@@ -212,6 +212,17 @@
     <string name="landscape_only">仅限横屏</string>
     <string name="wide_or_landscape">宽屏或横屏</string>
     <string name="always">始终</string>
+    <string name="asrkb_aidl_voice_input">说点啥 AIDL 语音输入（按住说话）</string>
+    <string name="asrkb_aidl_voice_input_summary">长按空格开始说话，松手结束并上屏；需在说点啥中开启“允许外部输入法联动（AIDL）”。</string>
+    <string name="asrkb_err_service_not_found">未找到说点啥服务（Pro/开源）</string>
+    <string name="asrkb_err_connect_failed">无法连接说点啥服务</string>
+    <string name="asrkb_err_busy">语音服务正忙，请稍后再试。</string>
+    <string name="asrkb_err_feature_disabled">请先在说点啥中开启“允许外部输入法联动（AIDL）”。</string>
+    <string name="asrkb_client_need_mic_permission">语音输入需要麦克风权限。</string>
+    <string name="asrkb_err_audio_record_failed">音频录制初始化失败，麦克风可能被其他应用占用。</string>
+    <string name="asrkb_err_unsupported">当前供应商不支持外部推送 PCM。</string>
+    <string name="asrkb_err_start_failed_with_code">启动会话失败（错误码 %1$d）</string>
+    <string name="asrkb_err_service_error_with_code">语音服务错误（错误码 %1$d）</string>
     <string name="preferred_voice_input">首选语音输入法</string>
     <string name="no_voice_input_installed">未安装语音输入</string>
     <string name="inline_suggestions">显示内嵌自动填充建议</string>

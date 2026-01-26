@@ -16,9 +16,17 @@ import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
 import android.view.KeyEvent
+import android.view.View
+import android.widget.FrameLayout
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils as AndroidColorUtils
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.withClip
+import androidx.transition.Slide
+import androidx.transition.TransitionManager
+import androidx.transition.TransitionSet
 import com.mikepenz.iconics.IconicsDrawable
 import com.mikepenz.iconics.utils.sizeDp
 import com.osfans.trime.daemon.RimeDaemon
@@ -30,6 +38,9 @@ import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.popup.PopupAction
 import com.osfans.trime.ime.popup.PopupActionListener
 import com.osfans.trime.ime.popup.PopupDelegate
+import com.osfans.trime.ime.voice.WaveformView
+import com.osfans.trime.link.AsrkbSpeechClient
+import com.osfans.trime.link.VoiceOverlayUiBridge
 import com.osfans.trime.util.sp
 import splitties.dimensions.dp
 import timber.log.Timber
@@ -73,8 +84,12 @@ class KeyboardView(
     private val showPreview by AppPrefs.defaultInstance().keyboard.popupOnKeyPress
     private val vibrateOnKeyRelease by AppPrefs.defaultInstance().keyboard.vibrateOnKeyRelease
     private val vibrateOnKeyRepeat by AppPrefs.defaultInstance().keyboard.vibrateOnKeyRepeat
+    private val asrkbAidlVoiceInputEnabled by AppPrefs.defaultInstance().general.asrkbAidlVoiceInputEnabled
 
     private val deletedTextBuffer = ArrayDeque<String>()
+
+    private var voiceOverlay: FrameLayout? = null
+    private var voiceWave: WaveformView? = null
 
     /**
      * 是否允許距離校正 When enabled, calls to [KeyboardActionListener.onKey] will include key codes for
@@ -116,7 +131,27 @@ class KeyboardView(
         invalidateAllKeys()
 
         onKeyActionListener = { keyIndex, behavior ->
-            if (behavior == KeyBehavior.LONG_CLICK && hasPopupKeys(keyIndex)) {
+            val isAsrkbVoiceLongPress =
+                behavior == KeyBehavior.LONG_CLICK &&
+                    asrkbAidlVoiceInputEnabled &&
+                    mKeys.getOrNull(keyIndex)?.getAction(behavior)?.code == KeyEvent.KEYCODE_VOICE_ASSIST
+
+            if (isAsrkbVoiceLongPress) {
+                showVoiceOverlay()
+                VoiceOverlayUiBridge.onAmplitude = { amp ->
+                    ContextCompat.getMainExecutor(service).execute {
+                        updateVoiceOverlayAmplitude(amp)
+                    }
+                }
+                VoiceOverlayUiBridge.onDone = {
+                    ContextCompat.getMainExecutor(service).execute {
+                        hideVoiceOverlay()
+                    }
+                    VoiceOverlayUiBridge.clear()
+                }
+                AsrkbSpeechClient.startHoldSession(service)
+                false
+            } else if (behavior == KeyBehavior.LONG_CLICK && hasPopupKeys(keyIndex)) {
                 val popupKeys = mKeys.get(keyIndex).popup
                 val bounds = getKeyBounds(keyIndex)
                 popupActionListener.onPopupAction(
@@ -182,6 +217,22 @@ class KeyboardView(
 
         onKeyReleaseListener = { keyIndex ->
             deletedTextBuffer.clear()
+            if (asrkbAidlVoiceInputEnabled) {
+                if (keyIndex == -1) {
+                    if (AsrkbSpeechClient.isHolding()) {
+                        hideVoiceOverlay()
+                        VoiceOverlayUiBridge.clear()
+                        AsrkbSpeechClient.stopHoldSession()
+                    }
+                } else {
+                    val longClickAction = mKeys.getOrNull(keyIndex)?.getAction(KeyBehavior.LONG_CLICK)
+                    if (longClickAction?.code == KeyEvent.KEYCODE_VOICE_ASSIST && AsrkbSpeechClient.isHolding()) {
+                        hideVoiceOverlay()
+                        VoiceOverlayUiBridge.clear()
+                        AsrkbSpeechClient.stopHoldSession()
+                    }
+                }
+            }
         }
 
         onPopupSelected = { keyIndex ->
@@ -279,6 +330,17 @@ class KeyboardView(
                 fullWidth
             }
         setMeasuredDimension(measuredWidth, fullHeight)
+
+        // KeyboardView 自己决定尺寸，因此需要手动测量子 View，否则覆盖层等子 View 可能拿到 0 尺寸。
+        if (childCount > 0) {
+            val childWidthSpec = MeasureSpec.makeMeasureSpec(measuredWidth, MeasureSpec.EXACTLY)
+            val childHeightSpec = MeasureSpec.makeMeasureSpec(fullHeight, MeasureSpec.EXACTLY)
+            for (i in 0 until childCount) {
+                val child = getChildAt(i)
+                if (child.visibility == GONE) continue
+                measureChildWithMargins(child, childWidthSpec, 0, childHeightSpec, 0)
+            }
+        }
     }
 
     /**
@@ -618,6 +680,14 @@ class KeyboardView(
     }
 
     fun onDetach() {
+        if (AsrkbSpeechClient.isHolding()) {
+            hideVoiceOverlay()
+            VoiceOverlayUiBridge.clear()
+            AsrkbSpeechClient.stopHoldSession()
+        } else {
+            hideVoiceOverlay()
+            VoiceOverlayUiBridge.clear()
+        }
         popup.dismissAll()
         freeDrawingBuffer()
     }
@@ -629,5 +699,76 @@ class KeyboardView(
 
     companion object {
         private const val MAX_NEARBY_KEYS = 12
+    }
+
+    private fun showVoiceOverlay() {
+        if (voiceOverlay != null) return
+
+        val bgColor = runCatching { ColorManager.getColor("keyboard_back_color") }.getOrElse { Color.BLACK }
+        val overlay =
+            FrameLayout(context).apply {
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+                isClickable = false
+                isFocusable = false
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+
+                runCatching {
+                    ColorManager.getDecorDrawable("keyboard_background")?.also { background = it }
+                }.onFailure { Timber.d(it, "Resolve keyboard_background drawable failed") }
+                if (background == null) setBackgroundColor(bgColor)
+            }
+
+        val candidateColors =
+            listOf(
+                "key_text_color",
+                "hilited_key_text_color",
+                "candidate_text_color",
+                "hilited_candidate_text_color",
+            ).mapNotNull { key ->
+                runCatching { ColorManager.getColor(key) }.getOrNull()
+            }
+        val lineColor =
+            candidateColors.firstOrNull { AndroidColorUtils.calculateContrast(it, bgColor) >= 2.5 }
+                ?: candidateColors.firstOrNull()
+                ?: Color.WHITE
+
+        val wave =
+            WaveformView(context).apply {
+                setWaveformColor(lineColor)
+                visibility = View.VISIBLE
+                start()
+            }
+        overlay.addView(wave, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+
+        val ts =
+            TransitionSet().apply {
+                addTransition(Slide(Gravity.BOTTOM).apply { addTarget(overlay) })
+                duration = 100
+            }
+        runCatching { TransitionManager.beginDelayedTransition(this, ts) }
+            .onFailure { Timber.d(it, "Begin voice overlay transition failed") }
+
+        addView(overlay, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        voiceOverlay = overlay
+        voiceWave = wave
+    }
+
+    private fun hideVoiceOverlay() {
+        val overlay = voiceOverlay ?: return
+        runCatching { voiceWave?.stop() }.onFailure { Timber.w(it, "Stop WaveformView failed") }
+        val ts =
+            TransitionSet().apply {
+                addTransition(Slide(Gravity.BOTTOM).apply { addTarget(overlay) })
+                duration = 100
+            }
+        runCatching { TransitionManager.beginDelayedTransition(this, ts) }
+            .onFailure { Timber.d(it, "Begin voice overlay transition failed") }
+        runCatching { removeView(overlay) }.onFailure { Timber.w(it, "Remove voice overlay failed") }
+        voiceOverlay = null
+        voiceWave = null
+    }
+
+    private fun updateVoiceOverlayAmplitude(amplitude: Float) {
+        voiceWave?.updateAmplitude(amplitude)
     }
 }

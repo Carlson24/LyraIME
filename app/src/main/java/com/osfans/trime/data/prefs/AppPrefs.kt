@@ -94,12 +94,19 @@ class AppPrefs(
             const val INLINE_PREEDIT_MODE = "inline_preedit_mode"
             const val ASCII_SWITCH_TIPS = "ascii_switch_tips"
             const val INLINE_SUGGESTIONS = "inline_suggestions"
+            const val ASRKB_AIDL_VOICE_INPUT = "asrkb_aidl_voice_input"
             const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
         }
 
         val inlinePreeditMode = enum(R.string.inline_preedit_mode, INLINE_PREEDIT_MODE, InlinePreeditMode.DISABLE)
         val asciiSwitchTips = switch(R.string.ascii_switch_tips, ASCII_SWITCH_TIPS, true)
         val inlineSuggestions = switch(R.string.inline_suggestions, INLINE_SUGGESTIONS, true)
+        val asrkbAidlVoiceInputEnabled = switch(
+            R.string.asrkb_aidl_voice_input,
+            ASRKB_AIDL_VOICE_INPUT,
+            false,
+            R.string.asrkb_aidl_voice_input_summary,
+        )
 
         val preferredVoiceInput = list(
             R.string.preferred_voice_input,
@@ -109,6 +116,7 @@ class AppPrefs(
             { ctx ->
                 InputMethodUtils.voiceInputMethods().map { it.first.loadLabel(ctx.packageManager) }
             },
+            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
     }
 
