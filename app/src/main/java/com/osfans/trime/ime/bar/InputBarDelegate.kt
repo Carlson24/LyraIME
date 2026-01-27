@@ -79,8 +79,10 @@ class InputBarDelegate : InputBroadcastReceiver {
     private val clipboardSuggestionTimeout by prefs.clipboard.clipboardSuggestionTimeout
 
     private val asrkbAidlVoiceInputEnabled by prefs.general.asrkbAidlVoiceInputEnabled
-    
+
     private val asrkbAidlVoiceToolbarButtonEnabled by prefs.general.asrkbAidlVoiceToolbarButtonEnabled
+
+    private var asrkbHoldingChangedListener: ((Boolean) -> Unit)? = null
 
     private var clipboardTimeoutJob: Job? = null
 
@@ -168,22 +170,25 @@ class InputBarDelegate : InputBroadcastReceiver {
                     visibility = View.GONE
                 }
                 setOnClickListener {
-                    if (!(asrkbAidlVoiceInputEnabled && asrkbAidlVoiceToolbarButtonEnabled)) return@setOnClickListener
                     if (AsrkbSpeechClient.isHolding()) {
                         stopAsrkbVoiceFromToolbar()
-                    } else {
-                        startAsrkbVoiceFromToolbar()
+                        return@setOnClickListener
                     }
+                    if (!(asrkbAidlVoiceInputEnabled && asrkbAidlVoiceToolbarButtonEnabled)) return@setOnClickListener
+                    startAsrkbVoiceFromToolbar()
                 }
             }
 
             val executor = ContextCompat.getMainExecutor(service)
-            AsrkbSpeechClient.onHoldingChanged = { holding ->
+            val holdingListener: (Boolean) -> Unit = { holding ->
                 executor.execute {
+                    if (!asrkbVoiceButton.isAttachedToWindow) return@execute
                     if (asrkbVoiceButton.visibility != View.VISIBLE) return@execute
                     asrkbVoiceButton.setIcon(if (holding) R.drawable.ic_baseline_stop_24 else R.drawable.ic_baseline_mic_24)
                 }
             }
+            asrkbHoldingChangedListener = holdingListener
+            AsrkbSpeechClient.onHoldingChanged = holdingListener
         }
     }
 
@@ -283,6 +288,20 @@ class InputBarDelegate : InputBroadcastReceiver {
 
             evalAlwaysUiState()
             ClipboardHelper.addOnUpdateListener(onClipboardUpdateListener)
+
+            addOnAttachStateChangeListener(
+                object : View.OnAttachStateChangeListener {
+                    override fun onViewAttachedToWindow(v: View) {}
+
+                    override fun onViewDetachedFromWindow(v: View) {
+                        val listener = asrkbHoldingChangedListener
+                        if (listener != null && AsrkbSpeechClient.onHoldingChanged === listener) {
+                            AsrkbSpeechClient.onHoldingChanged = null
+                        }
+                        asrkbHoldingChangedListener = null
+                    }
+                },
+            )
         }
     }
 
