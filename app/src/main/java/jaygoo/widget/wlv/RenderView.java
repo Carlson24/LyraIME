@@ -124,12 +124,20 @@ public abstract class RenderView extends SurfaceView implements SurfaceHolder.Ca
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
-        if (hasFocus && isStartAnim) startAnim(); else startThread();
+        super.onWindowFocusChanged(hasFocus);
+        if (!hasFocus) {
+            onPause();
+            return;
+        }
+        if (isStartAnim) {
+            onResume();
+            startThread();
+        }
     }
 
     private void render(Canvas canvas, long millisPassed) { onRender(canvas, millisPassed); }
 
-    public void startAnim() { isStartAnim = true; startThread(); }
+    public void startAnim() { isStartAnim = true; onResume(); startThread(); }
 
     private void startThread() {
         if (renderThread != null && !renderThread.running) {

@@ -32,6 +32,7 @@ object AsrkbSpeechClient {
     private var bound = false
     private var connection: ServiceConnection? = null
     private var remote: IBinder? = null
+    private var callbackBinder: IBinder? = null
     private var sessionId: Int = -1
     private var currentState: Int = STATE_IDLE
     private var holding: Boolean = false
@@ -44,7 +45,7 @@ object AsrkbSpeechClient {
         if (bound && remote != null && sessionId > 0) {
             if (!holding) {
                 Timber.w("Reset stale session before starting new hold (state=$currentState)")
-                unbind()
+                unbind(clearUi = false)
             } else {
                 return
             }
@@ -137,6 +138,7 @@ object AsrkbSpeechClient {
                                     }
                                 }
                             }
+                        callbackBinder = cbBinder
 
                         val data = Parcel.obtain()
                         val reply = Parcel.obtain()
@@ -208,8 +210,7 @@ object AsrkbSpeechClient {
         holding = false
 
         when (currentState) {
-            STATE_RECORDING -> if (hasPcmFrame) finishPcmSession() else cancelAndUnbind()
-            STATE_PROCESSING -> cancelAndUnbind()
+            STATE_RECORDING, STATE_PROCESSING -> if (hasPcmFrame) finishPcmSession() else cancelAndUnbind()
             else -> cancelAndUnbind()
         }
     }
@@ -221,9 +222,12 @@ object AsrkbSpeechClient {
         unbind()
     }
 
-    private fun unbind() {
-        runCatching { VoiceOverlayUiBridge.onDone?.invoke() }
-        VoiceOverlayUiBridge.clear()
+    private fun unbind(clearUi: Boolean = true) {
+        if (clearUi) {
+            runCatching { VoiceOverlayUiBridge.onDone?.invoke() }
+            VoiceOverlayUiBridge.clear()
+        }
+        callbackBinder = null
         val ctx = ctxRef
         stopAudioStreaming()
 
@@ -338,41 +342,74 @@ object AsrkbSpeechClient {
                 val chunkBytes = (sr * 200 / 1000) * bytesPerSample
                 val bufSize = max(minBuf, chunkBytes * 2)
 
-                var rec =
-                    AudioRecord(
-                        MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                        sr,
-                        ch,
-                        fmt,
-                        bufSize,
-                    )
+                fun createAudioRecord(source: Int): AudioRecord? {
+                    val rec =
+                        try {
+                            AudioRecord(
+                                source,
+                                sr,
+                                ch,
+                                fmt,
+                                bufSize,
+                            )
+                        } catch (t: Throwable) {
+                            Timber.w(t, "AudioRecord construct failed (source=$source)")
+                            null
+                        }
+                    if (rec == null) return null
+                    if (rec.state != AudioRecord.STATE_INITIALIZED) {
+                        Timber.w("AudioRecord not initialized (source=$source, state=${rec.state})")
+                        runCatching { rec.release() }
+                        return null
+                    }
+                    return rec
+                }
+
+                fun toastAndUnbind() {
+                    service.lifecycleScope.launch {
+                        toast(service, service.getString(R.string.asrkb_err_audio_record_failed))
+                        unbind()
+                    }
+                }
+
+                var usedSource = MediaRecorder.AudioSource.VOICE_RECOGNITION
+                var rec = createAudioRecord(usedSource) ?: run {
+                    usedSource = MediaRecorder.AudioSource.MIC
+                    createAudioRecord(usedSource)
+                }
+                if (rec == null) {
+                    toastAndUnbind()
+                    return@launch
+                }
+
                 audioRecord = rec
                 try {
                     rec.startRecording()
                 } catch (t: Throwable) {
+                    if (usedSource == MediaRecorder.AudioSource.MIC) {
+                        Timber.e(t, "AudioRecord MIC failed")
+                        toastAndUnbind()
+                        return@launch
+                    }
+
                     Timber.w(t, "AudioRecord start failed, fallback MIC")
-                    try {
-                        rec.release()
-                    } catch (e: Throwable) {
+                    runCatching { rec.release() }.onFailure { e ->
                         Timber.w(e, "AudioRecord release failed")
                     }
-                    rec =
-                        AudioRecord(
-                            MediaRecorder.AudioSource.MIC,
-                            sr,
-                            ch,
-                            fmt,
-                            bufSize,
-                        )
-                    audioRecord = rec
+
+                    usedSource = MediaRecorder.AudioSource.MIC
+                    val micRec = createAudioRecord(usedSource)
+                    if (micRec == null) {
+                        toastAndUnbind()
+                        return@launch
+                    }
+                    audioRecord = micRec
+                    rec = micRec
                     try {
                         rec.startRecording()
                     } catch (e: Throwable) {
                         Timber.e(e, "AudioRecord MIC failed")
-                        service.lifecycleScope.launch {
-                            toast(service, service.getString(R.string.asrkb_err_audio_record_failed))
-                            unbind()
-                        }
+                        toastAndUnbind()
                         return@launch
                     }
                 }
