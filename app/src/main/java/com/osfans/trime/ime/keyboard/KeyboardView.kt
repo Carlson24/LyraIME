@@ -138,6 +138,11 @@ class KeyboardView(
 
             if (isAsrkbVoiceLongPress) {
                 showVoiceOverlay()
+                VoiceOverlayUiBridge.onRecordingStarted = {
+                    ContextCompat.getMainExecutor(service).execute {
+                        startVoiceOverlayWave()
+                    }
+                }
                 VoiceOverlayUiBridge.onAmplitude = { amp ->
                     ContextCompat.getMainExecutor(service).execute {
                         updateVoiceOverlayAmplitude(amp)
@@ -735,8 +740,7 @@ class KeyboardView(
         val wave =
             WaveformView(context).apply {
                 setWaveformColor(lineColor)
-                visibility = View.VISIBLE
-                start()
+                visibility = View.INVISIBLE
             }
         overlay.addView(wave, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
@@ -766,6 +770,12 @@ class KeyboardView(
         runCatching { removeView(overlay) }.onFailure { Timber.w(it, "Remove voice overlay failed") }
         voiceOverlay = null
         voiceWave = null
+    }
+
+    private fun startVoiceOverlayWave() {
+        val wave = voiceWave ?: return
+        wave.visibility = View.VISIBLE
+        wave.start()
     }
 
     private fun updateVoiceOverlayAmplitude(amplitude: Float) {

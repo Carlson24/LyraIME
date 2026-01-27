@@ -23,6 +23,7 @@ import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.util.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.math.max
@@ -377,6 +378,7 @@ object AsrkbSpeechClient {
                 }
 
                 val chunk = ByteArray(chunkBytes)
+                var notifiedRecordingStarted = false
                 while (true) {
                     if (sessionId <= 0 || remote == null) break
                     val n =
@@ -385,7 +387,15 @@ object AsrkbSpeechClient {
                         } catch (_: Throwable) {
                             -1
                         }
-                    if (n <= 0) break
+                    if (n < 0) break
+                    if (n == 0) {
+                        delay(10)
+                        continue
+                    }
+                    if (!notifiedRecordingStarted) {
+                        notifiedRecordingStarted = true
+                        runCatching { VoiceOverlayUiBridge.onRecordingStarted?.invoke() }
+                    }
                     writePcmFrame(chunk, n, sr, 1)
                 }
             }

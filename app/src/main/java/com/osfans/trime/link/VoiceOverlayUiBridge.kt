@@ -6,12 +6,13 @@ package com.osfans.trime.link
  * - AIDL 客户端在回调线程里调用这些回调以驱动波形动画。
  */
 object VoiceOverlayUiBridge {
+    @Volatile var onRecordingStarted: (() -> Unit)? = null
     @Volatile var onAmplitude: ((Float) -> Unit)? = null
     @Volatile var onDone: (() -> Unit)? = null
 
     fun clear() {
+        onRecordingStarted = null
         onAmplitude = null
         onDone = null
     }
 }
-
