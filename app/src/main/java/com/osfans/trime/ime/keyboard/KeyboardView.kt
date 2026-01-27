@@ -706,7 +706,7 @@ class KeyboardView(
         private const val MAX_NEARBY_KEYS = 12
     }
 
-    private fun showVoiceOverlay() {
+    internal fun showVoiceOverlay() {
         if (voiceOverlay != null) return
 
         val bgColor = runCatching { ColorManager.getColor("keyboard_back_color") }.getOrElse { Color.BLACK }
@@ -757,7 +757,7 @@ class KeyboardView(
         voiceWave = wave
     }
 
-    private fun hideVoiceOverlay() {
+    internal fun hideVoiceOverlay() {
         val overlay = voiceOverlay ?: return
         runCatching { voiceWave?.stop() }.onFailure { Timber.w(it, "Stop WaveformView failed") }
         val ts =
@@ -772,13 +772,13 @@ class KeyboardView(
         voiceWave = null
     }
 
-    private fun startVoiceOverlayWave() {
+    internal fun startVoiceOverlayWave() {
         val wave = voiceWave ?: return
         wave.visibility = View.VISIBLE
         wave.start()
     }
 
-    private fun updateVoiceOverlayAmplitude(amplitude: Float) {
+    internal fun updateVoiceOverlayAmplitude(amplitude: Float) {
         voiceWave?.updateAmplitude(amplitude)
     }
 }

@@ -213,8 +213,10 @@
     <string name="landscape_only">Landscape only</string>
     <string name="wide_or_landscape">Wide or landscape</string>
     <string name="always">Always</string>
-    <string name="asrkb_aidl_voice_input">BiBi Keyboard AIDL voice input (hold to talk)</string>
-    <string name="asrkb_aidl_voice_input_summary">Long-press the key mapped to Voice Assist to talk, release to finish. Enable "External IME link (AIDL)" in BiBi Keyboard first.</string>
+    <string name="asrkb_aidl_voice_input">BiBi Keyboard AIDL voice input</string>
+    <string name="asrkb_aidl_voice_input_summary">Enable voice recognition via BiBi Keyboard (AIDL). Enable "External IME link (AIDL)" in BiBi Keyboard first.</string>
+    <string name="asrkb_aidl_voice_toolbar_button">Toolbar mic button</string>
+    <string name="asrkb_aidl_voice_toolbar_button_summary">Show a mic button on the toolbar. Tap to start recording, tap again to stop and commit. If the setting does not take effect immediately after toggling the switch, switch to another theme in the keyboard style settings and then switch back to refresh the UI.</string>
     <string name="asrkb_err_service_not_found">BiBi Keyboard service not found (Pro/Open-source)</string>
     <string name="asrkb_err_connect_failed">Failed to connect to BiBi Keyboard service</string>
     <string name="asrkb_err_busy">Voice service is busy. Please try again.</string>

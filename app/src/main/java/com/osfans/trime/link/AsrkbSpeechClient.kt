@@ -29,6 +29,8 @@ import timber.log.Timber
 import kotlin.math.max
 
 object AsrkbSpeechClient {
+    var onHoldingChanged: ((Boolean) -> Unit)? = null
+
     private var bound = false
     private var connection: ServiceConnection? = null
     private var remote: IBinder? = null
@@ -36,6 +38,12 @@ object AsrkbSpeechClient {
     private var sessionId: Int = -1
     private var currentState: Int = STATE_IDLE
     private var holding: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            runCatching { onHoldingChanged?.invoke(value) }
+                .onFailure { Timber.w(it, "onHoldingChanged failed") }
+        }
     private var ctxRef: TrimeInputMethodService? = null
     private var audioJob: Job? = null
     private var audioRecord: AudioRecord? = null

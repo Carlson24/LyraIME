@@ -6,6 +6,7 @@
 package com.osfans.trime.ime.bar.ui
 
 import android.content.Context
+import android.view.View
 import android.widget.ViewAnimator
 import androidx.annotation.DrawableRes
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -64,6 +65,10 @@ class AlwaysUi(
     val inlineSuggestionsUi = InlineSuggestionsUi(ctx)
 
     val hideKeyboardButton = ToolButton(ctx, R.drawable.ic_baseline_arrow_drop_down_24)
+    val asrkbVoiceButton =
+        ToolButton(ctx, R.drawable.ic_baseline_mic_24).apply {
+            visibility = View.GONE
+        }
     private val rightButtonAnimator =
         ViewAnimator(ctx).apply {
             add(hideKeyboardButton, lParams(matchParent, matchParent))
@@ -114,11 +119,17 @@ class AlwaysUi(
             },
         )
         add(
+            asrkbVoiceButton,
+            lParams(dp(rightWidth), dp(rightHeight)) {
+                before(rightButtonAnimator)
+                centerVertically()
+            },
+        )
+        add(
             animator,
             lParams(matchConstraints, matchParent) {
                 after(moreButtonAnimator)
-                before(rightButtonAnimator)
-                endOfParent()
+                before(asrkbVoiceButton)
                 centerVertically()
             },
         )
