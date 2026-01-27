@@ -214,7 +214,7 @@
     <string name="wide_or_landscape">Wide or landscape</string>
     <string name="always">Always</string>
     <string name="asrkb_aidl_voice_input">BiBi Keyboard AIDL voice input (hold to talk)</string>
-    <string name="asrkb_aidl_voice_input_summary">Long-press Space to talk, release to finish. Enable "External IME link (AIDL)" in BiBi Keyboard first.</string>
+    <string name="asrkb_aidl_voice_input_summary">Long-press the key mapped to Voice Assist to talk, release to finish. Enable "External IME link (AIDL)" in BiBi Keyboard first.</string>
     <string name="asrkb_err_service_not_found">BiBi Keyboard service not found (Pro/Open-source)</string>
     <string name="asrkb_err_connect_failed">Failed to connect to BiBi Keyboard service</string>
     <string name="asrkb_err_busy">Voice service is busy. Please try again.</string>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="asrkb_aidl_voice_input">BiBi Keyboard AIDL 音声入力（押して話す）</string>
-    <string name="asrkb_aidl_voice_input_summary">スペースを長押しして話し、離すと確定します。事前に BiBi Keyboard 側で「外部IME連携（AIDL）」を有効にしてください。</string>
+    <string name="asrkb_aidl_voice_input_summary">VOICE_ASSIST（音声入力）に割り当てたキーを長押しして話し、離すと確定します。事前に BiBi Keyboard 側で「外部IME連携（AIDL）」を有効にしてください。</string>
     <string name="asrkb_err_service_not_found">BiBi Keyboard サービスが見つかりません（Pro/OSS）</string>
     <string name="asrkb_err_connect_failed">BiBi Keyboard サービスに接続できません</string>
     <string name="asrkb_err_busy">音声サービスがビジーです。しばらくしてからお試しください。</string>

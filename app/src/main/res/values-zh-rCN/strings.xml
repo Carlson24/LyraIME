@@ -213,7 +213,7 @@
     <string name="wide_or_landscape">宽屏或横屏</string>
     <string name="always">始终</string>
     <string name="asrkb_aidl_voice_input">说点啥 AIDL 语音输入（按住说话）</string>
-    <string name="asrkb_aidl_voice_input_summary">长按空格开始说话，松手结束并上屏；需在说点啥中开启“允许外部输入法联动（AIDL）”。</string>
+    <string name="asrkb_aidl_voice_input_summary">长按键盘方案中配置为“语音输入/VOICE_ASSIST”的按键开始说话，松手结束并上屏；需在说点啥中开启“允许外部输入法联动（AIDL）”。</string>
     <string name="asrkb_err_service_not_found">未找到说点啥服务（Pro/开源）</string>
     <string name="asrkb_err_connect_failed">无法连接说点啥服务</string>
     <string name="asrkb_err_busy">语音服务正忙，请稍后再试。</string>
