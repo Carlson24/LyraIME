@@ -7,8 +7,8 @@
 
 <resources xmlns:xliff="urn:oasis:names:en:xliff:document:1.2">
     <!-- Input Method Platform Tittle  -->
-    <string name="app_name_release">Trime</string>
-    <string name="app_name_debug">Trime (Debug)</string>
+    <string name="app_name_release">Trime (BiBi)</string>
+    <string name="app_name_debug">Trime (BiBi Debug)</string>
     <!-- Preference settings -->
     <string name="qq_group_1">Trime QQ group 1</string>
     <string name="qq_group_2">Trime QQ group 2</string>
@@ -69,8 +69,8 @@
     <string name="custom_sound_effect_name">Custom key Sound Effect</string>
     <string name="setup__next">Next</string>
     <string name="setup__done">Done</string>
-    <string name="setup__enable_ime_hint">Enable <b>Trime</b> in Language and input settings</string>
-    <string name="setup__select_ime_hint">Select <b>Trime</b> as your default input method</string>
+    <string name="setup__enable_ime_hint">Enable <b>Trime (BiBi)</b> in Language and input settings</string>
+    <string name="setup__select_ime_hint">Select <b>Trime (BiBi)</b> as your default input method</string>
     <string name="setup__enable_ime">Enable Input Method</string>
     <string name="setup__select_ime">Select Input Method</string>
     <string name="setup__prev">Prev</string>
