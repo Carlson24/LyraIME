@@ -98,7 +98,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
         <!-- Using an activity alias to disable/enable the app icon in the launcher -->
         <activity-alias
-            android:name="com.osfans.trime.MainLauncherAlias"
+            android:name="${applicationId}.MainLauncherAlias"
             android:exported="true"
             android:label="@string/trime_app_name"
             android:launchMode="singleTask"
