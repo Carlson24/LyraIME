@@ -13,7 +13,7 @@ import android.text.SpannableStringBuilder
 import androidx.annotation.ColorInt
 import androidx.core.text.buildSpannedString
 import androidx.core.text.inSpans
-import com.osfans.trime.core.RimeProto
+import com.osfans.trime.core.CandidateProto
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
@@ -21,7 +21,6 @@ import com.osfans.trime.util.sp
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.textView
-import splitties.views.horizontalPadding
 
 class LabeledCandidateItemUi(
     override val ctx: Context,
@@ -39,7 +38,7 @@ class LabeledCandidateItemUi(
     private val highlightLabelColor = ColorManager.getColor("hilited_label_color")
     private val highlightCommentTextColor = ColorManager.getColor("hilited_comment_text_color")
     private val highlightCandidateTextColor = ColorManager.getColor("hilited_candidate_text_color")
-    private val highlightBackColor = ColorManager.getColor("hilited_back_color")
+    private val highlightCandidateBackColor = ColorManager.getColor("hilited_candidate_back_color")
 
     override val root =
         textView {
@@ -56,7 +55,7 @@ class LabeledCandidateItemUi(
     ) = inSpans(CandidateItemSpan(color, textSize, typeface), builderAction)
 
     fun update(
-        candidate: RimeProto.Candidate,
+        candidate: CandidateProto,
         highlighted: Boolean,
     ) {
         val labelFg = if (highlighted) highlightLabelColor else labelColor
@@ -75,7 +74,7 @@ class LabeledCandidateItemUi(
         val bg =
             GradientDrawable().apply {
                 if (highlighted) {
-                    setColor(highlightBackColor)
+                    setColor(highlightCandidateBackColor)
                     cornerRadius = ctx.dp(theme.window.cornerRadius)
                 } else {
                     setColor(Color.TRANSPARENT)
