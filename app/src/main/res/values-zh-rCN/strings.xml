@@ -53,6 +53,10 @@
     <string name="clipboard_limit">剪贴板历史记录上限</string>
     <string name="clipboard_compare_rules">剪贴板去重规则</string>
     <string name="clipboard_output_rules">剪贴板过滤规则</string>
+    <string name="clipboard_extract_rules">剪贴板提取规则</string>
+    <string name="extract">提取</string>
+    <string name="no_extraction_results">未找到匹配内容</string>
+    <string name="select_extracted_content">选择提取内容</string>
     <string name="clipboard_suggestion">显示剪贴板提示</string>
     <string name="clipboard_suggestion_timeout">剪贴板提示超时</string>
     <string name="deploy_finish">部署完成</string>
