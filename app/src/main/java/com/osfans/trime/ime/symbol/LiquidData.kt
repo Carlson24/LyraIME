@@ -14,6 +14,7 @@ object LiquidData {
         SYMBOL,
         TABS,
         HISTORY,
+        VAR_LENGTH,
     }
 
     data class Tag(val label: String = "", val type: Type)
@@ -43,4 +44,6 @@ object LiquidData {
             item.second.toList()
         }
     }
+
+    fun isVarLengthType(type: Type): Boolean = type == Type.VAR_LENGTH || type == Type.TABS || type == Type.HISTORY
 }
