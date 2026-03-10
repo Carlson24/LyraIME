@@ -44,6 +44,10 @@ class ClipboardWindow(private val initialTab: Int = 0) : BoardWindow.BarBoardWin
     private val prefs = AppPrefs.defaultInstance().clipboard
     private val clipboardReturnAfterPaste by prefs.clipboardReturnAfterPaste
 
+    private val clipboardExtractor by lazy {
+        ClipboardExtractor(context, service, windowManager)
+    }
+
     private val clipboardBeansPager by lazy {
         Pager(PagingConfig(pageSize = 16)) { ClipboardHelper.allBeans() }
     }
@@ -55,6 +59,10 @@ class ClipboardWindow(private val initialTab: Int = 0) : BoardWindow.BarBoardWin
 
     private val clipboardBeansAdapter by lazy {
         object : ClipboardAdapter(theme) {
+            override fun onExtractRequest(text: String) {
+                clipboardExtractor.showExtractDialog(text)
+            }
+
             override fun onPaste(bean: DatabaseBean) {
                 val text = bean.text ?: return
                 service.commitText(text)
@@ -101,6 +109,10 @@ class ClipboardWindow(private val initialTab: Int = 0) : BoardWindow.BarBoardWin
 
     private val collectionBeansAdapter by lazy {
         object : ClipboardAdapter(theme) {
+            override fun onExtractRequest(text: String) {
+                clipboardExtractor.showExtractDialog(text)
+            }
+
             override fun onPaste(bean: DatabaseBean) {
                 val text = bean.text ?: return
                 service.commitText(text)
@@ -162,6 +174,12 @@ class ClipboardWindow(private val initialTab: Int = 0) : BoardWindow.BarBoardWin
             adapter = clipboardPagesAdapter
         }
         titleUi.apply {
+            updateReturnAfterPasteButtonIcon()
+            returnAfterPasteButton.setOnClickListener {
+                val currentValue = prefs.clipboardReturnAfterPaste.getValue()
+                prefs.clipboardReturnAfterPaste.setValue(!currentValue)
+                updateReturnAfterPasteButtonIcon()
+            }
             tabLayout.onConfigureTab(viewPager) { tabUi, position ->
                 val label = when (position) {
                     0 -> R.string.clipboard
@@ -210,6 +228,18 @@ class ClipboardWindow(private val initialTab: Int = 0) : BoardWindow.BarBoardWin
             }.setNegativeButton(R.string.cancel, null)
             .create()
         service.showDialog(dialog)
+    }
+
+    private fun updateReturnAfterPasteButtonIcon() {
+        val currentReturnAfterPaste = prefs.clipboardReturnAfterPaste.getValue()
+        val iconRes = if (currentReturnAfterPaste) {
+            R.drawable.ic_outline_push_pin_24
+        } else {
+            R.drawable.ic_baseline_push_pin_24
+        }
+        clipboardLayout.titleUi.returnAfterPasteButton.setIcon(iconRes)
+        // 调整大头针图标的大小，使其与垃圾桶图标保持一致
+        clipboardLayout.titleUi.returnAfterPasteButton.setIconScale(0.85f)
     }
 
     override fun onAttached() {

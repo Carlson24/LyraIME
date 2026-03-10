@@ -71,6 +71,10 @@
     <string name="clipboard_limit">Clipboard history limit</string>
     <string name="clipboard_compare_rules">Clipboard compare rules</string>
     <string name="clipboard_output_rules">Clipboard output rules</string>
+    <string name="clipboard_extract_rules">Clipboard extract rules</string>
+    <string name="extract">Extract</string>
+    <string name="no_extraction_results">No matching content found</string>
+    <string name="select_extracted_content">Select extracted content</string>
     <string name="clipboard_suggestion">Show clipboard suggestions</string>
     <string name="clipboard_suggestion_timeout">Clipboard suggestion timeout</string>
     <string name="deploy_finish">Deploy finish</string>
