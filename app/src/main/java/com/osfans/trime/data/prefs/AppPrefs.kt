@@ -153,7 +153,6 @@ class AppPrefs(
             const val SPEAK_ON_KEYPRESS = "speak_on_keypress"
             const val SPEAK_ON_COMMIT = "speak_on_commit"
             const val POPUP_ON_KEY_PRESS = "show_key_popup"
-            const val SWIPE_ENABLED = "swipe_enabled"
             const val SWIPE_TRAVEL = "key_swipe_travel"
             const val SWIPE_VELOCITY = "key_swipe_velocity"
             const val LONG_PRESS_TIMEOUT = "key_long_press_timeout"
@@ -253,26 +252,28 @@ class AppPrefs(
         val speakOnKeyPress = switch(R.string.speak_on_keypress, SPEAK_ON_KEYPRESS, false)
         val speakOnCommit = switch(R.string.speak_on_commit, SPEAK_ON_COMMIT, false)
         val popupOnKeyPress = switch(R.string.popup_on_key_press, POPUP_ON_KEY_PRESS, false)
-        val swipeEnabled = switch(R.string.key_swipe_enabled, SWIPE_ENABLED, true)
         val swipeTravel = int(
             R.string.key_swipe_travel,
             SWIPE_TRAVEL,
-            80,
+            60,
             0,
             400,
             "dp",
             10,
-        ) { swipeEnabled.getValue() }
+            R.string.disable,
+            useMinAsDefault = true,
+        )
 
         val swipeVelocity = int(
             R.string.key_swipe_velocity,
             SWIPE_VELOCITY,
-            1600,
+            0,
             0,
             10000,
             "dp/s",
             100,
-        ) { swipeEnabled.getValue() }
+            R.string.disable,
+        )
 
         val longPressTimeout = int(
             R.string.key_long_press_timeout,
@@ -308,7 +309,7 @@ class AppPrefs(
             R.string.key_slide_step_size,
             SLIDE_STEP_SIZE,
             24,
-            0,
+            1,
             100,
             "dp",
         )

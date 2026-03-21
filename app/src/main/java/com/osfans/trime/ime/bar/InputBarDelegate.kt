@@ -36,6 +36,7 @@ import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.dependency.InputDependencyManager
 import com.osfans.trime.ime.keyboard.CommonKeyboardActionListener
 import com.osfans.trime.ime.keyboard.GestureFrame
+import com.osfans.trime.ime.keyboard.KeyBehavior
 import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.switches.SwitchOptionWindow
 import com.osfans.trime.ime.window.BoardWindow
@@ -127,8 +128,8 @@ class InputBarDelegate : InputBroadcastReceiver {
         alwaysUi.updateState(newState)
     }
 
-    private val swipeDownHideKeyboardCallback: ((GestureFrame.SwipeDirection) -> Unit) = { d ->
-        if (d == GestureFrame.SwipeDirection.Down) {
+    private val swipeDownHideKeyboardCallback: ((KeyBehavior) -> Unit) = { d ->
+        if (d == KeyBehavior.SWIPE_DOWN) {
             service.requestHideSelf(0)
         }
     }
@@ -143,7 +144,7 @@ class InputBarDelegate : InputBroadcastReceiver {
         }.apply {
             hideKeyboardButton.apply {
                 setOnClickListener { service.requestHideSelf(0) }
-                onSwipeListener = swipeDownHideKeyboardCallback
+                onSwipe = swipeDownHideKeyboardCallback
             }
             clipboardUi.suggestionView.apply {
                 setOnClickListener {
@@ -195,7 +196,7 @@ class InputBarDelegate : InputBroadcastReceiver {
     private val candidateUi by lazy {
         CandidateUi(context, candidate.view).apply {
             unrollButton.apply {
-                onSwipeListener = swipeDownHideKeyboardCallback
+                onSwipe = swipeDownHideKeyboardCallback
             }
         }
     }

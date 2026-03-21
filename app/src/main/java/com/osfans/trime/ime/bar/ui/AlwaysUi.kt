@@ -46,7 +46,15 @@ class AlwaysUi(
         buttonConfig: ToolBar.Button?,
         @DrawableRes icon: Int = 0,
     ): ToolButton = (if (buttonConfig != null) ToolButton(ctx, buttonConfig) else ToolButton(ctx, icon))
-        .also { it.setOnClickListener { onButtonClick?.invoke(buttonConfig?.action) } }
+        .also {
+            it.setOnClickListener { onButtonClick?.invoke(buttonConfig?.action) }
+            buttonConfig?.longPressAction?.takeIf { it.isNotEmpty() }?.let { action ->
+                it.setOnLongClickListener {
+                    onButtonClick?.invoke(action)
+                    true
+                }
+            }
+        }
 
     private val leftMostIcon: ToolButton = toolButton(
         theme.toolBar.primaryButton,
@@ -127,8 +135,8 @@ class AlwaysUi(
     private fun createBackButton(): ToolButton {
         val firstConfig = theme.toolBar.buttons.firstOrNull()
         val backConfig = firstConfig
-            ?.takeIf { ToolButton.getContentType(it.foreground?.style) == ToolButton.ContentType.TEXT }
-            ?.copy(foreground = firstConfig.foreground?.copy(style = "ic@arrow-left"))
+            ?.takeIf { ToolButton.getContentType(it.foreground.style) == ToolButton.ContentType.TEXT }
+            ?.copy(foreground = firstConfig.foreground.copy(style = theme.toolBar.backStyle))
 
         return toolButton(backConfig, R.drawable.ic_baseline_arrow_back_24)
             .also { it.setOnClickListener { updateState(State.Toolbar) } }

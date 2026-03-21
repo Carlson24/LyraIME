@@ -23,6 +23,7 @@ import com.osfans.trime.util.readText
 import com.osfans.trime.util.subprocess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -155,7 +156,6 @@ object RimeDaemon {
         realRime.finalize()
         realRime.startup()
         TrimeApplication.getInstance().coroutineScope.launch {
-            // cancel notification on ready
             realRime.lifecycle.whenReady {
                 notificationManager.cancel(id)
             }

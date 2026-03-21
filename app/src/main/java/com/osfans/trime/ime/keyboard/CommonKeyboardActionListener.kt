@@ -9,6 +9,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.view.KeyEvent
+import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.core.KeyModifier
@@ -16,6 +17,7 @@ import com.osfans.trime.core.KeyModifiers
 import com.osfans.trime.core.RimeApi
 import com.osfans.trime.core.RimeKeyEvent
 import com.osfans.trime.core.RimeKeyMapping
+import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.daemon.launchOnReady
 import com.osfans.trime.data.prefs.AppPrefs
@@ -94,7 +96,7 @@ class CommonKeyboardActionListener {
     private fun showEnabledSchemaPicker() {
         showDialog { api ->
             EnabledSchemaPickerDialog.build(api, service.lifecycleScope, context) {
-                setNegativeButton(R.string.schemata) { _, _ ->
+                setNegativeButton(R.string.enable_schemata) { _, _ ->
                     AppUtils.launchMainToSchemaList(context)
                 }
             }
@@ -114,10 +116,9 @@ class CommonKeyboardActionListener {
 
     val listener by lazy {
         object : KeyboardActionListener {
-            override fun onPress(keyEventCode: Int, isSound: Boolean) {
+            override fun onPress(keyEventCode: Int) {
                 InputFeedbackManager.run {
-                    keyPressVibrate(service.window.window!!.decorView)
-                    if (isSound) keyPressSound(keyEventCode)
+                    keyPressSound(keyEventCode)
                     keyPressSpeak(keyEventCode)
                 }
             }
@@ -198,6 +199,7 @@ class CommonKeyboardActionListener {
                     "commit" -> service.commitText(arg)
                     "date" -> service.commitText(customFormatDateTime(arg))
                     "run" -> handleRunCommand(arg)
+                    "apply" -> handleApplyCommand(arg)
                     "share_text" -> service.shareText()
                     "select_candidate" -> handleSelectCandidate(arg)
                     else -> handleIntentAction(action.command, arg)
@@ -255,6 +257,33 @@ class CommonKeyboardActionListener {
                 buildIntentFromArgument(arg)?.let { intent ->
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_HISTORY
                     service.startActivity(intent)
+                }
+            }
+
+            private fun handleApplyCommand(arg: String) {
+                when (arg) {
+                    "DEPLOY" -> {
+                        Timber.i("try to start maintenance via command ...")
+                        rime.launchOnReady { api -> api.deploy() }
+                    }
+                    "RESTART_RIME" -> {
+                        Timber.i("try to restart rime via command ...")
+                        RimeDaemon.restartRime()
+                    }
+                    "SYNC_USER_DATA" -> {
+                        Timber.i("try to sync rime user data via command ...")
+                        rime.launchOnReady { api -> api.syncUserData() }
+                    }
+                    "UPDATE_CONFIG" -> {
+                        Timber.i("try to update rime config via command ...")
+                        rime.launchOnReady { api ->
+                            api.updateConfig()
+                            service.lifecycleScope.launch {
+                                Toast.makeText(service, R.string.done, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    else -> Timber.w("Unknown apply method: $arg")
                 }
             }
 

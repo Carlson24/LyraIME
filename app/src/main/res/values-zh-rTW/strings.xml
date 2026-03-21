@@ -68,7 +68,7 @@
     <string name="external_storage_permission_denied">已拒絕授權儲存許可權，部署或讀取方案和配置功能或不可用</string>
     <string name="custom_sound_effect_name">自訂按鍵音效</string>
     <string name="setup__next">下一步</string>
-    <string name="setup__done">完成</string>
+    <string name="done">完成</string>
     <string name="setup__enable_ime_hint">在語言和輸入設定中啟用<b>同文輸入法（BiBi）</b></string>
     <string name="setup__select_ime_hint">選擇<b>同文輸入法（BiBi）</b>作為預設輸入法</string>
     <string name="setup__enable_ime">啟用輸入法</string>
@@ -86,7 +86,6 @@
     <string name="hook_ctrl_cv">攔截 Ctrl+C/V/X</string>
     <string name="hook_ctrl_lr">攔截 Ctrl+Left/Right</string>
     <string name="hook_ctrl_zy">攔截 Ctrl+Z/Y</string>
-    <string name="key_swipe_enabled">允許觸發按鍵的滑動手勢</string>
     <string name="key_swipe_velocity">觸發按鍵滑動手勢的速度（距離/速度滿足其一即可）</string>
     <string name="build_info">建構資訊</string>
     <string name="telegram">Telegram</string>
@@ -229,4 +228,5 @@
     <string name="preferred_voice_input">首選語音輸入</string>
     <string name="no_voice_input_installed">尚未安裝語音輸入</string>
     <string name="inline_suggestions">顯示內嵌自動填充建議</string>
+    <string name="update_config">更新配置</string>
 </resources>
