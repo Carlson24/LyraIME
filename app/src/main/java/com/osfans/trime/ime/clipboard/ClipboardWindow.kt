@@ -173,6 +173,7 @@ class ClipboardWindow(private val initialTab: Int = 0) : BoardWindow.BarBoardWin
         viewPager.apply {
             adapter = clipboardPagesAdapter
         }
+        setupCollectionFab(viewPager, context)
         titleUi.apply {
             updateReturnAfterPasteButtonIcon()
             returnAfterPasteButton.setOnClickListener {
