@@ -18,6 +18,37 @@ abstract class PreferenceDelegateProvider {
     val preferenceDelegatesUi: List<PreferenceDelegateUi<*>>
         get() = _preferenceDelegatesUi
 
+    /**
+     * 获取指定键的偏好代理
+     * @param key 偏好键
+     * @return 对应的偏好代理，如果不存在则返回 null
+     */
+    fun getPreferenceDelegate(key: String): PreferenceDelegate<*>? = _preferenceDelegates[key]
+
+    /**
+     * 根据 defaultValue 推断 SharedPreferences 的存储类型名称
+     * @param delegate 偏好代理
+     * @return 存储类型名称（BOOLEAN, INT, LONG, FLOAT, STRING, STRING_SET）
+     */
+    fun inferStorageTypeName(delegate: PreferenceDelegate<*>): String = when (delegate) {
+        is PreferenceDelegate.SerializableDelegate<*> -> {
+            // SerializableDelegate 都存储为 String
+            "STRING"
+        }
+        else -> {
+            // 根据 defaultValue 的类型判断
+            when (delegate.defaultValue) {
+                is Boolean -> "BOOLEAN"
+                is Int -> "INT"
+                is Long -> "LONG"
+                is Float, is Double -> "FLOAT"
+                is String -> "STRING"
+                is Set<*> -> "STRING_SET"
+                else -> "STRING"
+            }
+        }
+    }
+
     open fun createUi(screen: PreferenceScreen) {
     }
 
