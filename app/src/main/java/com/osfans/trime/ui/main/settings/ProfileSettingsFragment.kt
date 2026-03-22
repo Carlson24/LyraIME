@@ -18,6 +18,7 @@ import androidx.preference.Preference
 import androidx.preference.SwitchPreferenceCompat
 import com.osfans.trime.R
 import com.osfans.trime.daemon.launchOnReady
+import com.osfans.trime.data.backup.BackupRestoreDialog
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegate
@@ -60,6 +61,8 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
     private val lastSyncTime by prefs.lastBackgroundSyncTime
     private val lastSyncStatus by prefs.lastBackgroundSyncStatus
 
+    private val backupRestoreDialog = BackupRestoreDialog(this)
+
     private val onBackgroundSyncEnable = PreferenceDelegate.OnChangeListener<Boolean> { _, v ->
         editSyncIntervalPreference.isEnabled = v
     }
@@ -78,6 +81,7 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        backupRestoreDialog.setupLaunchers()
         prefs.periodicBackgroundSync.registerOnChangeListener(onBackgroundSyncEnable)
         prefs.periodicBackgroundSyncInterval.registerOnChangeListener(onSyncIntervalChange)
         browseLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) {
@@ -242,6 +246,15 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                                 ctx.toast((if (res) R.string.reset_success else R.string.reset_failure))
                             }
                         }.show()
+                }
+            }
+            addCategory(R.string.backup_and_restore) {
+                isIconSpaceReserved = false
+                addPreference(R.string.backup, R.string.backup_hint) {
+                    backupRestoreDialog.showBackupDialog()
+                }
+                addPreference(R.string.restore, R.string.restore_hint) {
+                    backupRestoreDialog.showRestoreDialog()
                 }
             }
         }

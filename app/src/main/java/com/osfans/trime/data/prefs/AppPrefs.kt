@@ -39,6 +39,49 @@ class AppPrefs(
         registerProvider { this }
     }
 
+    /**
+     * 验证偏好键和类型是否有效
+     * @param key 偏好键
+     * @param backupTypeName 备份中的类型名称
+     * @return 验证结果，包含是否有效和期望的类型
+     */
+    data class PreferenceValidationResult(
+        val isValid: Boolean,
+        val expectedTypeName: String? = null,
+        val message: String = "",
+    )
+
+    fun validatePreference(key: String, backupTypeName: String): PreferenceValidationResult {
+        // 查找包含该键的 provider
+        for (provider in providers) {
+            val delegate = provider.getPreferenceDelegate(key)
+            if (delegate != null) {
+                // 找到该键，检查类型是否匹配
+                val expectedTypeName = provider.inferStorageTypeName(delegate)
+                return if (expectedTypeName.equals(backupTypeName, ignoreCase = true)) {
+                    PreferenceValidationResult(
+                        isValid = true,
+                        expectedTypeName = expectedTypeName,
+                        message = "Key and type are valid",
+                    )
+                } else {
+                    PreferenceValidationResult(
+                        isValid = false,
+                        expectedTypeName = expectedTypeName,
+                        message = "Type mismatch: expected $expectedTypeName, but got $backupTypeName",
+                    )
+                }
+            }
+        }
+
+        // 未找到该键
+        return PreferenceValidationResult(
+            isValid = false,
+            expectedTypeName = null,
+            message = "Unknown preference key: $key",
+        )
+    }
+
     val internal = Internal(shared)
     val general = General(shared).register()
     val profile = Profile(shared).register()
