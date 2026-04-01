@@ -16,10 +16,7 @@ import com.osfans.trime.ime.window.BoardWindow
 interface InputBroadcastReceiver {
     fun onStartInput(info: EditorInfo) {}
 
-    fun onSelectionUpdate(
-        start: Int,
-        end: Int,
-    ) {}
+    fun onSelectionUpdate(start: Int, end: Int) {}
 
     fun onRimeSchemaUpdated(schema: SchemaItem) {}
 
@@ -30,6 +27,8 @@ interface InputBroadcastReceiver {
     fun onCompositionUpdate(data: CompositionProto) {}
 
     fun onCandidateMenuUpdate(data: MenuProto) {}
+
+    fun onKeyAppearanceUpdate(composing: Boolean, menu: Boolean, paging: Boolean) {}
 
     fun onInputStatusUpdate(value: StatusProto) {}
 

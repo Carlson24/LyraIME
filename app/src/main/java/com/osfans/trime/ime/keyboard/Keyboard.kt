@@ -83,7 +83,7 @@ class Keyboard(
 
     /** List of keys in this keyboard  */
     private val mKeys = mutableListOf<Key>()
-    val composingKeys = mutableListOf<Key>()
+    val appearanceStateKeys = mutableListOf<Key>()
     var modifier = 0
         private set
 
@@ -267,8 +267,8 @@ class Keyboard(
 
                 val totalWeight = rowWidthTotalWeight[row]
 
-                // if split keyboard layout is enabled, insert split gap at row middle when cumulative width ≥ 50%
-                if (isSplit && !splitInserted && rowWeightAccumulo >= totalWeight * 0.5f) {
+                // if split keyboard layout is enabled, insert split gap at row middle when cumulative width > 50%
+                if (isSplit && !splitInserted && rowWeightAccumulo > totalWeight * 0.5f) {
                     splitInserted = true
                     val gap = (totalWeight * splitRatio * oneWeightWidthPx).toInt()
 
@@ -294,6 +294,8 @@ class Keyboard(
                 key.keySymbolOffsetY = firstNonZero(textKey.keySymbolOffsetY, selfConfig.keySymbolOffsetY, theme.generalStyle.keySymbolOffsetY)
                 key.keyHintOffsetX = firstNonZero(textKey.keyHintOffsetX, selfConfig.keyHintOffsetX, theme.generalStyle.keyHintOffsetX)
                 key.keyHintOffsetY = firstNonZero(textKey.keyHintOffsetY, selfConfig.keyHintOffsetY, theme.generalStyle.keyHintOffsetY)
+                key.keyPressOffsetX = firstNonZero(textKey.keyPressOffsetX, selfConfig.keyPressOffsetX, theme.generalStyle.keyPressOffsetX)
+                key.keyPressOffsetY = firstNonZero(textKey.keyPressOffsetY, selfConfig.keyPressOffsetY, theme.generalStyle.keyPressOffsetY)
 
                 key.x = xPos
                 key.y = yPos
@@ -320,7 +322,8 @@ class Keyboard(
 
             height = yPos + currentRowHeight
 
-            for (key in mKeys) {
+            mKeys.forEachIndexed { index, key ->
+                key.index = index
                 if (key.column == 0) key.edgeFlags = key.edgeFlags or EDGE_LEFT
                 if (key.row == 0) key.edgeFlags = key.edgeFlags or EDGE_TOP
                 if (key.row == row) key.edgeFlags = key.edgeFlags or EDGE_BOTTOM

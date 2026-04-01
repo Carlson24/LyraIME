@@ -17,6 +17,7 @@ import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.TextKeyboard
+import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
 import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
@@ -43,6 +44,7 @@ class KeyboardWindow :
     private val rime: RimeSession by di.instance()
     private val commonKeyboardActionListener: CommonKeyboardActionListener by di.instance()
     private val popup: PopupDelegate by di.instance()
+    private val enterKeyDisplay: EnterKeyDisplayDelegate by di.instance()
 
     private val cursorCapsMode: Int
         get() =
@@ -73,7 +75,6 @@ class KeyboardWindow :
     private var currentKeyboardId = ""
     private var lastKeyboardId = ""
     private var lastLockKeyboardId = ""
-    private var lastComposing = true
     private val cachedKeyboards = mutableMapOf<String, Pair<Keyboard, KeyboardView>>()
     private val currentKeyboard: Keyboard? get() = cachedKeyboards[currentKeyboardId]?.first
     private val currentKeyboardView: KeyboardView? get() = cachedKeyboards[currentKeyboardId]?.second
@@ -109,7 +110,7 @@ class KeyboardWindow :
 
         val config = selectKeyboardConfig(target)
         val keyboard = currentKeyboard ?: Keyboard(theme, config)
-        val view = currentKeyboardView ?: KeyboardView(context, theme, keyboard, popup, service, keyboardActionListener)
+        val view = currentKeyboardView ?: KeyboardView(context, theme, keyboard, popup, service, keyboardActionListener, enterKeyDisplay)
 
         if (currentKeyboard == null) {
             cachedKeyboards[target] = keyboard to view
@@ -280,12 +281,11 @@ class KeyboardWindow :
         }
     }
 
-    override fun onCompositionUpdate(data: CompositionProto) {
-        val status = rime.run { statusCached }
-        val isComposing = status.isComposing
-        if (!status.isAsciiMode && lastComposing != isComposing) {
-            lastComposing = isComposing
-            currentKeyboardView?.invalidateAllKeys()
+    override fun onKeyAppearanceUpdate(composing: Boolean, menu: Boolean, paging: Boolean) {
+        if (!rime.run { statusCached }.isAsciiMode) {
+            currentKeyboard?.appearanceStateKeys?.forEach { key ->
+                currentKeyboardView?.invalidateKeyByIndex(key.index)
+            }
         }
     }
 
@@ -321,10 +321,6 @@ class KeyboardWindow :
             }
         }
         currentKeyboardView?.invalidateAllKeys()
-    }
-
-    override fun onEnterKeyLabelUpdate(label: String) {
-        currentKeyboardView?.onEnterKeyLabelUpdate(label)
     }
 
     override fun onAttached() {

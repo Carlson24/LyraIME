@@ -53,6 +53,7 @@ class ToolButton : GestureFrame {
         ICON,
         TEXT,
         LOCAL_IMAGE,
+        ICON_ONLY,
     }
 
     var contentType = ContentType.TEXT
@@ -62,7 +63,7 @@ class ToolButton : GestureFrame {
 
     constructor(context: Context, @DrawableRes icon: Int) : super(context) {
         config = ToolBar.Button()
-        setupContent(ContentType.ICON, icon = icon)
+        setupContent(ContentType.ICON_ONLY, icon = icon)
     }
 
     constructor(context: Context, config: ToolBar.Button) : super(context) {
@@ -107,16 +108,10 @@ class ToolButton : GestureFrame {
         removeAllViews()
 
         when (type) {
-            ContentType.ICON -> {
-                if (icon != null) {
-                    image.imageResource = icon
-                } else if (!text.isNullOrEmpty()) {
-                    image.imageDrawable = IconicsDrawable(context, text).apply {
-                        sizeDp = foreground.fontSize.toInt()
-                    }
+            ContentType.ICON -> text?.let {
+                image.imageDrawable = IconicsDrawable(context, it).apply {
+                    sizeDp = foreground.fontSize.toInt()
                 }
-                image.padding = dp(foreground.padding)
-                add(image, lParams(wrapContent, wrapContent, gravityCenter))
             }
             ContentType.TEXT -> {
                 text?.let { label.text = it }
@@ -125,11 +120,13 @@ class ToolButton : GestureFrame {
                 label.typeface = FontManager.getTypeface("toolbar_font")
                 add(label, lParams(wrapContent, wrapContent, gravityCenter))
             }
-            ContentType.LOCAL_IMAGE -> {
-                drawable?.let { image.setImageDrawable(it) }
-                image.padding = dp(foreground.padding)
-                add(image, lParams(wrapContent, wrapContent, gravityCenter))
-            }
+            ContentType.LOCAL_IMAGE -> drawable?.let { image.setImageDrawable(it) }
+            ContentType.ICON_ONLY -> icon?.let { image.imageResource = it }
+        }
+
+        if (type != ContentType.TEXT) {
+            image.padding = dp(foreground.padding)
+            add(image, lParams(wrapContent, wrapContent, gravityCenter))
         }
 
         applyColors()
@@ -142,7 +139,6 @@ class ToolButton : GestureFrame {
 
         val highlightColor = foreground.highlight.takeIf { it.isNotEmpty() }
             ?.let(ColorManager::getColor) ?: ColorManager.getColor("hilited_candidate_text_color")
-
         val colorStateList = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_pressed), intArrayOf()),
             intArrayOf(highlightColor, normalColor),
@@ -152,6 +148,7 @@ class ToolButton : GestureFrame {
             ContentType.ICON -> image.imageTintList = colorStateList
             ContentType.TEXT -> label.setTextColor(colorStateList)
             ContentType.LOCAL_IMAGE -> image.imageTintList = null
+            ContentType.ICON_ONLY -> image.imageTintList = ColorStateList.valueOf(normalColor)
         }
     }
 

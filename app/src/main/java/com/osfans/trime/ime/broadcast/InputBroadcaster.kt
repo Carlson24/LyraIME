@@ -66,6 +66,10 @@ class InputBroadcaster : InputBroadcastReceiver {
         receivers.forEach { it.onCandidateMenuUpdate(data) }
     }
 
+    override fun onKeyAppearanceUpdate(composing: Boolean, menu: Boolean, paging: Boolean) {
+        receivers.forEach { it.onKeyAppearanceUpdate(composing, menu, paging) }
+    }
+
     override fun onInputStatusUpdate(value: StatusProto) {
         receivers.forEach { it.onInputStatusUpdate(value) }
     }

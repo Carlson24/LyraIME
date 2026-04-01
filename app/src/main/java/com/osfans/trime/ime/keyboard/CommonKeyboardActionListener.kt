@@ -191,7 +191,7 @@ class CommonKeyboardActionListener {
                 when (action.command) {
                     "liquid_keyboard" -> handleLiquidKeyboard(arg)
                     "menu_keyboard" -> windowManager.attachWindow(SwitchOptionWindow())
-                    "clipboard_window" -> windowManager.attachWindow(ClipboardWindow())
+                    "clipboard_window" -> handleClipboardWindow(arg)
                     "set_color_scheme" -> handleColorScheme(arg)
                     "set_theme" -> handleTheme(arg)
                     "broadcast" -> service.sendBroadcast(Intent(arg))
@@ -227,6 +227,11 @@ class CommonKeyboardActionListener {
                 }
             }
 
+            private fun handleClipboardWindow(arg: String) {
+                val tabIndex = arg.toIntOrNull()?.coerceIn(0, 1) ?: 0
+                windowManager.attachWindow(ClipboardWindow(tabIndex))
+            }
+
             private fun handleColorScheme(arg: String) {
                 ThemeManager.activeTheme.colorSchemes
                     .find { it.id == arg }
@@ -236,7 +241,7 @@ class CommonKeyboardActionListener {
             private fun handleTheme(arg: String) {
                 if (arg.isEmpty()) {
                     // 参数为空时，刷新当前主题
-                    ThemeManager.selectTheme(ThemeManager.activeTheme.configId)
+                    ThemeManager.selectTheme(ThemeManager.prefs.selectedTheme.getValue())
                 } else {
                     // 通过主题名称查找对应的配置ID并切换主题
                     ThemeManager.getAllThemes()

@@ -16,7 +16,7 @@ class EnterKeyDisplayDelegate {
     private val theme: Theme by InputDependencyManager.getInstance().di.instance()
 
     companion object {
-        const val DEFAULT_LABEL = "⏎"
+        const val DEFAULT_LABEL = "Enter"
     }
 
     enum class Mode {

@@ -20,6 +20,8 @@ class Key(
 ) {
     private val rime get() = RimeDaemon.getFirstSessionOrNull()!!
 
+    var index: Int = -1
+
     val keyActions: Map<KeyBehavior, KeyAction> =
         buildMap {
             selfConfig?.behaviors?.forEach {
@@ -110,9 +112,9 @@ class Key(
 
     init {
         if (selfConfig != null) {
-            val hasComposingKey = selfConfig.behaviors.keys.any { it < KeyBehavior.COMBO }
-            if (hasComposingKey) parent.composingKeys.add(this)
-            sendBindings = selfConfig.sendBindings || hasComposingKey
+            val hasStateDependentBehavior = selfConfig.behaviors.keys.any { it < KeyBehavior.COMBO }
+            if (hasStateDependentBehavior) parent.appearanceStateKeys.add(this)
+            sendBindings = selfConfig.sendBindings || hasStateDependentBehavior
         } else {
             sendBindings = true
         }

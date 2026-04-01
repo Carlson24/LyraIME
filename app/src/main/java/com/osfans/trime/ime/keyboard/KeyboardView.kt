@@ -20,6 +20,7 @@ import androidx.transition.TransitionSet
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
+import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.popup.PopupDelegate
 import com.osfans.trime.ime.voice.WaveformView
@@ -36,11 +37,13 @@ class KeyboardView(
     val popup: PopupDelegate,
     val service: TrimeInputMethodService,
     private val keyboardActionListener: KeyboardActionListener,
+    private val enterKeyDisplay: EnterKeyDisplayDelegate,
 ) : FrameLayout(context) {
 
     private val keys get() = keyboard.keys
 
-    internal var labelEnter: String = theme.generalStyle.enterLabel.default
+    internal val labelEnter: String
+        get() = enterKeyDisplay.keyLabel
     internal val keyTextSize = theme.generalStyle.keyTextSize
     internal val keyLongTextSize = theme.generalStyle.keyLongTextSize.takeIf { it > 0 } ?: keyTextSize
     internal val symbolTextSize = theme.generalStyle.symbolTextSize.takeIf { it > 0 } ?: keyTextSize
@@ -108,8 +111,8 @@ class KeyboardView(
         children.forEach { it.invalidate() }
     }
 
-    fun onEnterKeyLabelUpdate(label: String) {
-        labelEnter = label
+    fun invalidateKeyByIndex(index: Int) {
+        getChildAt(index)?.invalidate()
     }
 
     val isCapsOn: Boolean
