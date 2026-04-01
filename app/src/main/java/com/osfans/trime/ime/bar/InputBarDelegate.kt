@@ -42,7 +42,7 @@ import com.osfans.trime.ime.switches.SwitchOptionWindow
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
 import com.osfans.trime.link.AsrkbSpeechClient
-import com.osfans.trime.link.VoiceOverlayUiBridge
+import com.osfans.trime.link.AsrkbVoiceHoldSessionController
 import com.osfans.trime.ui.main.ClipEditActivity
 import com.osfans.trime.util.AppUtils
 import kotlinx.coroutines.Job
@@ -78,6 +78,19 @@ class InputBarDelegate : InputBroadcastReceiver {
     private val clipboardSuggestion by prefs.clipboard.clipboardSuggestion
 
     private val clipboardSuggestionTimeout by prefs.clipboard.clipboardSuggestionTimeout
+
+    private val asrkbVoiceHoldController by lazy {
+        AsrkbVoiceHoldSessionController(
+            service = service,
+            showOverlay = { keyboardWindow.showAsrkbVoiceOverlay() },
+            startWave = { keyboardWindow.startAsrkbVoiceOverlayWave() },
+            updateAmplitude = { amplitude -> keyboardWindow.updateAsrkbVoiceOverlayAmplitude(amplitude) },
+            hideOverlay = { keyboardWindow.hideAsrkbVoiceOverlay() },
+            onSessionFinished = {
+                alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_mic_24)
+            },
+        )
+    }
 
     private val asrkbAidlVoiceInputEnabled by prefs.general.asrkbAidlVoiceInputEnabled
 
@@ -389,35 +402,11 @@ class InputBarDelegate : InputBroadcastReceiver {
     }
 
     private fun startAsrkbVoiceFromToolbar() {
-        val executor = ContextCompat.getMainExecutor(service)
-        keyboardWindow.showAsrkbVoiceOverlay()
-
-        VoiceOverlayUiBridge.onRecordingStarted = {
-            executor.execute {
-                keyboardWindow.startAsrkbVoiceOverlayWave()
-            }
-        }
-        VoiceOverlayUiBridge.onAmplitude = { amp ->
-            executor.execute {
-                keyboardWindow.updateAsrkbVoiceOverlayAmplitude(amp)
-            }
-        }
-        VoiceOverlayUiBridge.onDone = {
-            executor.execute {
-                keyboardWindow.hideAsrkbVoiceOverlay()
-                alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_mic_24)
-            }
-            VoiceOverlayUiBridge.clear()
-        }
-
         alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_stop_24)
-        AsrkbSpeechClient.startHoldSession(service)
+        asrkbVoiceHoldController.start()
     }
 
     private fun stopAsrkbVoiceFromToolbar() {
-        keyboardWindow.hideAsrkbVoiceOverlay()
-        VoiceOverlayUiBridge.clear()
-        alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_mic_24)
-        AsrkbSpeechClient.stopHoldSession()
+        asrkbVoiceHoldController.stop()
     }
 }

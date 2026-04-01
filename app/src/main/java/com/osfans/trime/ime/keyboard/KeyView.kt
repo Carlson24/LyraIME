@@ -14,7 +14,6 @@ import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.view.KeyEvent
-import androidx.core.content.ContextCompat
 import com.mikepenz.iconics.IconicsDrawable
 import com.mikepenz.iconics.utils.sizeDp
 import com.osfans.trime.daemon.RimeDaemon
@@ -24,8 +23,7 @@ import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.popup.PopupAction
 import com.osfans.trime.ime.popup.PopupDelegate
-import com.osfans.trime.link.AsrkbSpeechClient
-import com.osfans.trime.link.VoiceOverlayUiBridge
+import com.osfans.trime.link.AsrkbVoiceHoldSessionController
 import com.osfans.trime.util.sp
 import splitties.dimensions.dp
 import timber.log.Timber
@@ -57,8 +55,17 @@ class KeyView(
     private val deletedTextBuffer = ArrayDeque<String>()
 
     private var keyPressed = false
-    private var asrkbVoiceHoldStarted = false
     override fun isPressed(): Boolean = keyPressed
+
+    private val asrkbVoiceHoldController by lazy {
+        AsrkbVoiceHoldSessionController(
+            service = service,
+            showOverlay = { keyboardView.showVoiceOverlay() },
+            startWave = { keyboardView.startVoiceOverlayWave() },
+            updateAmplitude = { amplitude -> keyboardView.updateVoiceOverlayAmplitude(amplitude) },
+            hideOverlay = { keyboardView.hideVoiceOverlay() },
+        )
+    }
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
@@ -104,14 +111,12 @@ class KeyView(
 
         onRelease = { behavior, isFromLongPress ->
             Timber.d("KeyView release: label=${key.getLabel()}, behavior=$behavior, fromLongPress=$isFromLongPress")
-            if (isFromLongPress && asrkbVoiceHoldStarted && isAsrkbVoiceLongPressAction(key.getAction(KeyBehavior.LONG_CLICK))) {
-                stopAsrkbVoiceHoldSession()
+            if (isFromLongPress && asrkbVoiceHoldController.isRunning() && isAsrkbVoiceLongPressAction(key.getAction(KeyBehavior.LONG_CLICK))) {
+                asrkbVoiceHoldController.stopIfStarted()
                 setPressedState(false)
                 dismissPopupPreview()
                 if (keyboard.firstPressedKeyIndex == id) keyboard.firstPressedKeyIndex = -1
-                return@onRelease
-            }
-            if (isFromLongPress) {
+            } else if (isFromLongPress) {
                 if (hasPopup) {
                     val triggerAction = PopupAction.TriggerAction(id)
                     popup.listener.onPopupAction(triggerAction)
@@ -177,7 +182,7 @@ class KeyView(
         onLongClick = {
             val longPressAction = key.getAction(KeyBehavior.LONG_CLICK)
             if (isAsrkbVoiceLongPressAction(longPressAction)) {
-                startAsrkbVoiceHoldSession()
+                asrkbVoiceHoldController.start()
             } else if (key.popup.isNotEmpty()) {
                 dismissPopupPreview()
                 showPopupKeyboard()
@@ -198,9 +203,7 @@ class KeyView(
 
         onCancel = {
             deletedTextBuffer.clear()
-            if (asrkbVoiceHoldStarted) {
-                stopAsrkbVoiceHoldSession()
-            }
+            asrkbVoiceHoldController.stopIfStarted()
             setPressedState(false)
             dismissPopupPreview()
         }
@@ -220,42 +223,6 @@ class KeyView(
 
     private fun isAsrkbVoiceLongPressAction(action: KeyAction?): Boolean =
         asrkbAidlVoiceInputEnabled && action?.code == KeyEvent.KEYCODE_VOICE_ASSIST
-
-    private fun startAsrkbVoiceHoldSession() {
-        val executor = ContextCompat.getMainExecutor(service)
-        dismissPopupPreview()
-        keyboardView.showVoiceOverlay()
-        asrkbVoiceHoldStarted = true
-
-        VoiceOverlayUiBridge.onRecordingStarted = {
-            executor.execute {
-                keyboardView.startVoiceOverlayWave()
-            }
-        }
-        VoiceOverlayUiBridge.onAmplitude = { amp ->
-            executor.execute {
-                keyboardView.updateAsrkbVoiceOverlayAmplitude(amp)
-            }
-        }
-        VoiceOverlayUiBridge.onDone = {
-            executor.execute {
-                keyboardView.hideVoiceOverlay()
-            }
-            VoiceOverlayUiBridge.clear()
-        }
-
-        AsrkbSpeechClient.startHoldSession(service)
-    }
-
-    private fun stopAsrkbVoiceHoldSession() {
-        if (!asrkbVoiceHoldStarted) return
-        asrkbVoiceHoldStarted = false
-        keyboardView.hideVoiceOverlay()
-        VoiceOverlayUiBridge.clear()
-        if (AsrkbSpeechClient.isHolding()) {
-            AsrkbSpeechClient.stopHoldSession()
-        }
-    }
 
     private fun processKeyAction(action: KeyAction, behavior: KeyBehavior) {
         Timber.d("processKeyAction: label=${key.getLabel()}, code=${action.code}, type=$behavior")
