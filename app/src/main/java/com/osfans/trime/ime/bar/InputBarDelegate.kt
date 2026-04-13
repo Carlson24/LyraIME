@@ -6,6 +6,7 @@
 package com.osfans.trime.ime.bar
 
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Build
 import android.util.Size
 import android.view.View
@@ -41,6 +42,7 @@ import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
 import com.osfans.trime.ui.main.ClipEditActivity
 import com.osfans.trime.util.AppUtils
+import com.osfans.trime.util.isLandscape
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -69,6 +71,16 @@ class InputBarDelegate : InputBroadcastReceiver {
     private val prefs = AppPrefs.defaultInstance()
 
     private val hideQuickBar by prefs.keyboard.hideInputBar
+    private val disableWindowOnLandscape by prefs.candidates.disableWindowOnLandscape
+
+    private val shouldShowInputBar: Boolean
+        get() {
+            val isLandscape = context.resources.configuration.isLandscape()
+            // Show input bar when:
+            // 1. Not hidden by preference, OR
+            // 2. Temporarily shown in landscape mode despite being hidden
+            return !hideQuickBar || (disableWindowOnLandscape && isLandscape)
+        }
 
     private val clipboardSuggestion by prefs.clipboard.clipboardSuggestion
 
@@ -245,7 +257,7 @@ class InputBarDelegate : InputBroadcastReceiver {
     val view by lazy {
         ViewAnimator(context).apply {
             visibility =
-                if (hideQuickBar) {
+                if (!shouldShowInputBar) {
                     View.GONE
                 } else {
                     View.VISIBLE
@@ -264,6 +276,10 @@ class InputBarDelegate : InputBroadcastReceiver {
             evalAlwaysUiState()
             ClipboardHelper.addOnUpdateListener(onClipboardUpdateListener)
         }
+    }
+
+    fun updateVisibility() {
+        view.visibility = if (shouldShowInputBar) View.VISIBLE else View.GONE
     }
 
     override fun onStartInput(info: EditorInfo) {
