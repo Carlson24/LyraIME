@@ -168,6 +168,7 @@
     <string name="top_left">左上</string>
     <string name="top_right">右上</string>
     <string name="candidates_window_position">候选词窗口位置</string>
+    <string name="disable_window_on_landscape">横屏时临时禁用</string>
     <string name="deploy_failure">部署失败</string>
     <string name="view_deploy_failure_log">部署失败。点此查看错误日志。</string>
     <string name="hide_input_bar">隐藏输入工具栏</string>

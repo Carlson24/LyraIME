@@ -103,7 +103,7 @@ class InputView(
     private val liquidWindow: LiquidWindow by di.instance()
 
     private val inlinePreeditMode by AppPrefs.defaultInstance().general.inlinePreeditMode
-    private val candidatesMode by AppPrefs.defaultInstance().candidates.mode
+    private val effectiveWindowMode get() = service.inputDeviceManager.effectiveWindowMode
 
     private val keyboardSidePadding = theme.generalStyle.keyboardPadding
     private val keyboardSidePaddingLandscape = theme.generalStyle.keyboardPaddingLand
@@ -291,6 +291,10 @@ class InputView(
         enterKeyDisplay.updateLabelOnEditorInfo(info)
     }
 
+    fun updateInputBarVisibility() {
+        inputBar.updateVisibility()
+    }
+
     override fun handleRimeMessage(it: RimeMessage<*>) {
         when (it) {
             is RimeMessage.SchemaMessage -> {
@@ -310,7 +314,7 @@ class InputView(
                 }
             }
             is RimeMessage.CompositionMessage -> {
-                val data = if (candidatesMode == PopupCandidatesMode.ALWAYS_SHOW) {
+                val data = if (effectiveWindowMode == PopupCandidatesMode.ALWAYS_SHOW) {
                     CompositionProto()
                 } else {
                     it.data
@@ -321,7 +325,7 @@ class InputView(
                 broadcaster.onCandidateMenuUpdate(it.data)
             }
             is RimeMessage.CandidateListMessage -> {
-                val data = if (candidatesMode == PopupCandidatesMode.ALWAYS_SHOW) {
+                val data = if (effectiveWindowMode == PopupCandidatesMode.ALWAYS_SHOW) {
                     RimeMessage.CandidateListMessage.Data()
                 } else {
                     it.data
