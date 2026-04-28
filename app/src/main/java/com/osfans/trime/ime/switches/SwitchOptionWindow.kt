@@ -17,6 +17,7 @@ import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.core.SchemaItem
 import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.daemon.launchOnReady
+import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.bar.ui.ToolButton
 import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
@@ -28,6 +29,7 @@ import com.osfans.trime.util.AppUtils
 import kotlinx.coroutines.launch
 import org.kodein.di.instance
 import splitties.dimensions.dp
+import splitties.views.dsl.constraintlayout.before
 import splitties.views.dsl.constraintlayout.constraintLayout
 import splitties.views.dsl.constraintlayout.endOfParent
 import splitties.views.dsl.constraintlayout.lParams
@@ -41,8 +43,9 @@ class SwitchOptionWindow :
     private val service: TrimeInputMethodService by di.instance()
     private val rime: RimeSession by di.instance()
     private val theme: Theme by di.instance()
+    private val prefs: AppPrefs = AppPrefs.defaultInstance()
 
-    private val staticEntries by lazy {
+    private val staticEntryData: Array<SwitchOptionEntry> by lazy {
         arrayOf(
             SwitchOptionEntry.Static(
                 context.getString(R.string.theme),
@@ -66,6 +69,13 @@ class SwitchOptionWindow :
             ),
         )
     }
+
+    private val staticEntries: Array<SwitchOptionEntry>
+        get() = if (!prefs.general.hideStaticSwitcher.getValue()) {
+            staticEntryData
+        } else {
+            java.lang.reflect.Array.newInstance(SwitchOptionEntry::class.java, 0) as Array<SwitchOptionEntry>
+        }
 
     var popupMenu: PopupMenu? = null
 
@@ -187,9 +197,37 @@ class SwitchOptionWindow :
         }
     }
 
+    private val toggleVisibilityButton by lazy {
+        ToolButton(context, R.drawable.ic_baseline_visibility_24).apply {
+            setOnClickListener {
+                val newValue = !prefs.general.hideStaticSwitcher.getValue()
+                prefs.general.hideStaticSwitcher.setValue(newValue)
+                updateSchemaOptionEntries()
+                updateToggleIcon()
+            }
+        }
+    }
+
+    private fun updateToggleIcon() {
+        val hide = prefs.general.hideStaticSwitcher.getValue()
+        toggleVisibilityButton.setIcon(
+            if (hide) {
+                R.drawable.ic_baseline_visibility_off_24
+            } else {
+                R.drawable.ic_baseline_visibility_24
+            },
+        )
+    }
+
     private val barExternalView by lazy {
         context.constraintLayout {
             val size = dp(theme.generalStyle.run { candidateViewHeight + commentHeight })
+            add(
+                toggleVisibilityButton,
+                lParams(size, size) {
+                    before(settingsButton, dp(6))
+                },
+            )
             add(
                 settingsButton,
                 lParams(size, size) {
@@ -211,6 +249,7 @@ class SwitchOptionWindow :
                         *data.mapNotNull { SwitchOptionEntry.fromSwitch(rime, it) }.toTypedArray(),
                     ),
                 )
+                updateToggleIcon()
             }
         }
     }
