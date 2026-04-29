@@ -177,6 +177,9 @@ class LiquidLayout(
                             setBtnMargin(btn, btnInsets, false)
                         }
                     }
+                    LiquidKeyboard.KeyBar.Position.NAVBAR -> {
+                        // NAVBAR 位置不需要添加按钮到 fixedKeyBar
+                    }
                 }
             }
         }
@@ -192,6 +195,9 @@ class LiquidLayout(
     }
 
     val tabsUi = LiquidTabsUi(context, theme)
+
+    val isNavbarMode: Boolean =
+        theme.liquidKeyboard.fixedKeyBar.position == LiquidKeyboard.KeyBar.Position.NAVBAR
 
     init {
         when (theme.liquidKeyboard.fixedKeyBar.position) {
@@ -264,6 +270,23 @@ class LiquidLayout(
                         centerVertically()
                         startToEndOf(root)
                         endOfParent()
+                    },
+                )
+            }
+            LiquidKeyboard.KeyBar.Position.NAVBAR -> {
+                add(
+                    root,
+                    lParams {
+                        centerHorizontally()
+                        topOfParent()
+                        bottomToTopOf(tabsUi.root)
+                    },
+                )
+                add(
+                    tabsUi.root,
+                    lParams(matchParent, wrapContent) {
+                        centerHorizontally()
+                        bottomOfParent()
                     },
                 )
             }
