@@ -28,6 +28,7 @@ import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.bar.ui.AlwaysUi
 import com.osfans.trime.ime.bar.ui.CandidateUi
+import com.osfans.trime.ime.bar.ui.KeyboardNavBar
 import com.osfans.trime.ime.bar.ui.TabUi
 import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
 import com.osfans.trime.ime.candidates.compact.CompactCandidateDelegate
@@ -183,6 +184,16 @@ class InputBarDelegate : InputBroadcastReceiver {
 
     private val tabUi by lazy {
         TabUi(context, theme)
+    }
+
+    val navBar by lazy {
+        KeyboardNavBar(
+            context,
+            theme,
+            tabUi,
+            onAttach = { barStateMachine.push(QuickBarStateMachine.TransitionEvent.BarBoardWindowAttached) },
+            onDetach = { barStateMachine.push(QuickBarStateMachine.TransitionEvent.WindowDetached) },
+        )
     }
 
     private val barStateMachine =
