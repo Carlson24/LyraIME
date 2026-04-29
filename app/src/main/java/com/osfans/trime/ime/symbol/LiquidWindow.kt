@@ -16,6 +16,7 @@ import com.osfans.trime.daemon.launchOnReady
 import com.osfans.trime.data.SymbolHistory
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.LiquidKeyboard
+import com.osfans.trime.ime.bar.ui.LiquidKeyboardNavBar
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.keyboard.CommonKeyboardActionListener
 import com.osfans.trime.ime.keyboard.KeyboardWindow
@@ -28,13 +29,15 @@ import splitties.dimensions.dp
 class LiquidWindow :
     BoardWindow.BarBoardWindow(),
     ResidentWindow {
-    override val showTitle = false
+    override val showTitle: Boolean
+        get() = liquidLayout.isNavbarMode
 
     private val service: TrimeInputMethodService by di.instance()
     private val rime: RimeSession by di.instance()
     private val theme: Theme by di.instance()
     private val windowManager: BoardWindowManager by di.instance()
     private val commonKeyboardActionListener: CommonKeyboardActionListener by di.instance()
+    private val navBar by lazy { LiquidKeyboardNavBar(context, theme) }
 
     private lateinit var liquidLayout: LiquidLayout
     private val symbolHistory = SymbolHistory(180)
@@ -99,7 +102,14 @@ class LiquidWindow :
         }
     }
 
-    override fun onCreateBarView() = liquidLayout.tabsUi.root
+    override fun onCreateBarView(): View? = if (liquidLayout.isNavbarMode) {
+        navBar.createLiquidNavBar(
+            fixedKeys = theme.liquidKeyboard.fixedKeyBar.keys,
+            actionListener = commonKeyboardActionListener,
+        )
+    } else {
+        liquidLayout.tabsUi.root
+    }
 
     override fun onAttached() {}
 

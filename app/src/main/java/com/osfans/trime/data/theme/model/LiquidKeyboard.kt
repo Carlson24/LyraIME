@@ -49,6 +49,7 @@ data class LiquidKeyboard(
             LEFT,
             BOTTOM,
             RIGHT,
+            NAVBAR,
         }
     }
 
@@ -60,6 +61,7 @@ data class LiquidKeyboard(
         val height: Float? = null,
         val margin: EdgeInsets? = null,
         val padding: EdgeInsets? = null,
+        val isStringFormat: Boolean = false,
     ) : Parcelable
 
     @Parcelize
@@ -107,7 +109,7 @@ data class LiquidKeyboard(
                         when (item) {
                             is Node.Scalar -> {
                                 // 字符串格式：直接作为 click
-                                FixedKeyItem(click = item.string)
+                                FixedKeyItem(click = item.string, isStringFormat = true)
                             }
                             is Node.Mapping -> {
                                 // 键值对格式：解析所有属性
