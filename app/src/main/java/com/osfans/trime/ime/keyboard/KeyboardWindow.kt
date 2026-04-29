@@ -18,6 +18,7 @@ import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.TextKeyboard
+import com.osfans.trime.ime.bar.InputBarDelegate
 import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
 import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
 import com.osfans.trime.ime.core.TrimeInputMethodService
@@ -34,6 +35,7 @@ import splitties.views.dsl.core.add
 import splitties.views.dsl.core.frameLayout
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
+import splitties.views.dsl.core.wrapContent
 import timber.log.Timber
 
 class KeyboardWindow :
@@ -46,6 +48,7 @@ class KeyboardWindow :
     private val commonKeyboardActionListener: CommonKeyboardActionListener by di.instance()
     private val popup: PopupDelegate by di.instance()
     private val enterKeyDisplay: EnterKeyDisplayDelegate by di.instance()
+    private val inputBarDelegate: InputBarDelegate by di.instance()
 
     private val cursorCapsMode: Int
         get() =
@@ -150,6 +153,15 @@ class KeyboardWindow :
         view.let {
             keyboardView.apply {
                 (it.parent as? android.view.ViewGroup)?.removeView(it)
+                if (config?.navbar == true) {
+                    inputBarDelegate.navBar.attach(
+                        title = config.name,
+                        onCloseClick = { service.requestHideSelf(0) },
+                        onBackClick = { switchKeyboard(".previous") },
+                    )
+                } else {
+                    inputBarDelegate.navBar.detach()
+                }
                 add(it, lParams(matchParent, matchParent))
             }
         }
@@ -351,6 +363,7 @@ class KeyboardWindow :
     }
 
     override fun onDetached() {
+        inputBarDelegate.navBar.detach()
         currentKeyboardView?.onDetach()
     }
 }
