@@ -172,7 +172,6 @@ class CommonKeyboardActionListener {
                     service.lifecycleScope.launch {
                         val status = api.getRuntimeOption(option)
                         api.setRuntimeOption(option, !status)
-                        api.commitComposition()
                     }
                 }
             }
