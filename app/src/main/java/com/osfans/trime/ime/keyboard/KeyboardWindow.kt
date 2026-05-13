@@ -8,6 +8,7 @@ import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.FrameLayout
+import androidx.annotation.Keep
 import androidx.core.content.ContextCompat
 import com.osfans.trime.R
 import com.osfans.trime.core.CompositionProto
@@ -15,6 +16,7 @@ import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.core.SchemaItem
 import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.prefs.PreferenceDelegate
 import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.TextKeyboard
@@ -75,8 +77,10 @@ class KeyboardWindow :
     override val key: ResidentWindow.Key
         get() = KeyboardWindow
 
+    private val appPrefs = AppPrefs.defaultInstance()
+    private val internalPrefs = appPrefs.internal
+    private val expandKeypressAreaPref = appPrefs.keyboard.expandKeypressArea
     private val presetKeyboardIds = theme.presetKeyboards.keys.toList()
-    private val internalPrefs = AppPrefs.defaultInstance().internal
     private var initializeKeyboardId = internalPrefs.initializeKeyboardId.getValue()
     private val keyboardSourceMap = mutableMapOf<String, String>()
     private var currentKeyboardId = ""
@@ -87,6 +91,12 @@ class KeyboardWindow :
     private val currentKeyboardView: KeyboardView? get() = cachedKeyboards[currentKeyboardId]?.second
 
     private val keyboardActionListener = commonKeyboardActionListener.listener
+
+    @Keep
+    private val onExpandKeypressAreaChangeListener =
+        PreferenceDelegate.OnChangeListener<Boolean> { _, _ ->
+            refreshKeyboards(true)
+        }
 
     override fun onCreateView(): View {
         keyboardView = context.frameLayout(R.id.keyboard_view)
@@ -258,6 +268,17 @@ class KeyboardWindow :
         Timber.d("Switched to keyboard: $target")
     }
 
+    fun refreshKeyboards(isAll: Boolean = false) {
+        val id = currentKeyboardId.ifEmpty { return }
+        detachCurrentView()
+        if (isAll) {
+            cachedKeyboards.clear()
+        } else {
+            cachedKeyboards.remove(id)
+        }
+        attachKeyboard(id)
+    }
+
     override fun onStartInput(info: EditorInfo) {
         var tempAsciiMode = false
         val targetKeyboard =
@@ -360,9 +381,11 @@ class KeyboardWindow :
     }
 
     override fun onAttached() {
+        expandKeypressAreaPref.registerOnChangeListener(onExpandKeypressAreaChangeListener)
     }
 
     override fun onDetached() {
+        expandKeypressAreaPref.unregisterOnChangeListener(onExpandKeypressAreaChangeListener)
         inputBarDelegate.navBar.detach()
         currentKeyboardView?.onDetach()
     }
