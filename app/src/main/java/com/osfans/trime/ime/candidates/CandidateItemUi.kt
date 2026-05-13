@@ -147,6 +147,7 @@ class CandidateItemUi(
     }
 
     override val root = view(::GestureFrame) {
+        foreground = null
         /**
          * candidate long press feedback is handled by `showCandidateActionMenu`
          */
