@@ -142,4 +142,9 @@ abstract class ClipboardAdapter(
     abstract fun onDelete(id: Int)
 
     abstract val enableCollection: Boolean
+
+    fun dismissPopupMenu() {
+        popupMenu?.dismiss()
+        popupMenu = null
+    }
 }
