@@ -28,6 +28,7 @@ import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
 import com.osfans.trime.ime.popup.PopupDelegate
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.ResidentWindow
+import com.osfans.trime.util.isLandscape
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -98,8 +99,21 @@ class KeyboardWindow :
             refreshKeyboards(true)
         }
 
+    private val onKeyboardViewLayoutChangeListener =
+        View.OnLayoutChangeListener { v, left, _, right, _, _, _, _, _ ->
+            val width = right - left
+            if (width > 0 && KeyboardPending.allowedWidth != width) {
+                val isPortrait = !context.resources.configuration.isLandscape()
+                KeyboardPending.lastIsPortrait = isPortrait
+                KeyboardPending.containerWidth = width
+                KeyboardPending.allowedWidth = width
+                v.post { refreshKeyboards() }
+            }
+        }
+
     override fun onCreateView(): View {
         keyboardView = context.frameLayout(R.id.keyboard_view)
+        keyboardView.addOnLayoutChangeListener(onKeyboardViewLayoutChangeListener)
 
         restoreKeyboardSourceMap()
         // 使用记忆的键盘ID，否则根据方案匹配
