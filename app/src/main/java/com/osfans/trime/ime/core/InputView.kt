@@ -34,6 +34,7 @@ import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.popup.PopupDelegate
 import com.osfans.trime.ime.symbol.LiquidWindow
 import com.osfans.trime.ime.window.BoardWindowManager
+import com.osfans.trime.util.isLandscape
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.kodein.di.instance
@@ -238,9 +239,23 @@ class InputView(
         bottomPaddingSpace.updateLayoutParams {
             height = keyboardBottomPaddingPx
         }
-        val sidePadding = keyboardSidePaddingPx
+
+        val isOneHandMode = rime.run { getRuntimeOption("_one_hand_mode") }
+        val isPortrait = !context.resources.configuration.isLandscape()
+
+        val leftSidePadding = if (isOneHandMode && isPortrait) {
+            theme.generalStyle.keyboardPaddingLeft.takeIf { it > 0 }?.let { dp(it) } ?: keyboardSidePaddingPx
+        } else {
+            keyboardSidePaddingPx
+        }
+        val rightSidePadding = if (isOneHandMode && isPortrait) {
+            theme.generalStyle.keyboardPaddingRight.takeIf { it > 0 }?.let { dp(it) } ?: keyboardSidePaddingPx
+        } else {
+            keyboardSidePaddingPx
+        }
+
         val unset = LayoutParams.UNSET
-        if (sidePadding == 0) {
+        if (leftSidePadding == 0 && rightSidePadding == 0) {
             // hide side padding space views when unnecessary
             leftPaddingSpace.visibility = View.GONE
             rightPaddingSpace.visibility = View.GONE
@@ -254,10 +269,10 @@ class InputView(
             leftPaddingSpace.visibility = View.VISIBLE
             rightPaddingSpace.visibility = View.VISIBLE
             leftPaddingSpace.updateLayoutParams {
-                width = sidePadding
+                width = leftSidePadding
             }
             rightPaddingSpace.updateLayoutParams {
-                width = sidePadding
+                width = rightSidePadding
             }
             windowManager.view.updateLayoutParams<LayoutParams> {
                 startToStart = unset
@@ -266,7 +281,7 @@ class InputView(
                 endToStartOf(rightPaddingSpace)
             }
         }
-        inputBar.view.setPadding(sidePadding, 0, sidePadding, 0)
+        inputBar.view.setPadding(leftSidePadding, 0, rightSidePadding, 0)
     }
 
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
@@ -307,6 +322,11 @@ class InputView(
                         windowManager.attachWindow(LiquidWindow)
                         liquidWindow.setDataByIndex(0)
                     }
+                }
+
+                if (it.data.option == "_one_hand_mode") {
+                    updateKeyboardSize()
+                    keyboardWindow.refreshKeyboards(true)
                 }
             }
             is RimeMessage.CompositionMessage -> {
