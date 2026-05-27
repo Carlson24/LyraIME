@@ -424,6 +424,7 @@ class AppPrefs(
             const val CLIPBOARD_LIMIT = "clipboard_clipboard_limit"
             const val CLIPBOARD_COMPARE_RULES = "clipboard_clipboard_compare"
             const val CLIPBOARD_OUTPUT_RULES = "clipboard_clipboard_output"
+            const val CLIPBOARD_EXTRACT_RULES = "clipboard_extract_rules"
             const val CLIPBOARD_SUGGESTION = "clipboard_suggestion"
             const val CLIPBOARD_SUGGESTION_TIMEOUT = "clipboard_suggestion_timeout"
             const val CLIPBOARD_RETURN_AFTER_PASTE = "clipboard_return_after_paste"
@@ -443,6 +444,12 @@ class AppPrefs(
         val clipboardOutputRules = editText(
             R.string.clipboard_output_rules,
             CLIPBOARD_OUTPUT_RULES,
+            "",
+            R.string.a_regular_expression_per_line,
+        ) { clipboardListening.getValue() }
+        val clipboardExtractRules = editText(
+            R.string.clipboard_extract_rules,
+            CLIPBOARD_EXTRACT_RULES,
             "",
             R.string.a_regular_expression_per_line,
         ) { clipboardListening.getValue() }
