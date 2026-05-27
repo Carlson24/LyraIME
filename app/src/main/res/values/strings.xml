@@ -184,6 +184,7 @@
     <string name="top_left">Top left</string>
     <string name="top_right">Top right</string>
     <string name="candidates_window_position">Candidates window position</string>
+    <string name="disable_window_on_landscape">Temporarily disable in landscape</string>
     <string name="deploy_failure">Deploy failure</string>
     <string name="view_deploy_failure_log">Deploy failure. Click here to view error log.</string>
     <string name="hide_input_bar">Hide input bar</string>
