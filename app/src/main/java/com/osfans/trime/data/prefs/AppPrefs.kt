@@ -125,9 +125,13 @@ class AppPrefs(
     ) : PreferenceDelegateOwner(shared) {
         companion object {
             const val PID = "general__pid"
+            const val PREVIOUS_KEYBOARD_IDS = "internal__previous_keyboard_ids"
+            const val INITIALIZE_KEYBOARD_ID = "internal__initialize_keyboard_id"
         }
 
         val pid = int(PID, 0)
+        val previousKeyboardIds = string(PREVIOUS_KEYBOARD_IDS, "")
+        val initializeKeyboardId = string(INITIALIZE_KEYBOARD_ID, "")
     }
 
     class General(
