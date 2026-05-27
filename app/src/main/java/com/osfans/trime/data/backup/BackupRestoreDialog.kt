@@ -1,0 +1,305 @@
+/*
+ * SPDX-FileCopyrightText: 2015 - 2025 Rime community
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+package com.osfans.trime.data.backup
+
+import android.app.AlertDialog
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.osfans.trime.R
+import com.osfans.trime.ui.common.withLoadingDialog
+import com.osfans.trime.util.getFileFromUri
+import com.osfans.trime.util.toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+
+class BackupRestoreDialog(private val fragment: Fragment) {
+    private lateinit var saveLauncher: ActivityResultLauncher<String>
+    private lateinit var openLauncher: ActivityResultLauncher<Array<String>>
+
+    private var isBackupInProgress = false
+    private var isRestoreInProgress = false
+
+    fun setupLaunchers() {
+        saveLauncher =
+            fragment.registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+                uri ?: return@registerForActivityResult
+                handleBackupSave(uri)
+            }
+
+        openLauncher =
+            fragment.registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                uri ?: return@registerForActivityResult
+                handleRestoreOpen(uri)
+            }
+    }
+
+    fun showBackupDialog() {
+        if (isBackupInProgress) return
+
+        val context = fragment.requireContext()
+        val items =
+            arrayOf(
+                context.getString(R.string.preferences),
+                context.getString(R.string.clipboard_data),
+                context.getString(R.string.collection_data),
+            )
+        val checked = booleanArrayOf(true, true, true)
+
+        AlertDialog
+            .Builder(context)
+            .setTitle(R.string.select_backup_items)
+            .setMultiChoiceItems(items, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }.setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                if (isBackupInProgress) return@setPositiveButton
+                val timestamp = System.currentTimeMillis()
+                val fileName = "trime_backup_$timestamp.json"
+                performBackup(checked[0], checked[1], checked[2], fileName)
+            }.show()
+    }
+
+    fun showRestoreDialog() {
+        if (isRestoreInProgress) return
+        openLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+    }
+
+    private fun performBackup(
+        includePreferences: Boolean,
+        includeClipboard: Boolean,
+        includeCollection: Boolean,
+        fileName: String,
+    ) {
+        if (isBackupInProgress) return
+
+        val context = fragment.requireContext()
+        isBackupInProgress = true
+
+        // Launch backup process in a coroutine
+        fragment.lifecycleScope.launch {
+            var tempFile: File? = null
+            try {
+                // Show loading dialog during backup creation
+                fragment.lifecycleScope.withLoadingDialog(context, threshold = 0L) {
+                    withContext(Dispatchers.IO) {
+                        tempFile = File(context.cacheDir, "temp_backup.json")
+                        tempFile!!.delete()
+
+                        val backupData =
+                            BackupManager.createBackup(
+                                includePreferences = includePreferences,
+                                includeClipboard = includeClipboard,
+                                includeCollection = includeCollection,
+                            )
+
+                        BackupManager.saveBackupToFile(backupData, tempFile!!).getOrThrow()
+                    }
+                }
+
+                // Launch file picker after backup is complete (loading dialog already dismissed)
+                withContext(Dispatchers.Main) {
+                    saveLauncher.launch(fileName)
+                }
+            } catch (e: Exception) {
+                tempFile?.delete()
+                withContext(Dispatchers.Main) {
+                    context.toast(R.string.backup_failure)
+                }
+            } finally {
+                isBackupInProgress = false
+            }
+        }
+    }
+
+    private fun handleBackupSave(uri: Uri) {
+        val context = fragment.requireContext()
+
+        // Use withLoadingDialog with 0 threshold to show immediately
+        fragment.lifecycleScope.withLoadingDialog(context, threshold = 0L) {
+            try {
+                withContext(Dispatchers.IO) {
+                    val tempFile = File(context.cacheDir, "temp_backup.json")
+                    if (!tempFile.exists()) {
+                        withContext(Dispatchers.Main) {
+                            context.toast(R.string.backup_failure)
+                        }
+                        return@withContext
+                    }
+
+                    val inputStream = tempFile.inputStream()
+                    val outputStream = context.contentResolver.openOutputStream(uri)
+                    outputStream?.use { output ->
+                        inputStream.copyTo(output)
+                    }
+                    inputStream.close()
+                    tempFile.delete()
+                }
+
+                withContext(Dispatchers.Main) {
+                    context.toast(R.string.backup_success)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    context.toast(R.string.backup_failure)
+                }
+            }
+        }
+    }
+
+    private fun handleRestoreOpen(uri: Uri) {
+        if (isRestoreInProgress) return
+
+        val context = fragment.requireContext()
+        isRestoreInProgress = true
+
+        // Use withLoadingDialog with 0 threshold to show immediately
+        fragment.lifecycleScope.withLoadingDialog(context, threshold = 0L) {
+            try {
+                val file = withContext(Dispatchers.IO) {
+                    context.getFileFromUri(uri)
+                }
+
+                if (file == null || !file.exists()) {
+                    withContext(Dispatchers.Main) {
+                        context.toast(R.string.backup_file_invalid)
+                    }
+                    return@withLoadingDialog
+                }
+
+                val backupData = withContext(Dispatchers.IO) {
+                    BackupManager.loadBackupFromFile(file).getOrThrow()
+                }
+
+                if (backupData.version > BackupData.CURRENT_VERSION) {
+                    withContext(Dispatchers.Main) {
+                        context.toast(R.string.backup_version_too_new)
+                    }
+                    return@withLoadingDialog
+                }
+
+                val hasPreferences = backupData.preferences != null
+                val hasClipboard = backupData.clipboard != null
+                val hasCollection = backupData.collection != null
+
+                if (!hasPreferences && !hasClipboard && !hasCollection) {
+                    withContext(Dispatchers.Main) {
+                        context.toast(R.string.backup_file_invalid)
+                    }
+                    return@withLoadingDialog
+                }
+
+                withContext(Dispatchers.Main) {
+                    showRestoreItemsDialog(backupData, hasPreferences, hasClipboard, hasCollection)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    context.toast(R.string.backup_file_invalid)
+                }
+            } finally {
+                isRestoreInProgress = false
+            }
+        }
+    }
+
+    private fun showRestoreItemsDialog(
+        backupData: BackupData,
+        hasPreferences: Boolean,
+        hasClipboard: Boolean,
+        hasCollection: Boolean,
+    ) {
+        val context = fragment.requireContext()
+        val items = mutableListOf<String>()
+        val checked = mutableListOf<Boolean>()
+
+        if (hasPreferences) {
+            items.add(context.getString(R.string.preferences))
+            checked.add(true)
+        }
+        if (hasClipboard) {
+            items.add(context.getString(R.string.clipboard_data))
+            checked.add(true)
+        }
+        if (hasCollection) {
+            items.add(context.getString(R.string.collection_data))
+            checked.add(true)
+        }
+
+        AlertDialog
+            .Builder(context)
+            .setTitle(R.string.select_restore_items)
+            .setMultiChoiceItems(items.toTypedArray(), checked.toBooleanArray()) { _, which, isChecked ->
+                checked[which] = isChecked
+            }.setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                performRestore(
+                    backupData,
+                    if (hasPreferences) checked[0] else false,
+                    if (hasClipboard) checked[if (hasPreferences) 1 else 0] else false,
+                    if (hasCollection) checked[checked.size - 1] else false,
+                )
+            }.show()
+    }
+
+    private fun performRestore(
+        backupData: BackupData,
+        restorePreferences: Boolean,
+        restoreClipboard: Boolean,
+        restoreCollection: Boolean,
+    ) {
+        val context = fragment.requireContext()
+
+        // Use withLoadingDialog with 0 threshold to show immediately
+        fragment.lifecycleScope.withLoadingDialog(context, threshold = 0L) {
+            try {
+                withContext(Dispatchers.IO) {
+                    BackupManager.restoreBackup(
+                        backupData,
+                        restorePreferences = restorePreferences,
+                        restoreClipboard = restoreClipboard,
+                        restoreCollection = restoreCollection,
+                    ).getOrThrow()
+                }
+
+                withContext(Dispatchers.Main) {
+                    context.toast(R.string.restore_success)
+                    if (restorePreferences) {
+                        showRestartDialog(context)
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    context.toast(R.string.restore_failure)
+                }
+            }
+        }
+    }
+
+    private fun showRestartDialog(context: Context) {
+        AlertDialog.Builder(context)
+            .setTitle(R.string.restart_app)
+            .setMessage(R.string.restart_app_hint)
+            .setPositiveButton(R.string.restart) { _, _ ->
+                restartApp(context)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun restartApp(context: Context) {
+        val packageManager = context.packageManager
+        val intent = packageManager.getLaunchIntentForPackage(context.packageName)
+        intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        context.startActivity(intent)
+        android.os.Process.killProcess(android.os.Process.myPid())
+    }
+}
