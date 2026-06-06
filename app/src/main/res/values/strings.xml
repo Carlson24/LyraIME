@@ -220,4 +220,5 @@
     <string name="share">Share</string>
     <string name="word_segment">Word segment</string>
     <string name="star_success">Star success</string>
+    <string name="main_input_test_hint">Tap here to test input</string>
 </resources>
