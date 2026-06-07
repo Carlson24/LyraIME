@@ -7,6 +7,7 @@ package com.osfans.trime.data.prefs
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Typeface
 import androidx.annotation.Keep
 import com.osfans.trime.R
 import com.osfans.trime.data.base.DataManager
@@ -438,19 +439,28 @@ class AppPrefs(
             CLIPBOARD_COMPARE_RULES,
             "",
             R.string.a_regular_expression_per_line,
-        ) { clipboardListening.getValue() }
+            onBindEditText = { it.typeface = Typeface.MONOSPACE; it.textSize = 15f },
+            enableUiOn = { clipboardListening.getValue() },
+            summaryCountFormat = R.string.clipboard_rules_count,
+        )
         val clipboardOutputRules = editText(
             R.string.clipboard_output_rules,
             CLIPBOARD_OUTPUT_RULES,
             "",
             R.string.a_regular_expression_per_line,
-        ) { clipboardListening.getValue() }
+            onBindEditText = { it.typeface = Typeface.MONOSPACE; it.textSize = 15f },
+            enableUiOn = { clipboardListening.getValue() },
+            summaryCountFormat = R.string.clipboard_rules_count,
+        )
         val clipboardExtractRules = editText(
             R.string.clipboard_extract_rules,
             CLIPBOARD_EXTRACT_RULES,
             "",
             R.string.a_regular_expression_per_line,
-        ) { clipboardListening.getValue() }
+            onBindEditText = { it.typeface = Typeface.MONOSPACE; it.textSize = 15f },
+            enableUiOn = { clipboardListening.getValue() },
+            summaryCountFormat = R.string.clipboard_rules_count,
+        )
         val clipboardSuggestion = switch(
             R.string.clipboard_suggestion,
             CLIPBOARD_SUGGESTION,

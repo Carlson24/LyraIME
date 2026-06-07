@@ -7,20 +7,38 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
 <resources>
-    <color name="red_A700">#D50000</color>
-    <color name="red_400">#EF5350</color>
-    <color name="yellow_500">#FFEB3B</color>
-    <color name="yellow_800">#F9A825</color>
-    <color name="blue_500">#2196F3</color>
-    <color name="grey_400">#BDBDBD</color>
-    <color name="grey_700">#616161</color>
+    <!-- Material colors — derived from doc/extra.css Morandi Green (light) -->
+    <color name="red_A700">#c4888a</color>       <!-- Red -->
+    <color name="red_400">#d4a0a2</color>        <!-- Maroon -->
+    <color name="yellow_500">#b8a882</color>     <!-- Yellow -->
+    <color name="yellow_800">#c8b496</color>     <!-- Peach -->
+    <color name="blue_500">#8a9bab</color>       <!-- Blue -->
+    <color name="grey_400">#9eaf9f</color>       <!-- Overlay1 -->
+    <color name="grey_700">#586359</color>       <!-- Subtext0 -->
 
-    <!-- 本色彩方案取自 Rime 官网（https://rime.im） -->
-    <color name="colorPrimary">#37393C</color> <!-- 浅主题色 -->
-    <color name="colorPrimaryDark">#2D2F30</color> <!-- 深主题色 -->
-    <color name="colorAccent">#009BD1</color>  <!-- 浅强调色 -->
-    <color name="colorAccentDark">#317086</color> <!-- 深强调色 -->
+    <!-- Primary / Accent — #61A165 / #49814D from extra.css -->
+    <color name="colorPrimary">#61a165</color>       <!-- Morandi green -->
+    <color name="colorPrimaryDark">#49814d</color>   <!-- Morandi dark -->
+    <color name="colorAccent">#61a165</color>        <!-- Morandi green -->
+    <color name="colorAccentDark">#49814d</color>    <!-- Morandi dark -->
 
-    <color name="toolbarForegroundColor">#FFFFFF</color>  <!-- 工具栏前景色 -->
+    <color name="toolbarForegroundColor">#ffffff</color>
+
+    <!-- Wanxiang colors — light surfaces on #F0F5F1 background -->
+    <color name="wanxiang_card_bg">#ffffff</color>                   <!-- Card bg -->
+    <color name="wanxiang_card_border_unselected">#cdd9d0</color>   <!-- Surface2 -->
+    <color name="wanxiang_card_fill_selected">#e4ece6</color>       <!-- Surface1 -->
+    <color name="wanxiang_chip_unselected_bg">#e4ece6</color>       <!-- Surface1 -->
+    <color name="wanxiang_chip_unselected_text">#2d382e</color>     <!-- Text primary -->
+    <color name="wanxiang_divider">#cdd9d0</color>                  <!-- Surface2 -->
+    <color name="wanxiang_label_text">#809184</color>               <!-- Overlay0 -->
+    <color name="wanxiang_progress_status">#809184</color>          <!-- Overlay0 -->
+    <color name="wanxiang_card_title">#2d382e</color>               <!-- Text primary -->
+    <color name="wanxiang_card_title_secondary">#586359</color>     <!-- Subtext0 -->
+    <color name="wanxiang_error">#c4888a</color>                    <!-- Red -->
+    <color name="wanxiang_accent">#61a165</color>                   <!-- Morandi green -->
+    <color name="wanxiang_white">#ffffff</color>                    <!-- text on accent -->
+    <color name="wanxiang_checkbox_border">#cdd9d0</color>          <!-- Surface2 -->
+    <color name="wanxiang_button_dark_bg">#2d382e</color>           <!-- Text primary -->
 
 </resources>

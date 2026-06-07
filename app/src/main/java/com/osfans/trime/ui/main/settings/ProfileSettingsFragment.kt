@@ -32,7 +32,9 @@ import com.osfans.trime.util.customFormatTimeInDefault
 import com.osfans.trime.util.getFileFromUri
 import com.osfans.trime.util.getUriForFile
 import com.osfans.trime.util.toast
+import com.osfans.trime.worker.BackgroundSyncWork
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import splitties.dimensions.dp
 import splitties.resources.drawable
@@ -177,7 +179,10 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
             addCategory(R.string.synchronization) {
                 isIconSpaceReserved = false
                 addPreference(R.string.sync_user_data_immediately) {
-                    viewModel.rime.launchOnReady { it.syncUserData() }
+                    lifecycleScope.launch {
+                        BackgroundSyncWork.backupSettingsToSyncDir()
+                        viewModel.rime.launchOnReady { it.syncUserData() }
+                    }
                 }
                 addPreference(
                     SwitchPreferenceCompat(ctx).apply {

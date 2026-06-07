@@ -7,6 +7,7 @@ package com.osfans.trime.ui.main
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.osfans.trime.R
 import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.daemon.RimeSession
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +26,11 @@ class MainViewModel : ViewModel() {
 
     val toolbarEditButtonOnClickListener = MutableLiveData<(() -> Unit)?>()
 
+    val toolbarEditButtonIcon = MutableLiveData(R.drawable.ic_baseline_edit_24)
+
     val toolbarDeleteButtonOnClickListener = MutableLiveData<(() -> Unit)?>()
+
+    val toolbarDeleteButtonIcon = MutableLiveData(R.drawable.ic_baseline_delete_24)
 
     fun setToolbarTitle(title: String) {
         toolbarTitle.value = title
@@ -41,8 +46,10 @@ class MainViewModel : ViewModel() {
 
     fun enableToolbarEditButton(
         visible: Boolean = true,
+        icon: Int = R.drawable.ic_baseline_edit_24,
         onClick: () -> Unit,
     ) {
+        toolbarEditButtonIcon.value = icon
         toolbarEditButtonOnClickListener.value = onClick
         toolbarEditButtonVisible.value = visible
     }
@@ -60,7 +67,11 @@ class MainViewModel : ViewModel() {
         toolbarEditButtonVisible.value = true
     }
 
-    fun enableToolbarDeleteButton(onClick: () -> Unit) {
+    fun enableToolbarDeleteButton(
+        icon: Int = R.drawable.ic_baseline_delete_24,
+        onClick: () -> Unit,
+    ) {
+        toolbarDeleteButtonIcon.value = icon
         toolbarDeleteButtonOnClickListener.value = onClick
     }
 
