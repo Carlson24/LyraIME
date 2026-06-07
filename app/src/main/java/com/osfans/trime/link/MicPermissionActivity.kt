@@ -33,4 +33,3 @@ class MicPermissionActivity : ComponentActivity() {
         }
     }
 }
-

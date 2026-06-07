@@ -48,9 +48,8 @@ class KeyView(
     private val hookShiftArrow: Boolean by lazy {
         AppPrefs.defaultInstance().keyboard.hookShiftArrow.getValue()
     }
-    private val asrkbAidlVoiceInputEnabled: Boolean by lazy {
-        AppPrefs.defaultInstance().general.asrkbAidlVoiceInputEnabled.getValue()
-    }
+    private val asrkbAidlVoiceInputEnabled: Boolean
+        get() = AppPrefs.defaultInstance().voiceInput.asrkbAidlVoiceInputEnabled.getValue()
 
     private val deletedTextBuffer = ArrayDeque<String>()
 
@@ -64,6 +63,7 @@ class KeyView(
             startWave = { keyboardView.startVoiceOverlayWave() },
             updateAmplitude = { amplitude -> keyboardView.updateVoiceOverlayAmplitude(amplitude) },
             hideOverlay = { keyboardView.hideVoiceOverlay() },
+            useAidl = { asrkbAidlVoiceInputEnabled },
         )
     }
 
@@ -111,7 +111,7 @@ class KeyView(
 
         onRelease = { behavior, isFromLongPress ->
             Timber.d("KeyView release: label=${key.getLabel()}, behavior=$behavior, fromLongPress=$isFromLongPress")
-            if (isFromLongPress && asrkbVoiceHoldController.isRunning() && isAsrkbVoiceLongPressAction(key.getAction(KeyBehavior.LONG_CLICK))) {
+            if (isFromLongPress && isVoiceLongPressAction(key.getAction(KeyBehavior.LONG_CLICK))) {
                 asrkbVoiceHoldController.stopIfStarted()
                 setPressedState(false)
                 dismissPopupPreview()
@@ -181,7 +181,7 @@ class KeyView(
 
         onLongClick = {
             val longPressAction = key.getAction(KeyBehavior.LONG_CLICK)
-            if (isAsrkbVoiceLongPressAction(longPressAction)) {
+            if (isVoiceLongPressAction(longPressAction)) {
                 asrkbVoiceHoldController.start()
             } else if (key.popup.isNotEmpty()) {
                 dismissPopupPreview()
@@ -221,8 +221,7 @@ class KeyView(
         }
     }
 
-    private fun isAsrkbVoiceLongPressAction(action: KeyAction?): Boolean =
-        asrkbAidlVoiceInputEnabled && action?.code == KeyEvent.KEYCODE_VOICE_ASSIST
+    private fun isVoiceLongPressAction(action: KeyAction?): Boolean = action?.code == KeyEvent.KEYCODE_VOICE_ASSIST
 
     private fun processKeyAction(action: KeyAction, behavior: KeyBehavior) {
         Timber.d("processKeyAction: label=${key.getLabel()}, code=${action.code}, type=$behavior")

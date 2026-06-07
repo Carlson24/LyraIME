@@ -21,6 +21,14 @@ class NativeAppConventionPlugin : NativeBaseConventionPlugin() {
                 "git -C app/src/main/jni/OpenCC describe --tags --long --always",
             )
 
+    private val Project.sherpaOnnxVersion: String
+        get() {
+            val aar = file("libs").listFiles()?.find {
+                it.name.startsWith("sherpa-onnx-") && it.name.endsWith(".aar")
+            }
+            return aar?.name?.removePrefix("sherpa-onnx-")?.removeSuffix(".aar") ?: "unknown"
+        }
+
     override fun apply(target: Project) {
         super.apply(target)
 
@@ -33,6 +41,7 @@ class NativeAppConventionPlugin : NativeBaseConventionPlugin() {
             defaultConfig {
                 buildConfigField("String", "LIBRIME_VERSION", "\"${target.librimeVersion}\"")
                 buildConfigField("String", "OPENCC_VERSION", "\"${target.openccVersion}\"")
+                buildConfigField("String", "SHERPA_ONNX_VERSION", "\"${target.sherpaOnnxVersion}\"")
             }
         }
     }

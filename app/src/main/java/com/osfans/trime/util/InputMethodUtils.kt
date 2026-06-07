@@ -18,6 +18,8 @@ import splitties.systemservices.inputMethodManager
 import timber.log.Timber
 
 object InputMethodUtils {
+    const val BUILTIN_VOICE_INPUT = "__builtin_voice__"
+    private val EXCLUDED_VOICE_INPUT_PACKAGES = setOf("com.brycewg.asrkb", "com.brycewg.asrkb.pro")
     private val serviceName = TrimeInputMethodService::class.java.name
     private val componentName =
         ComponentName(appContext, TrimeInputMethodService::class.java).flattenToShortString()
@@ -57,6 +59,7 @@ object InputMethodUtils {
 
     fun voiceInputMethods(): List<Pair<InputMethodInfo, InputMethodSubtype>> = inputMethodManager
         .enabledInputMethodList
+        .filterNot { it.packageName in EXCLUDED_VOICE_INPUT_PACKAGES }
         .mapNotNull { info ->
             for (i in 0 until info.subtypeCount) {
                 val subType = info.getSubtypeAt(i)

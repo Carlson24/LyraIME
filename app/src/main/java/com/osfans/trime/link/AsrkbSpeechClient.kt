@@ -2,6 +2,7 @@
  * Minimal external AIDL client to link with BiBi Keyboard (asr-keyboard)
  * via raw Binder transact calls (push PCM mode).
  */
+
 package com.osfans.trime.link
 
 import android.Manifest
@@ -16,8 +17,8 @@ import android.media.MediaRecorder
 import android.os.Binder
 import android.os.IBinder
 import android.os.Parcel
-import androidx.lifecycle.lifecycleScope
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.util.toast
@@ -38,6 +39,7 @@ object AsrkbSpeechClient {
     private var callbackBinder: IBinder? = null
     private var sessionId: Int = -1
     private var currentState: Int = STATE_IDLE
+
     @Volatile
     private var holding: Boolean = false
         set(value) {
@@ -86,67 +88,65 @@ object AsrkbSpeechClient {
                                     data: Parcel,
                                     reply: Parcel?,
                                     flags: Int,
-                                ): Boolean {
-                                    return try {
-                                        when (code) {
-                                            CB_onState -> {
-                                                data.enforceInterface(DESCRIPTOR_CB)
-                                                val _sid = data.readInt()
-                                                val s = data.readInt()
-                                                data.readString()
-                                                currentState = s
-                                                reply?.writeNoException()
-                                                true
-                                            }
-                                            CB_onPartial -> {
-                                                data.enforceInterface(DESCRIPTOR_CB)
-                                                data.readInt()
-                                                val text = data.readString() ?: ""
-                                                ctx.lifecycleScope.launch {
-                                                    ctx.currentInputConnection?.setComposingText(text, 1)
-                                                }
-                                                reply?.writeNoException()
-                                                true
-                                            }
-                                            CB_onFinal -> {
-                                                data.enforceInterface(DESCRIPTOR_CB)
-                                                data.readInt()
-                                                val text = data.readString() ?: ""
-                                                ctx.lifecycleScope.launch {
-                                                    ctx.commitText(text)
-                                                    unbind()
-                                                }
-                                                reply?.writeNoException()
-                                                true
-                                            }
-                                            CB_onError -> {
-                                                data.enforceInterface(DESCRIPTOR_CB)
-                                                data.readInt()
-                                                val codeVal = data.readInt()
-                                                val msg = data.readString()
-                                                toast(ctx, mapCallbackError(ctx, codeVal, msg))
-                                                unbind()
-                                                reply?.writeNoException()
-                                                true
-                                            }
-                                            CB_onAmplitude -> {
-                                                data.enforceInterface(DESCRIPTOR_CB)
-                                                data.readInt()
-                                                val amp = data.readFloat()
-                                                runCatching { VoiceOverlayUiBridge.onAmplitude?.invoke(amp) }
-                                                reply?.writeNoException()
-                                                true
-                                            }
-                                            IBinder.INTERFACE_TRANSACTION -> {
-                                                reply?.writeString(DESCRIPTOR_CB)
-                                                true
-                                            }
-                                            else -> super.onTransact(code, data, reply, flags)
+                                ): Boolean = try {
+                                    when (code) {
+                                        CB_ON_STATE -> {
+                                            data.enforceInterface(DESCRIPTOR_CB)
+                                            val sid = data.readInt()
+                                            val s = data.readInt()
+                                            data.readString()
+                                            currentState = s
+                                            reply?.writeNoException()
+                                            true
                                         }
-                                    } catch (t: Throwable) {
-                                        Timber.w(t, "callback transact handle failed (code=$code)")
-                                        false
+                                        CB_ON_PARTIAL -> {
+                                            data.enforceInterface(DESCRIPTOR_CB)
+                                            data.readInt()
+                                            val text = data.readString() ?: ""
+                                            ctx.lifecycleScope.launch {
+                                                ctx.currentInputConnection?.setComposingText(text, 1)
+                                            }
+                                            reply?.writeNoException()
+                                            true
+                                        }
+                                        CB_ON_FINAL -> {
+                                            data.enforceInterface(DESCRIPTOR_CB)
+                                            data.readInt()
+                                            val text = data.readString() ?: ""
+                                            ctx.lifecycleScope.launch {
+                                                ctx.commitText(text)
+                                                unbind()
+                                            }
+                                            reply?.writeNoException()
+                                            true
+                                        }
+                                        CB_ON_ERROR -> {
+                                            data.enforceInterface(DESCRIPTOR_CB)
+                                            data.readInt()
+                                            val codeVal = data.readInt()
+                                            val msg = data.readString()
+                                            toast(ctx, mapCallbackError(ctx, codeVal, msg))
+                                            unbind()
+                                            reply?.writeNoException()
+                                            true
+                                        }
+                                        CB_ON_AMPLITUDE -> {
+                                            data.enforceInterface(DESCRIPTOR_CB)
+                                            data.readInt()
+                                            val amp = data.readFloat()
+                                            runCatching { VoiceOverlayUiBridge.onAmplitude?.invoke(amp) }
+                                            reply?.writeNoException()
+                                            true
+                                        }
+                                        IBinder.INTERFACE_TRANSACTION -> {
+                                            reply?.writeString(DESCRIPTOR_CB)
+                                            true
+                                        }
+                                        else -> super.onTransact(code, data, reply, flags)
                                     }
+                                } catch (t: Throwable) {
+                                    Timber.w(t, "callback transact handle failed (code=$code)")
+                                    false
                                 }
                             }
                         callbackBinder = cbBinder
@@ -159,7 +159,7 @@ object AsrkbSpeechClient {
                             // push PCM mode: presence=0 means no SpeechConfig; server follows its current settings
                             data.writeInt(0)
                             data.writeStrongBinder(cbBinder)
-                            b.transact(TRANSACTION_startPcmSession, data, reply, 0)
+                            b.transact(TRANSACTION_START_PCM_SESSION, data, reply, 0)
                             reply.readException()
                             sid = reply.readInt()
                         } finally {
@@ -273,7 +273,7 @@ object AsrkbSpeechClient {
         try {
             data.writeInterfaceToken(DESCRIPTOR_SVC)
             data.writeInt(sid)
-            b.transact(TRANSACTION_finishPcm, data, reply, 0)
+            b.transact(TRANSACTION_FINISH_PCM, data, reply, 0)
             reply.readException()
         } catch (t: Throwable) {
             Timber.w(t, "finishPcmSession failed")
@@ -304,7 +304,7 @@ object AsrkbSpeechClient {
         try {
             data.writeInterfaceToken(DESCRIPTOR_SVC)
             data.writeInt(sid)
-            b.transact(TRANSACTION_cancelSession, data, reply, 0)
+            b.transact(TRANSACTION_CANCEL_SESSION, data, reply, 0)
             reply.readException()
         } catch (t: Throwable) {
             Timber.w(t, "cancelSession failed")
@@ -492,7 +492,7 @@ object AsrkbSpeechClient {
             }
             data.writeInt(sr)
             data.writeInt(ch)
-            b.transact(TRANSACTION_writePcm, data, reply, 0)
+            b.transact(TRANSACTION_WRITE_PCM, data, reply, 0)
             reply.readException()
         } catch (t: Throwable) {
             Timber.w(t, "writePcm transact failed")
@@ -520,36 +520,32 @@ object AsrkbSpeechClient {
         }
     }
 
-    private fun mapStartError(ctx: Context, code: Int): String {
-        return when (code) {
-            -2 -> ctx.getString(R.string.asrkb_err_busy)
-            -3 -> ctx.getString(R.string.asrkb_err_feature_disabled)
-            -5 -> ctx.getString(R.string.asrkb_err_unsupported)
-            else -> ctx.getString(R.string.asrkb_err_start_failed_with_code, code)
-        }
+    private fun mapStartError(ctx: Context, code: Int): String = when (code) {
+        -2 -> ctx.getString(R.string.asrkb_err_busy)
+        -3 -> ctx.getString(R.string.asrkb_err_feature_disabled)
+        -5 -> ctx.getString(R.string.asrkb_err_unsupported)
+        else -> ctx.getString(R.string.asrkb_err_start_failed_with_code, code)
     }
 
-    private fun mapCallbackError(ctx: Context, code: Int, msg: String?): String {
-        return when (code) {
-            403 -> ctx.getString(R.string.asrkb_err_feature_disabled)
-            else -> ctx.getString(R.string.asrkb_err_service_error_with_code, code)
-        }.let { base ->
-            if (msg.isNullOrBlank()) base else "$base: $msg"
-        }
+    private fun mapCallbackError(ctx: Context, code: Int, msg: String?): String = when (code) {
+        403 -> ctx.getString(R.string.asrkb_err_feature_disabled)
+        else -> ctx.getString(R.string.asrkb_err_service_error_with_code, code)
+    }.let { base ->
+        if (msg.isNullOrBlank()) base else "$base: $msg"
     }
 
     private const val DESCRIPTOR_SVC = "com.brycewg.asrkb.aidl.IExternalSpeechService"
-    private const val TRANSACTION_cancelSession = IBinder.FIRST_CALL_TRANSACTION + 2
-    private const val TRANSACTION_startPcmSession = IBinder.FIRST_CALL_TRANSACTION + 6
-    private const val TRANSACTION_writePcm = IBinder.FIRST_CALL_TRANSACTION + 7
-    private const val TRANSACTION_finishPcm = IBinder.FIRST_CALL_TRANSACTION + 8
+    private const val TRANSACTION_CANCEL_SESSION = IBinder.FIRST_CALL_TRANSACTION + 2
+    private const val TRANSACTION_START_PCM_SESSION = IBinder.FIRST_CALL_TRANSACTION + 6
+    private const val TRANSACTION_WRITE_PCM = IBinder.FIRST_CALL_TRANSACTION + 7
+    private const val TRANSACTION_FINISH_PCM = IBinder.FIRST_CALL_TRANSACTION + 8
 
     private const val DESCRIPTOR_CB = "com.brycewg.asrkb.aidl.ISpeechCallback"
-    private const val CB_onState = IBinder.FIRST_CALL_TRANSACTION + 0
-    private const val CB_onPartial = IBinder.FIRST_CALL_TRANSACTION + 1
-    private const val CB_onFinal = IBinder.FIRST_CALL_TRANSACTION + 2
-    private const val CB_onError = IBinder.FIRST_CALL_TRANSACTION + 3
-    private const val CB_onAmplitude = IBinder.FIRST_CALL_TRANSACTION + 4
+    private const val CB_ON_STATE = IBinder.FIRST_CALL_TRANSACTION + 0
+    private const val CB_ON_PARTIAL = IBinder.FIRST_CALL_TRANSACTION + 1
+    private const val CB_ON_FINAL = IBinder.FIRST_CALL_TRANSACTION + 2
+    private const val CB_ON_ERROR = IBinder.FIRST_CALL_TRANSACTION + 3
+    private const val CB_ON_AMPLITUDE = IBinder.FIRST_CALL_TRANSACTION + 4
 
     private const val STATE_IDLE = 0
     private const val STATE_RECORDING = 1

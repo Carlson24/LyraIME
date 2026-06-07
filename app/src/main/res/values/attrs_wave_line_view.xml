@@ -9,6 +9,7 @@
         <attr name="wlvMoveSpeed" format="float" />
         <attr name="wlvSamplingSize" format="integer" />
         <attr name="wlvSensibility" format="integer" />
+        <attr name="wlvPolygonSides" format="integer" />
     </declare-styleable>
 </resources>
 

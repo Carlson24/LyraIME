@@ -7,7 +7,9 @@ package com.osfans.trime.link
  */
 object VoiceOverlayUiBridge {
     @Volatile var onRecordingStarted: (() -> Unit)? = null
+
     @Volatile var onAmplitude: ((Float) -> Unit)? = null
+
     @Volatile var onDone: (() -> Unit)? = null
 
     fun clear() {
