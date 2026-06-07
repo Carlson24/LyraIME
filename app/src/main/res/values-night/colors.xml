@@ -7,6 +7,38 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
 <resources>
-    <color name="colorAccent">#0A7CB2</color>
-    <color name="colorAccentDark">#28566d</color>
+    <!-- Material colors — Catppuccin Mocha -->
+    <color name="red_A700">#f38ba8</color>       <!-- Red -->
+    <color name="red_400">#eba0ac</color>        <!-- Maroon -->
+    <color name="yellow_500">#f9e2af</color>     <!-- Yellow -->
+    <color name="yellow_800">#fab387</color>     <!-- Peach -->
+    <color name="blue_500">#89b4fa</color>       <!-- Blue -->
+    <color name="grey_400">#7f849c</color>       <!-- Overlay1 -->
+    <color name="grey_700">#a6adc8</color>       <!-- Subtext0 -->
+
+    <!-- Primary / Accent -->
+    <color name="colorPrimary">#1e1e2e</color>       <!-- Base -->
+    <color name="colorPrimaryDark">#11111b</color>   <!-- Crust -->
+    <color name="colorAccent">#89b4fa</color>        <!-- Blue -->
+    <color name="colorAccentDark">#74c7ec</color>    <!-- Sapphire -->
+
+    <color name="toolbarForegroundColor">#ffffff</color>
+
+    <!-- Wanxiang colors — Catppuccin Mocha -->
+    <color name="wanxiang_card_bg">#1e1e2e</color>              <!-- Base -->
+    <color name="wanxiang_card_border_unselected">#313244</color>    <!-- Surface0 -->
+    <color name="wanxiang_card_fill_selected">#45475a</color>       <!-- Surface1 -->
+    <color name="wanxiang_chip_unselected_bg">#313244</color>       <!-- Surface0 -->
+    <color name="wanxiang_chip_unselected_text">#cdd6f4</color>     <!-- Text -->
+    <color name="wanxiang_divider">#313244</color>                  <!-- Surface0 -->
+    <color name="wanxiang_label_text">#6c7086</color>               <!-- Overlay0 -->
+    <color name="wanxiang_progress_status">#6c7086</color>          <!-- Overlay0 -->
+    <color name="wanxiang_card_title">#cdd6f4</color>               <!-- Text -->
+    <color name="wanxiang_card_title_secondary">#a6adc8</color>     <!-- Subtext0 -->
+    <color name="wanxiang_error">#f38ba8</color>                    <!-- Red -->
+    <color name="wanxiang_accent">#89b4fa</color>                   <!-- Blue -->
+    <color name="wanxiang_white">#ffffff</color>                    <!-- text on accent -->
+    <color name="wanxiang_checkbox_border">#585b70</color>          <!-- Surface2 -->
+    <color name="wanxiang_button_dark_bg">#45475a</color>           <!-- Surface1 -->
+
 </resources>

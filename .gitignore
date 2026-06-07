@@ -473,6 +473,7 @@ keystore.properties
 # Project
 app/src/main/assets/checksums.json
 app/src/main/assets/shared/opencc
+app/src/main/assets/shared/dicts
 
 # boost
 app/boost-*.tar.xz

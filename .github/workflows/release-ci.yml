@@ -13,6 +13,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -63,19 +65,16 @@ jobs:
         if: ${{ !steps.jni-cache.outputs.cache-hit }}
         run: cp -R app/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib app/prebuilt
 
-      - name: Build changelog
-        id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v4
-        with:
-          commitMode: true
-          ignorePreReleases: true
-          configurationJson: |
-            {
-              "template": "Change log from #{{FROM_TAG}} to #{{TO_TAG}}: #{{RELEASE_DIFF}}\n#{{UNCATEGORIZED}}",
-              "pr_template": "- [#{{MERGE_SHA}}] - #{{TITLE}}"
-            }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Rename APK
+        run: |
+          pushd app/build/outputs/apk/release
+            for apk in com.carlson.lyraime-v*.apk; do
+              arch=$(echo "$apk" | grep -oE '(arm64-v8a|x86_64)')
+              ver=$(echo "$apk" | grep -oP 'v\d+\.\d+\.\d+\.\d+')
+              mv "$apk" "LyraIME-${arch}-${ver}.apk"
+            done
+          popd
 
       - name: Create Stable release
         uses: ncipollo/release-action@v1
@@ -83,6 +82,5 @@ jobs:
           allowUpdates: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
           artifacts: "app/build/outputs/apk/release/*.apk"
-          body: |
-            ${{ steps.build_changelog.outputs.changelog }}
+          body: "Update schema and build release APKs."
           token: ${{ secrets.GITHUB_TOKEN }}

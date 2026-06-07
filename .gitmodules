@@ -38,3 +38,9 @@
 [submodule "essay"]
 	path = app/data/rime/essay
 	url = https://github.com/rime/rime-essay
+[submodule "wanxiang-zrm"]
+	path = app/data/rime/wanxiang-zrm
+	url = https://github.com/Carlson24/wanxiang-zrm.git
+[submodule "app/data/rime/wanxiang-zrm"]
+	path = app/data/rime/wanxiang-zrm
+	url = https://github.com/Carlson24/wanxiang-zrm.git

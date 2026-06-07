@@ -5,6 +5,8 @@
 @file:Suppress("UnstableApiUsage")
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 plugins {
     id("com.osfans.trime.app-convention")
@@ -25,10 +27,10 @@ android {
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "com.osfans.trime"
+        applicationId = "com.carlson.lyraime"
         minSdk = 21
         targetSdk = 35
-        versionCode = 20260701
+        versionCode = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
         versionName = "3.3.11"
 
         multiDexEnabled = true
