@@ -256,4 +256,5 @@
     <string name="share">分享</string>
     <string name="word_segment">分词</string>
     <string name="star_success">收藏成功</string>
+    <string name="main_input_test_hint">点击此处测试输入</string>
 </resources>
