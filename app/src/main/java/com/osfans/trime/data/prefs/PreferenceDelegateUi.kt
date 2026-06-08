@@ -5,11 +5,13 @@
 package com.osfans.trime.data.prefs
 
 import android.content.Context
+import android.widget.EditText as AndroidEditText
 import androidx.annotation.StringRes
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.SwitchPreference
+import com.osfans.trime.R
 import com.osfans.trime.ui.main.settings.DialogSeekBarPreference
 import com.osfans.trime.ui.main.settings.EditTextIntPreference
 
@@ -117,17 +119,32 @@ abstract class PreferenceDelegateUi<T : Preference>(
         @StringRes
         val message: Int? = null,
         enableUiOn: (() -> Boolean)? = null,
+        val onBindEditText: ((AndroidEditText) -> Unit)? = null,
+        @StringRes
+        val summaryCountFormat: Int? = null,
     ) : PreferenceDelegateUi<EditTextPreference>(key, enableUiOn) {
         override fun createUi(context: Context) = EditTextPreference(context).apply {
             key = this@EditText.key
             isIconSpaceReserved = false
             isSingleLineTitle = false
-            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+            summaryProvider = if (this@EditText.summaryCountFormat != null) {
+                Preference.SummaryProvider<EditTextPreference> { pref ->
+                    val text = pref.sharedPreferences?.getString(pref.key, "") ?: ""
+                    val count = text.lines().count { it.isNotBlank() }
+                    if (count == 0) context.getString(R.string.disable)
+                    else context.getString(this@EditText.summaryCountFormat, count)
+                }
+            } else {
+                EditTextPreference.SimpleSummaryProvider.getInstance()
+            }
             setDefaultValue(this@EditText.defaultValue)
             setTitle(this@EditText.title)
             setDialogTitle(this@EditText.title)
             if (this@EditText.message != null) {
                 setDialogMessage(this@EditText.message)
+            }
+            if (this@EditText.onBindEditText != null) {
+                setOnBindEditTextListener(this@EditText.onBindEditText!!)
             }
         }
     }

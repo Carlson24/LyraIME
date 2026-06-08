@@ -13,8 +13,11 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.osfans.trime.daemon.RimeDaemon
+import com.osfans.trime.data.backup.BackupManager
+import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import timber.log.Timber
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 class BackgroundSyncWork(
@@ -32,9 +35,10 @@ class BackgroundSyncWork(
     }
 
     private suspend fun doBackgroundSync(): Result {
-        if (!enable) {
-            return Result.failure()
-        }
+        if (!enable) return Result.failure()
+
+        backupSettingsToSyncDir()
+
         val rime = RimeDaemon.createSession(javaClass.name)
         val success = rime.runOnReady { syncUserData() }
         lastSyncTime = System.currentTimeMillis()
@@ -46,12 +50,43 @@ class BackgroundSyncWork(
 
     companion object {
         private const val PERIODIC_BACKGROUND_SYNC_KEY = "periodic_background_sync"
+        const val SETTINGS_BACKUP_FILENAME = "trime_settings_backup.json"
 
         private val prefs = AppPrefs.defaultInstance().profile
         private val enable by prefs.periodicBackgroundSync
         private val interval by prefs.periodicBackgroundSyncInterval
         private var lastSyncStatus by prefs.lastBackgroundSyncStatus
         private var lastSyncTime by prefs.lastBackgroundSyncTime
+
+        suspend fun backupSettingsToSyncDir() {
+            try {
+                val userId = readInstallationId()
+                val syncDir = File(DataManager.userDataDir, "sync").resolve(userId)
+                syncDir.mkdirs()
+                val backupFile = File(syncDir, SETTINGS_BACKUP_FILENAME)
+                val backupData = BackupManager.createBackup(
+                    includePreferences = true,
+                    includeClipboard = false,
+                    includeCollection = true,
+                    includeWanxiang = true,
+                    includeCustomTasks = true,
+                )
+                BackupManager.saveBackupToFile(backupData, backupFile)
+                Timber.d("Settings backup saved to sync dir: ${backupFile.absolutePath}")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to backup settings to sync dir")
+            }
+        }
+
+        private fun readInstallationId(): String {
+            val file = File(DataManager.userDataDir, "installation.yaml")
+            if (file.exists()) {
+                val content = file.readText()
+                Regex("""installation_id:\s*["']?([^"'\n\r]+)""").find(content)
+                    ?.groupValues?.get(1)?.trim()?.let { return it }
+            }
+            return "unknown"
+        }
 
         fun start(context: Context) {
             Timber.i("BackgroundSyncWork scheduled!")

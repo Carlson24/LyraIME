@@ -260,11 +260,14 @@ object ColorManager {
     }
 
     private fun resolveImageFilePath(value: String): String {
+        val shared = DataManager.sharedDataDir.resolve("backgrounds/$backgroundFolder/$value")
+        if (shared.exists()) return shared.absolutePath
+        val sharedFallback = DataManager.sharedDataDir.resolve("backgrounds/$value")
+        if (sharedFallback.exists()) return sharedFallback.absolutePath
         val default = DataManager.userDataDir.resolve("backgrounds/$backgroundFolder/$value")
-        if (!default.exists()) {
-            val fallback = DataManager.userDataDir.resolve("backgrounds/$value")
-            if (fallback.exists()) return fallback.absolutePath
-        }
+        if (default.exists()) return default.absolutePath
+        val fallback = DataManager.userDataDir.resolve("backgrounds/$value")
+        if (fallback.exists()) return fallback.absolutePath
         return default.absolutePath
     }
 
