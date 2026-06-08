@@ -17,7 +17,7 @@ object SoundEffectManager {
 
     private val userDir: File
         get() {
-            val dest = File(DataManager.userDataDir, "soundeffect")
+            val dest = File(DataManager.userDataDir, "themes/soundeffect")
             val old = File(DataManager.userDataDir, "sound")
             return FileUtils.rename(old, dest.name).getOrDefault(dest.also { it.mkdirs() })
         }

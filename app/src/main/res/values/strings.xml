@@ -7,8 +7,8 @@
 
 <resources xmlns:xliff="urn:oasis:names:en:xliff:document:1.2">
     <!-- Input Method Platform Tittle  -->
-    <string name="app_name_release">Trime</string>
-    <string name="app_name_debug">Trime (Debug)</string>
+    <string name="app_name_release">LyraIME</string>
+    <string name="app_name_debug">LyraIME (Debug)</string>
     <!-- Preference settings -->
     <string name="qq_group_1">Trime QQ group 1</string>
     <string name="qq_group_2">Trime QQ group 2</string>
@@ -92,8 +92,8 @@
     <string name="custom_sound_effect_name">Custom key Sound Effect</string>
     <string name="setup__next">Next</string>
     <string name="done">Done</string>
-    <string name="setup__enable_ime_hint">Enable <b>Trime</b> in Language and input settings</string>
-    <string name="setup__select_ime_hint">Select <b>Trime</b> as your default input method</string>
+    <string name="setup__enable_ime_hint">Enable <b>LyraIME</b> in Language and input settings</string>
+    <string name="setup__select_ime_hint">Select <b>LyraIME</b> as your default input method</string>
     <string name="setup__enable_ime">Enable Input Method</string>
     <string name="setup__select_ime">Select Input Method</string>
     <string name="setup__prev">Prev</string>
@@ -159,7 +159,7 @@
     <string name="enable_landscape_mode">Enable Landscape Mode</string>
     <string name="split_space_percent">Auto Split Keyboard Space Ratio</string>
     <string name="setup__step_three">Setup 3</string>
-    <string name="setup__request_permission_hint">Currently Trime requests storage permissions to access its configuration\nand allow users to modify easily.</string>
+    <string name="setup__request_permission_hint">Currently LyraIME requests storage permissions to access its configuration and allow users to modify easily.</string>
     <string name="setup__request_permission">Request storage permission</string>
     <string name="grant_permission">Grant permission</string>
     <string name="notification_permission_title">No Notification Permission</string>

@@ -264,9 +264,9 @@ object ColorManager {
         if (shared.exists()) return shared.absolutePath
         val sharedFallback = DataManager.sharedDataDir.resolve("backgrounds/$value")
         if (sharedFallback.exists()) return sharedFallback.absolutePath
-        val default = DataManager.userDataDir.resolve("backgrounds/$backgroundFolder/$value")
+        val default = DataManager.userDataDir.resolve("themes/backgrounds/$backgroundFolder/$value")
         if (default.exists()) return default.absolutePath
-        val fallback = DataManager.userDataDir.resolve("backgrounds/$value")
+        val fallback = DataManager.userDataDir.resolve("themes/backgrounds/$value")
         if (fallback.exists()) return fallback.absolutePath
         return default.absolutePath
     }

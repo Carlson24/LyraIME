@@ -7,38 +7,38 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
 <resources>
-    <!-- Material colors — derived from doc/extra.css Morandi Green (light) -->
-    <color name="red_A700">#c4888a</color>       <!-- Red -->
-    <color name="red_400">#d4a0a2</color>        <!-- Maroon -->
-    <color name="yellow_500">#b8a882</color>     <!-- Yellow -->
-    <color name="yellow_800">#c8b496</color>     <!-- Peach -->
-    <color name="blue_500">#8a9bab</color>       <!-- Blue -->
-    <color name="grey_400">#9eaf9f</color>       <!-- Overlay1 -->
-    <color name="grey_700">#586359</color>       <!-- Subtext0 -->
+    <!-- Material colors — Catppuccin Latte -->
+    <color name="red_A700">#d20f39</color>       <!-- Red -->
+    <color name="red_400">#e64553</color>        <!-- Maroon -->
+    <color name="yellow_500">#df8e1d</color>     <!-- Yellow -->
+    <color name="yellow_800">#fe640b</color>     <!-- Peach -->
+    <color name="blue_500">#1e66f5</color>       <!-- Blue -->
+    <color name="grey_400">#8c8fa1</color>       <!-- Overlay1 -->
+    <color name="grey_700">#6c6f85</color>       <!-- Subtext0 -->
 
-    <!-- Primary / Accent — #61A165 / #49814D from extra.css -->
-    <color name="colorPrimary">#61a165</color>       <!-- Morandi green -->
-    <color name="colorPrimaryDark">#49814d</color>   <!-- Morandi dark -->
-    <color name="colorAccent">#61a165</color>        <!-- Morandi green -->
-    <color name="colorAccentDark">#49814d</color>    <!-- Morandi dark -->
+    <!-- Primary / Accent -->
+    <color name="colorPrimary">#4c4f69</color>       <!-- Text -->
+    <color name="colorPrimaryDark">#3c3f59</color>   <!-- Text darkened -->
+    <color name="colorAccent">#1e66f5</color>        <!-- Blue -->
+    <color name="colorAccentDark">#209fb5</color>    <!-- Sapphire -->
 
     <color name="toolbarForegroundColor">#ffffff</color>
 
-    <!-- Wanxiang colors — light surfaces on #F0F5F1 background -->
-    <color name="wanxiang_card_bg">#ffffff</color>                   <!-- Card bg -->
-    <color name="wanxiang_card_border_unselected">#cdd9d0</color>   <!-- Surface2 -->
-    <color name="wanxiang_card_fill_selected">#e4ece6</color>       <!-- Surface1 -->
-    <color name="wanxiang_chip_unselected_bg">#e4ece6</color>       <!-- Surface1 -->
-    <color name="wanxiang_chip_unselected_text">#2d382e</color>     <!-- Text primary -->
-    <color name="wanxiang_divider">#cdd9d0</color>                  <!-- Surface2 -->
-    <color name="wanxiang_label_text">#809184</color>               <!-- Overlay0 -->
-    <color name="wanxiang_progress_status">#809184</color>          <!-- Overlay0 -->
-    <color name="wanxiang_card_title">#2d382e</color>               <!-- Text primary -->
-    <color name="wanxiang_card_title_secondary">#586359</color>     <!-- Subtext0 -->
-    <color name="wanxiang_error">#c4888a</color>                    <!-- Red -->
-    <color name="wanxiang_accent">#61a165</color>                   <!-- Morandi green -->
+    <!-- Wanxiang colors — Catppuccin Latte -->
+    <color name="wanxiang_card_bg">#eff1f5</color>              <!-- Base -->
+    <color name="wanxiang_card_border_unselected">#ccd0da</color>    <!-- Surface0 -->
+    <color name="wanxiang_card_fill_selected">#bcc0cc</color>       <!-- Surface1 -->
+    <color name="wanxiang_chip_unselected_bg">#ccd0da</color>       <!-- Surface0 -->
+    <color name="wanxiang_chip_unselected_text">#4c4f69</color>     <!-- Text -->
+    <color name="wanxiang_divider">#ccd0da</color>                  <!-- Surface0 -->
+    <color name="wanxiang_label_text">#9ca0b0</color>               <!-- Overlay0 -->
+    <color name="wanxiang_progress_status">#9ca0b0</color>          <!-- Overlay0 -->
+    <color name="wanxiang_card_title">#4c4f69</color>               <!-- Text -->
+    <color name="wanxiang_card_title_secondary">#6c6f85</color>     <!-- Subtext0 -->
+    <color name="wanxiang_error">#d20f39</color>                    <!-- Red -->
+    <color name="wanxiang_accent">#1e66f5</color>                   <!-- Blue -->
     <color name="wanxiang_white">#ffffff</color>                    <!-- text on accent -->
-    <color name="wanxiang_checkbox_border">#cdd9d0</color>          <!-- Surface2 -->
-    <color name="wanxiang_button_dark_bg">#2d382e</color>           <!-- Text primary -->
+    <color name="wanxiang_checkbox_border">#bcc0cc</color>          <!-- Surface1 -->
+    <color name="wanxiang_button_dark_bg">#4c4f69</color>           <!-- Text -->
 
 </resources>

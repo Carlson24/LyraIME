@@ -30,7 +30,7 @@ object FontManager {
         TOOLBAR_FONT,
     }
 
-    private val fontDir get() = File(DataManager.userDataDir, "fonts")
+    private val fontDir get() = File(DataManager.userDataDir, "themes/fonts")
     lateinit var hanBFont: Typeface
         private set
     lateinit var latinFont: Typeface
