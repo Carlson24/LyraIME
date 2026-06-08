@@ -84,6 +84,7 @@ class AppPrefs(
 
     val internal = Internal(shared)
     val general = General(shared).register()
+    val voiceInput = VoiceInput(shared).register()
     val profile = Profile(shared).register()
     val keyboard = Keyboard(shared).register()
     val candidates = Candidates(shared).register()
@@ -149,15 +150,47 @@ class AppPrefs(
         val asciiSwitchTips = switch(R.string.ascii_switch_tips, ASCII_SWITCH_TIPS, true)
         val inlineSuggestions = switch(R.string.inline_suggestions, INLINE_SUGGESTIONS, true)
         val hideStaticSwitcher = bool(HIDE_STATIC_SWITCHER, false)
+    }
+
+    class VoiceInput(
+        shared: SharedPreferences,
+    ) : PreferenceDelegateOwner(shared, R.string.voice_input) {
+        companion object {
+            const val ASRKB_AIDL_VOICE_INPUT = "asrkb_aidl_voice_input"
+            const val ASRKB_AIDL_VOICE_TOOLBAR_BUTTON = "asrkb_aidl_voice_toolbar_button"
+            const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
+            const val VOICE_ANIMATION_STYLE = "voice_animation_style"
+        }
+
+        enum class VoiceAnimationStyle(override val stringRes: Int) : PreferenceDelegateEnum {
+            PARTICLE(R.string.voice_animation_particle),
+            SPHERE(R.string.voice_animation_sphere),
+        }
+
+        val asrkbAidlVoiceInputEnabled = switch(
+            R.string.asrkb_aidl_voice_input,
+            ASRKB_AIDL_VOICE_INPUT,
+            false,
+            R.string.asrkb_aidl_voice_input_summary,
+        )
+        val asrkbAidlVoiceToolbarButtonEnabled = switch(
+            R.string.asrkb_aidl_voice_toolbar_button,
+            ASRKB_AIDL_VOICE_TOOLBAR_BUTTON,
+            true,
+            R.string.asrkb_aidl_voice_toolbar_button_summary,
+        )
+
+        val voiceAnimationStyle = enum(R.string.voice_animation_style, VOICE_ANIMATION_STYLE, VoiceAnimationStyle.PARTICLE)
 
         val preferredVoiceInput = list(
             R.string.preferred_voice_input,
             PREFERRED_VOICE_INPUT,
-            "",
-            { InputMethodUtils.voiceInputMethods().map { it.first.packageName } },
+            InputMethodUtils.BUILTIN_VOICE_INPUT,
+            { listOf(InputMethodUtils.BUILTIN_VOICE_INPUT) + InputMethodUtils.voiceInputMethods().map { it.first.packageName } },
             { ctx ->
-                InputMethodUtils.voiceInputMethods().map { it.first.loadLabel(ctx.packageManager) }
+                listOf(ctx.getString(R.string.builtin_voice_input)) + InputMethodUtils.voiceInputMethods().map { it.first.loadLabel(ctx.packageManager) }
             },
+            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
     }
 

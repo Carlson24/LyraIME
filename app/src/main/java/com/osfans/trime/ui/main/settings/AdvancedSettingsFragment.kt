@@ -11,6 +11,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.annotation.Keep
 import androidx.appcompat.app.AppCompatDelegate
+import com.osfans.trime.BuildConfig
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegate
 import com.osfans.trime.data.prefs.PreferenceDelegateFragment
@@ -49,7 +50,7 @@ class AdvancedSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultInst
     }
 
     companion object {
-        private const val SETTINGS_ACTIVITY_NAME = "com.osfans.trime.MainLauncherAlias"
+        private val SETTINGS_ACTIVITY_NAME = "${BuildConfig.APPLICATION_ID}.MainLauncherAlias"
 
         fun showAppIcon(context: Context, enable: Boolean) {
             val state = if (enable) {

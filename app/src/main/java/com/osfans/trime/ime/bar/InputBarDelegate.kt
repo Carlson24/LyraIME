@@ -18,6 +18,7 @@ import android.widget.ViewAnimator
 import android.widget.inline.InlineContentView
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.core.RimeMessage
@@ -41,6 +42,9 @@ import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.switches.SwitchOptionWindow
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
+import com.osfans.trime.link.AsrkbSpeechClient
+import com.osfans.trime.link.AsrkbVoiceHoldSessionController
+import com.osfans.trime.link.SherpaSpeechClient
 import com.osfans.trime.ui.main.ClipEditActivity
 import com.osfans.trime.util.AppUtils
 import com.osfans.trime.util.isLandscape
@@ -66,6 +70,7 @@ class InputBarDelegate : InputBroadcastReceiver {
     private val windowManager: BoardWindowManager by di.instance()
     private val commonKeyboardActionListener: CommonKeyboardActionListener by di.instance()
     private val candidate: CompactCandidateDelegate by di.instance()
+    private val keyboardWindow: KeyboardWindow by di.instance()
 
     val themedHeight = theme.generalStyle.run { candidateViewHeight + commentHeight }
 
@@ -86,6 +91,26 @@ class InputBarDelegate : InputBroadcastReceiver {
     private val clipboardSuggestion by prefs.clipboard.clipboardSuggestion
 
     private val clipboardSuggestionTimeout by prefs.clipboard.clipboardSuggestionTimeout
+
+    private val asrkbVoiceHoldController by lazy {
+        AsrkbVoiceHoldSessionController(
+            service = service,
+            showOverlay = { keyboardWindow.showAsrkbVoiceOverlay() },
+            startWave = { keyboardWindow.startAsrkbVoiceOverlayWave() },
+            updateAmplitude = { amplitude -> keyboardWindow.updateAsrkbVoiceOverlayAmplitude(amplitude) },
+            hideOverlay = { keyboardWindow.hideAsrkbVoiceOverlay() },
+            onSessionFinished = {
+                alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_mic_24)
+            },
+            useAidl = { asrkbAidlVoiceInputEnabled },
+        )
+    }
+
+    private val asrkbAidlVoiceInputEnabled by prefs.voiceInput.asrkbAidlVoiceInputEnabled
+
+    private val asrkbAidlVoiceToolbarButtonEnabled by prefs.voiceInput.asrkbAidlVoiceToolbarButtonEnabled
+
+    private var asrkbHoldingChangedListener: ((Boolean) -> Unit)? = null
 
     private var clipboardTimeoutJob: Job? = null
 
@@ -164,8 +189,46 @@ class InputBarDelegate : InputBroadcastReceiver {
             clipboardUi.dismiss.setOnClickListener {
                 dismissClipboardSuggestion()
             }
+            asrkbVoiceButton.apply {
+                val toolbarVisible = asrkbAidlVoiceToolbarButtonEnabled
+                if (toolbarVisible) {
+                    visibility = View.VISIBLE
+                    setIcon(
+                        if (isAsrkbHolding()) {
+                            R.drawable.ic_baseline_stop_24
+                        } else {
+                            R.drawable.ic_baseline_mic_24
+                        },
+                    )
+                } else {
+                    visibility = View.GONE
+                }
+                setOnClickListener {
+                    if (isAsrkbHolding()) {
+                        stopAsrkbVoiceFromToolbar()
+                        return@setOnClickListener
+                    }
+                    if (!toolbarVisible) return@setOnClickListener
+                    startAsrkbVoiceFromToolbar()
+                }
+            }
+
+            val executor = ContextCompat.getMainExecutor(service)
+            val holdingListener: (Boolean) -> Unit = { _ ->
+                executor.execute {
+                    if (!asrkbVoiceButton.isAttachedToWindow) return@execute
+                    if (asrkbVoiceButton.visibility != View.VISIBLE) return@execute
+                    val isActive = isAsrkbHolding()
+                    asrkbVoiceButton.setIcon(if (isActive) R.drawable.ic_baseline_stop_24 else R.drawable.ic_baseline_mic_24)
+                }
+            }
+            asrkbHoldingChangedListener = holdingListener
+            AsrkbSpeechClient.onHoldingChanged = holdingListener
+            SherpaSpeechClient.onHoldingChanged = holdingListener
         }
     }
+
+    private fun isAsrkbHolding(): Boolean = if (asrkbAidlVoiceInputEnabled) AsrkbSpeechClient.isHolding() else SherpaSpeechClient.isHolding()
 
     private fun dismissClipboardSuggestion() {
         clipboardTimeoutJob?.cancel()
@@ -286,6 +349,23 @@ class InputBarDelegate : InputBroadcastReceiver {
 
             evalAlwaysUiState()
             ClipboardHelper.addOnUpdateListener(onClipboardUpdateListener)
+
+            addOnAttachStateChangeListener(
+                object : View.OnAttachStateChangeListener {
+                    override fun onViewAttachedToWindow(v: View) {}
+
+                    override fun onViewDetachedFromWindow(v: View) {
+                        val listener = asrkbHoldingChangedListener
+                        if (listener != null && AsrkbSpeechClient.onHoldingChanged === listener) {
+                            AsrkbSpeechClient.onHoldingChanged = null
+                        }
+                        if (listener != null && SherpaSpeechClient.onHoldingChanged === listener) {
+                            SherpaSpeechClient.onHoldingChanged = null
+                        }
+                        asrkbHoldingChangedListener = null
+                    }
+                },
+            )
         }
     }
 
@@ -370,4 +450,19 @@ class InputBarDelegate : InputBroadcastReceiver {
     override fun onRimeOptionUpdated(value: RimeMessage.OptionMessage.Data) {
         alwaysUi.updateButtonsStyle()
     }
+
+    private fun startAsrkbVoiceFromToolbar() {
+        alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_stop_24)
+        asrkbVoiceHoldController.start()
+    }
+
+    private fun stopAsrkbVoiceFromToolbar() {
+        asrkbVoiceHoldController.stop()
+    }
+
+    fun startVoiceHoldSession() {
+        alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_stop_24)
+        asrkbVoiceHoldController.start()
+    }
+
 }

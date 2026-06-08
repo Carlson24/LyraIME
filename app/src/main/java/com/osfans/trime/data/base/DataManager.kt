@@ -56,6 +56,8 @@ object DataManager {
 
     val sharedDataDir = File(appContext.getExternalFilesDir(null), "shared").also { it.mkdirs() }
 
+    val voiceDataDir = File(appContext.getExternalFilesDir(null), "voice").also { it.mkdirs() }
+
     val userDataDir
         get() = File(prefs.profile.userDataDir.getValue()).also { it.mkdirs() }
 

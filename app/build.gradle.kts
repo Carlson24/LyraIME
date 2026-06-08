@@ -25,7 +25,7 @@ android {
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "com.osfans.trime"
+        applicationId = "com.osfans.trime.bibi"
         minSdk = 21
         targetSdk = 35
         versionCode = 20260701
@@ -190,6 +190,7 @@ dependencies {
     implementation(libs.splitties.views.dsl.recyclerview)
     implementation(libs.splitties.views.recyclerview)
     implementation(libs.aboutlibraries.core)
+    implementation(fileTree("libs") { include("*.aar") })
     implementation(libs.iconics.core)
     implementation(libs.community.material.typeface) {
         artifact { type = "aar" }
