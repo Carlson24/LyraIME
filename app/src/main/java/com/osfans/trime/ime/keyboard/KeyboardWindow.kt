@@ -293,6 +293,22 @@ class KeyboardWindow :
         attachKeyboard(id)
     }
 
+    fun showAsrkbVoiceOverlay() {
+        currentKeyboardView?.showVoiceOverlay()
+    }
+
+    fun hideAsrkbVoiceOverlay() {
+        currentKeyboardView?.hideVoiceOverlay()
+    }
+
+    fun startAsrkbVoiceOverlayWave() {
+        currentKeyboardView?.startVoiceOverlayWave()
+    }
+
+    fun updateAsrkbVoiceOverlayAmplitude(amplitude: Float) {
+        currentKeyboardView?.updateVoiceOverlayAmplitude(amplitude)
+    }
+
     override fun onStartInput(info: EditorInfo) {
         var tempAsciiMode = false
         val targetKeyboard =

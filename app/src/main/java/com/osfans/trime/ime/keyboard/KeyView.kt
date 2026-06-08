@@ -24,6 +24,7 @@ import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.popup.PopupAction
 import com.osfans.trime.ime.popup.PopupDelegate
+import com.osfans.trime.link.AsrkbVoiceHoldSessionController
 import com.osfans.trime.util.sp
 import splitties.dimensions.dp
 import timber.log.Timber
@@ -48,11 +49,24 @@ class KeyView(
     private val hookShiftArrow: Boolean by lazy {
         AppPrefs.defaultInstance().keyboard.hookShiftArrow.getValue()
     }
+    private val asrkbAidlVoiceInputEnabled: Boolean
+        get() = AppPrefs.defaultInstance().voiceInput.asrkbAidlVoiceInputEnabled.getValue()
 
     private val deletedTextBuffer = ArrayDeque<String>()
 
     private var keyPressed = false
     override fun isPressed(): Boolean = keyPressed
+
+    private val asrkbVoiceHoldController by lazy {
+        AsrkbVoiceHoldSessionController(
+            service = service,
+            showOverlay = { keyboardView.showVoiceOverlay() },
+            startWave = { keyboardView.startVoiceOverlayWave() },
+            updateAmplitude = { amplitude -> keyboardView.updateVoiceOverlayAmplitude(amplitude) },
+            hideOverlay = { keyboardView.hideVoiceOverlay() },
+            useAidl = { asrkbAidlVoiceInputEnabled },
+        )
+    }
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
@@ -98,7 +112,12 @@ class KeyView(
 
         onRelease = { behavior, isFromLongPress ->
             Timber.d("KeyView release: label=${key.getLabel()}, behavior=$behavior, fromLongPress=$isFromLongPress")
-            if (isFromLongPress) {
+            if (isFromLongPress && isVoiceLongPressAction(key.getAction(KeyBehavior.LONG_CLICK))) {
+                asrkbVoiceHoldController.stopIfStarted()
+                setPressedState(false)
+                dismissPopupPreview()
+                if (keyboard.firstPressedKeyIndex == id) keyboard.firstPressedKeyIndex = -1
+            } else if (isFromLongPress) {
                 if (hasPopup) {
                     val triggerAction = PopupAction.TriggerAction(id)
                     popup.listener.onPopupAction(triggerAction)
@@ -162,11 +181,14 @@ class KeyView(
         }
 
         onLongClick = {
-            if (key.popup.isNotEmpty()) {
+            val longPressAction = key.getAction(KeyBehavior.LONG_CLICK)
+            if (isVoiceLongPressAction(longPressAction)) {
+                asrkbVoiceHoldController.start()
+            } else if (key.popup.isNotEmpty()) {
                 dismissPopupPreview()
                 showPopupKeyboard()
             } else if (hasLongPress) {
-                key.getAction(KeyBehavior.LONG_CLICK)?.let {
+                longPressAction?.let {
                     processKeyAction(it, KeyBehavior.LONG_CLICK)
                     setPressedState(false)
                     dismissPopupPreview()
@@ -182,6 +204,7 @@ class KeyView(
 
         onCancel = {
             deletedTextBuffer.clear()
+            asrkbVoiceHoldController.stopIfStarted()
             setPressedState(false)
             dismissPopupPreview()
         }
@@ -198,6 +221,8 @@ class KeyView(
             invalidate()
         }
     }
+
+    private fun isVoiceLongPressAction(action: KeyAction?): Boolean = action?.code == KeyEvent.KEYCODE_VOICE_ASSIST
 
     private fun processKeyAction(action: KeyAction, behavior: KeyBehavior) {
         Timber.d("processKeyAction: label=${key.getLabel()}, code=${action.code}, type=$behavior")

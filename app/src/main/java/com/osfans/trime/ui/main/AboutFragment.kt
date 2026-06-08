@@ -53,6 +53,14 @@ class AboutFragment : PaddingPreferenceFragment() {
                     ),
                 )
             }
+            addPreference(R.string.sherpa_onnx_version, BuildConfig.SHERPA_ONNX_VERSION) {
+                startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(Const.SHERPA_ONNX_URL),
+                    ),
+                )
+            }
             addPreference(
                 Preference(requireContext()).apply {
                     isIconSpaceReserved = false

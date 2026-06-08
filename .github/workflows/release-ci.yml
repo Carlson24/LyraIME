@@ -10,6 +10,7 @@ on:
       - 'v*'
 env:
   CI_NAME: Release CI
+  SHERPA_ONNX_VERSION: "1.13.2"
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -36,6 +37,12 @@ jobs:
       - name: Install Android NDK
         run: |
           sdkmanager --install "cmake;3.31.6"
+
+      - name: Download sherpa-onnx AAR
+        run: |
+          mkdir -p app/libs
+          curl -fSL -o "app/libs/sherpa-onnx-${SHERPA_ONNX_VERSION}.aar" \
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_ONNX_VERSION}/sherpa-onnx-${SHERPA_ONNX_VERSION}.aar"
 
       - name: Calculate JNI cache hash
         id: cache-hash
