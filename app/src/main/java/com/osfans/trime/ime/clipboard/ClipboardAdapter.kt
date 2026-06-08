@@ -5,6 +5,7 @@
 
 package com.osfans.trime.ime.clipboard
 
+import android.content.Context
 import android.os.Build
 import android.view.ViewGroup
 import android.widget.PopupMenu
@@ -84,6 +85,9 @@ abstract class ClipboardAdapter(
                 val popup = PopupMenu(ctx, it)
                 val menu = popup.menu
                 val iconTint = ctx.styledColor(android.R.attr.colorControlNormal)
+                menu.item(R.string.extract, R.drawable.ic_baseline_visibility_24, iconTint) {
+                    onExtractRequest(bean.text ?: "")
+                }
                 menu.item(R.string.edit, R.drawable.ic_baseline_edit_24, iconTint) {
                     onEdit(bean.id)
                 }
@@ -125,6 +129,8 @@ abstract class ClipboardAdapter(
         }
     }
 
+    abstract fun onExtractRequest(text: String)
+
     abstract fun onPaste(bean: DatabaseBean)
 
     open fun onPin(id: Int) {}
@@ -142,4 +148,9 @@ abstract class ClipboardAdapter(
     abstract fun onDelete(id: Int)
 
     abstract val enableCollection: Boolean
+
+    fun dismissPopupMenu() {
+        popupMenu?.dismiss()
+        popupMenu = null
+    }
 }

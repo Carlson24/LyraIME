@@ -8,15 +8,19 @@ import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.FrameLayout
+import androidx.annotation.Keep
 import androidx.core.content.ContextCompat
 import com.osfans.trime.R
 import com.osfans.trime.core.CompositionProto
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.core.SchemaItem
 import com.osfans.trime.daemon.RimeSession
+import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.prefs.PreferenceDelegate
 import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.TextKeyboard
+import com.osfans.trime.ime.bar.InputBarDelegate
 import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
 import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
 import com.osfans.trime.ime.core.TrimeInputMethodService
@@ -24,6 +28,7 @@ import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
 import com.osfans.trime.ime.popup.PopupDelegate
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.ResidentWindow
+import com.osfans.trime.util.isLandscape
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -33,6 +38,7 @@ import splitties.views.dsl.core.add
 import splitties.views.dsl.core.frameLayout
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
+import splitties.views.dsl.core.wrapContent
 import timber.log.Timber
 
 class KeyboardWindow :
@@ -45,6 +51,7 @@ class KeyboardWindow :
     private val commonKeyboardActionListener: CommonKeyboardActionListener by di.instance()
     private val popup: PopupDelegate by di.instance()
     private val enterKeyDisplay: EnterKeyDisplayDelegate by di.instance()
+    private val inputBarDelegate: InputBarDelegate by di.instance()
 
     private val cursorCapsMode: Int
         get() =
@@ -71,7 +78,12 @@ class KeyboardWindow :
     override val key: ResidentWindow.Key
         get() = KeyboardWindow
 
+    private val appPrefs = AppPrefs.defaultInstance()
+    private val internalPrefs = appPrefs.internal
+    private val expandKeypressAreaPref = appPrefs.keyboard.expandKeypressArea
     private val presetKeyboardIds = theme.presetKeyboards.keys.toList()
+    private var initializeKeyboardId = internalPrefs.initializeKeyboardId.getValue()
+    private val keyboardSourceMap = mutableMapOf<String, String>()
     private var currentKeyboardId = ""
     private var lastKeyboardId = ""
     private var lastLockKeyboardId = ""
@@ -81,9 +93,35 @@ class KeyboardWindow :
 
     private val keyboardActionListener = commonKeyboardActionListener.listener
 
+    @Keep
+    private val onExpandKeypressAreaChangeListener =
+        PreferenceDelegate.OnChangeListener<Boolean> { _, _ ->
+            refreshKeyboards(true)
+        }
+
+    private val onKeyboardViewLayoutChangeListener =
+        View.OnLayoutChangeListener { v, left, _, right, _, _, _, _, _ ->
+            val width = right - left
+            if (width > 0 && KeyboardPending.allowedWidth != width) {
+                val isPortrait = !context.resources.configuration.isLandscape()
+                KeyboardPending.lastIsPortrait = isPortrait
+                KeyboardPending.containerWidth = width
+                KeyboardPending.allowedWidth = width
+                v.post { refreshKeyboards() }
+            }
+        }
+
     override fun onCreateView(): View {
         keyboardView = context.frameLayout(R.id.keyboard_view)
-        attachKeyboard(evalKeyboard(".default"))
+        keyboardView.addOnLayoutChangeListener(onKeyboardViewLayoutChangeListener)
+
+        restoreKeyboardSourceMap()
+        // 使用记忆的键盘ID，否则根据方案匹配
+        val targetKeyboardId = initializeKeyboardId.takeIf {
+            it.isNotEmpty() && presetKeyboardIds.contains(it)
+        } ?: ".default"
+
+        attachKeyboard(evalKeyboard(targetKeyboardId))
         return keyboardView
     }
 
@@ -139,6 +177,15 @@ class KeyboardWindow :
         view.let {
             keyboardView.apply {
                 (it.parent as? android.view.ViewGroup)?.removeView(it)
+                if (config?.navbar == true) {
+                    inputBarDelegate.navBar.attach(
+                        title = config.name,
+                        onCloseClick = { service.requestHideSelf(0) },
+                        onBackClick = { switchKeyboard(".previous") },
+                    )
+                } else {
+                    inputBarDelegate.navBar.detach()
+                }
                 add(it, lParams(matchParent, matchParent))
             }
         }
@@ -161,6 +208,24 @@ class KeyboardWindow :
         return if (presetKeyboardIds.contains(layout)) layout else "default"
     }
 
+    private fun persistKeyboardSourceMap() {
+        val serialized = keyboardSourceMap.entries
+            .joinToString(",") { "${it.key}:${it.value}" }
+        internalPrefs.previousKeyboardIds.setValue(serialized)
+    }
+
+    private fun restoreKeyboardSourceMap() {
+        val serialized = internalPrefs.previousKeyboardIds.getValue()
+        serialized.takeIf { it.isNotEmpty() }?.split(",")
+            ?.mapNotNull { entry ->
+                entry.split(":").takeIf { it.size == 2 }?.let { (target, source) ->
+                    target to source
+                }?.takeIf { (target, source) ->
+                    target in presetKeyboardIds && source in presetKeyboardIds
+                }
+            }?.toMap(keyboardSourceMap)
+    }
+
     private fun evalKeyboard(id: String): String {
         val currentIdx = presetKeyboardIds.indexOfFirst { currentKeyboardId == it }
         val dot =
@@ -169,6 +234,7 @@ class KeyboardWindow :
                 ".prior" -> presetKeyboardIds.getOrNull(currentIdx - 1) ?: currentKeyboardId
                 ".next" -> presetKeyboardIds.getOrNull(currentIdx + 1) ?: currentKeyboardId
                 ".last" -> lastKeyboardId
+                ".previous" -> keyboardSourceMap[currentKeyboardId] ?: currentKeyboardId
                 ".last_lock" -> lastLockKeyboardId
                 ".ascii" -> {
                     var ascii = currentKeyboard?.asciiKeyboard
@@ -185,6 +251,11 @@ class KeyboardWindow :
             }
         var final = dot.ifEmpty { smartMatchKeyboard() }
 
+        // 记忆最终键盘ID（排除横屏键盘）
+        if (final != currentKeyboardId) {
+            internalPrefs.initializeKeyboardId.setValue(final)
+        }
+
         // 切换到横屏布局
         if (service.isLandscapeMode()) {
             val landscape =
@@ -200,10 +271,26 @@ class KeyboardWindow :
             if (cachedKeyboards.containsKey(target)) {
                 if (target == currentKeyboardId) return@execute
             }
+            // 保存上一个键盘ID，用于来源键盘回退（如果不是返回类操作且不是重新弹出则记录）
+            if (to.isNotEmpty() && to !in setOf(".previous", ".last_lock")) {
+                keyboardSourceMap[target] = currentKeyboardId
+                persistKeyboardSourceMap()
+            }
             detachCurrentView()
             attachKeyboard(target)
         }
         Timber.d("Switched to keyboard: $target")
+    }
+
+    fun refreshKeyboards(isAll: Boolean = false) {
+        val id = currentKeyboardId.ifEmpty { return }
+        detachCurrentView()
+        if (isAll) {
+            cachedKeyboards.clear()
+        } else {
+            cachedKeyboards.remove(id)
+        }
+        attachKeyboard(id)
     }
 
     override fun onStartInput(info: EditorInfo) {
@@ -308,9 +395,12 @@ class KeyboardWindow :
     }
 
     override fun onAttached() {
+        expandKeypressAreaPref.registerOnChangeListener(onExpandKeypressAreaChangeListener)
     }
 
     override fun onDetached() {
+        expandKeypressAreaPref.unregisterOnChangeListener(onExpandKeypressAreaChangeListener)
+        inputBarDelegate.navBar.detach()
         currentKeyboardView?.onDetach()
     }
 }

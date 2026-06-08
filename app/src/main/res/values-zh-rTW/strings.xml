@@ -25,6 +25,20 @@
     <string name="normal_mode_color_summary">選取想要的配色</string>
     <string name="reset">回廠</string>
     <string name="reset_hint">使用預設的內建設置覆蓋共享資料夾下相同檔案</string>
+    <string name="backup_and_restore">備份與還原</string>
+    <string name="backup_hint">備份首選項、剪貼簿和收藏夾數據</string>
+    <string name="restore_hint">從備份文件還原數據</string>
+    <string name="backup_success">備份成功！</string>
+    <string name="backup_failure">備份失敗！</string>
+    <string name="restore_success">還原成功！</string>
+    <string name="restore_failure">還原失敗！</string>
+    <string name="backup_file_invalid">備份文件無效！</string>
+    <string name="backup_version_too_new">備份版本過新！</string>
+    <string name="select_backup_items">選擇要備份的項目</string>
+    <string name="preferences">首選項</string>
+    <string name="clipboard_data">剪貼簿數據</string>
+    <string name="collection_data">收藏夾數據</string>
+    <string name="select_restore_items">選擇要還原的項目</string>
     <string name="sound_on_keypress">按鍵聲音</string>
     <string name="sound_volume">按鍵音量</string>
     <string name="vibrate_on_key_press">按鍵時振動</string>
@@ -57,6 +71,10 @@
     <string name="clipboard_limit">剪貼簿歷史記錄上限</string>
     <string name="clipboard_compare_rules">剪貼簿去重規則</string>
     <string name="clipboard_output_rules">剪貼簿過濾規則</string>
+    <string name="clipboard_extract_rules">剪貼簿提取規則</string>
+    <string name="extract">提取</string>
+    <string name="no_extraction_results">未找到匹配內容</string>
+    <string name="select_extracted_content">選擇提取內容</string>
     <string name="clipboard_suggestion">顯示剪貼簿建議</string>
     <string name="clipboard_suggestion_timeout">剪貼簿項目逾時</string>
     <string name="deploy_finish">部署完成</string>
@@ -126,6 +144,7 @@
     <string name="licenses_of_third_party_libraries">第三方軟體庫許可證</string>
     <string name="clipboard">剪貼簿</string>
     <string name="collection">收藏夾</string>
+    <string name="add_to_collection">新增到收藏夾</string>
     <string name="simple_key_unpin">取消置頂</string>
     <string name="simple_key_pin">置頂</string>
     <string name="delete_all">刪除全部</string>
@@ -170,6 +189,7 @@
     <string name="top_left">左上</string>
     <string name="top_right">右上</string>
     <string name="candidates_window_position">候選詞視窗位置</string>
+    <string name="disable_window_on_landscape">橫屏時暫時停用</string>
     <string name="deploy_failure">部署失敗</string>
     <string name="view_deploy_failure_log">部署失敗。點此檢視錯誤日誌。</string>
     <string name="hide_input_bar">隱藏輸入工具欄</string>
@@ -203,6 +223,9 @@
     <string name="restored_from_x">已從 %1$s 還原</string>
     <string name="backup">備份</string>
     <string name="restore">還原</string>
+    <string name="restart_app">重啟應用</string>
+    <string name="restart_app_hint">部分設定可能需要重啟應用才能生效。是否現在重啟？</string>
+    <string name="restart">重啟</string>
     <string name="clipboard_listening">監聽剪貼簿</string>
     <string name="clipboard_return_after_paste">貼上後返回</string>
     <string name="source_code">原始碼</string>

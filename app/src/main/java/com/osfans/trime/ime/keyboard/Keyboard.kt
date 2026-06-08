@@ -10,15 +10,23 @@ import android.graphics.Point
 import android.os.Build
 import android.view.KeyEvent
 import android.view.WindowInsets
+import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
+import com.osfans.trime.util.isLandscape
 import splitties.bitflags.hasFlag
 import splitties.dimensions.dp
 import splitties.systemservices.windowManager
 import kotlin.math.abs
 import kotlin.math.pow
+
+internal object KeyboardPending {
+    var lastIsPortrait: Boolean? = null
+    var containerWidth: Int = 0
+    var allowedWidth: Int = 0
+}
 
 /** 從YAML中加載鍵盤配置，包含多個[按鍵][Key]。  */
 @Suppress("ktlint:standard:property-naming")
@@ -93,8 +101,27 @@ class Keyboard(
     /** Width of the screen available to fit the keyboard  */
     private val allowedWidth: Int
         get() {
+            val isPortrait = !context.resources.configuration.isLandscape()
+
+            if (KeyboardPending.containerWidth > 0 && KeyboardPending.lastIsPortrait == isPortrait) {
+                return KeyboardPending.containerWidth
+            }
+
             val padding = theme.generalStyle.run {
                 if (context.isLandscapeMode()) keyboardPaddingLand else keyboardPadding
+            }
+
+            val isOneHandMode = runCatching {
+                RimeDaemon.getFirstSessionOrNull()?.run { getRuntimeOption("_one_hand_mode") }
+            }.getOrNull() == true
+
+            fun resolvePadding(configValue: Int) = configValue.takeIf { it > 0 } ?: padding
+
+            val totalPadding = if (isOneHandMode && isPortrait) {
+                resolvePadding(theme.generalStyle.keyboardPaddingLeft) +
+                    resolvePadding(theme.generalStyle.keyboardPaddingRight)
+            } else {
+                2 * padding
             }
 
             val safeWidth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -104,12 +131,7 @@ class Keyboard(
                 )
                 val displayWidth = context.resources.displayMetrics.widthPixels
                 val windowWidth = windowMetrics.bounds.width() - insets.left - insets.right
-                val isPortrait = displayWidth < context.resources.displayMetrics.heightPixels
-                if (isPortrait && windowWidth < displayWidth - context.dp(1)) {
-                    displayWidth
-                } else {
-                    windowWidth
-                }
+                if (windowWidth < displayWidth - context.dp(1)) displayWidth else windowWidth
             } else {
                 @Suppress("DEPRECATION")
                 val size = Point()
@@ -117,7 +139,10 @@ class Keyboard(
                 context.windowManager.defaultDisplay.getSize(size)
                 size.x
             }
-            return safeWidth - 2 * context.dp(padding)
+
+            val width = safeWidth - context.dp(totalPadding)
+            KeyboardPending.allowedWidth = width
+            return width
         }
 
     /** Keyboard default ascii mode  */

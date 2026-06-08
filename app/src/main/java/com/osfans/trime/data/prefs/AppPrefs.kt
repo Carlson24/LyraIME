@@ -39,6 +39,49 @@ class AppPrefs(
         registerProvider { this }
     }
 
+    /**
+     * 验证偏好键和类型是否有效
+     * @param key 偏好键
+     * @param backupTypeName 备份中的类型名称
+     * @return 验证结果，包含是否有效和期望的类型
+     */
+    data class PreferenceValidationResult(
+        val isValid: Boolean,
+        val expectedTypeName: String? = null,
+        val message: String = "",
+    )
+
+    fun validatePreference(key: String, backupTypeName: String): PreferenceValidationResult {
+        // 查找包含该键的 provider
+        for (provider in providers) {
+            val delegate = provider.getPreferenceDelegate(key)
+            if (delegate != null) {
+                // 找到该键，检查类型是否匹配
+                val expectedTypeName = provider.inferStorageTypeName(delegate)
+                return if (expectedTypeName.equals(backupTypeName, ignoreCase = true)) {
+                    PreferenceValidationResult(
+                        isValid = true,
+                        expectedTypeName = expectedTypeName,
+                        message = "Key and type are valid",
+                    )
+                } else {
+                    PreferenceValidationResult(
+                        isValid = false,
+                        expectedTypeName = expectedTypeName,
+                        message = "Type mismatch: expected $expectedTypeName, but got $backupTypeName",
+                    )
+                }
+            }
+        }
+
+        // 未找到该键
+        return PreferenceValidationResult(
+            isValid = false,
+            expectedTypeName = null,
+            message = "Unknown preference key: $key",
+        )
+    }
+
     val internal = Internal(shared)
     val general = General(shared).register()
     val profile = Profile(shared).register()
@@ -82,9 +125,13 @@ class AppPrefs(
     ) : PreferenceDelegateOwner(shared) {
         companion object {
             const val PID = "general__pid"
+            const val PREVIOUS_KEYBOARD_IDS = "internal__previous_keyboard_ids"
+            const val INITIALIZE_KEYBOARD_ID = "internal__initialize_keyboard_id"
         }
 
         val pid = int(PID, 0)
+        val previousKeyboardIds = string(PREVIOUS_KEYBOARD_IDS, "")
+        val initializeKeyboardId = string(INITIALIZE_KEYBOARD_ID, "")
     }
 
     class General(
@@ -95,11 +142,13 @@ class AppPrefs(
             const val ASCII_SWITCH_TIPS = "ascii_switch_tips"
             const val INLINE_SUGGESTIONS = "inline_suggestions"
             const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
+            const val HIDE_STATIC_SWITCHER = "hide_static_switcher"
         }
 
         val inlinePreeditMode = enum(R.string.inline_preedit_mode, INLINE_PREEDIT_MODE, InlinePreeditMode.DISABLE)
         val asciiSwitchTips = switch(R.string.ascii_switch_tips, ASCII_SWITCH_TIPS, true)
         val inlineSuggestions = switch(R.string.inline_suggestions, INLINE_SUGGESTIONS, true)
+        val hideStaticSwitcher = bool(HIDE_STATIC_SWITCHER, false)
 
         val preferredVoiceInput = list(
             R.string.preferred_voice_input,
@@ -343,11 +392,13 @@ class AppPrefs(
             const val MODE = "show_candidates_window"
             const val LAYOUT = "candidates_layout"
             const val POSITION = "candidates_window_position"
+            const val DISABLE_WINDOW_ON_LANDSCAPE = "disable_window_on_landscape"
         }
 
         val mode = enum(R.string.show_candidates_window, MODE, PopupCandidatesMode.DISABLED)
         val layout = enum(R.string.candidates_layout, LAYOUT, PopupCandidatesLayout.AUTOMATIC)
         val position = enum(R.string.candidates_window_position, POSITION, PopupPosition.BOTTOM_LEFT)
+        val disableWindowOnLandscape = switch(R.string.disable_window_on_landscape, DISABLE_WINDOW_ON_LANDSCAPE, false)
     }
 
     /**
@@ -379,6 +430,7 @@ class AppPrefs(
             const val CLIPBOARD_LIMIT = "clipboard_clipboard_limit"
             const val CLIPBOARD_COMPARE_RULES = "clipboard_clipboard_compare"
             const val CLIPBOARD_OUTPUT_RULES = "clipboard_clipboard_output"
+            const val CLIPBOARD_EXTRACT_RULES = "clipboard_extract_rules"
             const val CLIPBOARD_SUGGESTION = "clipboard_suggestion"
             const val CLIPBOARD_SUGGESTION_TIMEOUT = "clipboard_suggestion_timeout"
             const val CLIPBOARD_RETURN_AFTER_PASTE = "clipboard_return_after_paste"
@@ -398,6 +450,12 @@ class AppPrefs(
         val clipboardOutputRules = editText(
             R.string.clipboard_output_rules,
             CLIPBOARD_OUTPUT_RULES,
+            "",
+            R.string.a_regular_expression_per_line,
+        ) { clipboardListening.getValue() }
+        val clipboardExtractRules = editText(
+            R.string.clipboard_extract_rules,
+            CLIPBOARD_EXTRACT_RULES,
             "",
             R.string.a_regular_expression_per_line,
         ) { clipboardListening.getValue() }

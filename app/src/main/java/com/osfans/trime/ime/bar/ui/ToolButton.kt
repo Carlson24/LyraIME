@@ -87,6 +87,11 @@ class ToolButton : GestureFrame {
         image.imageTintList = ColorStateList.valueOf(color ?: ColorManager.getColor("candidate_text_color"))
     }
 
+    fun setIconScale(scale: Float) {
+        image.scaleX = scale
+        image.scaleY = scale
+    }
+
     fun updateStyle() {
         if (needsStyleUpdate()) {
             removeAllViews()

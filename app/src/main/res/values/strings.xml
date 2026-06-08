@@ -25,6 +25,20 @@
     <string name="normal_mode_color_summary">Select desired color</string>
     <string name="reset">Reset</string>
     <string name="reset_hint">Overwrite the same files in shared directory with default built-in assets</string>
+    <string name="backup_and_restore">Backup &amp; Restore</string>
+    <string name="backup_hint">Backup preferences, clipboard and collection data</string>
+    <string name="restore_hint">Restore data from backup file</string>
+    <string name="backup_success">Backup succeeded!</string>
+    <string name="backup_failure">Backup failed!</string>
+    <string name="restore_success">Restore succeeded!</string>
+    <string name="restore_failure">Restore failed!</string>
+    <string name="backup_file_invalid">Invalid backup file!</string>
+    <string name="backup_version_too_new">Backup version is too new!</string>
+    <string name="select_backup_items">Select items to backup</string>
+    <string name="preferences">Preferences</string>
+    <string name="clipboard_data">Clipboard Data</string>
+    <string name="collection_data">Collection Data</string>
+    <string name="select_restore_items">Select items to restore</string>
     <string name="sound_on_keypress">Sound on key press</string>
     <string name="sound_volume">Sound volume on key press</string>
     <string name="vibrate_on_key_press">Vibrate on key press</string>
@@ -57,6 +71,10 @@
     <string name="clipboard_limit">Clipboard history limit</string>
     <string name="clipboard_compare_rules">Clipboard compare rules</string>
     <string name="clipboard_output_rules">Clipboard output rules</string>
+    <string name="clipboard_extract_rules">Clipboard extract rules</string>
+    <string name="extract">Extract</string>
+    <string name="no_extraction_results">No matching content found</string>
+    <string name="select_extracted_content">Select extracted content</string>
     <string name="clipboard_suggestion">Show clipboard suggestions</string>
     <string name="clipboard_suggestion_timeout">Clipboard suggestion timeout</string>
     <string name="deploy_finish">Deploy finish</string>
@@ -126,6 +144,7 @@
     <string name="licenses_of_third_party_libraries">Licenses of third-party libraries</string>
     <string name="clipboard">Clipboard</string>
     <string name="collection">Collection</string>
+    <string name="add_to_collection">Add to collection</string>
     <string name="simple_key_unpin">Unpin</string>
     <string name="simple_key_pin">Pin</string>
     <string name="delete_all">Delete all</string>
@@ -170,6 +189,7 @@
     <string name="top_left">Top left</string>
     <string name="top_right">Top right</string>
     <string name="candidates_window_position">Candidates window position</string>
+    <string name="disable_window_on_landscape">Temporarily disable in landscape</string>
     <string name="deploy_failure">Deploy failure</string>
     <string name="view_deploy_failure_log">Deploy failure. Click here to view error log.</string>
     <string name="hide_input_bar">Hide input bar</string>
@@ -203,6 +223,9 @@
     <string name="restored_from_x">Restored from %1$s</string>
     <string name="backup">Backup</string>
     <string name="restore">Restore</string>
+    <string name="restart_app">Restart App</string>
+    <string name="restart_app_hint">Some settings may not take effect until the app is restarted. Would you like to restart now?</string>
+    <string name="restart">Restart</string>
     <string name="clipboard_listening">Clipboard listening</string>
     <string name="clipboard_return_after_paste">Return after pasting</string>
     <string name="source_code">Source code</string>

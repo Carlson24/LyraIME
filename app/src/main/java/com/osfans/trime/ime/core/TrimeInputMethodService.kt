@@ -80,7 +80,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
     private val navBarManager = NavigationBarManager()
-    private val inputDeviceManager =
+    val inputDeviceManager =
         InputDeviceManager onChange@{
             val w = window.window ?: return@onChange
             navBarManager.evaluate(w, useVirtualKeyboard = it)
@@ -104,8 +104,13 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
 
     @Keep
     private val recreateCandidatesViewListener =
-        PreferenceDelegateProvider.OnChangeListener {
-            replaceCandidateView(ThemeManager.activeTheme)
+        PreferenceDelegateProvider.OnChangeListener { key ->
+            if (key == AppPrefs.Candidates.DISABLE_WINDOW_ON_LANDSCAPE) {
+                inputDeviceManager.reapplyWindowMode(this)
+                inputView?.updateInputBarVisibility()
+            } else {
+                replaceCandidateView(ThemeManager.activeTheme)
+            }
         }
 
     @Keep
@@ -257,6 +262,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             is RimeMessage.DeployMessage -> {
                 if (it.data == RimeMessage.DeployMessage.State.Success) {
                     ThemeManager.selectTheme(ThemeManager.prefs.selectedTheme.getValue())
+                    inputDeviceManager.reapplyWindowMode(this)
                 }
             }
             else -> {}
@@ -279,6 +285,11 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         inputDeviceManager.setCandidatesView(newCandidatesView)
         navBarManager.setupInputView(newCandidatesView)
         candidatesView = newCandidatesView
+        if (decorLocationUpdated) {
+            candidatesView?.updateCursorAnchor(anchorPosition, contentSize)
+        } else {
+            workaroundNullCursorAnchorInfo()
+        }
         return newCandidatesView
     }
 
@@ -335,8 +346,13 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             ActivityInfo.CONFIG_UI_MODE
         val diff = lastKnownConfig.diff(newConfig)
         Timber.d("onConfigurationChanged diff=$diff")
+        val orientationChanged = lastKnownConfig.orientation != newConfig.orientation
         if (diff and keyboardUiModeMask != diff) {
             super.onConfigurationChanged(newConfig)
+        }
+        if (orientationChanged) {
+            inputDeviceManager.reapplyWindowMode(this)
+            inputView?.updateInputBarVisibility()
         }
         lastKnownConfig.setTo(newConfig)
     }
