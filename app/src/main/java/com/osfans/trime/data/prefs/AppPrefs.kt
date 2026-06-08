@@ -489,12 +489,6 @@ class AppPrefs(
             CLIPBOARD_OUTPUT_RULES,
             "",
             R.string.a_regular_expression_per_line,
-        ) { clipboardListening.getValue() }
-        val clipboardExtractRules = editText(
-            R.string.clipboard_extract_rules,
-            CLIPBOARD_EXTRACT_RULES,
-            "",
-            R.string.a_regular_expression_per_line,
             onBindEditText = { it.typeface = Typeface.MONOSPACE; it.textSize = 15f },
             enableUiOn = { clipboardListening.getValue() },
             summaryCountFormat = R.string.clipboard_rules_count,

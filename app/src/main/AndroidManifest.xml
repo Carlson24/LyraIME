@@ -105,16 +105,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
             android:windowSoftInputMode="stateAlwaysVisible|adjustPan" />
 
         <activity
-            android:name=".ui.main.CollectionAddActivity"
-            android:autoRemoveFromRecents="true"
-            android:excludeFromRecents="true"
-            android:label="@string/add_to_collection"
-            android:launchMode="singleInstance"
-            android:taskAffinity=".ui.main.LiquidKeyboardEditActivity"
-            android:theme="@style/Theme.DialogTheme"
-            android:windowSoftInputMode="stateAlwaysVisible|adjustPan" />
-
-        <activity
             android:name=".link.MicPermissionActivity"
             android:exported="false" />
 
