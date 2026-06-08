@@ -42,6 +42,7 @@ import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
 import com.osfans.trime.link.AsrkbSpeechClient
 import com.osfans.trime.link.AsrkbVoiceHoldSessionController
+import com.osfans.trime.link.SherpaSpeechClient
 import com.osfans.trime.ui.main.ClipEditActivity
 import com.osfans.trime.util.AppUtils
 import kotlinx.coroutines.Job
@@ -88,12 +89,13 @@ class InputBarDelegate : InputBroadcastReceiver {
             onSessionFinished = {
                 alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_mic_24)
             },
+            useAidl = { asrkbAidlVoiceInputEnabled },
         )
     }
 
-    private val asrkbAidlVoiceInputEnabled by prefs.general.asrkbAidlVoiceInputEnabled
+    private val asrkbAidlVoiceInputEnabled by prefs.voiceInput.asrkbAidlVoiceInputEnabled
 
-    private val asrkbAidlVoiceToolbarButtonEnabled by prefs.general.asrkbAidlVoiceToolbarButtonEnabled
+    private val asrkbAidlVoiceToolbarButtonEnabled by prefs.voiceInput.asrkbAidlVoiceToolbarButtonEnabled
 
     private var asrkbHoldingChangedListener: ((Boolean) -> Unit)? = null
 
@@ -175,35 +177,45 @@ class InputBarDelegate : InputBroadcastReceiver {
                 dismissClipboardSuggestion()
             }
             asrkbVoiceButton.apply {
-                val enabled = asrkbAidlVoiceInputEnabled && asrkbAidlVoiceToolbarButtonEnabled
-                if (enabled) {
+                val toolbarVisible = asrkbAidlVoiceToolbarButtonEnabled
+                if (toolbarVisible) {
                     visibility = View.VISIBLE
-                    setIcon(if (AsrkbSpeechClient.isHolding()) R.drawable.ic_baseline_stop_24 else R.drawable.ic_baseline_mic_24)
+                    setIcon(
+                        if (isAsrkbHolding()) {
+                            R.drawable.ic_baseline_stop_24
+                        } else {
+                            R.drawable.ic_baseline_mic_24
+                        },
+                    )
                 } else {
                     visibility = View.GONE
                 }
                 setOnClickListener {
-                    if (AsrkbSpeechClient.isHolding()) {
+                    if (isAsrkbHolding()) {
                         stopAsrkbVoiceFromToolbar()
                         return@setOnClickListener
                     }
-                    if (!(asrkbAidlVoiceInputEnabled && asrkbAidlVoiceToolbarButtonEnabled)) return@setOnClickListener
+                    if (!toolbarVisible) return@setOnClickListener
                     startAsrkbVoiceFromToolbar()
                 }
             }
 
             val executor = ContextCompat.getMainExecutor(service)
-            val holdingListener: (Boolean) -> Unit = { holding ->
+            val holdingListener: (Boolean) -> Unit = { _ ->
                 executor.execute {
                     if (!asrkbVoiceButton.isAttachedToWindow) return@execute
                     if (asrkbVoiceButton.visibility != View.VISIBLE) return@execute
-                    asrkbVoiceButton.setIcon(if (holding) R.drawable.ic_baseline_stop_24 else R.drawable.ic_baseline_mic_24)
+                    val isActive = isAsrkbHolding()
+                    asrkbVoiceButton.setIcon(if (isActive) R.drawable.ic_baseline_stop_24 else R.drawable.ic_baseline_mic_24)
                 }
             }
             asrkbHoldingChangedListener = holdingListener
             AsrkbSpeechClient.onHoldingChanged = holdingListener
+            SherpaSpeechClient.onHoldingChanged = holdingListener
         }
     }
+
+    private fun isAsrkbHolding(): Boolean = if (asrkbAidlVoiceInputEnabled) AsrkbSpeechClient.isHolding() else SherpaSpeechClient.isHolding()
 
     private fun dismissClipboardSuggestion() {
         clipboardTimeoutJob?.cancel()
@@ -324,6 +336,9 @@ class InputBarDelegate : InputBroadcastReceiver {
                         if (listener != null && AsrkbSpeechClient.onHoldingChanged === listener) {
                             AsrkbSpeechClient.onHoldingChanged = null
                         }
+                        if (listener != null && SherpaSpeechClient.onHoldingChanged === listener) {
+                            SherpaSpeechClient.onHoldingChanged = null
+                        }
                         asrkbHoldingChangedListener = null
                     }
                 },
@@ -417,4 +432,10 @@ class InputBarDelegate : InputBroadcastReceiver {
     private fun stopAsrkbVoiceFromToolbar() {
         asrkbVoiceHoldController.stop()
     }
+
+    fun startVoiceHoldSession() {
+        alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_stop_24)
+        asrkbVoiceHoldController.start()
+    }
+
 }

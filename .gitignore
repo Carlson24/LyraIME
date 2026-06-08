@@ -10,11 +10,15 @@
 .gradle/
 build/
 
+# sherpa-onnx AAR (downloaded in CI)
+app/libs/*.aar
+
 # Local configuration file (sdk path, etc)
 local.properties
 
 # Log/OS Files
 *.log
+**/*.logcat
 
 # Android Studio generated files and folders
 captures/
@@ -471,6 +475,7 @@ obj/
 keystore.properties
 
 # Project
+app/release/output-metadata.json
 app/src/main/assets/checksums.json
 app/src/main/assets/shared/opencc
 

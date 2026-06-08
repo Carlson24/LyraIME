@@ -1,4 +1,4 @@
-package jaygoo.widget.wlv;
+package com.osfans.trime.ime.voice;
 
 import android.content.Context;
 import android.graphics.Canvas;

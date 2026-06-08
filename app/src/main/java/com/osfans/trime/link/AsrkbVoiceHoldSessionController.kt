@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 BryceWG
+ * SPDX-FileCopyrightText: 2026 Rime community
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -9,8 +9,9 @@ import androidx.core.content.ContextCompat
 import com.osfans.trime.ime.core.TrimeInputMethodService
 
 /**
- * Shared controller for the ASRKB hold-to-talk session and overlay callbacks.
- * It keeps the UI bridge wiring out of keyboard/tool-bar entry points so future merges stay smaller.
+ * Shared controller for the hold-to-talk session and overlay callbacks.
+ * When [useAidl] is true, delegates to [AsrkbSpeechClient] (external AIDL service).
+ * When [useAidl] is false, delegates to [SherpaSpeechClient] (local offline ASR).
  */
 internal class AsrkbVoiceHoldSessionController(
     private val service: TrimeInputMethodService,
@@ -19,6 +20,7 @@ internal class AsrkbVoiceHoldSessionController(
     private val updateAmplitude: (Float) -> Unit,
     private val hideOverlay: () -> Unit,
     private val onSessionFinished: (() -> Unit)? = null,
+    private val useAidl: () -> Boolean = { true },
 ) {
     private var startedByController = false
 
@@ -50,7 +52,11 @@ internal class AsrkbVoiceHoldSessionController(
             VoiceOverlayUiBridge.clear()
         }
 
-        AsrkbSpeechClient.startHoldSession(service)
+        if (useAidl()) {
+            AsrkbSpeechClient.startHoldSession(service)
+        } else {
+            SherpaSpeechClient.startHoldSession(service)
+        }
     }
 
     fun stopIfStarted() {
@@ -63,8 +69,14 @@ internal class AsrkbVoiceHoldSessionController(
         hideOverlay()
         VoiceOverlayUiBridge.clear()
         onSessionFinished?.invoke()
-        if (AsrkbSpeechClient.isHolding()) {
-            AsrkbSpeechClient.stopHoldSession()
+        if (useAidl()) {
+            if (AsrkbSpeechClient.isHolding()) {
+                AsrkbSpeechClient.stopHoldSession()
+            }
+        } else {
+            if (SherpaSpeechClient.isHolding()) {
+                SherpaSpeechClient.stopHoldSession()
+            }
         }
     }
 }

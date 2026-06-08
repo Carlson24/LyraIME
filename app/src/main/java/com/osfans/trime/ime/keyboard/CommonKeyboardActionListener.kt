@@ -24,6 +24,7 @@ import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.ThemeManager
+import com.osfans.trime.ime.bar.InputBarDelegate
 import com.osfans.trime.ime.clipboard.ClipboardWindow
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.dependency.InputDependencyManager
@@ -37,7 +38,6 @@ import com.osfans.trime.ui.main.settings.ColorPickerDialog
 import com.osfans.trime.ui.main.settings.SoundEffectPickerDialog
 import com.osfans.trime.ui.main.settings.ThemePickerDialog
 import com.osfans.trime.util.AppUtils
-import com.osfans.trime.util.InputMethodUtils
 import com.osfans.trime.util.buildIntentFromAction
 import com.osfans.trime.util.buildIntentFromArgument
 import com.osfans.trime.util.customFormatDateTime
@@ -58,6 +58,7 @@ class CommonKeyboardActionListener {
     private val windowManager: BoardWindowManager by di.instance()
     private val keyboardWindow: KeyboardWindow by di.instance()
     private val liquidWindow: LiquidWindow by di.instance()
+    private val inputBarDelegate: InputBarDelegate by di.instance()
 
     private val prefs = AppPrefs.defaultInstance()
 
@@ -325,22 +326,7 @@ class CommonKeyboardActionListener {
             }
 
             private fun switchToVoiceInputMethod() {
-                val pkgName = prefs.general.preferredVoiceInput.getValue()
-                val voiceInputSubType = if (pkgName.isNotEmpty()) {
-                    InputMethodUtils.voiceInputMethods().find {
-                        it.first.packageName == pkgName
-                    }?.let {
-                        it.first.id to it.second
-                    } ?: InputMethodUtils.firstVoiceInput()
-                } else {
-                    InputMethodUtils.firstVoiceInput()
-                }
-                if (voiceInputSubType != null) {
-                    val (id, subType) = voiceInputSubType
-                    InputMethodUtils.switchInputMethod(service, id, subType)
-                } else {
-                    service.toast(R.string.no_voice_input_installed)
-                }
+                inputBarDelegate.startVoiceHoldSession()
             }
 
             private fun handleDefaultKeyAction(action: KeyAction) {

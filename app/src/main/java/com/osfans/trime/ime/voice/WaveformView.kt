@@ -6,18 +6,19 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.FrameLayout
 import androidx.annotation.ColorInt
-import jaygoo.widget.wlv.WaveLineView
+import com.osfans.trime.data.prefs.AppPrefs
 import timber.log.Timber
 import kotlin.math.ln
 
 /**
- * 实时音频波形视图（封装 WaveLineView）。
+ * 实时音频波形视图（封装粒子/涟漪动画视图）。
  * API 与说点啥/小企鹅保持一致：start/stop/updateAmplitude/setWaveformColor。
  */
 class WaveformView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
+    animationStyle: AppPrefs.VoiceInput.VoiceAnimationStyle = AppPrefs.VoiceInput.VoiceAnimationStyle.PARTICLE,
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     companion object {
@@ -27,26 +28,40 @@ class WaveformView @JvmOverloads constructor(
 
     private var isActive = false
 
-    private val waveView: WaveLineView =
-        WaveLineView(context).apply {
-            setBackGroundColor(Color.TRANSPARENT)
-            setSensibility(10)
-            setMoveSpeed(250f)
-        }
+    private val waveView: RenderView = when (animationStyle) {
+        AppPrefs.VoiceInput.VoiceAnimationStyle.PARTICLE ->
+            ParticleWaveView(context).apply {
+                backGroundColor = Color.TRANSPARENT
+                setSensibility(10)
+                setMoveSpeed(250f)
+            }
+        AppPrefs.VoiceInput.VoiceAnimationStyle.SPHERE ->
+            SphereRippleView(context).apply {
+                backGroundColor = Color.TRANSPARENT
+                setSensibility(10)
+                setMoveSpeed(250f)
+            }
+    }
 
     init {
         addView(waveView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
-        visibility = View.GONE
+        visibility = GONE
     }
 
     fun setWaveformColor(@ColorInt color: Int) {
-        waveView.setLineColor(color)
+        when (waveView) {
+            is ParticleWaveView -> waveView.lineColor = color
+            is SphereRippleView -> waveView.lineColor = color
+        }
         invalidate()
     }
 
     fun updateAmplitude(amplitude: Float) {
         if (!isActive) return
-        waveView.setVolume(amplitudeToVolume(amplitude))
+        when (waveView) {
+            is ParticleWaveView -> waveView.setVolume(amplitudeToVolume(amplitude))
+            is SphereRippleView -> waveView.setVolume(amplitudeToVolume(amplitude))
+        }
     }
 
     private fun amplitudeToVolume(amplitude: Float): Int {
@@ -76,7 +91,7 @@ class WaveformView @JvmOverloads constructor(
 
     override fun onVisibilityChanged(changedView: View, visibility: Int) {
         super.onVisibilityChanged(changedView, visibility)
-        if (changedView == this && visibility != View.VISIBLE) {
+        if (changedView == this && visibility != VISIBLE) {
             if (isActive) stop()
         }
     }

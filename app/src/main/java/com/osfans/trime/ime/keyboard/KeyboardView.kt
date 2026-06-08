@@ -12,7 +12,6 @@ import android.graphics.Color
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
-import androidx.core.graphics.ColorUtils as AndroidColorUtils
 import androidx.core.view.children
 import androidx.transition.Slide
 import androidx.transition.TransitionManager
@@ -25,8 +24,10 @@ import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.popup.PopupDelegate
 import com.osfans.trime.ime.voice.WaveformView
 import com.osfans.trime.link.AsrkbSpeechClient
+import com.osfans.trime.link.SherpaSpeechClient
 import com.osfans.trime.link.VoiceOverlayUiBridge
 import timber.log.Timber
+import androidx.core.graphics.ColorUtils as AndroidColorUtils
 
 // TODO: move layout calculation responsibilities from Keyboard to KeyboardView using ConstraintLayout
 @SuppressLint("ViewConstructor")
@@ -66,15 +67,14 @@ class KeyboardView(
         }
     }
 
-    private fun createKeyView(index: Int, key: Key): KeyView =
-        KeyView(
-            context,
-            key = key,
-            keyboard = keyboard,
-            keyboardView = this,
-            keyboardActionListener = keyboardActionListener,
-        ).apply {
-            id = index
+    private fun createKeyView(index: Int, key: Key): KeyView = KeyView(
+        context,
+        key = key,
+        keyboard = keyboard,
+        keyboardView = this,
+        keyboardActionListener = keyboardActionListener,
+    ).apply {
+        id = index
 
         val totalWidth = key.width + key.extraWidthLeft + key.extraWidthRight
         layoutParams = LayoutParams(totalWidth, key.height)
@@ -120,13 +120,12 @@ class KeyboardView(
         get() = keyboard.mShiftKey?.isOn == true
 
     fun onDetach() {
+        hideVoiceOverlay()
+        VoiceOverlayUiBridge.clear()
         if (AsrkbSpeechClient.isHolding()) {
-            hideVoiceOverlay()
-            VoiceOverlayUiBridge.clear()
             AsrkbSpeechClient.stopHoldSession()
-        } else {
-            hideVoiceOverlay()
-            VoiceOverlayUiBridge.clear()
+        } else if (SherpaSpeechClient.isHolding()) {
+            SherpaSpeechClient.stopHoldSession()
         }
         popup.dismissAll()
     }
@@ -141,6 +140,7 @@ class KeyboardView(
                 isClickable = false
                 isFocusable = false
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                alpha = 0.75f
 
                 runCatching {
                     ColorManager.getDecorDrawable("keyboard_background")?.also { background = it }
@@ -163,7 +163,7 @@ class KeyboardView(
                 ?: Color.WHITE
 
         val wave =
-            WaveformView(context).apply {
+            WaveformView(context, animationStyle = AppPrefs.defaultInstance().voiceInput.voiceAnimationStyle.getValue()).apply {
                 setWaveformColor(lineColor)
                 visibility = View.INVISIBLE
             }

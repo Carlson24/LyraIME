@@ -41,6 +41,7 @@ class AppPrefs(
 
     val internal = Internal(shared)
     val general = General(shared).register()
+    val voiceInput = VoiceInput(shared).register()
     val profile = Profile(shared).register()
     val keyboard = Keyboard(shared).register()
     val candidates = Candidates(shared).register()
@@ -94,14 +95,28 @@ class AppPrefs(
             const val INLINE_PREEDIT_MODE = "inline_preedit_mode"
             const val ASCII_SWITCH_TIPS = "ascii_switch_tips"
             const val INLINE_SUGGESTIONS = "inline_suggestions"
-            const val ASRKB_AIDL_VOICE_INPUT = "asrkb_aidl_voice_input"
-            const val ASRKB_AIDL_VOICE_TOOLBAR_BUTTON = "asrkb_aidl_voice_toolbar_button"
-            const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
         }
 
         val inlinePreeditMode = enum(R.string.inline_preedit_mode, INLINE_PREEDIT_MODE, InlinePreeditMode.DISABLE)
         val asciiSwitchTips = switch(R.string.ascii_switch_tips, ASCII_SWITCH_TIPS, true)
         val inlineSuggestions = switch(R.string.inline_suggestions, INLINE_SUGGESTIONS, true)
+    }
+
+    class VoiceInput(
+        shared: SharedPreferences,
+    ) : PreferenceDelegateOwner(shared, R.string.voice_input) {
+        companion object {
+            const val ASRKB_AIDL_VOICE_INPUT = "asrkb_aidl_voice_input"
+            const val ASRKB_AIDL_VOICE_TOOLBAR_BUTTON = "asrkb_aidl_voice_toolbar_button"
+            const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
+            const val VOICE_ANIMATION_STYLE = "voice_animation_style"
+        }
+
+        enum class VoiceAnimationStyle(override val stringRes: Int) : PreferenceDelegateEnum {
+            PARTICLE(R.string.voice_animation_particle),
+            SPHERE(R.string.voice_animation_sphere),
+        }
+
         val asrkbAidlVoiceInputEnabled = switch(
             R.string.asrkb_aidl_voice_input,
             ASRKB_AIDL_VOICE_INPUT,
@@ -111,18 +126,19 @@ class AppPrefs(
         val asrkbAidlVoiceToolbarButtonEnabled = switch(
             R.string.asrkb_aidl_voice_toolbar_button,
             ASRKB_AIDL_VOICE_TOOLBAR_BUTTON,
-            false,
+            true,
             R.string.asrkb_aidl_voice_toolbar_button_summary,
-            enableUiOn = { asrkbAidlVoiceInputEnabled.getValue() },
         )
+
+        val voiceAnimationStyle = enum(R.string.voice_animation_style, VOICE_ANIMATION_STYLE, VoiceAnimationStyle.PARTICLE)
 
         val preferredVoiceInput = list(
             R.string.preferred_voice_input,
             PREFERRED_VOICE_INPUT,
-            "",
-            { InputMethodUtils.voiceInputMethods().map { it.first.packageName } },
+            InputMethodUtils.BUILTIN_VOICE_INPUT,
+            { listOf(InputMethodUtils.BUILTIN_VOICE_INPUT) + InputMethodUtils.voiceInputMethods().map { it.first.packageName } },
             { ctx ->
-                InputMethodUtils.voiceInputMethods().map { it.first.loadLabel(ctx.packageManager) }
+                listOf(ctx.getString(R.string.builtin_voice_input)) + InputMethodUtils.voiceInputMethods().map { it.first.loadLabel(ctx.packageManager) }
             },
             enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )

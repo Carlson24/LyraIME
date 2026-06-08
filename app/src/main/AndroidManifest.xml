@@ -7,6 +7,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -94,6 +95,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
         <activity
             android:name=".link.MicPermissionActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".link.VoiceModelDownloadActivity"
             android:exported="false" />
 
         <!-- Using an activity alias to disable/enable the app icon in the launcher -->
