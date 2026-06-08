@@ -72,11 +72,22 @@ jobs:
         if: ${{ !steps.jni-cache.outputs.cache-hit }}
         run: cp -R app/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib app/prebuilt
 
+
+      - name: Rename APK
+        run: |
+          pushd app/build/outputs/apk/release
+            for apk in com.carlson.lyraime-v*.apk; do
+              arch=$(echo "$apk" | grep -oE '(arm64-v8a|x86_64)')
+              ver=$(echo "$apk" | grep -oP 'v\d+\.\d+\.\d+\.\d+')
+              mv "$apk" "LyraIME-${arch}-${ver}.apk"
+            done
+          popd
+
       - name: Create Stable release
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
           artifacts: "app/build/outputs/apk/release/*.apk"
-          body: "build apk for release ${{ github.ref_name }}"
+          body: "Update schema and build release APKs."
           token: ${{ secrets.GITHUB_TOKEN }}

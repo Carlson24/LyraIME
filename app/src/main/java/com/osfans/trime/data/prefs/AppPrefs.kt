@@ -263,7 +263,7 @@ class AppPrefs(
 
         val hideInputBar = switch(R.string.hide_input_bar, HIDE_INPUT_BAR, false)
 
-        val soundOnKeyPress = switch(R.string.sound_on_keypress, SOUND_ON_KEYPRESS, false)
+        val soundOnKeyPress = switch(R.string.sound_on_keypress, SOUND_ON_KEYPRESS, true)
         val soundVolume = int(
             R.string.sound_volume,
             KEY_SOUND_VOLUME,
@@ -285,7 +285,7 @@ class AppPrefs(
             "",
         ) { soundOnKeyPress.getValue() && useCustomSoundEffect.getValue() }
 
-        val vibrateOnKeyPress = switch(R.string.vibrate_on_key_press, VIBRATE_ON_KEY_PRESS, false)
+        val vibrateOnKeyPress = switch(R.string.vibrate_on_key_press, VIBRATE_ON_KEY_PRESS, true)
         val vibrateOnKeyRelease = switch(
             R.string.vibrate_on_key_release,
             VIBRATE_ON_KEY_RELEASE,
@@ -295,7 +295,7 @@ class AppPrefs(
         val vibrateOnKeyRepeat = switch(
             R.string.vibrate_on_key_repeat,
             VIBRATE_ON_KEY_REPEAT,
-            false,
+            true,
         ) { vibrateOnKeyPress.getValue() }
 
         val vibrationDuration = int(
@@ -383,12 +383,12 @@ class AppPrefs(
             "dp",
         )
 
-        val horizontalCandidateMode = enum(R.string.horizontal_candidate_style, HORIZONTAL_CANDIDATE_MODE, CompactCandidateMode.NEVER_FILL)
+        val horizontalCandidateMode = enum(R.string.horizontal_candidate_style, HORIZONTAL_CANDIDATE_MODE, CompactCandidateMode.AUTO_FILL)
 
         val maxSpanCount = int(
             R.string.max_span_count,
             MAX_SPAN_COUNT,
-            6,
+            5,
             1,
             10,
             enableUiOn = {
@@ -400,7 +400,7 @@ class AppPrefs(
         val maxSpanCountLandscape = int(
             R.string.max_span_count_landscape,
             MAX_SPAN_COUNT_LANDSCAPE,
-            8,
+            5,
             4,
             12,
             enableUiOn = {
@@ -414,8 +414,8 @@ class AppPrefs(
         val hookCtrlLR = switch(R.string.hook_ctrl_lr, HOOK_CTRL_LR, false)
         val hookCtrlZY = switch(R.string.hook_ctrl_zy, HOOK_CTRL_ZY, false)
         val hookShiftSpace = switch(R.string.hook_shift_space, HOOK_SHIFT_SPACE, false)
-        val hookShiftNum = switch(R.string.hook_shift_num, HOOK_SHIFT_NUM, false)
-        val hookShiftSymbol = switch(R.string.hook_shift_symbol, HOOK_SHIFT_SYMBOL, false)
+        val hookShiftNum = switch(R.string.hook_shift_num, HOOK_SHIFT_NUM, true)
+        val hookShiftSymbol = switch(R.string.hook_shift_symbol, HOOK_SHIFT_SYMBOL, true)
         val hookShiftArrow = switch(R.string.hook_shift_arrow, HOOK_SHIFT_ARROW, true)
     }
 
@@ -429,7 +429,7 @@ class AppPrefs(
             const val DISABLE_WINDOW_ON_LANDSCAPE = "disable_window_on_landscape"
         }
 
-        val mode = enum(R.string.show_candidates_window, MODE, PopupCandidatesMode.DISABLED)
+        val mode = enum(R.string.show_candidates_window, MODE, PopupCandidatesMode.SYSTEM_DEFAULT)
         val layout = enum(R.string.candidates_layout, LAYOUT, PopupCandidatesLayout.AUTOMATIC)
         val position = enum(R.string.candidates_window_position, POSITION, PopupPosition.BOTTOM_LEFT)
         val disableWindowOnLandscape = switch(R.string.disable_window_on_landscape, DISABLE_WINDOW_ON_LANDSCAPE, false)
@@ -451,7 +451,7 @@ class AppPrefs(
 
         val userDataDir = string(USER_DATA_DIR, DataManager.defaultDataDir.path)
         val periodicBackgroundSync = bool(PERIODIC_BACKGROUND_SYNC, false)
-        val periodicBackgroundSyncInterval = int(PERIODIC_BACKGROUND_SYNC_INTERVAL, 30)
+        val periodicBackgroundSyncInterval = int(PERIODIC_BACKGROUND_SYNC_INTERVAL, 720)
         val lastBackgroundSyncStatus = bool(LAST_BACKGROUND_SYNC_STATUS, false)
         val lastBackgroundSyncTime = long(LAST_BACKGROUND_SYNC_TIME, 0L)
     }
@@ -473,7 +473,7 @@ class AppPrefs(
         val clipboardLimit = int(
             R.string.clipboard_limit,
             CLIPBOARD_LIMIT,
-            10,
+            1024,
         ) { clipboardListening.getValue() }
         val clipboardCompareRules = editText(
             R.string.clipboard_compare_rules,
@@ -516,7 +516,7 @@ class AppPrefs(
         val clipboardSuggestionTimeout = int(
             R.string.clipboard_suggestion_timeout,
             CLIPBOARD_SUGGESTION_TIMEOUT,
-            20,
+            60,
             0,
             100,
             "s",

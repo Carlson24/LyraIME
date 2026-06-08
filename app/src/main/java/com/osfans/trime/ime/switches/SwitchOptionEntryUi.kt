@@ -6,7 +6,6 @@
 package com.osfans.trime.ime.switches
 
 import android.content.Context
-import android.graphics.Typeface
 import android.icu.text.BreakIterator
 import android.os.Build
 import android.util.TypedValue
@@ -14,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import com.osfans.trime.data.theme.ColorManager
+import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.core.AutoScaleTextView
 import com.osfans.trime.ime.keyboard.GestureFrame
@@ -58,14 +58,8 @@ class SwitchOptionEntryUi(
 
     val textIcon =
         view(::AutoScaleTextView) {
-            setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20f)
-            // keep original typeface, apply textStyle only
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                // 600 = Semi Bold, 700 = Bold which is too heavy
-                typeface = Typeface.create(typeface, 600, false)
-            } else {
-                setTypeface(typeface, Typeface.BOLD)
-            }
+            setTextSize(TypedValue.COMPLEX_UNIT_DIP, 24f)
+            typeface = FontManager.getTypeface("key_font")
         }
 
     val label =
@@ -73,6 +67,7 @@ class SwitchOptionEntryUi(
             textSize = 12f
             gravity = gravityCenter
             setTextColor(ColorManager.getColor("key_text_color"))
+            typeface = FontManager.getTypeface("key_font")
         }
 
     override val root =

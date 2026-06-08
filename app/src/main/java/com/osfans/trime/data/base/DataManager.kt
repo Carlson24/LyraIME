@@ -25,7 +25,7 @@ object DataManager {
     private const val SCHEMA_LIST_CUSTOM_PATCH = """
       patch:
         schema_list:
-          - schema: wanxiang
+          - schema: wanxiang_zrm
           - schema: wanxiang_english
     """
 
@@ -52,7 +52,7 @@ object DataManager {
 
     private val prefs by lazy { AppPrefs.defaultInstance() }
 
-    val defaultDataDir = File(Environment.getExternalStorageDirectory(), "rime")
+    val defaultDataDir = File(Environment.getExternalStorageDirectory(), "Documents/LyraIME")
 
     val sharedDataDir = File(appContext.getExternalFilesDir(null), "shared").also { it.mkdirs() }
 

@@ -27,7 +27,7 @@ android {
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "com.osfans.trime"
+        applicationId = "com.carlson.lyraime"
         minSdk = 21
         targetSdk = 35
         versionCode = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
