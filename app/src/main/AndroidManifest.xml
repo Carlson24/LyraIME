@@ -8,6 +8,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -104,6 +105,16 @@ SPDX-License-Identifier: GPL-3.0-or-later
             android:windowSoftInputMode="stateAlwaysVisible|adjustPan" />
 
         <activity
+            android:name=".ui.main.CollectionAddActivity"
+            android:autoRemoveFromRecents="true"
+            android:excludeFromRecents="true"
+            android:label="@string/add_to_collection"
+            android:launchMode="singleInstance"
+            android:taskAffinity=".ui.main.LiquidKeyboardEditActivity"
+            android:theme="@style/Theme.DialogTheme"
+            android:windowSoftInputMode="stateAlwaysVisible|adjustPan" />
+
+        <activity
             android:name=".link.MicPermissionActivity"
             android:exported="false" />
 
@@ -127,5 +138,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
         </activity-alias>
 
         <!-- All activities must be declared above <activity-alias> tag -->
+
     </application>
 </manifest>

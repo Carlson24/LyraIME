@@ -15,6 +15,8 @@ data class BackupData(
     val preferences: Map<String, BackupPreference>? = null,
     val clipboard: List<BackupBean>? = null,
     val collection: List<BackupBean>? = null,
+    val wanxiangPrefs: Map<String, BackupPreference>? = null,
+    val customTasks: String? = null,
 ) {
     companion object {
         const val CURRENT_VERSION = 1

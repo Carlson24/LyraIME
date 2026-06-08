@@ -154,6 +154,21 @@ class MainFragment : PaddingPreferenceFragment() {
                     NavigationRoute.Advanced,
                 )
             }
+            addCategory("") {
+                isIconSpaceReserved = false
+                addPreference(
+                    title = R.string.wanxiang_updater,
+                    icon = R.drawable.ic_baseline_download_24,
+                ) {
+                    findNavController().navigateWithAnim(NavigationRoute.Wanxiang)
+                }
+                addPreference(
+                    title = R.string.wanxiang_custom_title,
+                    icon = R.drawable.ic_baseline_edit_24,
+                ) {
+                    findNavController().navigateWithAnim(NavigationRoute.WanxiangCustom)
+                }
+            }
         }
     }
 }

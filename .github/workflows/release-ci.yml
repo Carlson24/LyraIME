@@ -14,6 +14,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -70,26 +72,11 @@ jobs:
         if: ${{ !steps.jni-cache.outputs.cache-hit }}
         run: cp -R app/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib app/prebuilt
 
-      - name: Build changelog
-        id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v4
-        with:
-          commitMode: true
-          ignorePreReleases: true
-          configurationJson: |
-            {
-              "template": "Change log from #{{FROM_TAG}} to #{{TO_TAG}}: #{{RELEASE_DIFF}}\n#{{UNCATEGORIZED}}",
-              "pr_template": "- [#{{MERGE_SHA}}] - #{{TITLE}}"
-            }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create Stable release
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
           artifacts: "app/build/outputs/apk/release/*.apk"
-          body: |
-            ${{ steps.build_changelog.outputs.changelog }}
+          body: "build apk for release ${{ github.ref_name }}"
           token: ${{ secrets.GITHUB_TOKEN }}

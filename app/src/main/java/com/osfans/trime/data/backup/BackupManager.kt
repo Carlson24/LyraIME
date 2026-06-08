@@ -5,6 +5,7 @@
 
 package com.osfans.trime.data.backup
 
+import android.content.Context
 import androidx.paging.PagingSource
 import androidx.preference.PreferenceManager
 import androidx.room.Room
@@ -27,6 +28,7 @@ import timber.log.Timber
 import java.io.File
 
 object BackupManager {
+    private const val CUSTOM_TASKS_KEY = "custom_tasks_data"
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -40,13 +42,17 @@ object BackupManager {
         includePreferences: Boolean = true,
         includeClipboard: Boolean = true,
         includeCollection: Boolean = true,
+        includeWanxiang: Boolean = true,
+        includeCustomTasks: Boolean = true,
     ): BackupData = backupMutex.withLock {
         withContext(Dispatchers.IO) {
-            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, collection=$includeCollection")
+            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, collection=$includeCollection, wanxiang=$includeWanxiang, customTasks=$includeCustomTasks")
             BackupData(
                 preferences = if (includePreferences) exportPreferences() else null,
                 clipboard = if (includeClipboard) exportClipboard() else null,
                 collection = if (includeCollection) exportCollection() else null,
+                wanxiangPrefs = if (includeWanxiang) exportWanxiangPrefs() else null,
+                customTasks = if (includeCustomTasks) exportCustomTasks() else null,
             ).also {
                 Timber.d("Backup created successfully")
             }
@@ -58,10 +64,12 @@ object BackupManager {
         restorePreferences: Boolean = true,
         restoreClipboard: Boolean = true,
         restoreCollection: Boolean = true,
+        restoreWanxiang: Boolean = true,
+        restoreCustomTasks: Boolean = true,
     ): Result<Unit> = restoreMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                Timber.d("Restoring backup: preferences=$restorePreferences, clipboard=$restoreClipboard, collection=$restoreCollection")
+                Timber.d("Restoring backup: preferences=$restorePreferences, clipboard=$restoreClipboard, collection=$restoreCollection, wanxiang=$restoreWanxiang, customTasks=$restoreCustomTasks")
                 val migratedData = migrateBackup(backupData)
 
                 // Temporarily disable clipboard listener to avoid conflicts during restore
@@ -88,6 +96,12 @@ object BackupManager {
                     }
                     if (restoreCollection && migratedData.collection != null) {
                         importCollection(migratedData.collection)
+                    }
+                    if (restoreWanxiang && migratedData.wanxiangPrefs != null) {
+                        importWanxiangPrefs(migratedData.wanxiangPrefs)
+                    }
+                    if (restoreCustomTasks && migratedData.customTasks != null) {
+                        importCustomTasks(migratedData.customTasks)
                     }
                     Timber.d("Backup restored successfully")
                     Result.success(Unit)
@@ -440,5 +454,86 @@ object BackupManager {
         }
 
         throw lastException ?: Exception("Failed to import collection data after $maxRetries attempts")
+    }
+
+    private fun exportWanxiangPrefs(): Map<String, BackupPreference> {
+        val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+        val allPrefs = sharedPreferences.all
+        val result = mutableMapOf<String, BackupPreference>()
+
+        for ((key, value) in allPrefs) {
+            if (key == CUSTOM_TASKS_KEY) continue
+            result[key] = valueToBackupPreference(value)
+        }
+
+        Timber.d("Successfully exported Wanxiang preferences with ${result.size} items")
+        return result
+    }
+
+    private fun exportCustomTasks(): String? {
+        val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getString(CUSTOM_TASKS_KEY, null)
+    }
+
+    private fun importCustomTasks(data: String) {
+        val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+        sharedPreferences.edit().putString(CUSTOM_TASKS_KEY, data).apply()
+        Timber.d("Successfully imported custom tasks")
+    }
+
+    private suspend fun importWanxiangPrefs(prefs: Map<String, BackupPreference>) {
+        val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.clear()
+
+        prefs.forEach { (key, backupPref) ->
+            val value = backupPref.value
+            val type = backupPref.type
+
+            when {
+                value is JsonArray -> {
+                    when (type) {
+                        PreferenceType.STRING_SET -> {
+                            val stringSet = value.map<JsonElement, String> { (it as JsonPrimitive).content }.toSet()
+                            editor.putStringSet(key, stringSet)
+                        }
+                        else -> {
+                            editor.putString(key, value.toString())
+                        }
+                    }
+                }
+                value is JsonPrimitive -> {
+                    val content = value.content
+
+                    when (type) {
+                        PreferenceType.BOOLEAN -> {
+                            editor.putBoolean(key, content.toBoolean())
+                        }
+                        PreferenceType.INT -> {
+                            editor.putInt(key, content.toIntOrNull() ?: 0)
+                        }
+                        PreferenceType.LONG -> {
+                            editor.putLong(key, content.toLongOrNull() ?: 0L)
+                        }
+                        PreferenceType.FLOAT -> {
+                            editor.putFloat(key, content.toFloatOrNull() ?: 0f)
+                        }
+                        PreferenceType.STRING -> {
+                            editor.putString(key, content)
+                        }
+                        else -> {
+                            editor.putString(key, content)
+                        }
+                    }
+                }
+                value is JsonNull -> editor.putString(key, null)
+                else -> {
+                    editor.putString(key, value.toString())
+                }
+            }
+        }
+
+        editor.apply()
+        Timber.d("Successfully imported Wanxiang preferences with ${prefs.size} items")
     }
 }

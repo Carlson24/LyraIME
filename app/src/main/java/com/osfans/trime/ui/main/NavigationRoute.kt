@@ -9,6 +9,8 @@ import android.os.Parcelable
 import androidx.navigation.NavController
 import androidx.navigation.createGraph
 import androidx.navigation.fragment.fragment
+import com.amzxyz.wanxiang.CustomTasksFragment
+import com.amzxyz.wanxiang.WanxiangUpdateFragment
 import com.osfans.trime.R
 import com.osfans.trime.ui.main.settings.AdvancedSettingsFragment
 import com.osfans.trime.ui.main.settings.CandidatesSettingsFragment
@@ -60,6 +62,12 @@ sealed class NavigationRoute : Parcelable {
     data object Advanced : NavigationRoute()
 
     @Serializable
+    data object Wanxiang : NavigationRoute()
+
+    @Serializable
+    data object WanxiangCustom : NavigationRoute()
+
+    @Serializable
     data object Developer : NavigationRoute()
 
     @Serializable
@@ -106,6 +114,12 @@ sealed class NavigationRoute : Parcelable {
             }
             fragment<AdvancedSettingsFragment, Advanced> {
                 label = ctx.getString(R.string.advanced)
+            }
+            fragment<WanxiangUpdateFragment, Wanxiang> {
+                label = ctx.getString(R.string.wanxiang_updater)
+            }
+            fragment<CustomTasksFragment, WanxiangCustom> {
+                label = ctx.getString(R.string.wanxiang_custom_title)
             }
             fragment<DeveloperFragment, Developer> {
                 label = ctx.getString(R.string.developer)

@@ -7,5 +7,5 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
 <resources>
-    <color name="ic_app_icon_background">#FFFFFF</color>
+    <color name="ic_app_icon_background">#61A165</color>
 </resources>

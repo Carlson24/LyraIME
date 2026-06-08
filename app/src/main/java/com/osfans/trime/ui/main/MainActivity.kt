@@ -6,6 +6,7 @@
 package com.osfans.trime.ui.main
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.ViewGroup
@@ -154,12 +155,28 @@ class MainActivity : AppCompatActivity() {
             viewModel.toolbarEditButtonVisible.observe(this@MainActivity) {
                 isVisible = it
             }
+            viewModel.toolbarEditButtonIcon.observe(this@MainActivity) { icon ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    setIcon(icon)
+                    iconTintList = null
+                } else {
+                    setIcon(ContextCompat.getDrawable(this@MainActivity, icon))
+                }
+            }
         }
         menu.item(R.string.delete, R.drawable.ic_baseline_delete_24, showAsAction = true) {
             viewModel.toolbarDeleteButtonOnClickListener.value?.invoke()
         }.apply {
             viewModel.toolbarDeleteButtonOnClickListener.observe(this@MainActivity) {
                 isVisible = it != null
+            }
+            viewModel.toolbarDeleteButtonIcon.observe(this@MainActivity) { icon ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    setIcon(icon)
+                    iconTintList = null
+                } else {
+                    setIcon(ContextCompat.getDrawable(this@MainActivity, icon))
+                }
             }
         }
         menu.forEach { item ->

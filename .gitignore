@@ -477,6 +477,8 @@ keystore.properties
 # Project
 app/src/main/assets/checksums.json
 app/src/main/assets/shared/opencc
+app/src/main/assets/shared/backgrounds
+app/src/main/assets/shared/jianchun.trime.yaml
 
 # boost
 app/boost-*.tar.xz
