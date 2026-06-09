@@ -37,6 +37,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     private var downloadPref: Preference? = null
     private var importPref: Preference? = null
     private var downloadJob: Job? = null
+
     @Volatile private var downloadCancelled = false
 
     @Keep

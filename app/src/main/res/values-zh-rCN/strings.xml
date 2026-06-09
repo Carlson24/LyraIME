@@ -262,7 +262,7 @@
     <string name="voice_model_missing_title">需要语音模型</string>
     <string name="voice_model_missing_message">内置语音识别需要语音模型文件。请下载或手动选择包含模型的ZIP文件。</string>
     <string name="voice_model_not_initialized">语音模型未安装，请在语音输入设置中初始化本地语音识别组件。</string>
-    <string name="voice_model_download_action">在线下载语音模型（400M）</string>
+    <string name="voice_model_download_action">在线下载语音模型</string>
     <string name="voice_model_import_action">本地导入语音模型</string>
     <string name="voice_model_download">下载</string>
     <string name="voice_model_select_file">手动选择</string>
@@ -273,6 +273,7 @@
     <string name="voice_model_download_failed">下载失败：%s</string>
     <string name="voice_model_verification_failed">SHA256校验失败</string>
     <string name="voice_model_extract_failed">解压失败：%s</string>
+    <string name="voice_engine_loaded">语音引擎加载完成，耗时 %dms</string>
     <string name="voice_model_installed">语音模型安装成功</string>
     <string name="voice_model_exists_title">语音模型已存在</string>
     <string name="voice_model_exists_re_download">语音模型已安装，是否重新下载？</string>
@@ -285,7 +286,7 @@
     <string name="main_input_test_hint">点击此处测试输入</string>
     <string name="wanxiang_updater">万象更新</string>
     <string name="wanxiang_auto_check">自动检查更新</string>
-    <string name="wanxiang_check_interval">检查间隔：%1$d 小时</string>
+    <string name="wanxiang_check_interval">检查间隔</string>
     <string name="wanxiang_new_version_title">万象更新可用</string>
     <string name="wanxiang_new_version_text">新版本 %1$s 可用（当前：%2$s）</string>
     <string name="wanxiang_update_channel">更新通道</string>
@@ -302,7 +303,7 @@
     <string name="wanxiang_download_source">下载源配置</string>
     <string name="wanxiang_github_token">GitHub Token（可选）</string>
     <string name="wanxiang_task_progress">任务进度</string>
-    <string name="wanxiang_actions">选择要更新的内容：</string>
+    <string name="wanxiang_actions">选择要更新的内容</string>
     <string name="wanxiang_schema_only">方案</string>
     <string name="wanxiang_dict_only">词库</string>
     <string name="wanxiang_model_only">模型</string>
@@ -345,6 +346,8 @@
     <string name="wanxiang_dl_multithread_failed">多线程失败, 降级单线程...</string>
     <string name="wanxiang_dl_mb_multithread">%sMB (多线程)</string>
     <string name="wanxiang_dl_assembling">文件合并中...</string>
+    <string name="wanxiang_dl_progress_line">%1$s\n%2$s</string>
+    <string name="wanxiang_dl_progress_status">%1$d%% - %2$s</string>
     <string name="wanxiang_dl_mb_single">%sMB (单线)</string>
     <string name="wanxiang_dl_extracting">解压中...</string>
     <string name="wanxiang_dl_auth_expired">授权目录已失效</string>

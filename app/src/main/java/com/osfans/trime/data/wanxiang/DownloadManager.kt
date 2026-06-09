@@ -2,13 +2,15 @@
  * SPDX-FileCopyrightText: 2025 Rime community
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
-package com.amzxyz.wanxiang
+package com.osfans.trime.data.wanxiang
 
 import android.content.Context
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.osfans.trime.R
 import com.osfans.trime.data.base.DataManager
+import com.osfans.trime.util.computeFileSha256
+import com.osfans.trime.util.extractZipToTempDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -21,7 +23,7 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.atomic.AtomicLong
-import java.util.zip.ZipInputStream
+import kotlin.coroutines.cancellation.CancellationException
 
 object DownloadManager {
 
@@ -33,6 +35,7 @@ object DownloadManager {
         isDict: Boolean = false,
         targetPaths: List<String> = emptyList(),
         onProgress: (TaskState) -> Unit,
+        isCancelled: () -> Boolean = { false },
     ) = withContext(Dispatchers.IO) {
         val stagingDir = File(context.cacheDir, "wanxiang_staging")
         stagingDir.mkdirs()
@@ -44,36 +47,69 @@ object DownloadManager {
             task.url.startsWith("file://") ||
             task.url.startsWith("content://")
 
-        if (isLocalFile) {
-            success = downloadLocal(task, tmpFile, context)
-            if (!success) lastErrorMsg = context.getString(R.string.wanxiang_dl_local_error)
-        } else {
-            for (attempt in 1..3) {
-                task.status = if (attempt > 1) {
-                    context.getString(R.string.wanxiang_dl_retrying, attempt)
-                } else {
-                    context.getString(R.string.wanxiang_dl_connecting)
-                }
-                onProgress(task)
-                try {
-                    success = downloadRemote(task, tmpFile, token, context, onProgress)
-                    if (success) break
-                } catch (e: Exception) {
-                    lastErrorMsg = e.message ?: context.getString(R.string.wanxiang_dl_network_error)
-                    delay(1000)
+        try {
+            if (isLocalFile) {
+                success = downloadLocal(task, tmpFile, context)
+                if (!success) lastErrorMsg = context.getString(R.string.wanxiang_dl_local_error)
+            } else {
+                for (attempt in 1..3) {
+                    if (isCancelled()) throw CancellationException("Download cancelled")
+                    task.status = if (attempt > 1) {
+                        context.getString(R.string.wanxiang_dl_retrying, attempt)
+                    } else {
+                        context.getString(R.string.wanxiang_dl_connecting)
+                    }
+                    onProgress(task)
+                    try {
+                        success = downloadRemote(task, tmpFile, token, context, onProgress, isCancelled)
+                        if (success) break
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        lastErrorMsg = e.message ?: context.getString(R.string.wanxiang_dl_network_error)
+                        delay(1000)
+                    }
                 }
             }
-        }
 
-        if (success) {
-            deploy(task, tmpFile, stagingDir, rules, isDict, targetPaths, context, onProgress)
-        } else {
+            if (success) {
+                if (isCancelled()) throw CancellationException("Download cancelled")
+                if (!verifySha256(task, tmpFile, context, onProgress)) {
+                    return@withContext
+                }
+                deploy(task, tmpFile, stagingDir, rules, isDict, targetPaths, context, onProgress)
+            } else {
+                task.isError = true
+                task.progress = 0f
+                task.status = context.getString(R.string.wanxiang_dl_fetch_failed, lastErrorMsg)
+                onProgress(task)
+            }
+        } catch (e: CancellationException) {
             task.isError = true
             task.progress = 0f
-            task.status = context.getString(R.string.wanxiang_dl_fetch_failed, lastErrorMsg)
+            task.status = context.getString(R.string.wanxiang_dl_network_error)
             onProgress(task)
+            throw e
+        } finally {
+            stagingDir.deleteRecursively()
         }
-        stagingDir.deleteRecursively()
+    }
+
+    private fun verifySha256(
+        task: TaskState,
+        tmpFile: File,
+        context: Context,
+        onProgress: (TaskState) -> Unit,
+    ): Boolean {
+        val expected = task.expectedSha256 ?: return true
+        val computed = computeFileSha256(tmpFile)
+        if (computed != null && computed.equals(expected, ignoreCase = true)) return true
+        task.isError = true
+        task.isFinished = false
+        task.progress = 0f
+        task.status = context.getString(R.string.wanxiang_dl_fetch_failed, "SHA256 mismatch")
+        onProgress(task)
+        return false
     }
 
     private fun downloadLocal(
@@ -109,22 +145,25 @@ object DownloadManager {
         token: String,
         context: Context,
         onProgress: (TaskState) -> Unit,
+        isCancelled: () -> Boolean,
     ): Boolean {
         val finalUrlStr = resolveRedirects(task.url, token)
 
         val totalSize = queryContentLength(finalUrlStr, token)
         if (totalSize > 0) {
             try {
-                downloadMultiThread(task, tmpFile, finalUrlStr, token, totalSize, context, onProgress)
+                downloadMultiThread(task, tmpFile, finalUrlStr, token, totalSize, context, onProgress, isCancelled)
                 task.progress = 1f
                 return true
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 task.status = context.getString(R.string.wanxiang_dl_multithread_failed)
                 onProgress(task)
             }
         }
         try {
-            downloadSingleThread(task, tmpFile, finalUrlStr, token, context, onProgress)
+            downloadSingleThread(task, tmpFile, finalUrlStr, token, context, onProgress, isCancelled)
             task.progress = 1f
             return true
         } catch (_: Exception) {
@@ -181,6 +220,7 @@ object DownloadManager {
         totalSize: Long,
         context: Context,
         onProgress: (TaskState) -> Unit,
+        isCancelled: () -> Boolean,
     ) {
         val threadCount = 3
         val chunkSize = totalSize / threadCount
@@ -194,33 +234,49 @@ object DownloadManager {
                     val start = i * chunkSize
                     val end = if (i == threadCount - 1) totalSize - 1 else (start + chunkSize - 1)
                     val partConn = URL(urlStr).openConnection() as HttpURLConnection
-                    setHeaders(partConn, token, urlStr)
-                    partConn.setRequestProperty("Range", "bytes=$start-$end")
-                    partConn.connectTimeout = 10000
-                    partConn.readTimeout = 10000
-                    val partFile = File(stagingDir, "${tmpFile.name}.part$i")
-                    partConn.inputStream.buffered().use { input ->
-                        FileOutputStream(partFile).buffered().use { output ->
-                            val buf = ByteArray(65536)
-                            var count: Int
-                            while (input.read(buf).also { count = it } != -1) {
-                                output.write(buf, 0, count)
-                                val current = downloadedLen.addAndGet(count.toLong())
-                                if (System.currentTimeMillis() - lastUpdate.get() > 150) {
-                                    lastUpdate.set(System.currentTimeMillis())
-                                    launch(Dispatchers.Main) {
-                                        val mb = "%.1f".format(current / 1024.0 / 1024.0)
-                                        task.status = context.getString(R.string.wanxiang_dl_mb_multithread, mb)
-                                        onProgress(task)
+                    try {
+                        setHeaders(partConn, token, urlStr)
+                        partConn.setRequestProperty("Range", "bytes=$start-$end")
+                        partConn.connectTimeout = 10000
+                        partConn.readTimeout = 10000
+                        val partFile = File(stagingDir, "${tmpFile.name}.part$i")
+                        partConn.inputStream.buffered().use { input ->
+                            FileOutputStream(partFile).buffered().use { output ->
+                                val buf = ByteArray(65536)
+                                var count: Int
+                                while (input.read(buf).also { count = it } != -1) {
+                                    if (isCancelled()) {
+                                        throw CancellationException("Download cancelled")
+                                    }
+                                    output.write(buf, 0, count)
+                                    val current = downloadedLen.addAndGet(count.toLong())
+                                    if (System.currentTimeMillis() - lastUpdate.get() > 150) {
+                                        lastUpdate.set(System.currentTimeMillis())
+                                        launch(Dispatchers.Main) {
+                                            val currentMb = "%.1f".format(current / 1024.0 / 1024.0)
+                                            val totalMb = "%.1f".format(totalSize / 1024.0 / 1024.0)
+                                            task.progress = current.toFloat() / totalSize.toFloat()
+                                            task.status = context.getString(
+                                                R.string.wanxiang_dl_mb_multithread,
+                                                "$currentMb / $totalMb",
+                                            )
+                                            onProgress(task)
+                                        }
                                     }
                                 }
                             }
                         }
+                    } catch (e: CancellationException) {
+                        partConn.disconnect()
+                        throw e
+                    } finally {
+                        partConn.disconnect()
                     }
                 }
             }
             jobs.awaitAll()
         }
+        if (isCancelled()) throw CancellationException("Download cancelled")
         task.status = context.getString(R.string.wanxiang_dl_assembling)
         onProgress(task)
         withContext(Dispatchers.IO) {
@@ -241,33 +297,50 @@ object DownloadManager {
         token: String,
         context: Context,
         onProgress: (TaskState) -> Unit,
+        isCancelled: () -> Boolean,
     ) {
         val conn = URL(urlStr).openConnection() as HttpURLConnection
-        setHeaders(conn, token, urlStr)
-        val fallbackSize = conn.contentLength.toLong()
-        task.progress = if (fallbackSize > 0) 0f else -1f
-        conn.inputStream.buffered().use { input ->
-            FileOutputStream(tmpFile).buffered().use { output ->
-                val buf = ByteArray(131072)
-                var count: Int
-                var downloaded = 0L
-                var lastUpdate = System.currentTimeMillis()
-                while (input.read(buf).also { count = it } != -1) {
-                    downloaded += count
-                    output.write(buf, 0, count)
-                    if (System.currentTimeMillis() - lastUpdate > 150) {
-                        lastUpdate = System.currentTimeMillis()
-                        if (fallbackSize > 0) {
-                            task.progress = downloaded.toFloat() / fallbackSize
-                            task.status = "${"%.1f".format(downloaded / 1024.0 / 1024.0)}MB / ${"%.1f".format(fallbackSize / 1024.0 / 1024.0)}MB"
-                        } else {
-                            val mb = "%.1f".format(downloaded / 1024.0 / 1024.0)
-                            task.status = context.getString(R.string.wanxiang_dl_mb_single, mb)
+        try {
+            setHeaders(conn, token, urlStr)
+            val fallbackSize = conn.contentLength.toLong()
+            task.progress = if (fallbackSize > 0) 0f else -1f
+            conn.inputStream.buffered().use { input ->
+                FileOutputStream(tmpFile).buffered().use { output ->
+                    val buf = ByteArray(131072)
+                    var count: Int
+                    var downloaded = 0L
+                    var lastUpdate = System.currentTimeMillis()
+                    while (input.read(buf).also { count = it } != -1) {
+                        if (isCancelled()) {
+                            throw CancellationException("Download cancelled")
                         }
-                        onProgress(task)
+                        downloaded += count
+                        output.write(buf, 0, count)
+                        if (System.currentTimeMillis() - lastUpdate > 150) {
+                            lastUpdate = System.currentTimeMillis()
+                            val currentMb = "%.1f".format(downloaded / 1024.0 / 1024.0)
+                            task.progress = if (fallbackSize > 0) {
+                                downloaded.toFloat() / fallbackSize
+                            } else {
+                                -1f
+                            }
+                            val sizeInfo = if (fallbackSize > 0) {
+                                val totalMb = "%.1f".format(fallbackSize / 1024.0 / 1024.0)
+                                "$currentMb / $totalMb"
+                            } else {
+                                currentMb
+                            }
+                            task.status = context.getString(R.string.wanxiang_dl_mb_single, sizeInfo)
+                            onProgress(task)
+                        }
                     }
                 }
             }
+        } catch (e: CancellationException) {
+            conn.disconnect()
+            throw e
+        } finally {
+            conn.disconnect()
         }
     }
 
@@ -297,19 +370,7 @@ object DownloadManager {
             extractDir.mkdirs()
 
             if (task.url.endsWith(".zip")) {
-                ZipInputStream(tmpFile.inputStream()).use { zis ->
-                    var entry = zis.nextEntry
-                    while (entry != null) {
-                        val f = File(extractDir, entry.name)
-                        if (entry.isDirectory) {
-                            f.mkdirs()
-                        } else {
-                            f.parentFile?.mkdirs()
-                            FileOutputStream(f).use { zis.copyTo(it) }
-                        }
-                        entry = zis.nextEntry
-                    }
-                }
+                extractZipToTempDir(tmpFile.inputStream(), extractDir)
             } else {
                 tmpFile.copyTo(File(extractDir, task.url.substringAfterLast("/")))
             }

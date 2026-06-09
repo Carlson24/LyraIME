@@ -464,5 +464,4 @@ class InputBarDelegate : InputBroadcastReceiver {
         alwaysUi.asrkbVoiceButton.setIcon(R.drawable.ic_baseline_stop_24)
         asrkbVoiceHoldController.start()
     }
-
 }

@@ -259,11 +259,13 @@
     <string name="no_voice_input_installed">No voice input installed</string>
     <string name="voice_animation_style">Voice animation</string>
     <string name="voice_animation_particle">Particle ring</string>
+    <string name="voice_num_threads">Recognition threads</string>
+    <string name="voice_sensitivity">Sensitivity</string>
     <string name="voice_animation_sphere">Sphere ripple</string>
     <string name="voice_model_missing_title">Voice model required</string>
     <string name="voice_model_missing_message">Built-in voice recognition requires model files. Download or select a ZIP file containing the model.</string>
     <string name="voice_model_not_initialized">Voice model not installed. Please download in Voice Input settings.</string>
-    <string name="voice_model_download_action">Download voice model online (400M)</string>
+    <string name="voice_model_download_action">"Download voice model online "</string>
     <string name="voice_model_import_action">Import voice model locally</string>
     <string name="voice_model_download">Download</string>
     <string name="voice_model_select_file">Select file</string>
@@ -274,6 +276,7 @@
     <string name="voice_model_download_failed">Download failed: %s</string>
     <string name="voice_model_verification_failed">SHA256 verification failed</string>
     <string name="voice_model_extract_failed">Failed to extract model files: %s</string>
+    <string name="voice_engine_loaded">Voice engine loaded in %dms</string>
     <string name="voice_model_installed">Voice model installed successfully</string>
     <string name="voice_model_exists_title">Voice model already exists</string>
     <string name="voice_model_exists_re_download">The voice model is already installed. Download again?</string>
@@ -286,7 +289,7 @@
     <string name="main_input_test_hint">Tap here to test input</string>
     <string name="wanxiang_updater">Wanxiang Update</string>
     <string name="wanxiang_auto_check">Auto check for updates</string>
-    <string name="wanxiang_check_interval">Check interval: %1$d hours</string>
+    <string name="wanxiang_check_interval">Check interval</string>
     <string name="wanxiang_new_version_title">Wanxiang Update Available</string>
     <string name="wanxiang_new_version_text">New version %1$s is available (current: %2$s)</string>
     <string name="wanxiang_update_channel">Update Channel</string>
@@ -303,7 +306,7 @@
     <string name="wanxiang_download_source">Download Source</string>
     <string name="wanxiang_github_token">GitHub Token (optional)</string>
     <string name="wanxiang_task_progress">Task Progress</string>
-    <string name="wanxiang_actions">Select items to update:</string>
+    <string name="wanxiang_actions">Select items to update</string>
     <string name="wanxiang_schema_only">Schema</string>
     <string name="wanxiang_dict_only">Dict</string>
     <string name="wanxiang_model_only">Model</string>
@@ -346,6 +349,8 @@
     <string name="wanxiang_dl_multithread_failed">Multi-thread failed, fallback to single...</string>
     <string name="wanxiang_dl_mb_multithread">%sMB (multi)</string>
     <string name="wanxiang_dl_assembling">Merging files...</string>
+    <string name="wanxiang_dl_progress_line">%1$s\n%2$s</string>
+    <string name="wanxiang_dl_progress_status">%1$d%% - %2$s</string>
     <string name="wanxiang_dl_mb_single">%sMB (single)</string>
     <string name="wanxiang_dl_extracting">Extracting...</string>
     <string name="wanxiang_dl_auth_expired">Authorization expired</string>

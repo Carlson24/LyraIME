@@ -11,33 +11,30 @@ import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.k2fsa.sherpa.onnx.FeatureConfig
-import com.k2fsa.sherpa.onnx.OfflineModelConfig
-import com.k2fsa.sherpa.onnx.OfflinePunctuation
-import com.k2fsa.sherpa.onnx.OfflinePunctuationConfig
-import com.k2fsa.sherpa.onnx.OfflinePunctuationModelConfig
-import com.k2fsa.sherpa.onnx.OfflineRecognizer
-import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
-import com.k2fsa.sherpa.onnx.OfflineSenseVoiceModelConfig
-import com.k2fsa.sherpa.onnx.OfflineStream
-import com.k2fsa.sherpa.onnx.QnnConfig
+import com.k2fsa.sherpa.onnx.OnlineModelConfig
+import com.k2fsa.sherpa.onnx.OnlineRecognizer
+import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
+import com.k2fsa.sherpa.onnx.OnlineStream
+import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
 import com.osfans.trime.R
 import com.osfans.trime.data.base.DataManager
+import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.util.toast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
+import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
@@ -47,22 +44,32 @@ object SherpaSpeechClient {
     @Volatile
     var onHoldingChanged: ((Boolean) -> Unit)? = null
 
-    private val recognizerRef = AtomicReference<OfflineRecognizer?>(null)
-    private val currentStreamRef = AtomicReference<OfflineStream?>(null)
-    private val punctuationRef = AtomicReference<OfflinePunctuation?>(null)
+    private val recognizerRef = AtomicReference<OnlineRecognizer?>(null)
+    private val currentStreamRef = AtomicReference<OnlineStream?>(null)
 
     private val isHolding = AtomicBoolean(false)
 
     private var audioJob: Job? = null
     private var audioRecord: AudioRecord? = null
 
-    private var serviceRef: TrimeInputMethodService? = null
+    @Volatile
+    private var serviceRef: WeakReference<TrimeInputMethodService>? = null
     private val initLock = Any()
     private val audioLock = Any()
     private var isFirstInit = true
 
     private const val SAMPLE_RATE = 16000
     private const val NOISE_THRESHOLD = 0.02f
+    private const val PARTIAL_EMIT_MIN_INTERVAL_MS = 120L
+
+    @Volatile
+    private var lastEmitUptimeMs: Long = 0L
+
+    @Volatile
+    private var lastEmittedText: String? = null
+
+    @Volatile
+    private var lastRawText: String? = null
 
     private fun initEngineIfNeeded(): Boolean {
         if (recognizerRef.get() != null) return true
@@ -71,89 +78,55 @@ object SherpaSpeechClient {
             if (recognizerRef.get() != null) return true
 
             val voiceDir = DataManager.voiceDataDir
-            val metaFile = File(voiceDir, "metadata.json")
             val tokensFile = File(voiceDir, "tokens.txt")
+            val encoderFile = File(voiceDir, "encoder-480ms.onnx")
+            val decoderFile = File(voiceDir, "decoder-480ms.onnx")
+            val joinerFile = File(voiceDir, "joiner-480ms.onnx")
 
-            var numThreads = 4
-            var modelName = "model.int8.onnx"
-            var punctModelName = "punct.model.int8.onnx"
-            var language = "auto"
-            var provider = "cpu"
-            var decodingMethod = "greedy_search"
-
-            if (metaFile.exists()) {
-                try {
-                    val jsonString = metaFile.readText(Charsets.UTF_8)
-                    val json = JSONObject(jsonString)
-                    numThreads = json.optInt("numThreads", numThreads)
-                    modelName = json.optString("model", modelName)
-                    punctModelName = json.optString("punctModel", punctModelName)
-                    language = json.optString("language", language)
-                    provider = json.optString("provider", provider)
-                    decodingMethod = json.optString("decodingMethod", decodingMethod)
-                    Timber.i("Sherpa metadata loaded from external JSON")
-                } catch (e: Exception) {
-                    Timber.e(e, "Failed to parse external metadata.json")
-                }
-            }
-
-            val modelFile = File(voiceDir, modelName)
-            if (!modelFile.exists() || !tokensFile.exists()) {
-                Timber.e("Sherpa init aborted: model file or tokens.txt not found in voice dir")
+            if (!tokensFile.exists()) {
+                Timber.e("Sherpa init aborted: tokens.txt not found in voice dir")
                 return false
             }
-            val punctModelFile = File(voiceDir, punctModelName)
+            if (!encoderFile.exists() || !decoderFile.exists() || !joinerFile.exists()) {
+                Timber.e("Sherpa init aborted: encoder/decoder/joiner model files not found in voice dir")
+                return false
+            }
+
             return try {
-                val senseVoiceConfig =
-                    OfflineSenseVoiceModelConfig(
-                        model = modelFile.absolutePath,
-                        language = language,
-                        useInverseTextNormalization = true,
-                        qnnConfig = QnnConfig(),
+                val transducerConfig =
+                    OnlineTransducerModelConfig(
+                        encoder = encoderFile.absolutePath,
+                        decoder = decoderFile.absolutePath,
+                        joiner = joinerFile.absolutePath,
                     )
 
+                val prefs = AppPrefs.defaultInstance().voiceInput
+                val numThreads = prefs.voiceNumThreads.getValue()
+                    .coerceIn(1, Runtime.getRuntime().availableProcessors())
+                val sensitivity = prefs.voiceSensitivity.getValue()
+                    .coerceIn(1, 10)
+
                 val modelConfig =
-                    OfflineModelConfig(
+                    OnlineModelConfig(
+                        transducer = transducerConfig,
                         tokens = tokensFile.absolutePath,
-                        senseVoice = senseVoiceConfig,
-                        debug = false,
                         numThreads = numThreads,
-                        provider = provider,
+                        provider = "cpu",
+                        modelType = "zipformer2",
+                        debug = false,
                     )
 
                 val config =
-                    OfflineRecognizerConfig(
+                    OnlineRecognizerConfig(
                         featConfig = FeatureConfig(sampleRate = SAMPLE_RATE, featureDim = 80),
                         modelConfig = modelConfig,
-                        decodingMethod = decodingMethod,
+                        decodingMethod = "greedy_search",
+                        maxActivePaths = sensitivity,
+                        enableEndpoint = false,
                     )
 
-                recognizerRef.set(OfflineRecognizer(null, config))
-                Timber.i("Sherpa-onnx offline ASR engine initialized")
-
-                if (punctModelFile.exists()) {
-                    try {
-                        val punctConfig =
-                            OfflinePunctuationConfig(
-                                model =
-                                OfflinePunctuationModelConfig(
-                                    ctTransformer = punctModelFile.absolutePath,
-                                    numThreads = numThreads,
-                                    debug = false,
-                                    provider = provider,
-                                ),
-                            )
-                        punctuationRef.set(OfflinePunctuation(null, punctConfig))
-                        Timber.i("Sherpa punctuation model loaded: ${punctModelFile.name}")
-                    } catch (e: Throwable) {
-                        Timber.e(e, "Sherpa punctuation model failed to load")
-                        punctuationRef.set(null)
-                    }
-                } else {
-                    Timber.w("Sherpa punctuation model not found, output will be raw text")
-                    punctuationRef.set(null)
-                }
-
+                recognizerRef.set(OnlineRecognizer(null, config))
+                Timber.i("Sherpa-onnx online ASR engine initialized")
                 true
             } catch (e: Throwable) {
                 Timber.e(e, "Sherpa engine init crashed")
@@ -166,7 +139,10 @@ object SherpaSpeechClient {
         if (!isHolding.compareAndSet(false, true)) return
         invokeHoldingChanged(true)
 
-        serviceRef = service
+        serviceRef = WeakReference(service)
+        lastEmitUptimeMs = 0L
+        lastEmittedText = null
+        lastRawText = null
 
         if (!VoiceModelManager.checkModelFiles()) {
             service.toast(service.getString(R.string.voice_model_not_initialized))
@@ -183,7 +159,7 @@ object SherpaSpeechClient {
 
             if (initSuccess && initWasFirst) {
                 isFirstInit = false
-                service.toast("语音引擎加载完成，耗时 ${elapsed}ms")
+                service.toast(service.getString(R.string.voice_engine_loaded, elapsed))
             }
 
             if (initSuccess) {
@@ -214,14 +190,7 @@ object SherpaSpeechClient {
         invokeHoldingChanged(false)
         val job = audioJob
         audioJob = null
-        serviceRef?.let { s ->
-            s.lifecycleScope.launch {
-                job?.cancelAndJoin()
-                s.currentInputConnection?.finishComposingText()
-                clearServiceRef()
-            }
-        } ?: run {
-            job?.cancel()
+        if (job == null) {
             clearServiceRef()
         }
     }
@@ -273,11 +242,8 @@ object SherpaSpeechClient {
 
                     val chunk = ByteArray(chunkBytes)
                     var notifiedRecordingStarted = false
-                    var loopCounter = 0
 
-                    var hasRealAudioEntered = false
-                    var continuousSilenceCount = 0
-                    val maxTailBufferFrames = 10
+                    var loopCounter = 0L
 
                     while (isActive && isHolding.get() && rec.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
                         val n =
@@ -307,91 +273,88 @@ object SherpaSpeechClient {
                             .get(shortChunk)
 
                         val amp = calculateAmplitude(chunk, n)
-                        val floatChunk = FloatArray(sampleCount)
-
                         val isCurrentFrameSpeech = amp >= NOISE_THRESHOLD
-
-                        if (isCurrentFrameSpeech) {
-                            continuousSilenceCount = 0
-                            hasRealAudioEntered = true
-                        } else {
-                            continuousSilenceCount++
-                        }
+                        val floatChunk = FloatArray(sampleCount)
 
                         for (i in 0 until sampleCount) {
                             floatChunk[i] = shortChunk[i] / 32768.0f
                         }
 
-                        var pendingText: String? = null
+                        var rawText: String? = null
 
                         synchronized(audioLock) {
                             val engine = recognizerRef.get()
                             val stream = currentStreamRef.get()
-                            val puncEngine = punctuationRef.get()
 
                             if (engine != null && stream != null) {
-                                if (hasRealAudioEntered) {
-                                    if (continuousSilenceCount <= maxTailBufferFrames) {
-                                        stream.acceptWaveform(floatChunk, SAMPLE_RATE)
+                                stream.acceptWaveform(floatChunk, SAMPLE_RATE)
 
-                                        loopCounter++
-                                        if (loopCounter % 8 == 0) {
-                                            try {
-                                                engine.decode(stream)
-                                                val resultObj = engine.getResult(stream)
-                                                if (resultObj.text.isNotBlank()) {
-                                                    val cleanText = cleanSenseVoiceText(resultObj.text)
-                                                    pendingText =
-                                                        if (puncEngine != null && cleanText.isNotBlank()) {
-                                                            puncEngine.addPunctuation(cleanText)
-                                                        } else {
-                                                            cleanText
-                                                        }
-                                                }
-                                            } catch (e: Throwable) {
-                                                Timber.e(e, "Streaming decode failed")
-                                            }
-                                        }
+                                var loops = 0
+                                while (engine.isReady(stream) && loops < 16) {
+                                    engine.decode(stream)
+                                    loops++
+                                }
+
+                                val resultObj = engine.getResult(stream)
+                                if (resultObj.text.isNotBlank()) {
+                                    rawText = resultObj.text
+                                }
+                            }
+                        }
+
+                        if (!rawText.isNullOrBlank() && rawText != lastRawText) {
+                            lastRawText = rawText
+                            val now = SystemClock.uptimeMillis()
+                            if ((now - lastEmitUptimeMs) >= PARTIAL_EMIT_MIN_INTERVAL_MS) {
+                                val normalized = normalizeCjkSpacing(rawText)
+                                if (normalized.isNotEmpty() && normalized != lastEmittedText) {
+                                    lastEmittedText = normalized
+                                    lastEmitUptimeMs = now
+                                    withContext(Dispatchers.Main) {
+                                        serviceRef?.get()?.currentInputConnection?.setComposingText(
+                                            normalized,
+                                            1,
+                                        )
                                     }
                                 }
                             }
                         }
 
-                        if (!pendingText.isNullOrBlank()) {
+                        if (isCurrentFrameSpeech || loopCounter % 4 == 0L) {
                             withContext(Dispatchers.Main) {
-                                serviceRef?.currentInputConnection?.setComposingText(
-                                    pendingText,
-                                    1,
-                                )
+                                runCatching { VoiceOverlayUiBridge.onAmplitude?.invoke(amp) }
                             }
                         }
-
-                        withContext(Dispatchers.Main) {
-                            runCatching { VoiceOverlayUiBridge.onAmplitude?.invoke(amp) }
-                        }
+                        loopCounter++
 
                         delay(5)
                     }
 
-                    var finalCleanText: String? = null
+                    var finalText: String? = null
 
                     synchronized(audioLock) {
                         val engine = recognizerRef.get()
                         val stream = currentStreamRef.get()
-                        val puncEngine = punctuationRef.get()
 
-                        if (engine != null && stream != null && hasRealAudioEntered) {
+                        if (engine != null && stream != null) {
                             try {
-                                engine.decode(stream)
+                                val tailSamples = ((SAMPLE_RATE * 0.6).toInt()).coerceAtLeast(1)
+                                val tail = FloatArray(tailSamples)
+                                stream.acceptWaveform(tail, SAMPLE_RATE)
+                                stream.inputFinished()
+
+                                val startUptimeMs = SystemClock.uptimeMillis()
+                                val maxUptimeMs = startUptimeMs + 2500L
+                                var loops = 0
+                                while (loops < 512 && SystemClock.uptimeMillis() < maxUptimeMs) {
+                                    if (!engine.isReady(stream)) break
+                                    engine.decode(stream)
+                                    loops++
+                                }
+
                                 val finalResult = engine.getResult(stream)
                                 if (finalResult.text.isNotBlank()) {
-                                    val cleanText = cleanSenseVoiceText(finalResult.text)
-                                    finalCleanText =
-                                        if (puncEngine != null && cleanText.isNotBlank()) {
-                                            puncEngine.addPunctuation(cleanText)
-                                        } else {
-                                            cleanText
-                                        }
+                                    finalText = normalizeCjkSpacing(finalResult.text)
                                 }
                             } catch (e: Throwable) {
                                 Timber.e(e, "Final decode failed")
@@ -399,13 +362,16 @@ object SherpaSpeechClient {
                         }
                     }
 
-                    if (!finalCleanText.isNullOrBlank()) {
+                    if (!finalText.isNullOrBlank()) {
                         withContext(Dispatchers.Main) {
-                            serviceRef?.currentInputConnection?.setComposingText(
-                                finalCleanText,
-                                1,
-                            )
+                            val ic = serviceRef?.get()?.currentInputConnection
+                            ic?.setComposingText(finalText, 1)
+                            ic?.finishComposingText()
                         }
+                    }
+                    withContext(Dispatchers.Main) {
+                        runCatching { VoiceOverlayUiBridge.onDone?.invoke() }
+                        clearServiceRef()
                     }
                 } catch (t: Throwable) {
                     if (t is CancellationException) {
@@ -415,7 +381,7 @@ object SherpaSpeechClient {
                     } else {
                         Timber.e(t, "Audio recording / inference failed")
                         withContext(Dispatchers.Main) {
-                            serviceRef?.let { service.toast(it.getString(R.string.asrkb_err_audio_record_failed)) }
+                            serviceRef?.get()?.let { service.toast(it.getString(R.string.asrkb_err_audio_record_failed)) }
                             runCatching { VoiceOverlayUiBridge.onDone?.invoke() }
                         }
                     }
@@ -429,9 +395,8 @@ object SherpaSpeechClient {
                     }
                     synchronized(audioLock) {
                         try {
-                            currentStreamRef.get()?.release()
+                            currentStreamRef.getAndSet(null)?.release()
                         } catch (_: Throwable) {}
-                        currentStreamRef.set(null)
                     }
                 }
             }
@@ -452,9 +417,8 @@ object SherpaSpeechClient {
         invokeHoldingChanged(false)
         synchronized(audioLock) {
             try {
-                currentStreamRef.get()?.release()
+                currentStreamRef.getAndSet(null)?.release()
             } catch (_: Throwable) {}
-            currentStreamRef.set(null)
         }
         clearServiceRef()
     }
@@ -466,8 +430,54 @@ object SherpaSpeechClient {
     }
 
     private fun clearServiceRef() {
+        serviceRef?.clear()
         serviceRef = null
     }
+
+    private fun normalizeCjkSpacing(text: String): String {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return trimmed
+        val chars = trimmed.toCharArray()
+        val out = StringBuilder(trimmed.length)
+        var i = 0
+        while (i < chars.size) {
+            val ch = chars[i]
+            if (ch.isWhitespace()) {
+                val prev = out.lastOrNull()
+                var j = i + 1
+                while (j < chars.size && chars[j].isWhitespace()) {
+                    j++
+                }
+                val next = chars.getOrNull(j)
+                val dropCjkSpace = prev != null &&
+                    next != null &&
+                    isCjkOrCjkPunct(prev) &&
+                    isCjkOrCjkPunct(next)
+                val dropBeforeAsciiPunct = next != null &&
+                    next in ".,!?;:%)]}"
+                if (!dropCjkSpace && !dropBeforeAsciiPunct) {
+                    var k = i
+                    while (k < j) {
+                        out.append(chars[k])
+                        k++
+                    }
+                }
+                i = j
+                continue
+            }
+            out.append(ch)
+            i++
+        }
+        return out.toString()
+    }
+
+    private fun isCjkOrCjkPunct(ch: Char): Boolean = ch in '\u3400'..'\u4DBF' ||
+        ch in '\u4E00'..'\u9FFF' ||
+        ch in '\uF900'..'\uFAFF' ||
+        ch in '！'..'～' ||
+        ch in '\u3000'..'\u303F' ||
+        ch in '\uFF00'..'\uFFEF' ||
+        ch in '\uFE30'..'\uFE4F'
 
     private fun calculateAmplitude(buffer: ByteArray, size: Int): Float {
         var max = 0
@@ -479,6 +489,4 @@ object SherpaSpeechClient {
         }
         return max.toFloat() / 32768f
     }
-
-    private fun cleanSenseVoiceText(rawText: String): String = rawText.trim()
 }

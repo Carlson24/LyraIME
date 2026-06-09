@@ -25,8 +25,8 @@ object DataManager {
     private const val SCHEMA_LIST_CUSTOM_PATCH = """
       patch:
         schema_list:
-          - schema: wanxiang_zrm
-          - schema: wanxiang_english
+          - schema: luna_pinyin_simp
+          - schema: luna_pinyin
     """
 
     private val lock = ReentrantLock()

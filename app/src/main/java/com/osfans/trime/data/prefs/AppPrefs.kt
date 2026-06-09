@@ -11,6 +11,7 @@ import android.graphics.Typeface
 import androidx.annotation.Keep
 import com.osfans.trime.R
 import com.osfans.trime.data.base.DataManager
+import com.osfans.trime.data.wanxiang.DefaultExcludeRules
 import com.osfans.trime.ime.candidates.compact.CompactCandidateMode
 import com.osfans.trime.ime.candidates.popup.PopupCandidatesLayout
 import com.osfans.trime.ime.candidates.popup.PopupCandidatesMode
@@ -91,6 +92,7 @@ class AppPrefs(
     val candidates = Candidates(shared).register()
     val clipboard = Clipboard(shared).register()
     val advanced = Advanced(shared).register()
+    val wanxiang = Wanxiang(shared).register()
 
     @Keep
     private val onSharedPreferenceChangeListener =
@@ -161,6 +163,8 @@ class AppPrefs(
             const val ASRKB_AIDL_VOICE_TOOLBAR_BUTTON = "asrkb_aidl_voice_toolbar_button"
             const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
             const val VOICE_ANIMATION_STYLE = "voice_animation_style"
+            const val VOICE_NUM_THREADS = "voice_num_threads"
+            const val VOICE_SENSITIVITY = "voice_sensitivity"
         }
 
         enum class VoiceAnimationStyle(override val stringRes: Int) : PreferenceDelegateEnum {
@@ -191,6 +195,23 @@ class AppPrefs(
             { ctx ->
                 listOf(ctx.getString(R.string.builtin_voice_input)) + InputMethodUtils.voiceInputMethods().map { it.first.loadLabel(ctx.packageManager) }
             },
+            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
+        )
+
+        val voiceNumThreads = int(
+            R.string.voice_num_threads,
+            VOICE_NUM_THREADS,
+            4,
+            1,
+            Runtime.getRuntime().availableProcessors().coerceAtLeast(4),
+            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
+        )
+        val voiceSensitivity = int(
+            R.string.voice_sensitivity,
+            VOICE_SENSITIVITY,
+            5,
+            1,
+            10,
             enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
     }
@@ -480,7 +501,10 @@ class AppPrefs(
             CLIPBOARD_COMPARE_RULES,
             "",
             R.string.a_regular_expression_per_line,
-            onBindEditText = { it.typeface = Typeface.MONOSPACE; it.textSize = 15f },
+            onBindEditText = {
+                it.typeface = Typeface.MONOSPACE
+                it.textSize = 15f
+            },
             enableUiOn = { clipboardListening.getValue() },
             summaryCountFormat = R.string.clipboard_rules_count,
         )
@@ -489,7 +513,10 @@ class AppPrefs(
             CLIPBOARD_OUTPUT_RULES,
             "",
             R.string.a_regular_expression_per_line,
-            onBindEditText = { it.typeface = Typeface.MONOSPACE; it.textSize = 15f },
+            onBindEditText = {
+                it.typeface = Typeface.MONOSPACE
+                it.textSize = 15f
+            },
             enableUiOn = { clipboardListening.getValue() },
             summaryCountFormat = R.string.clipboard_rules_count,
         )
@@ -498,7 +525,10 @@ class AppPrefs(
             CLIPBOARD_EXTRACT_RULES,
             "",
             R.string.a_regular_expression_per_line,
-            onBindEditText = { it.typeface = Typeface.MONOSPACE; it.textSize = 15f },
+            onBindEditText = {
+                it.typeface = Typeface.MONOSPACE
+                it.textSize = 15f
+            },
             enableUiOn = { clipboardListening.getValue() },
             summaryCountFormat = R.string.clipboard_rules_count,
         )
@@ -542,6 +572,88 @@ class AppPrefs(
             SHOW_APP_ICON,
             true,
             R.string.only_available_on_some_roms,
+        )
+    }
+
+    class Wanxiang(
+        shared: SharedPreferences,
+    ) : PreferenceDelegateOwner(shared, R.string.wanxiang_updater) {
+        companion object {
+            const val UPDATE_CHANNEL = "wanxiang_update_channel"
+            const val IS_PRO = "wanxiang_is_pro"
+            const val AUX_SCHEME = "wanxiang_aux_scheme"
+            const val DOWNLOAD_SOURCE = "wanxiang_download_source"
+            const val GH_TOKEN = "wanxiang_gh_token"
+            const val EXCLUDE_RULES = "wanxiang_exclude_rules"
+            const val AUTO_CHECK = "wanxiang_auto_check"
+            const val CHECK_INTERVAL = "wanxiang_check_interval"
+        }
+
+        val updateChannel = list(
+            R.string.wanxiang_update_channel,
+            UPDATE_CHANNEL,
+            "Stable",
+            { listOf("Stable", "Preview") },
+            { ctx ->
+                listOf(
+                    ctx.getString(R.string.wanxiang_stable),
+                    ctx.getString(R.string.wanxiang_preview),
+                )
+            },
+        )
+        val isPro = list(
+            R.string.wanxiang_scheme_version,
+            IS_PRO,
+            "pro",
+            { listOf("pro", "base") },
+            { listOf("Pro", "Base") },
+        )
+        val auxScheme = list(
+            R.string.wanxiang_aux_scheme,
+            AUX_SCHEME,
+            "zrm",
+            { listOf("zrm", "wx", "flypy", "moqi", "hanxin", "shouyou", "shyplus", "tiger", "wubi") },
+            {
+                listOf(
+                    "自然码", "万象", "小鹤", "墨奇",
+                    "汉心", "首右", "首右+",
+                    "虎码", "五笔",
+                )
+            },
+            enableUiOn = { isPro.getValue() == "pro" },
+        )
+        val downloadSource = list(
+            R.string.wanxiang_download_source,
+            DOWNLOAD_SOURCE,
+            "CNB",
+            { listOf("CNB", "GitHub") },
+            { listOf("CNB", "GitHub") },
+        )
+        val ghToken = editText(
+            R.string.wanxiang_github_token,
+            GH_TOKEN,
+            "",
+            enableUiOn = { downloadSource.getValue() == "GitHub" },
+        )
+        val autoCheck = switch(R.string.wanxiang_auto_check, AUTO_CHECK, false)
+        val checkInterval = int(
+            R.string.wanxiang_check_interval,
+            CHECK_INTERVAL,
+            12,
+            3,
+            24,
+            "h",
+        ) { autoCheck.getValue() }
+        val excludeRules = editText(
+            R.string.wanxiang_exclude_rules,
+            EXCLUDE_RULES,
+            DefaultExcludeRules,
+            R.string.wanxiang_exclude_hint,
+            onBindEditText = {
+                it.typeface = Typeface.MONOSPACE
+                it.textSize = 15f
+            },
+            summaryCountFormat = R.string.wanxiang_exclude_rules_count,
         )
     }
 }

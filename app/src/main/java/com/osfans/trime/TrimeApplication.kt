@@ -14,7 +14,6 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
-import com.amzxyz.wanxiang.WanxiangCheckWorker
 import com.osfans.trime.data.db.ClipboardHelper
 import com.osfans.trime.data.db.CollectionHelper
 import com.osfans.trime.data.prefs.AppPrefs
@@ -23,6 +22,7 @@ import com.osfans.trime.receiver.RimeIntentReceiver
 import com.osfans.trime.ui.main.LogActivity
 import com.osfans.trime.util.isNightMode
 import com.osfans.trime.worker.BackgroundSyncWork
+import com.osfans.trime.worker.WanxiangCheckWorker
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch

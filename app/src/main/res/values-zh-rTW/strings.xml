@@ -263,7 +263,7 @@
     <string name="voice_model_missing_title">需要語音模型</string>
     <string name="voice_model_missing_message">內建語音識別需要語音模型檔案。請下載或手動選取包含模型的ZIP檔案。</string>
     <string name="voice_model_not_initialized">語音模型未安裝，請在語音輸入設定中初始化本地語音識別元件。</string>
-    <string name="voice_model_download_action">線上下載語音模型（400M）</string>
+    <string name="voice_model_download_action">線上下載語音模型</string>
     <string name="voice_model_import_action">本地匯入語音模型</string>
     <string name="voice_model_download">下載</string>
     <string name="voice_model_select_file">手動選取</string>
@@ -274,6 +274,7 @@
     <string name="voice_model_download_failed">下載失敗：%s</string>
     <string name="voice_model_verification_failed">SHA256驗證失敗</string>
     <string name="voice_model_extract_failed">解壓縮失敗：%s</string>
+    <string name="voice_engine_loaded">語音引擎載入完成，耗時 %dms</string>
     <string name="voice_model_installed">語音模型安裝成功</string>
     <string name="voice_model_exists_title">語音模型已存在</string>
     <string name="voice_model_exists_re_download">語音模型已安裝，是否重新...</string>
@@ -286,7 +287,7 @@
     <string name="main_input_test_hint">點擊此處測試輸入</string>
     <string name="wanxiang_updater">萬象更新</string>
     <string name="wanxiang_auto_check">自動檢查更新</string>
-    <string name="wanxiang_check_interval">檢查間隔：%1$d 小時</string>
+    <string name="wanxiang_check_interval">檢查間隔</string>
     <string name="wanxiang_new_version_title">萬象更新可用</string>
     <string name="wanxiang_new_version_text">新版本 %1$s 可用（目前：%2$s）</string>
     <string name="wanxiang_update_channel">更新通道</string>
@@ -303,7 +304,7 @@
     <string name="wanxiang_download_source">下載源配置</string>
     <string name="wanxiang_github_token">GitHub Token（可選）</string>
     <string name="wanxiang_task_progress">任務進度</string>
-    <string name="wanxiang_actions">選擇要更新的內容：</string>
+    <string name="wanxiang_actions">選擇要更新的內容</string>
     <string name="wanxiang_schema_only">方案</string>
     <string name="wanxiang_dict_only">詞庫</string>
     <string name="wanxiang_model_only">模型</string>
@@ -346,6 +347,8 @@
     <string name="wanxiang_dl_multithread_failed">多執行緒失敗, 降級單執行緒...</string>
     <string name="wanxiang_dl_mb_multithread">%sMB (多執行緒)</string>
     <string name="wanxiang_dl_assembling">檔案合併中...</string>
+    <string name="wanxiang_dl_progress_line">%1$s\n%2$s</string>
+    <string name="wanxiang_dl_progress_status">%1$d%% - %2$s</string>
     <string name="wanxiang_dl_mb_single">%sMB (單線)</string>
     <string name="wanxiang_dl_extracting">解壓中...</string>
     <string name="wanxiang_dl_auth_expired">授權目錄已失效</string>

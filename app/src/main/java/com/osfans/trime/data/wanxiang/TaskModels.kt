@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2025 Rime community
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
-package com.amzxyz.wanxiang
+package com.osfans.trime.data.wanxiang
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
@@ -13,6 +13,7 @@ import java.util.UUID
 data class TaskState(
     val title: String,
     val url: String,
+    val expectedSha256: String? = null,
     var progress: Float = 0f,
     var status: String = "",
     var isFinished: Boolean = false,

@@ -3,13 +3,14 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-package com.amzxyz.wanxiang
+package com.osfans.trime.worker
 
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
+import androidx.preference.PreferenceManager
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -17,11 +18,13 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.osfans.trime.R
-import com.osfans.trime.data.base.DataManager
+import com.osfans.trime.data.ResourceUrls
+import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.wanxiang.compareVersions
+import com.osfans.trime.data.wanxiang.readLocalWanxiangVersion
 import com.osfans.trime.ui.main.MainActivity
 import com.osfans.trime.ui.main.NavigationRoute
 import com.osfans.trime.util.createNotificationChannel
-import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.TimeUnit
@@ -31,10 +34,10 @@ class WanxiangCheckWorker(
     workerParams: WorkerParameters,
 ) : CoroutineWorker(context, workerParams) {
     override suspend fun doWork(): Result {
-        val sharedPref = applicationContext.getSharedPreferences("WanxiangPrefs", 0)
-        if (!sharedPref.getBoolean("auto_check", false)) return Result.success()
+        val sharedPref = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        if (!sharedPref.getBoolean(AppPrefs.Wanxiang.AUTO_CHECK, false)) return Result.success()
 
-        val localVersion = readLocalVersion()
+        val localVersion = readLocalWanxiangVersion()
         if (localVersion == "v0.0.0") return Result.success()
 
         val remoteVersion = fetchRemoteVersion() ?: return Result.retry()
@@ -44,26 +47,8 @@ class WanxiangCheckWorker(
         return Result.success()
     }
 
-    private fun readLocalVersion(): String = try {
-        val userDataFile = File(DataManager.userDataDir, "lua/wanxiang/wanxiang.lua")
-        val sharedDataFile = File(DataManager.sharedDataDir, "wanxiang/wanxiang.lua")
-        val file = when {
-            userDataFile.exists() -> userDataFile
-            sharedDataFile.exists() -> sharedDataFile
-            else -> null
-        }
-        if (file != null) {
-            val content = file.readText()
-            Regex("""wanxiang\.version\s*=\s*"([^"]+)"""").find(content)?.groupValues?.get(1) ?: "v0.0.0"
-        } else {
-            "v0.0.0"
-        }
-    } catch (_: Exception) {
-        "v0.0.0"
-    }
-
     private fun fetchRemoteVersion(): String? = try {
-        val url = URL("https://api.github.com/repos/amzxyz/rime-wanxiang/releases/latest")
+        val url = URL(ResourceUrls.WANXIANG_API_LATEST_RELEASE)
         val conn = url.openConnection() as HttpURLConnection
         conn.setRequestProperty("User-Agent", "WanxiangUpdater-Agent")
         conn.connectTimeout = 10000
@@ -77,18 +62,6 @@ class WanxiangCheckWorker(
         }
     } catch (_: Exception) {
         null
-    }
-
-    private fun compareVersions(a: String, b: String): Int {
-        fun parse(v: String): List<Int> = v.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
-        val va = parse(a)
-        val vb = parse(b)
-        for (i in 0 until maxOf(va.size, vb.size)) {
-            val aa = va.getOrElse(i) { 0 }
-            val bb = vb.getOrElse(i) { 0 }
-            if (aa != bb) return aa.compareTo(bb)
-        }
-        return 0
     }
 
     private fun showNotification(remoteVersion: String, localVersion: String) {
@@ -124,9 +97,9 @@ class WanxiangCheckWorker(
         private const val NOTIFICATION_ID = 4321
 
         fun start(context: Context) {
-            val prefs = context.getSharedPreferences("WanxiangPrefs", 0)
-            if (!prefs.getBoolean("auto_check", false)) return
-            val intervalHours = prefs.getInt("check_interval", 12)
+            val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+            if (!prefs.getBoolean(AppPrefs.Wanxiang.AUTO_CHECK, false)) return
+            val intervalHours = prefs.getInt(AppPrefs.Wanxiang.CHECK_INTERVAL, 12)
             val workManager = WorkManager.getInstance(context.applicationContext)
             val constraints = Constraints.Builder()
                 .setRequiresBatteryNotLow(true)

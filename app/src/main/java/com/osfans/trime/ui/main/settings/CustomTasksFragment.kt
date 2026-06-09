@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2025 Rime community
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
-package com.amzxyz.wanxiang
+package com.osfans.trime.ui.main.settings
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -20,19 +20,24 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.ColorRes
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.view.children
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.data.base.DataManager
+import com.osfans.trime.data.wanxiang.CustomTask
+import com.osfans.trime.data.wanxiang.DownloadManager
+import com.osfans.trime.data.wanxiang.TaskState
+import com.osfans.trime.data.wanxiang.addDownloadProgressItem
+import com.osfans.trime.data.wanxiang.loadCustomTasks
+import com.osfans.trime.data.wanxiang.saveCustomTasks
+import com.osfans.trime.data.wanxiang.updateDownloadProgressItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -480,11 +485,14 @@ class CustomTasksFragment : Fragment() {
 
         val tasks = targets.map { t ->
             val fName = t.url.substringAfterLast("/")
-            TaskState("${t.name.ifBlank { getString(R.string.wanxiang_default_short) }} ($fName)", t.url)
+            TaskState(
+                "${t.name.ifBlank { getString(R.string.wanxiang_default_short) }} ($fName)",
+                t.url,
+            )
         }
 
         for (task in tasks) {
-            addProgressToCustom(task)
+            addDownloadProgressItem(llCustomProgress, task, requireContext())
         }
 
         lifecycleScope.launch {
@@ -496,7 +504,7 @@ class CustomTasksFragment : Fragment() {
                     rules = emptyList(),
                     targetPaths = listOf(tData.boundPath),
                     onProgress = { t ->
-                        lifecycleScope.launch(Dispatchers.Main) { updateProgressInCustom(t) }
+                        lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.wanxiang_error) }
                     },
                 )
             }
@@ -530,7 +538,7 @@ class CustomTasksFragment : Fragment() {
             task.name.ifBlank { getString(R.string.wanxiang_default_short) } + " (${task.url.substringAfterLast("/")})",
             task.url,
         )
-        addProgressToCustom(uiState)
+        addDownloadProgressItem(llCustomProgress, uiState, requireContext())
 
         lifecycleScope.launch {
             DownloadManager.downloadAndDeploy(
@@ -540,66 +548,12 @@ class CustomTasksFragment : Fragment() {
                 rules = emptyList(),
                 targetPaths = listOf(task.boundPath),
                 onProgress = { t ->
-                    lifecycleScope.launch(Dispatchers.Main) { updateProgressInCustom(t) }
+                    lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.wanxiang_error) }
                 },
             )
             isDownloading = false
             btnBatchExecute.isClickable = true
             btnBatchExecute.alpha = 1f
-        }
-    }
-
-    private fun addProgressToCustom(task: TaskState) {
-        val ctx = requireContext()
-        val dp = ctx.resources.displayMetrics.density
-        fun Int.dp() = (this * dp).toInt()
-
-        val container = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ).apply {
-                topMargin = 8.dp()
-                bottomMargin = 4.dp()
-            }
-        }
-        val header = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
-        val titleView = TextView(ctx).apply {
-            text = task.title
-            textSize = 12f
-            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-            maxLines = 1
-        }
-        val statusView = TextView(ctx).apply {
-            text = task.status
-            textSize = 11f
-        }
-        header.addView(titleView)
-        header.addView(statusView)
-
-        val bar = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100 }
-        container.addView(header)
-        container.addView(bar)
-        container.tag = task
-        llCustomProgress.addView(container)
-    }
-
-    private fun updateProgressInCustom(task: TaskState) {
-        for (child in llCustomProgress.children) {
-            if (child.tag == task && child is LinearLayout) {
-                val header = child.getChildAt(0) as? LinearLayout ?: continue
-                val bar = child.getChildAt(1) as? ProgressBar ?: continue
-                val statusView = header.getChildAt(1) as? TextView ?: continue
-                statusView.text = task.status
-                if (task.progress < 0) {
-                    bar.isIndeterminate = true
-                } else {
-                    bar.isIndeterminate = false
-                    bar.progress = (task.progress * 100).toInt()
-                }
-                if (task.isError) statusView.setTextColor(color(R.color.wanxiang_error))
-            }
         }
     }
 

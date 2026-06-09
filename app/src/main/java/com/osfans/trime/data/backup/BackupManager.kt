@@ -198,7 +198,7 @@ object BackupManager {
         val filteredPrefs = mutableMapOf<String, BackupPreference>()
 
         for ((key, value) in allPrefs) {
-            if (key != AppPrefs.Internal.PID) {
+            if (key != AppPrefs.Internal.PID && !key.startsWith("wanxiang_")) {
                 filteredPrefs[key] = valueToBackupPreference(value)
             }
         }
@@ -457,13 +457,14 @@ object BackupManager {
     }
 
     private fun exportWanxiangPrefs(): Map<String, BackupPreference> {
-        val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
         val allPrefs = sharedPreferences.all
         val result = mutableMapOf<String, BackupPreference>()
 
         for ((key, value) in allPrefs) {
-            if (key == CUSTOM_TASKS_KEY) continue
-            result[key] = valueToBackupPreference(value)
+            if (key.startsWith("wanxiang_")) {
+                result[key] = valueToBackupPreference(value)
+            }
         }
 
         Timber.d("Successfully exported Wanxiang preferences with ${result.size} items")
@@ -482,13 +483,19 @@ object BackupManager {
     }
 
     private suspend fun importWanxiangPrefs(prefs: Map<String, BackupPreference>) {
-        val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
         val editor = sharedPreferences.edit()
-        editor.clear()
+        val appPrefs = AppPrefs.defaultInstance()
 
         prefs.forEach { (key, backupPref) ->
             val value = backupPref.value
             val type = backupPref.type
+
+            val validationResult = appPrefs.validatePreference(key, type.name)
+            if (!validationResult.isValid) {
+                Timber.w("Skipping Wanxiang preference '$key': ${validationResult.message}")
+                return@forEach
+            }
 
             when {
                 value is JsonArray -> {

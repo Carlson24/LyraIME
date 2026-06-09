@@ -5,7 +5,6 @@
 package com.osfans.trime.data.prefs
 
 import android.content.Context
-import android.widget.EditText as AndroidEditText
 import androidx.annotation.StringRes
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
@@ -14,6 +13,7 @@ import androidx.preference.SwitchPreference
 import com.osfans.trime.R
 import com.osfans.trime.ui.main.settings.DialogSeekBarPreference
 import com.osfans.trime.ui.main.settings.EditTextIntPreference
+import android.widget.EditText as AndroidEditText
 
 abstract class PreferenceDelegateUi<T : Preference>(
     val key: String,
@@ -131,8 +131,11 @@ abstract class PreferenceDelegateUi<T : Preference>(
                 Preference.SummaryProvider<EditTextPreference> { pref ->
                     val text = pref.sharedPreferences?.getString(pref.key, "") ?: ""
                     val count = text.lines().count { it.isNotBlank() }
-                    if (count == 0) context.getString(R.string.disable)
-                    else context.getString(this@EditText.summaryCountFormat, count)
+                    if (count == 0) {
+                        context.getString(R.string.disable)
+                    } else {
+                        context.getString(this@EditText.summaryCountFormat, count)
+                    }
                 }
             } else {
                 EditTextPreference.SimpleSummaryProvider.getInstance()
