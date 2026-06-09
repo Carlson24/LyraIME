@@ -115,7 +115,7 @@
     <string name="quick_bar">快捷欄</string>
     <string name="copy_done">已複製</string>
     <string name="hook_shift_space">點擊空格時，忽略Shift的鎖定狀態</string>
-    <string name="hook_shift_num">點擊0-9時，忽略Shift的鎖定狀態</string>
+    <string name="hook_shift_num">點擊0–9時，忽略Shift的鎖定狀態</string>
     <string name="hook_shift_symbol">點擊符號鍵時，忽略Shift的鎖定狀態</string>
     <string name="hook_shift_arrow">點選方向鍵時，保持Shift的鎖定狀態</string>
     <string name="export">匯出</string>
@@ -259,6 +259,7 @@
     <string name="no_voice_input_installed">尚未安裝語音輸入</string>
     <string name="voice_animation_style">語音動畫</string>
     <string name="voice_animation_particle">粒子環</string>
+    <string name="voice_sensitivity">識別靈敏度</string>
     <string name="voice_animation_sphere">球形漣漪</string>
     <string name="voice_model_missing_title">需要語音模型</string>
     <string name="voice_model_missing_message">內建語音識別需要語音模型檔案。請下載或手動選取包含模型的ZIP檔案。</string>
@@ -277,7 +278,7 @@
     <string name="voice_engine_loaded">語音引擎載入完成，耗時 %dms</string>
     <string name="voice_model_installed">語音模型安裝成功</string>
     <string name="voice_model_exists_title">語音模型已存在</string>
-    <string name="voice_model_exists_re_download">語音模型已安裝，是否重新...</string>
+    <string name="voice_model_exists_re_download">語音模型已安裝，是否重新…</string>
     <string name="voice_model_exists_re_import">語音模型已安裝，是否重新匯入？</string>
     <string name="inline_suggestions">顯示內嵌自動填充建議</string>
     <string name="update_config">更新配置</string>
@@ -329,7 +330,7 @@
     <string name="wanxiang_default_name">未命名任務</string>
     <string name="wanxiang_default_short">未命名</string>
     <string name="wanxiang_hint_task_name">如: 霧凇輸入方案</string>
-    <string name="wanxiang_hint_url">https://... 或 /storage/...</string>
+    <string name="wanxiang_hint_url">https://… 或 /storage/…</string>
     <string name="wanxiang_auth_prefix">授權: </string>
     <string name="wanxiang_confirm_execute">確認執行選中的更新操作？\n目標目錄: %s</string>
     <string name="wanxiang_package_dicts">詞庫包</string>
@@ -339,18 +340,18 @@
     <string name="wanxiang_granted">授權</string>
     <string name="wanxiang_dl_local_error">本地檔案讀取異常</string>
     <string name="wanxiang_dl_retrying">重試中(%d/3)</string>
-    <string name="wanxiang_dl_connecting">連線中...</string>
+    <string name="wanxiang_dl_connecting">連線中…</string>
     <string name="wanxiang_dl_network_error">網路異常</string>
     <string name="wanxiang_dl_fetch_failed">獲取檔案失敗: %s</string>
-    <string name="wanxiang_dl_reading_local">讀取本地檔案...</string>
+    <string name="wanxiang_dl_reading_local">讀取本地檔案…</string>
     <string name="wanxiang_dl_local_done">本地讀取完成</string>
-    <string name="wanxiang_dl_multithread_failed">多執行緒失敗, 降級單執行緒...</string>
+    <string name="wanxiang_dl_multithread_failed">多執行緒失敗, 降級單執行緒…</string>
     <string name="wanxiang_dl_mb_multithread">%sMB (多執行緒)</string>
-    <string name="wanxiang_dl_assembling">檔案合併中...</string>
+    <string name="wanxiang_dl_assembling">檔案合併中…</string>
     <string name="wanxiang_dl_progress_line">%1$s\n%2$s</string>
     <string name="wanxiang_dl_progress_status">%1$d%% - %2$s</string>
     <string name="wanxiang_dl_mb_single">%sMB (單線)</string>
-    <string name="wanxiang_dl_extracting">解壓中...</string>
+    <string name="wanxiang_dl_extracting">解壓中…</string>
     <string name="wanxiang_dl_auth_expired">授權目錄已失效</string>
     <string name="wanxiang_dl_saf_denied">SAF底層拒絕存取</string>
     <string name="wanxiang_dl_all_failed">全部失敗</string>
@@ -361,4 +362,5 @@
     <string name="wanxiang_dl_file_conflict">檔案衝突無法建立: %s</string>
     <string name="wanxiang_dl_file_stream_busy">檔案流被占用拒絕寫入: %s</string>
     <string name="wanxiang_dl_failed_item" formatted="false">%s(%s)</string>
+    <string name="voice_num_threads">語音識別線程數</string>
 </resources>

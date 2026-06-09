@@ -15,6 +15,20 @@ open class PreferenceDelegate<T : Any>(
     val key: String,
     val defaultValue: T,
 ) : ReadWriteProperty<Any?, T> {
+    init {
+        try {
+            when (defaultValue) {
+                is Int -> sharedPreferences.getInt(key, 0)
+                is Long -> sharedPreferences.getLong(key, 0L)
+                is Float -> sharedPreferences.getFloat(key, 0f)
+                is Boolean -> sharedPreferences.getBoolean(key, false)
+                is String -> sharedPreferences.getString(key, null)
+            }
+        } catch (_: ClassCastException) {
+            sharedPreferences.edit { remove(key) }
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
     open fun getValue(): T = try {
         when (defaultValue) {

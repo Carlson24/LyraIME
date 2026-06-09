@@ -95,7 +95,7 @@
     <string name="quick_bar">快捷栏</string>
     <string name="copy_done">已复制</string>
     <string name="hook_shift_space">点击空格时，忽略Shift的锁定状态</string>
-    <string name="hook_shift_num">点击0-9时，忽略Shift的锁定状态</string>
+    <string name="hook_shift_num">点击0–9时，忽略Shift的锁定状态</string>
     <string name="hook_shift_symbol">点击符号键时，忽略Shift的锁定状态</string>
     <string name="hook_shift_arrow">点击方向键时，保持Shift的锁定状态</string>
     <string name="developer">开发者</string>
@@ -258,6 +258,7 @@
     <string name="no_voice_input_installed">未安装语音输入</string>
     <string name="voice_animation_style">语音动画</string>
     <string name="voice_animation_particle">粒子环</string>
+    <string name="voice_sensitivity">识别灵敏度</string>
     <string name="voice_animation_sphere">球形涟漪</string>
     <string name="voice_model_missing_title">需要语音模型</string>
     <string name="voice_model_missing_message">内置语音识别需要语音模型文件。请下载或手动选择包含模型的ZIP文件。</string>
@@ -328,7 +329,7 @@
     <string name="wanxiang_default_name">未命名任务</string>
     <string name="wanxiang_default_short">未命名</string>
     <string name="wanxiang_hint_task_name">如: 雾凇输入方案</string>
-    <string name="wanxiang_hint_url">https://... 或 /storage/...</string>
+    <string name="wanxiang_hint_url">https://… 或 /storage/…</string>
     <string name="wanxiang_auth_prefix">授权: </string>
     <string name="wanxiang_confirm_execute">确认执行选中的更新操作？\n目标目录: %s</string>
     <string name="wanxiang_package_dicts">词库包</string>
@@ -338,18 +339,18 @@
     <string name="wanxiang_granted">授权</string>
     <string name="wanxiang_dl_local_error">本地文件读取异常</string>
     <string name="wanxiang_dl_retrying">重试中(%d/3)</string>
-    <string name="wanxiang_dl_connecting">连接中...</string>
+    <string name="wanxiang_dl_connecting">连接中…</string>
     <string name="wanxiang_dl_network_error">网络异常</string>
     <string name="wanxiang_dl_fetch_failed">获取文件失败: %s</string>
-    <string name="wanxiang_dl_reading_local">读取本地文件...</string>
+    <string name="wanxiang_dl_reading_local">读取本地文件…</string>
     <string name="wanxiang_dl_local_done">本地读取完成</string>
-    <string name="wanxiang_dl_multithread_failed">多线程失败, 降级单线程...</string>
+    <string name="wanxiang_dl_multithread_failed">多线程失败, 降级单线程…</string>
     <string name="wanxiang_dl_mb_multithread">%sMB (多线程)</string>
-    <string name="wanxiang_dl_assembling">文件合并中...</string>
+    <string name="wanxiang_dl_assembling">文件合并中…</string>
     <string name="wanxiang_dl_progress_line">%1$s\n%2$s</string>
     <string name="wanxiang_dl_progress_status">%1$d%% - %2$s</string>
     <string name="wanxiang_dl_mb_single">%sMB (单线)</string>
-    <string name="wanxiang_dl_extracting">解压中...</string>
+    <string name="wanxiang_dl_extracting">解压中…</string>
     <string name="wanxiang_dl_auth_expired">授权目录已失效</string>
     <string name="wanxiang_dl_saf_denied">SAF底层拒绝访问</string>
     <string name="wanxiang_dl_all_failed">全部失败</string>
@@ -360,4 +361,5 @@
     <string name="wanxiang_dl_file_conflict">文件冲突无法创建: %s</string>
     <string name="wanxiang_dl_file_stream_busy">文件流被占用拒绝写入: %s</string>
     <string name="wanxiang_dl_failed_item" formatted="false">%s(%s)</string>
+    <string name="voice_num_threads">语音识别线程数</string>
 </resources>
