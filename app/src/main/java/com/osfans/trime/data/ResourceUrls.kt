@@ -29,7 +29,7 @@ object ResourceUrls {
 
     // ---- Voice Model ----
     const val VOICE_MODEL_DOWNLOAD =
-        "https://github.com/Carlson24/LyraIME/releases/download/models/Sherpa-Onnx-SenseVoice.zip"
+        "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-streaming-x-asr-480ms-zh-en.zip"
     const val VOICE_MODEL_SHA256 =
         "56b5be59a57aa7893b98040690c87238f026cb1c9cd58db98547be9ecd43ee87"
 }
