@@ -47,11 +47,10 @@ class BoardWindowManager {
         )
     }
 
-    @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
-    fun <W : BoardWindow, E : ResidentWindow, R> cacheResidentWindow(
+    fun <R> cacheResidentWindow(
         window: R,
         createView: Boolean = false,
-    ) where R : W, R : E {
+    ) where R : BoardWindow, R : ResidentWindow {
         if (window.key in cachedResidentWindows) {
             if (cachedResidentWindows[window.key]!!.first === window) {
                 Timber.d("Skip adding resident window $window")

@@ -74,7 +74,7 @@ class SwitchOptionWindow :
         get() = if (!prefs.general.hideStaticSwitcher.getValue()) {
             staticEntryData
         } else {
-            java.lang.reflect.Array.newInstance(SwitchOptionEntry::class.java, 0) as Array<SwitchOptionEntry>
+            emptyArray()
         }
 
     var popupMenu: PopupMenu? = null

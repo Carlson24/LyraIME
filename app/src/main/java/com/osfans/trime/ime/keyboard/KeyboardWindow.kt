@@ -73,7 +73,9 @@ class KeyboardWindow :
 
     private lateinit var keyboardView: FrameLayout
 
-    companion object : ResidentWindow.Key
+    companion object : ResidentWindow.Key {
+        lateinit var currentKeyboard: Keyboard
+    }
 
     override val key: ResidentWindow.Key
         get() = KeyboardWindow
@@ -170,8 +172,7 @@ class KeyboardWindow :
                 }
             }
 
-            // TODO：为避免过量重构，这里暂时将 currentKeyboard 同步到 KeyboardSwitcher
-            KeyboardSwitcher.currentKeyboard = it
+            KeyboardWindow.currentKeyboard = it
         }
 
         view.let {

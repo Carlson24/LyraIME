@@ -88,7 +88,7 @@ fun Context.getFileFromUri(uri: Uri): File? {
                     val result = getVolumeList.invoke(mStorageManager)
                     val length = result?.let { Array.getLength(it) } ?: 0
                     for (i in 0 until length) {
-                        val storageVolumeElement = Array.get(result, i)
+                        val storageVolumeElement: Any? = Array.get(result!!, i)
                         val mounted =
                             Environment.MEDIA_MOUNTED ==
                                 getState.invoke(
@@ -107,7 +107,9 @@ fun Context.getFileFromUri(uri: Uri): File? {
                         }
                         val uuid = getUuid.invoke(storageVolumeElement) as? String
                         if (uuid != null && uuid == type) {
-                            return File(getPath.invoke(storageVolumeElement).toString() + "/" + split[1])
+                            val pathObj = getPath.invoke(storageVolumeElement)
+                            if (pathObj == null) continue
+                            return File(pathObj.toString() + "/" + split[1])
                         }
                     }
                 }.getOrElse {

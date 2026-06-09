@@ -362,5 +362,5 @@
     <string name="wanxiang_dl_dir_locked">System locked directory: %s</string>
     <string name="wanxiang_dl_file_conflict">File conflict, cannot create: %s</string>
     <string name="wanxiang_dl_file_stream_busy">File stream busy, write denied: %s</string>
-    <string name="wanxiang_dl_failed_item">%s(%s)</string>
+    <string name="wanxiang_dl_failed_item" formatted="false">%s(%s)</string>
 </resources>

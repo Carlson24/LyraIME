@@ -359,5 +359,5 @@
     <string name="wanxiang_dl_dir_locked">系统锁定了目录: %s</string>
     <string name="wanxiang_dl_file_conflict">文件冲突无法创建: %s</string>
     <string name="wanxiang_dl_file_stream_busy">文件流被占用拒绝写入: %s</string>
-    <string name="wanxiang_dl_failed_item">%s(%s)</string>
+    <string name="wanxiang_dl_failed_item" formatted="false">%s(%s)</string>
 </resources>

@@ -23,7 +23,7 @@ import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.model.ToolBar
 import com.osfans.trime.ime.keyboard.GestureFrame
-import com.osfans.trime.ime.keyboard.KeyboardSwitcher
+import com.osfans.trime.ime.keyboard.KeyboardWindow
 import splitties.dimensions.dp
 import splitties.views.dsl.core.add
 import splitties.views.dsl.core.imageView
@@ -223,7 +223,7 @@ class ToolButton : GestureFrame {
     }
 
     private fun setupFallbackContent(config: ToolBar.Button) {
-        val action = KeyActionManager.getAction(config.action).getLabel(KeyboardSwitcher.currentKeyboard)
+        val action = KeyActionManager.getAction(config.action).getLabel(KeyboardWindow.currentKeyboard)
         setupContent(ContentType.TEXT, text = action)
     }
 

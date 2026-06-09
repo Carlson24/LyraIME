@@ -142,10 +142,10 @@ class CommonKeyboardActionListener {
                         service.commitText(action.commit)
                         false
                     }
-                    KeyboardSwitcher.currentKeyboard.let { keyboard ->
+                    KeyboardWindow.currentKeyboard.let { keyboard ->
                         action.getText(keyboard).isNotEmpty()
                     } -> {
-                        onText(action.getText(KeyboardSwitcher.currentKeyboard))
+                        onText(action.getText(KeyboardWindow.currentKeyboard))
                         false
                     }
                     else -> true
@@ -338,15 +338,15 @@ class CommonKeyboardActionListener {
                     else -> false
                 }
 
-                if (action.modifier == 0 && KeyboardSwitcher.currentKeyboard.isOnlyShiftOn && shouldHookShiftKey) {
+                if (action.modifier == 0 && KeyboardWindow.currentKeyboard.isOnlyShiftOn && shouldHookShiftKey) {
                     onKey(action.code, 0)
                     return
                 }
 
                 val modifier = when {
-                    action.modifier == 0 -> KeyboardSwitcher.currentKeyboard.modifier
+                    action.modifier == 0 -> KeyboardWindow.currentKeyboard.modifier
                     (action.modifier and KeyEvent.META_CTRL_ON) != 0 && isNavigationKey(action.code) ->
-                        action.modifier or KeyboardSwitcher.currentKeyboard.modifier
+                        action.modifier or KeyboardWindow.currentKeyboard.modifier
                     else -> action.modifier
                 }
 
