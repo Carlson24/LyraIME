@@ -260,6 +260,10 @@
     <string name="voice_animation_particle">粒子环</string>
     <string name="voice_sensitivity">识别灵敏度</string>
     <string name="voice_animation_sphere">球形涟漪</string>
+    <string name="voice_model_type">语音模型类型</string>
+    <string name="voice_model_type_standard">标准</string>
+    <string name="voice_model_type_int8">Int8（更小更快）</string>
+    <string name="local_voice_settings">本地语音设置</string>
     <string name="voice_model_missing_title">需要语音模型</string>
     <string name="voice_model_missing_message">内置语音识别需要语音模型文件。请下载或手动选择包含模型的ZIP文件。</string>
     <string name="voice_model_not_initialized">语音模型未安装，请在语音输入设置中初始化本地语音识别组件。</string>
@@ -275,10 +279,16 @@
     <string name="voice_model_verification_failed">SHA256校验失败</string>
     <string name="voice_model_extract_failed">解压失败：%s</string>
     <string name="voice_engine_loaded">语音引擎加载完成，耗时 %dms</string>
+    <string name="voice_engine_reloading">正在重载语音引擎…</string>
+    <string name="voice_engine_reloaded">语音引擎重载完成，耗时 %dms</string>
     <string name="voice_model_installed">语音模型安装成功</string>
     <string name="voice_model_exists_title">语音模型已存在</string>
     <string name="voice_model_exists_re_download">语音模型已安装，是否重新下载？</string>
     <string name="voice_model_exists_re_import">语音模型已安装，是否重新导入？</string>
+    <string name="voice_model_type_mismatch_title">模型类型不匹配</string>
+    <string name="voice_model_type_mismatch_message">所选文件似乎是%s模型，但你设置中选择的是%s。是否继续导入？</string>
+    <string name="voice_model_type_standard_name">标准</string>
+    <string name="voice_model_type_int8_name">Int8</string>
     <string name="inline_suggestions">显示内嵌自动填充建议</string>
     <string name="update_config">更新配置</string>
     <string name="share">分享</string>
@@ -294,6 +304,7 @@
     <string name="wanxiang_stable">正式版</string>
     <string name="wanxiang_preview">预览版</string>
     <string name="wanxiang_scheme_version">方案版本</string>
+    <string name="wanxiang_scheme_type">方案类型</string>
     <string name="wanxiang_version_label_fmt">%1$s (%2$s)</string>
     <string name="wanxiang_exclude_rules_count">%d 项规则</string>
     <string name="wanxiang_aux_scheme">辅助码类型</string>

@@ -11,6 +11,27 @@ import java.io.InputStream
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
+fun extractTarBz2(
+    tarBz2File: File,
+    targetDir: File,
+) {
+    targetDir.mkdirs()
+    val process =
+        ProcessBuilder(
+            "tar",
+            "-xjf",
+            tarBz2File.absolutePath,
+            "-C",
+            targetDir.absolutePath,
+            "--strip-components=1",
+        ).redirectErrorStream(true).start()
+    val exitCode = process.waitFor()
+    if (exitCode != 0) {
+        val stderr = process.inputStream.bufferedReader().use { it.readText() }
+        throw RuntimeException("tar extraction failed (exit $exitCode): $stderr")
+    }
+}
+
 fun extractZip(
     zipFile: File,
     targetDir: File,

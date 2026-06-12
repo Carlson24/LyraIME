@@ -21,7 +21,6 @@ import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OnlineStream
 import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
 import com.osfans.trime.R
-import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.util.toast
@@ -33,12 +32,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.File
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
 
 object SherpaSpeechClient {
     @Volatile
@@ -46,6 +45,18 @@ object SherpaSpeechClient {
 
     private val recognizerRef = AtomicReference<OnlineRecognizer?>(null)
     private val currentStreamRef = AtomicReference<OnlineStream?>(null)
+
+    private data class EngineConfig(
+        val modelType: AppPrefs.LocalVoice.VoiceModelType,
+        val numThreads: Int,
+        val sensitivity: Int,
+    )
+
+    @Volatile
+    private var lastEngineConfig: EngineConfig? = null
+
+    @Volatile
+    private var engineWasReloaded = false
 
     private val isHolding = AtomicBoolean(false)
 
@@ -60,6 +71,9 @@ object SherpaSpeechClient {
 
     private const val SAMPLE_RATE = 16000
     private const val NOISE_THRESHOLD = 0.02f
+    private const val CHUNK_MS = 480
+    private const val CHUNK_SAMPLES = SAMPLE_RATE * CHUNK_MS / 1000
+    private const val CHUNK_BYTES = CHUNK_SAMPLES * 2
     private const val PARTIAL_EMIT_MIN_INTERVAL_MS = 120L
 
     @Volatile
@@ -72,48 +86,46 @@ object SherpaSpeechClient {
     private var lastRawText: String? = null
 
     private fun initEngineIfNeeded(): Boolean {
-        if (recognizerRef.get() != null) return true
+        val currentConfig = readEngineConfig()
 
         synchronized(initLock) {
-            if (recognizerRef.get() != null) return true
+            if (recognizerRef.get() != null && currentConfig == lastEngineConfig) return true
 
-            val voiceDir = DataManager.voiceDataDir
-            val tokensFile = File(voiceDir, "tokens.txt")
-            val encoderFile = File(voiceDir, "encoder-480ms.onnx")
-            val decoderFile = File(voiceDir, "decoder-480ms.onnx")
-            val joinerFile = File(voiceDir, "joiner-480ms.onnx")
-
-            if (!tokensFile.exists()) {
-                Timber.e("Sherpa init aborted: tokens.txt not found in voice dir")
-                return false
+            if (recognizerRef.get() != null) {
+                Timber.i("Engine config changed ($lastEngineConfig -> $currentConfig), releasing old recognizer")
+                try {
+                    recognizerRef.getAndSet(null)?.release()
+                } catch (_: Throwable) {}
+                engineWasReloaded = true
             }
-            if (!encoderFile.exists() || !decoderFile.exists() || !joinerFile.exists()) {
-                Timber.e("Sherpa init aborted: encoder/decoder/joiner model files not found in voice dir")
+
+            val modelFiles = VoiceModelManager.resolveModelFiles()
+            if (modelFiles == null) {
+                Timber.e("Sherpa init aborted: model files not resolved in voice dir")
+                engineWasReloaded = false
                 return false
             }
 
             return try {
                 val transducerConfig =
                     OnlineTransducerModelConfig(
-                        encoder = encoderFile.absolutePath,
-                        decoder = decoderFile.absolutePath,
-                        joiner = joinerFile.absolutePath,
+                        encoder = modelFiles.encoder.absolutePath,
+                        decoder = modelFiles.decoder.absolutePath,
+                        joiner = modelFiles.joiner.absolutePath,
                     )
 
-                val prefs = AppPrefs.defaultInstance().voiceInput
-                val numThreads = prefs.voiceNumThreads.getValue()
-                    .coerceIn(1, Runtime.getRuntime().availableProcessors())
-                val sensitivity = prefs.voiceSensitivity.getValue()
-                    .coerceIn(1, 10)
+                val useBpe = modelFiles.bpeVocab != null
 
                 val modelConfig =
                     OnlineModelConfig(
                         transducer = transducerConfig,
-                        tokens = tokensFile.absolutePath,
-                        numThreads = numThreads,
+                        tokens = modelFiles.tokens.absolutePath,
+                        numThreads = currentConfig.numThreads,
                         provider = "cpu",
-                        modelType = "zipformer2",
+                        modelType = "",
                         debug = false,
+                        modelingUnit = "",
+                        bpeVocab = modelFiles.bpeVocab?.absolutePath ?: "",
                     )
 
                 val config =
@@ -121,15 +133,20 @@ object SherpaSpeechClient {
                         featConfig = FeatureConfig(sampleRate = SAMPLE_RATE, featureDim = 80),
                         modelConfig = modelConfig,
                         decodingMethod = "greedy_search",
-                        maxActivePaths = sensitivity,
+                        maxActivePaths = currentConfig.sensitivity,
                         enableEndpoint = false,
                     )
 
+                val encoderPath = modelFiles.encoder.absolutePath
+                val isInt8 = modelFiles.encoder.nameWithoutExtension.contains("int8", ignoreCase = true)
+                Timber.i("Creating OnlineRecognizer: encoder=$encoderPath, bpe=$useBpe, int8=$isInt8")
                 recognizerRef.set(OnlineRecognizer(null, config))
-                Timber.i("Sherpa-onnx online ASR engine initialized")
+                lastEngineConfig = currentConfig
+                Timber.i("Sherpa-onnx online ASR engine initialized (bpe=$useBpe, int8=$isInt8)")
                 true
             } catch (e: Throwable) {
                 Timber.e(e, "Sherpa engine init crashed")
+                engineWasReloaded = false
                 false
             }
         }
@@ -153,6 +170,12 @@ object SherpaSpeechClient {
 
         service.lifecycleScope.launch {
             val initWasFirst = isFirstInit
+            val currentConfig = readEngineConfig()
+
+            if (lastEngineConfig != null && currentConfig != lastEngineConfig) {
+                service.toast(service.getString(R.string.voice_engine_reloading))
+            }
+
             val startTime = System.currentTimeMillis()
             val initSuccess = withContext(Dispatchers.IO) { initEngineIfNeeded() }
             val elapsed = System.currentTimeMillis() - startTime
@@ -160,6 +183,11 @@ object SherpaSpeechClient {
             if (initSuccess && initWasFirst) {
                 isFirstInit = false
                 service.toast(service.getString(R.string.voice_engine_loaded, elapsed))
+            }
+
+            if (initSuccess && engineWasReloaded) {
+                engineWasReloaded = false
+                service.toast(service.getString(R.string.voice_engine_reloaded, elapsed))
             }
 
             if (initSuccess) {
@@ -220,8 +248,7 @@ object SherpaSpeechClient {
                     val fmt = AudioFormat.ENCODING_PCM_16BIT
                     val minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, ch, fmt)
 
-                    val chunkBytes = (SAMPLE_RATE * 80 / 1000) * 2
-                    val bufSize = minBuf.coerceAtLeast(chunkBytes * 2)
+                    val bufSize = minBuf.coerceAtLeast(CHUNK_BYTES * 2)
 
                     rec =
                         listOf(
@@ -240,7 +267,7 @@ object SherpaSpeechClient {
                     audioRecord = rec
                     rec.startRecording()
 
-                    val chunk = ByteArray(chunkBytes)
+                    val chunk = ByteArray(CHUNK_BYTES)
                     var notifiedRecordingStarted = false
 
                     var loopCounter = 0L
@@ -254,7 +281,7 @@ object SherpaSpeechClient {
                             }
                         if (n < 0) break
                         if (n == 0) {
-                            delay(10)
+                            delay(10.milliseconds)
                             continue
                         }
 
@@ -290,7 +317,7 @@ object SherpaSpeechClient {
                                 stream.acceptWaveform(floatChunk, SAMPLE_RATE)
 
                                 var loops = 0
-                                while (engine.isReady(stream) && loops < 16) {
+                                while (engine.isReady(stream) && loops < 64) {
                                     engine.decode(stream)
                                     loops++
                                 }
@@ -320,14 +347,12 @@ object SherpaSpeechClient {
                             }
                         }
 
-                        if (isCurrentFrameSpeech || loopCounter % 4 == 0L) {
-                            withContext(Dispatchers.Main) {
-                                runCatching { VoiceOverlayUiBridge.onAmplitude?.invoke(amp) }
-                            }
+                        withContext(Dispatchers.Main) {
+                            runCatching { VoiceOverlayUiBridge.onAmplitude?.invoke(amp) }
                         }
                         loopCounter++
 
-                        delay(5)
+                        delay(5.milliseconds)
                     }
 
                     var finalText: String? = null
@@ -338,7 +363,7 @@ object SherpaSpeechClient {
 
                         if (engine != null && stream != null) {
                             try {
-                                val tailSamples = ((SAMPLE_RATE * 0.6).toInt()).coerceAtLeast(1)
+                                val tailSamples = ((SAMPLE_RATE * 480 / 1000).toInt()).coerceAtLeast(1)
                                 val tail = FloatArray(tailSamples)
                                 stream.acceptWaveform(tail, SAMPLE_RATE)
                                 stream.inputFinished()
@@ -403,6 +428,17 @@ object SherpaSpeechClient {
     }
 
     fun isHolding(): Boolean = isHolding.get()
+
+    private fun readEngineConfig(): EngineConfig {
+        val prefs = AppPrefs.defaultInstance().localVoice
+        return EngineConfig(
+            modelType = prefs.voiceModelType.getValue(),
+            numThreads = prefs.voiceNumThreads.getValue()
+                .coerceIn(1, Runtime.getRuntime().availableProcessors()),
+            sensitivity = prefs.voiceSensitivity.getValue()
+                .coerceIn(1, 10),
+        )
+    }
 
     private fun cancelSession() {
         isHolding.set(false)

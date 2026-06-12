@@ -18,22 +18,20 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.NotificationCompat
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.EditTextPreference
-import androidx.preference.ListPreference
 import androidx.preference.Preference
-import androidx.preference.SwitchPreference
 import androidx.preference.SwitchPreferenceCompat
 import com.osfans.trime.R
 import com.osfans.trime.daemon.RimeDaemon
+import com.osfans.trime.daemon.launchOnReady
 import com.osfans.trime.data.ResourceUrls
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
-import com.osfans.trime.data.prefs.PreferenceDelegate
+import com.osfans.trime.data.prefs.PreferenceDelegateFragment
+import com.osfans.trime.data.prefs.PreferenceDelegateProvider
 import com.osfans.trime.data.wanxiang.DownloadManager
 import com.osfans.trime.data.wanxiang.TaskState
 import com.osfans.trime.data.wanxiang.compareVersions
 import com.osfans.trime.data.wanxiang.readLocalWanxiangVersion
-import com.osfans.trime.ui.common.PaddingPreferenceFragment
 import com.osfans.trime.ui.main.MainActivity
 import com.osfans.trime.ui.main.MainViewModel
 import com.osfans.trime.ui.main.NavigationRoute
@@ -53,7 +51,7 @@ import java.net.URL
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
 
-class WanxiangUpdateFragment : PaddingPreferenceFragment() {
+class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultInstance().wanxiang) {
     private val viewModel: MainViewModel by activityViewModels()
     private val prefs = AppPrefs.defaultInstance().wanxiang
 
@@ -67,37 +65,25 @@ class WanxiangUpdateFragment : PaddingPreferenceFragment() {
     private var checkModel = false
 
     private lateinit var versionDisplayPref: Preference
-    private lateinit var auxSchemePref: ListPreference
-    private lateinit var checkIntervalPref: DialogSeekBarPreference
-    private lateinit var ghTokenPref: EditTextPreference
 
-    private val onIsProChange = PreferenceDelegate.OnChangeListener<String> { _, _ ->
-        auxSchemePref.isEnabled = prefs.isPro.getValue() == "pro"
-    }
-
-    private val onAutoCheckChange = PreferenceDelegate.OnChangeListener<Boolean> { _, enabled ->
-        checkIntervalPref.isEnabled = enabled
-        if (enabled) {
-            WanxiangCheckWorker.start(requireContext())
-        } else {
-            WanxiangCheckWorker.cancel(requireContext())
+    private val onWorkerChange = PreferenceDelegateProvider.OnChangeListener { key ->
+        when (key) {
+            AppPrefs.Wanxiang.AUTO_CHECK -> {
+                if (prefs.autoCheck.getValue()) {
+                    WanxiangCheckWorker.start(requireContext())
+                } else {
+                    WanxiangCheckWorker.cancel(requireContext())
+                }
+            }
+            AppPrefs.Wanxiang.CHECK_INTERVAL -> {
+                WanxiangCheckWorker.start(requireContext())
+            }
         }
-    }
-
-    private val onCheckIntervalChange = PreferenceDelegate.OnChangeListener<Int> { _, _ ->
-        WanxiangCheckWorker.start(requireContext())
-    }
-
-    private val onDownloadSourceChange = PreferenceDelegate.OnChangeListener<String> { _, source ->
-        ghTokenPref.isEnabled = source == "GitHub"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        prefs.isPro.registerOnChangeListener(onIsProChange)
-        prefs.autoCheck.registerOnChangeListener(onAutoCheckChange)
-        prefs.checkInterval.registerOnChangeListener(onCheckIntervalChange)
-        prefs.downloadSource.registerOnChangeListener(onDownloadSourceChange)
+        prefs.registerOnChangeListener(onWorkerChange)
     }
 
     override fun onStart() {
@@ -105,9 +91,7 @@ class WanxiangUpdateFragment : PaddingPreferenceFragment() {
         viewModel.enableToolbarEditButton(
             icon = R.drawable.ic_baseline_refresh_reversed_24,
         ) {
-            refreshLocalVersion()
-            fetchLatestVersionTag(notifyOnNew = true)
-            WanxiangCheckWorker.start(requireContext())
+            viewModel.rime.launchOnReady { it.deploy() }
         }
         viewModel.enableToolbarDeleteButton(
             icon = R.drawable.ic_baseline_download_24,
@@ -123,14 +107,13 @@ class WanxiangUpdateFragment : PaddingPreferenceFragment() {
     }
 
     override fun onDestroy() {
+        prefs.unregisterOnChangeListener(onWorkerChange)
         super.onDestroy()
-        prefs.isPro.unregisterOnChangeListener(onIsProChange)
-        prefs.autoCheck.unregisterOnChangeListener(onAutoCheckChange)
-        prefs.checkInterval.unregisterOnChangeListener(onCheckIntervalChange)
-        prefs.downloadSource.unregisterOnChangeListener(onDownloadSourceChange)
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        super.onCreatePreferences(savedInstanceState, rootKey)
+        evaluateVisibility()
         val ctx = requireContext()
         preferenceScreen = preferenceManager.createPreferenceScreen(ctx).apply {
             isIconSpaceReserved = false
@@ -140,138 +123,15 @@ class WanxiangUpdateFragment : PaddingPreferenceFragment() {
                 title = getString(R.string.wanxiang_scheme_version)
                 isIconSpaceReserved = false
                 isSingleLineTitle = false
+                setOnPreferenceClickListener {
+                    refreshLocalVersion()
+                    fetchLatestVersionTag(notifyOnNew = true)
+                    true
+                }
             }
             addPreference(versionDisplayPref)
 
-            addCategory(R.string.wanxiang_updater) {
-                isIconSpaceReserved = false
-
-                addPreference(
-                    ListPreference(ctx).apply {
-                        key = AppPrefs.Wanxiang.UPDATE_CHANNEL
-                        isIconSpaceReserved = false
-                        isSingleLineTitle = false
-                        entryValues = arrayOf("Stable", "Preview")
-                        entries = arrayOf(
-                            getString(R.string.wanxiang_stable),
-                            getString(R.string.wanxiang_preview),
-                        )
-                        summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
-                        setDefaultValue("Stable")
-                        setTitle(R.string.wanxiang_update_channel)
-                        setDialogTitle(R.string.wanxiang_update_channel)
-                    },
-                )
-
-                addPreference(
-                    ListPreference(ctx).apply {
-                        key = AppPrefs.Wanxiang.IS_PRO
-                        isIconSpaceReserved = false
-                        isSingleLineTitle = false
-                        entryValues = arrayOf("pro", "base")
-                        entries = arrayOf("Pro", "Base")
-                        summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
-                        setDefaultValue("pro")
-                        setTitle(R.string.wanxiang_scheme_version)
-                        setDialogTitle(R.string.wanxiang_scheme_version)
-                    },
-                )
-
-                auxSchemePref = ListPreference(ctx).apply {
-                    key = AppPrefs.Wanxiang.AUX_SCHEME
-                    isIconSpaceReserved = false
-                    isSingleLineTitle = false
-                    entryValues = arrayOf(
-                        "zrm", "wx", "flypy", "moqi",
-                        "hanxin", "shouyou", "shyplus", "tiger", "wubi",
-                    )
-                    entries = arrayOf(
-                        "自然码", "万象", "小鹤", "墨奇",
-                        "汉心", "首右", "首右+", "虎码", "五笔",
-                    )
-                    summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
-                    setDefaultValue("zrm")
-                    setTitle(R.string.wanxiang_aux_scheme)
-                    setDialogTitle(R.string.wanxiang_aux_scheme)
-                    isEnabled = prefs.isPro.getValue() == "pro"
-                }
-                addPreference(auxSchemePref)
-
-                addPreference(
-                    SwitchPreference(ctx).apply {
-                        key = AppPrefs.Wanxiang.AUTO_CHECK
-                        isIconSpaceReserved = false
-                        isSingleLineTitle = false
-                        setDefaultValue(false)
-                        setTitle(R.string.wanxiang_auto_check)
-                    },
-                )
-
-                checkIntervalPref = DialogSeekBarPreference(ctx).apply {
-                    key = AppPrefs.Wanxiang.CHECK_INTERVAL
-                    isIconSpaceReserved = false
-                    isSingleLineTitle = false
-                    summaryProvider = DialogSeekBarPreference.SimpleSummaryProvider
-                    setDefaultValue(12)
-                    setTitle(R.string.wanxiang_check_interval)
-                    min = 3
-                    max = 24
-                    unit = "h"
-                    step = 1
-                    isEnabled = prefs.autoCheck.getValue()
-                }
-                addPreference(checkIntervalPref)
-
-                addPreference(
-                    EditTextPreference(ctx).apply {
-                        key = AppPrefs.Wanxiang.EXCLUDE_RULES
-                        isIconSpaceReserved = false
-                        isSingleLineTitle = false
-                        summaryProvider = Preference.SummaryProvider<EditTextPreference> { pref ->
-                            val text = pref.sharedPreferences?.getString(pref.key, "") ?: ""
-                            val count = text.lines().count { it.isNotBlank() }
-                            if (count == 0) {
-                                getString(R.string.disable)
-                            } else {
-                                getString(R.string.wanxiang_exclude_rules_count, count)
-                            }
-                        }
-                        setDefaultValue(prefs.excludeRules.getValue())
-                        setTitle(R.string.wanxiang_exclude_rules)
-                        setDialogTitle(R.string.wanxiang_exclude_rules)
-                        setDialogMessage(R.string.wanxiang_exclude_hint)
-                        setOnBindEditTextListener {
-                            it.typeface = Typeface.MONOSPACE
-                            it.textSize = 15f
-                        }
-                    },
-                )
-
-                addPreference(
-                    ListPreference(ctx).apply {
-                        key = AppPrefs.Wanxiang.DOWNLOAD_SOURCE
-                        isIconSpaceReserved = false
-                        isSingleLineTitle = false
-                        entryValues = arrayOf("CNB", "GitHub")
-                        entries = arrayOf("CNB", "GitHub")
-                        summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
-                        setDefaultValue("CNB")
-                        setTitle(R.string.wanxiang_download_source)
-                        setDialogTitle(R.string.wanxiang_download_source)
-                    },
-                )
-
-                ghTokenPref = EditTextPreference(ctx).apply {
-                    key = AppPrefs.Wanxiang.GH_TOKEN
-                    isIconSpaceReserved = false
-                    isSingleLineTitle = false
-                    setDefaultValue("")
-                    setTitle(R.string.wanxiang_github_token)
-                    setDialogTitle(R.string.wanxiang_github_token)
-                    isEnabled = prefs.downloadSource.getValue() == "GitHub"
-                }
-                addPreference(ghTokenPref)
-            }
+            prefs.createUi(this)
 
             addCategory(R.string.wanxiang_actions) {
                 isIconSpaceReserved = false
@@ -339,11 +199,7 @@ class WanxiangUpdateFragment : PaddingPreferenceFragment() {
             getString(R.string.wanxiang_preview)
         }
         val variant = if (isPro == "pro") "Pro" else "Base"
-        versionDisplayPref.summary = getString(
-            R.string.wanxiang_version_label_fmt,
-            "$channelLabel ($variant)",
-            "$currentLocalVersion → $latestStableTag",
-        )
+        versionDisplayPref.summary = "$channelLabel ($variant) ($currentLocalVersion → $latestStableTag)"
     }
 
     private fun fetchLatestVersionTag(notifyOnNew: Boolean = false) {

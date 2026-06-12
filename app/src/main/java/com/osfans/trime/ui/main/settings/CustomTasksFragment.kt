@@ -133,7 +133,7 @@ class CustomTasksFragment : Fragment() {
                 barRow.addView(rowLabel(ctx, R.string.wanxiang_batch_queue))
                 btnBatchExecute = barActionBtn(ctx, R.string.wanxiang_batch_execute, accentColor(ctx))
                 barRow.addView(btnBatchExecute)
-                btnBatchDelete = barActionBtn(ctx, R.string.wanxiang_batch_delete, color(R.color.wanxiang_error))
+                btnBatchDelete = barActionBtn(ctx, R.string.wanxiang_batch_delete, color(R.color.red_A700))
                 barRow.addView(btnBatchDelete)
                 cvBatchActions.addView(barRow)
                 cvBatchActions.addView(
@@ -282,7 +282,7 @@ class CustomTasksFragment : Fragment() {
             ).apply { bottomMargin = 12.dp() }
             orientation = LinearLayout.VERTICAL
             setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
-            val borderColor = if (task.isSelected) color(R.color.wanxiang_accent) else color(R.color.wanxiang_card_border_unselected)
+            val borderColor = if (task.isSelected) color(R.color.blue_500) else color(R.color.wanxiang_card_border_unselected)
             background = GradientDrawable().apply {
                 setStroke(1.dp(), borderColor)
                 cornerRadius = 4.dp().toFloat()
@@ -325,7 +325,7 @@ class CustomTasksFragment : Fragment() {
         val titleView = TextView(ctx).apply {
             text = task.name.ifBlank { getString(R.string.wanxiang_default_name) }
             textSize = 14f
-            setTextColor(if (task.isSelected) color(R.color.wanxiang_card_title) else color(R.color.wanxiang_card_title_secondary))
+            setTextColor(if (task.isSelected) color(R.color.wanxiang_card_title) else color(R.color.grey_700))
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
         val toggleView = TextView(ctx).apply {
@@ -437,7 +437,7 @@ class CustomTasksFragment : Fragment() {
         val deleteBtn = TextView(ctx).apply {
             text = getString(R.string.wanxiang_delete_task)
             textSize = 12f
-            setTextColor(color(R.color.wanxiang_error))
+            setTextColor(color(R.color.red_A700))
             setPadding(8.dp(), 12.dp(), 8.dp(), 12.dp())
             setOnClickListener {
                 customTasks.removeAt(index)
@@ -504,7 +504,7 @@ class CustomTasksFragment : Fragment() {
                     rules = emptyList(),
                     targetPaths = listOf(tData.boundPath),
                     onProgress = { t ->
-                        lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.wanxiang_error) }
+                        lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red_A700) }
                     },
                 )
             }
@@ -548,7 +548,7 @@ class CustomTasksFragment : Fragment() {
                 rules = emptyList(),
                 targetPaths = listOf(task.boundPath),
                 onProgress = { t ->
-                    lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.wanxiang_error) }
+                    lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red_A700) }
                 },
             )
             isDownloading = false

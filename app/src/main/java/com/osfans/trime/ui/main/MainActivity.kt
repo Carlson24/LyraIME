@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
         binding.mainToolbar.toolbar.navigationIcon =
             DrawerArrowDrawable(this).apply {
                 progress = 1f
-                color = ContextCompat.getColor(this@MainActivity, R.color.toolbarForegroundColor)
+                color = ContextCompat.getColor(this@MainActivity, R.color.wanxiang_white)
             }
         // show menu icon and other action icons on toolbar
         // don't use `setSupportActionBar(binding.toolbar)` here,

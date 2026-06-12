@@ -8,37 +8,29 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 <resources>
     <!-- Material colors — Catppuccin Mocha -->
-    <color name="red_A700">#f38ba8</color>       <!-- Red -->
-    <color name="red_400">#eba0ac</color>        <!-- Maroon -->
-    <color name="yellow_500">#f9e2af</color>     <!-- Yellow -->
-    <color name="yellow_800">#fab387</color>     <!-- Peach -->
-    <color name="blue_500">#89b4fa</color>       <!-- Blue -->
-    <color name="grey_400">#7f849c</color>       <!-- Overlay1 -->
-    <color name="grey_700">#a6adc8</color>       <!-- Subtext0 -->
+    <color name="red_A700">#f38ba8</color>
+    <color name="red_400">#eba0ac</color>
+    <color name="yellow_500">#f9e2af</color>
+    <color name="yellow_800">#fab387</color>
+    <color name="green_400">#a6e3a1</color>
+    <color name="teal_400">#94e2d5</color>
+    <color name="blue_500">#89b4fa</color>
+    <color name="cyan_400">#89dceb</color>
+    <color name="purple_400">#cba6f7</color>
+    <color name="grey_400">#7f849c</color>
+    <color name="grey_700">#a6adc8</color>
 
-    <!-- Primary / Accent -->
-    <color name="colorPrimary">#1e1e2e</color>       <!-- Base -->
-    <color name="colorPrimaryDark">#11111b</color>   <!-- Crust -->
-    <color name="colorAccent">#89b4fa</color>        <!-- Blue -->
-    <color name="colorAccentDark">#74c7ec</color>    <!-- Sapphire -->
+    <!-- Primary -->
+    <color name="colorPrimary">#1e1e2e</color>
+    <color name="colorPrimaryDark">#11111b</color>
 
-    <color name="toolbarForegroundColor">#ffffff</color>
-
-    <!-- Wanxiang colors — Catppuccin Mocha -->
-    <color name="wanxiang_card_bg">#1e1e2e</color>              <!-- Base -->
-    <color name="wanxiang_card_border_unselected">#313244</color>    <!-- Surface0 -->
-    <color name="wanxiang_card_fill_selected">#45475a</color>       <!-- Surface1 -->
-    <color name="wanxiang_chip_unselected_bg">#313244</color>       <!-- Surface0 -->
-    <color name="wanxiang_chip_unselected_text">#cdd6f4</color>     <!-- Text -->
-    <color name="wanxiang_divider">#313244</color>                  <!-- Surface0 -->
-    <color name="wanxiang_label_text">#6c7086</color>               <!-- Overlay0 -->
-    <color name="wanxiang_progress_status">#6c7086</color>          <!-- Overlay0 -->
-    <color name="wanxiang_card_title">#cdd6f4</color>               <!-- Text -->
-    <color name="wanxiang_card_title_secondary">#a6adc8</color>     <!-- Subtext0 -->
-    <color name="wanxiang_error">#f38ba8</color>                    <!-- Red -->
-    <color name="wanxiang_accent">#89b4fa</color>                   <!-- Blue -->
-    <color name="wanxiang_white">#ffffff</color>                    <!-- text on accent -->
-    <color name="wanxiang_checkbox_border">#585b70</color>          <!-- Surface2 -->
-    <color name="wanxiang_button_dark_bg">#45475a</color>           <!-- Surface1 -->
+    <!-- Wanxiang — Catppuccin Mocha -->
+    <color name="wanxiang_card_bg">#1e1e2e</color>
+    <color name="wanxiang_card_border_unselected">#313244</color>
+    <color name="wanxiang_card_fill_selected">#45475a</color>
+    <color name="wanxiang_card_title">#cdd6f4</color>
+    <color name="wanxiang_label_text">#6c7086</color>
+    <color name="wanxiang_white">#ffffff</color>
+    <color name="wanxiang_checkbox_border">#585b70</color>
 
 </resources>

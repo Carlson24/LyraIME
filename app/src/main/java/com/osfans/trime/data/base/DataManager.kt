@@ -7,6 +7,7 @@ package com.osfans.trime.data.base
 import android.content.res.AssetManager
 import android.os.Build
 import android.os.Environment
+import com.osfans.trime.BuildConfig
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.util.FileUtils
 import com.osfans.trime.util.ResourceUtils
@@ -25,8 +26,8 @@ object DataManager {
     private const val SCHEMA_LIST_CUSTOM_PATCH = """
       patch:
         schema_list:
-          - schema: luna_pinyin_simp
           - schema: luna_pinyin
+          - schema: luna_pinyin_simp
     """
 
     private val lock = ReentrantLock()
@@ -52,7 +53,7 @@ object DataManager {
 
     private val prefs by lazy { AppPrefs.defaultInstance() }
 
-    val defaultDataDir = File(Environment.getExternalStorageDirectory(), "Documents/LyraIME")
+    val defaultDataDir = File(Environment.getExternalStorageDirectory(), "Documents/LyraIME${if (BuildConfig.DEBUG) "Debug" else ""}")
 
     val sharedDataDir = File(appContext.getExternalFilesDir(null), "shared").also { it.mkdirs() }
 

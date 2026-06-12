@@ -28,6 +28,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 
 object AsrkbSpeechClient {
     @Volatile
@@ -138,7 +139,7 @@ object AsrkbSpeechClient {
                                             reply?.writeNoException()
                                             true
                                         }
-                                        IBinder.INTERFACE_TRANSACTION -> {
+                                        INTERFACE_TRANSACTION -> {
                                             reply?.writeString(DESCRIPTOR_CB)
                                             true
                                         }
@@ -437,7 +438,7 @@ object AsrkbSpeechClient {
                         }
                     if (n < 0) break
                     if (n == 0) {
-                        delay(10)
+                        delay(10.milliseconds)
                         continue
                     }
                     if (!notifiedRecordingStarted) {
@@ -550,5 +551,4 @@ object AsrkbSpeechClient {
     private const val STATE_IDLE = 0
     private const val STATE_RECORDING = 1
     private const val STATE_PROCESSING = 2
-    private const val STATE_ERROR = 3
 }

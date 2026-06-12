@@ -29,7 +29,11 @@ object ResourceUrls {
 
     // ---- Voice Model ----
     const val VOICE_MODEL_DOWNLOAD =
-        "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-streaming-x-asr-480ms-zh-en.zip"
+        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-x-asr-480ms-streaming-zipformer-transducer-zh-en-punct-2026-06-05.tar.bz2"
     const val VOICE_MODEL_SHA256 =
-        "56b5be59a57aa7893b98040690c87238f026cb1c9cd58db98547be9ecd43ee87"
+        "67ad368298674eac2aed66676632be2672c05807f95bae1d66f5d04813f34a99"
+    const val VOICE_MODEL_INT8_DOWNLOAD =
+        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-x-asr-480ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05.tar.bz2"
+    const val VOICE_MODEL_INT8_SHA256 =
+        "7f19daf70818a9727cce21f27c577d89522aebab0e7025be5594ef93a46d41f3"
 }

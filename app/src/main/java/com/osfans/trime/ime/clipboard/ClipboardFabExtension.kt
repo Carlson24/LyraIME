@@ -32,7 +32,7 @@ fun ClipboardLayout.setupCollectionFab(
         scaleType = ImageView.ScaleType.CENTER
         imageDrawable = drawable(R.drawable.ic_baseline_add_24)!!.apply { setTint(0xFFFFFFFF.toInt()) }
         layoutParams = android.view.ViewGroup.MarginLayoutParams(dp(32), dp(32))
-        val backgroundColor = ContextCompat.getColor(context, R.color.colorAccent)
+        val backgroundColor = ContextCompat.getColor(context, R.color.blue_500)
         val pressedColor = ColorUtils.blendARGB(backgroundColor, 0xFF000000.toInt(), 0.12f)
         val radius = dp(16).toFloat()
         background = StateListDrawable().apply {

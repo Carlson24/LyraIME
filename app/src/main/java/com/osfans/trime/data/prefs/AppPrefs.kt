@@ -87,6 +87,7 @@ class AppPrefs(
     val internal = Internal(shared)
     val general = General(shared).register()
     val voiceInput = VoiceInput(shared).register()
+    val localVoice = LocalVoice(shared).register()
     val profile = Profile(shared).register()
     val keyboard = Keyboard(shared).register()
     val candidates = Candidates(shared).register()
@@ -145,7 +146,6 @@ class AppPrefs(
             const val INLINE_PREEDIT_MODE = "inline_preedit_mode"
             const val ASCII_SWITCH_TIPS = "ascii_switch_tips"
             const val INLINE_SUGGESTIONS = "inline_suggestions"
-            const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
             const val HIDE_STATIC_SWITCHER = "hide_static_switcher"
         }
 
@@ -163,8 +163,6 @@ class AppPrefs(
             const val ASRKB_AIDL_VOICE_TOOLBAR_BUTTON = "asrkb_aidl_voice_toolbar_button"
             const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
             const val VOICE_ANIMATION_STYLE = "voice_animation_style"
-            const val VOICE_NUM_THREADS = "voice_num_threads"
-            const val VOICE_SENSITIVITY = "voice_sensitivity"
         }
 
         enum class VoiceAnimationStyle(override val stringRes: Int) : PreferenceDelegateEnum {
@@ -197,14 +195,33 @@ class AppPrefs(
             },
             enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
+    }
 
+    class LocalVoice(
+        shared: SharedPreferences,
+    ) : PreferenceDelegateOwner(shared, R.string.local_voice_settings) {
+        companion object {
+            const val VOICE_MODEL_TYPE = "voice_model_type"
+            const val VOICE_NUM_THREADS = "voice_num_threads"
+            const val VOICE_SENSITIVITY = "voice_sensitivity"
+        }
+
+        enum class VoiceModelType(override val stringRes: Int) : PreferenceDelegateEnum {
+            STANDARD(R.string.voice_model_type_standard),
+            INT8(R.string.voice_model_type_int8),
+        }
+
+        val voiceModelType = enum(
+            R.string.voice_model_type,
+            VOICE_MODEL_TYPE,
+            VoiceModelType.STANDARD,
+        )
         val voiceNumThreads = int(
             R.string.voice_num_threads,
             VOICE_NUM_THREADS,
             4,
             1,
             Runtime.getRuntime().availableProcessors().coerceAtLeast(4),
-            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
         val voiceSensitivity = int(
             R.string.voice_sensitivity,
@@ -212,7 +229,6 @@ class AppPrefs(
             5,
             1,
             10,
-            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
     }
 
@@ -602,7 +618,7 @@ class AppPrefs(
             },
         )
         val isPro = list(
-            R.string.wanxiang_scheme_version,
+            R.string.wanxiang_scheme_type,
             IS_PRO,
             "pro",
             { listOf("pro", "base") },

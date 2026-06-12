@@ -262,6 +262,10 @@
     <string name="voice_num_threads">Voice Recognition threads</string>
     <string name="voice_sensitivity">Voice Sensitivity</string>
     <string name="voice_animation_sphere">Sphere ripple</string>
+    <string name="voice_model_type">Voice model type</string>
+    <string name="voice_model_type_standard">Standard</string>
+    <string name="voice_model_type_int8">Int8 (smaller, faster)</string>
+    <string name="local_voice_settings">Local voice settings</string>
     <string name="voice_model_missing_title">Voice model required</string>
     <string name="voice_model_missing_message">Built-in voice recognition requires model files. Download or select a ZIP file containing the model.</string>
     <string name="voice_model_not_initialized">Voice model not installed. Please download in Voice Input settings.</string>
@@ -277,10 +281,16 @@
     <string name="voice_model_verification_failed">SHA256 verification failed</string>
     <string name="voice_model_extract_failed">Failed to extract model files: %s</string>
     <string name="voice_engine_loaded">Voice engine loaded in %dms</string>
+    <string name="voice_engine_reloading">Voice engine reloading…</string>
+    <string name="voice_engine_reloaded">Voice engine reloaded in %dms</string>
     <string name="voice_model_installed">Voice model installed successfully</string>
     <string name="voice_model_exists_title">Voice model already exists</string>
     <string name="voice_model_exists_re_download">The voice model is already installed. Download again?</string>
     <string name="voice_model_exists_re_import">The voice model is already installed. Import again?</string>
+    <string name="voice_model_type_mismatch_title">Model type mismatch</string>
+    <string name="voice_model_type_mismatch_message">The selected file appears to be a %s model, but you have %s selected in settings. Continue anyway?</string>
+    <string name="voice_model_type_standard_name">standard</string>
+    <string name="voice_model_type_int8_name">int8</string>
     <string name="inline_suggestions">Show inline autofill suggestions</string>
     <string name="update_config">Update config</string>
     <string name="share">Share</string>
@@ -296,6 +306,7 @@
     <string name="wanxiang_stable">Stable</string>
     <string name="wanxiang_preview">Preview</string>
     <string name="wanxiang_scheme_version">Scheme Version</string>
+    <string name="wanxiang_scheme_type">Scheme Type</string>
     <string name="wanxiang_version_label_fmt">%1$s (%2$s)</string>
     <string name="wanxiang_exclude_rules_count">%d file patterns</string>
     <string name="wanxiang_aux_scheme">Aux Scheme</string>

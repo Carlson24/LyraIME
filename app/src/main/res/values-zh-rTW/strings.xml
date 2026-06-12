@@ -261,6 +261,10 @@
     <string name="voice_animation_particle">粒子環</string>
     <string name="voice_sensitivity">識別靈敏度</string>
     <string name="voice_animation_sphere">球形漣漪</string>
+    <string name="voice_model_type">語音模型類型</string>
+    <string name="voice_model_type_standard">標準</string>
+    <string name="voice_model_type_int8">Int8（更小更快）</string>
+    <string name="local_voice_settings">本地語音設定</string>
     <string name="voice_model_missing_title">需要語音模型</string>
     <string name="voice_model_missing_message">內建語音識別需要語音模型檔案。請下載或手動選取包含模型的ZIP檔案。</string>
     <string name="voice_model_not_initialized">語音模型未安裝，請在語音輸入設定中初始化本地語音識別元件。</string>
@@ -276,10 +280,16 @@
     <string name="voice_model_verification_failed">SHA256驗證失敗</string>
     <string name="voice_model_extract_failed">解壓縮失敗：%s</string>
     <string name="voice_engine_loaded">語音引擎載入完成，耗時 %dms</string>
+    <string name="voice_engine_reloading">正在重載語音引擎…</string>
+    <string name="voice_engine_reloaded">語音引擎重載完成，耗時 %dms</string>
     <string name="voice_model_installed">語音模型安裝成功</string>
     <string name="voice_model_exists_title">語音模型已存在</string>
     <string name="voice_model_exists_re_download">語音模型已安裝，是否重新…</string>
     <string name="voice_model_exists_re_import">語音模型已安裝，是否重新匯入？</string>
+    <string name="voice_model_type_mismatch_title">模型類型不匹配</string>
+    <string name="voice_model_type_mismatch_message">所選檔案似乎是%s模型，但你設定中選擇的是%s。是否繼續匯入？</string>
+    <string name="voice_model_type_standard_name">標準</string>
+    <string name="voice_model_type_int8_name">Int8</string>
     <string name="inline_suggestions">顯示內嵌自動填充建議</string>
     <string name="update_config">更新配置</string>
     <string name="share">分享</string>
@@ -295,6 +305,7 @@
     <string name="wanxiang_stable">正式版</string>
     <string name="wanxiang_preview">預覽版</string>
     <string name="wanxiang_scheme_version">方案版本</string>
+    <string name="wanxiang_scheme_type">方案類型</string>
     <string name="wanxiang_version_label_fmt">%1$s (%2$s)</string>
     <string name="wanxiang_exclude_rules_count">%d 项规则</string>
     <string name="wanxiang_aux_scheme">輔助碼类型</string>
