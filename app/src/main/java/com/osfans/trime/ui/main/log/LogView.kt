@@ -81,13 +81,13 @@ constructor(
             ContextCompat.getColor(
                 context,
                 when (str.codePointAt(19).toChar()) {
-                    'V' -> R.color.grey_700
-                    'D' -> R.color.grey_700
-                    'I' -> R.color.blue_500
-                    'W' -> R.color.yellow_800
-                    'E' -> R.color.red_400
-                    'F' -> R.color.red_A700
-                    else -> R.color.colorPrimary
+                    'V' -> R.color.subtext0
+                    'D' -> R.color.subtext0
+                    'I' -> R.color.blue
+                    'W' -> R.color.peach
+                    'E' -> R.color.maroon
+                    'F' -> R.color.red
+                    else -> R.color.text
                 },
             )
         logAdapter.append(

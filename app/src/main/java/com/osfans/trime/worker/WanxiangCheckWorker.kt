@@ -20,8 +20,8 @@ import androidx.work.WorkerParameters
 import com.osfans.trime.R
 import com.osfans.trime.data.ResourceUrls
 import com.osfans.trime.data.prefs.AppPrefs
-import com.osfans.trime.data.wanxiang.compareVersions
-import com.osfans.trime.data.wanxiang.readLocalWanxiangVersion
+import com.osfans.trime.util.compareVersions
+import com.osfans.trime.util.readLocalWanxiangVersion
 import com.osfans.trime.ui.main.MainActivity
 import com.osfans.trime.ui.main.NavigationRoute
 import com.osfans.trime.util.createNotificationChannel

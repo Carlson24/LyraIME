@@ -288,7 +288,7 @@
     <string name="voice_model_exists_re_download">The voice model is already installed. Download again?</string>
     <string name="voice_model_exists_re_import">The voice model is already installed. Import again?</string>
     <string name="voice_model_type_mismatch_title">Model type mismatch</string>
-    <string name="voice_model_type_mismatch_message">The selected file appears to be a %s model, but you have %s selected in settings. Continue anyway?</string>
+    <string name="voice_model_type_mismatch_message" formatted="false">The selected file appears to be a %s model, but you have %s selected in settings. Continue anyway?</string>
     <string name="voice_model_type_standard_name">standard</string>
     <string name="voice_model_type_int8_name">int8</string>
     <string name="inline_suggestions">Show inline autofill suggestions</string>
@@ -312,7 +312,7 @@
     <string name="wanxiang_aux_scheme">Aux Scheme</string>
     <string name="wanxiang_advanced_rules">Whitelist Files</string>
     <string name="wanxiang_exclude_hint">Enter file patterns (one per line, regex supported). Matching files will be skipped during deploy.</string>
-    <string name="wanxiang_exclude_rules">File Patterns</string>
+    <string name="wanxiang_exclude_rules">Whitelist files rules</string>
     <string name="wanxiang_reset_rules">Restore Defaults</string>
     <string name="wanxiang_download_source">Download Source</string>
     <string name="wanxiang_github_token">GitHub Token (optional)</string>

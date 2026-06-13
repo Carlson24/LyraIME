@@ -133,7 +133,7 @@ class CustomTasksFragment : Fragment() {
                 barRow.addView(rowLabel(ctx, R.string.wanxiang_batch_queue))
                 btnBatchExecute = barActionBtn(ctx, R.string.wanxiang_batch_execute, accentColor(ctx))
                 barRow.addView(btnBatchExecute)
-                btnBatchDelete = barActionBtn(ctx, R.string.wanxiang_batch_delete, color(R.color.red_A700))
+                btnBatchDelete = barActionBtn(ctx, R.string.wanxiang_batch_delete, color(R.color.red))
                 barRow.addView(btnBatchDelete)
                 cvBatchActions.addView(barRow)
                 cvBatchActions.addView(
@@ -282,7 +282,7 @@ class CustomTasksFragment : Fragment() {
             ).apply { bottomMargin = 12.dp() }
             orientation = LinearLayout.VERTICAL
             setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
-            val borderColor = if (task.isSelected) color(R.color.blue_500) else color(R.color.wanxiang_card_border_unselected)
+            val borderColor = if (task.isSelected) color(R.color.blue) else color(R.color.surface0)
             background = GradientDrawable().apply {
                 setStroke(1.dp(), borderColor)
                 cornerRadius = 4.dp().toFloat()
@@ -325,13 +325,13 @@ class CustomTasksFragment : Fragment() {
         val titleView = TextView(ctx).apply {
             text = task.name.ifBlank { getString(R.string.wanxiang_default_name) }
             textSize = 14f
-            setTextColor(if (task.isSelected) color(R.color.wanxiang_card_title) else color(R.color.grey_700))
+            setTextColor(if (task.isSelected) color(R.color.text) else color(R.color.subtext0))
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
         val toggleView = TextView(ctx).apply {
             text = if (task.isExpanded) "▲" else "▼"
             textSize = 12f
-            setTextColor(color(R.color.wanxiang_checkbox_border))
+            setTextColor(color(R.color.surface2))
         }
         header.addView(titleView)
         header.addView(toggleView)
@@ -437,7 +437,7 @@ class CustomTasksFragment : Fragment() {
         val deleteBtn = TextView(ctx).apply {
             text = getString(R.string.wanxiang_delete_task)
             textSize = 12f
-            setTextColor(color(R.color.red_A700))
+            setTextColor(color(R.color.red))
             setPadding(8.dp(), 12.dp(), 8.dp(), 12.dp())
             setOnClickListener {
                 customTasks.removeAt(index)
@@ -504,7 +504,7 @@ class CustomTasksFragment : Fragment() {
                     rules = emptyList(),
                     targetPaths = listOf(tData.boundPath),
                     onProgress = { t ->
-                        lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red_A700) }
+                        lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red) }
                     },
                 )
             }
@@ -548,7 +548,7 @@ class CustomTasksFragment : Fragment() {
                 rules = emptyList(),
                 targetPaths = listOf(task.boundPath),
                 onProgress = { t ->
-                    lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red_A700) }
+                    lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red) }
                 },
             )
             isDownloading = false
@@ -560,7 +560,7 @@ class CustomTasksFragment : Fragment() {
     private fun makeLabel(ctx: Context, text: String): TextView = TextView(ctx).apply {
         this.text = text
         textSize = 11f
-        setTextColor(color(R.color.wanxiang_label_text))
+        setTextColor(color(R.color.overlay0))
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,

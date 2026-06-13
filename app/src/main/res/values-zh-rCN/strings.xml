@@ -286,7 +286,7 @@
     <string name="voice_model_exists_re_download">语音模型已安装，是否重新下载？</string>
     <string name="voice_model_exists_re_import">语音模型已安装，是否重新导入？</string>
     <string name="voice_model_type_mismatch_title">模型类型不匹配</string>
-    <string name="voice_model_type_mismatch_message">所选文件似乎是%s模型，但你设置中选择的是%s。是否继续导入？</string>
+    <string name="voice_model_type_mismatch_message" formatted="false">所选文件似乎是%s模型，但你设置中选择的是%s。是否继续导入？</string>
     <string name="voice_model_type_standard_name">标准</string>
     <string name="voice_model_type_int8_name">Int8</string>
     <string name="inline_suggestions">显示内嵌自动填充建议</string>
@@ -309,8 +309,8 @@
     <string name="wanxiang_exclude_rules_count">%d 项规则</string>
     <string name="wanxiang_aux_scheme">辅助码类型</string>
     <string name="wanxiang_advanced_rules">白名单文件</string>
-    <string name="wanxiang_exclude_hint">输入文件匹配规则（每行一条，支持正则）。命中的文件将在部署时跳过。</string>
-    <string name="wanxiang_exclude_rules">文件匹配规则</string>
+    <string name="wanxiang_exclude_hint">输入文件匹配规则（每行一条，支持正则）。匹配的文件将在部署时跳过。</string>
+    <string name="wanxiang_exclude_rules">白名单文件规则</string>
     <string name="wanxiang_reset_rules">恢复默认规则</string>
     <string name="wanxiang_download_source">下载源配置</string>
     <string name="wanxiang_github_token">GitHub Token（可选）</string>

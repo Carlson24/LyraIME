@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-package com.osfans.trime.data.wanxiang
+package com.osfans.trime.util
 
 import com.osfans.trime.data.base.DataManager
 import java.io.File

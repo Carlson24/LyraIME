@@ -7,30 +7,31 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
 <resources>
-    <!-- Material colors — Catppuccin Latte -->
-    <color name="red_A700">#d20f39</color>
-    <color name="red_400">#e64553</color>
-    <color name="yellow_500">#df8e1d</color>
-    <color name="yellow_800">#fe640b</color>
-    <color name="green_400">#40a02b</color>
-    <color name="teal_400">#179299</color>
-    <color name="blue_500">#1e66f5</color>
-    <color name="cyan_400">#04a5e5</color>
-    <color name="purple_400">#8839ef</color>
-    <color name="grey_400">#8c8fa1</color>
-    <color name="grey_700">#6c6f85</color>
-
-    <!-- Primary -->
-    <color name="colorPrimary">#4c4f69</color>
-    <color name="colorPrimaryDark">#3c3f59</color>
-
-    <!-- Wanxiang — Catppuccin Latte -->
-    <color name="wanxiang_card_bg">#eff1f5</color>
-    <color name="wanxiang_card_border_unselected">#ccd0da</color>
-    <color name="wanxiang_card_fill_selected">#bcc0cc</color>
-    <color name="wanxiang_card_title">#4c4f69</color>
-    <color name="wanxiang_label_text">#9ca0b0</color>
-    <color name="wanxiang_white">#ffffff</color>
-    <color name="wanxiang_checkbox_border">#bcc0cc</color>
-
+    <!-- Catppuccin Latte palette -->
+    <color name="rosewater">#dc8a78</color>
+    <color name="flamingo">#dd7878</color>
+    <color name="pink">#ea76cb</color>
+    <color name="mauve">#8839ef</color>
+    <color name="red">#d20f39</color>
+    <color name="maroon">#e64553</color>
+    <color name="peach">#fe640b</color>
+    <color name="yellow">#df8e1d</color>
+    <color name="green">#40a02b</color>
+    <color name="teal">#179299</color>
+    <color name="sky">#04a5e5</color>
+    <color name="sapphire">#209fb5</color>
+    <color name="blue">#1e66f5</color>
+    <color name="lavender">#7287fd</color>
+    <color name="text">#4c4f69</color>
+    <color name="subtext1">#5c5f77</color>
+    <color name="subtext0">#6c6f85</color>
+    <color name="overlay2">#7c7f93</color>
+    <color name="overlay1">#8c8fa1</color>
+    <color name="overlay0">#9ca0b0</color>
+    <color name="surface2">#acb0be</color>
+    <color name="surface1">#bcc0cc</color>
+    <color name="surface0">#ccd0da</color>
+    <color name="base">#eff1f5</color>
+    <color name="mantle">#e6e9ef</color>
+    <color name="crust">#dce0e8</color>
 </resources>
