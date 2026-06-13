@@ -25,8 +25,9 @@ import com.osfans.trime.ui.main.NavigationRoute
 import com.osfans.trime.util.compareVersions
 import com.osfans.trime.util.createNotificationChannel
 import com.osfans.trime.util.readLocalWanxiangVersion
-import java.net.HttpURLConnection
-import java.net.URL
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 class WanxiangCheckWorker(
@@ -47,18 +48,26 @@ class WanxiangCheckWorker(
         return Result.success()
     }
 
+    private val client: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .build()
+    }
+
     private fun fetchRemoteVersion(): String? = try {
-        val url = URL(ResourceUrls.WANXIANG_API_LATEST_RELEASE)
-        val conn = url.openConnection() as HttpURLConnection
-        conn.setRequestProperty("User-Agent", "WanxiangUpdater-Agent")
-        conn.connectTimeout = 10000
-        conn.connect()
-        if (conn.responseCode == 200) {
-            val content = conn.inputStream.bufferedReader().readText()
-            Regex("\"tag_name\"\\s*:\\s*\"([^\"]+)\"")
-                .find(content)?.groupValues?.get(1)
-        } else {
-            null
+        val request = Request.Builder()
+            .url(ResourceUrls.WANXIANG_API_LATEST_RELEASE)
+            .header("User-Agent", ResourceUrls.USER_AGENT)
+            .get()
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (response.isSuccessful) {
+                val content = response.body?.string() ?: return null
+                JSONObject(content).optString("tag_name", "").ifEmpty { null }
+            } else {
+                null
+            }
         }
     } catch (_: Exception) {
         null

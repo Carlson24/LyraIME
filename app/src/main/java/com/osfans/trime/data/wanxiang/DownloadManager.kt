@@ -8,6 +8,7 @@ import android.content.Context
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.osfans.trime.R
+import com.osfans.trime.data.ResourceUrls
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.util.computeFileSha256
 import com.osfans.trime.util.extractZipToTempDir
@@ -18,14 +19,33 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.cancellation.CancellationException
 
 object DownloadManager {
+
+    private val client: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .build()
+    }
+
+    private fun buildRequest(urlStr: String, token: String): Request.Builder {
+        val builder = Request.Builder().url(urlStr)
+            .header("User-Agent", ResourceUrls.USER_AGENT)
+        if (urlStr.contains("github.com") && token.isNotBlank()) {
+            builder.header("Authorization", "Bearer $token")
+        }
+        return builder
+    }
 
     suspend fun downloadAndDeploy(
         task: TaskState,
@@ -138,7 +158,6 @@ object DownloadManager {
         }
     }
 
-    @Suppress("DEPRECATION")
     private suspend fun downloadRemote(
         task: TaskState,
         tmpFile: File,
@@ -171,45 +190,26 @@ object DownloadManager {
         }
     }
 
-    private fun resolveRedirects(urlStr: String, token: String): String {
-        var finalUrl = urlStr
-        for (i in 0 until 5) {
-            val conn = URL(finalUrl).openConnection() as HttpURLConnection
-            conn.instanceFollowRedirects = false
-            setHeaders(conn, token, finalUrl)
-            conn.requestMethod = "HEAD"
-            conn.connectTimeout = 10000
-            val code = conn.responseCode
-            if (code in setOf(301, 302, 303, 307, 308)) {
-                val location = conn.getHeaderField("Location")
-                if (!location.isNullOrBlank()) {
-                    finalUrl = if (location.startsWith("http")) {
-                        location
-                    } else {
-                        URL(URL(finalUrl), location).toString()
-                    }
-                    conn.disconnect()
-                    continue
-                }
-            }
-            conn.disconnect()
-            break
+    private fun resolveRedirects(urlStr: String, token: String): String = try {
+        val request = buildRequest(urlStr, token).head().build()
+        client.newCall(request).execute().use { response ->
+            response.request.url.toString()
         }
-        return finalUrl
+    } catch (_: Exception) {
+        urlStr
     }
 
-    private fun queryContentLength(urlStr: String, token: String): Long {
-        val conn = URL(urlStr).openConnection() as HttpURLConnection
-        setHeaders(conn, token, urlStr)
-        conn.requestMethod = "HEAD"
-        conn.connectTimeout = 10000
-        val size = if (conn.responseCode == 200 || conn.responseCode == 206) {
-            conn.contentLength.toLong()
-        } else {
-            0L
+    private fun queryContentLength(urlStr: String, token: String): Long = try {
+        val request = buildRequest(urlStr, token).head().build()
+        client.newCall(request).execute().use { response ->
+            if (response.isSuccessful) {
+                response.header("Content-Length")?.toLongOrNull() ?: -1L
+            } else {
+                0L
+            }
         }
-        conn.disconnect()
-        return size
+    } catch (_: Exception) {
+        0L
     }
 
     private suspend fun downloadMultiThread(
@@ -233,44 +233,42 @@ object DownloadManager {
                 async(Dispatchers.IO) {
                     val start = i * chunkSize
                     val end = if (i == threadCount - 1) totalSize - 1 else (start + chunkSize - 1)
-                    val partConn = URL(urlStr).openConnection() as HttpURLConnection
+                    val request = buildRequest(urlStr, token)
+                        .header("Range", "bytes=$start-$end")
+                        .get()
+                        .build()
                     try {
-                        setHeaders(partConn, token, urlStr)
-                        partConn.setRequestProperty("Range", "bytes=$start-$end")
-                        partConn.connectTimeout = 10000
-                        partConn.readTimeout = 10000
-                        val partFile = File(stagingDir, "${tmpFile.name}.part$i")
-                        partConn.inputStream.buffered().use { input ->
-                            FileOutputStream(partFile).buffered().use { output ->
-                                val buf = ByteArray(65536)
-                                var count: Int
-                                while (input.read(buf).also { count = it } != -1) {
-                                    if (isCancelled()) {
-                                        throw CancellationException("Download cancelled")
-                                    }
-                                    output.write(buf, 0, count)
-                                    val current = downloadedLen.addAndGet(count.toLong())
-                                    if (System.currentTimeMillis() - lastUpdate.get() > 150) {
-                                        lastUpdate.set(System.currentTimeMillis())
-                                        launch(Dispatchers.Main) {
-                                            val currentMb = "%.1f".format(current / 1024.0 / 1024.0)
-                                            val totalMb = "%.1f".format(totalSize / 1024.0 / 1024.0)
-                                            task.progress = current.toFloat() / totalSize.toFloat()
-                                            task.status = context.getString(
-                                                R.string.wanxiang_dl_mb_multithread,
-                                                "$currentMb / $totalMb",
-                                            )
-                                            onProgress(task)
+                        client.newCall(request).execute().use { response ->
+                            val partFile = File(stagingDir, "${tmpFile.name}.part$i")
+                            response.body?.byteStream()?.buffered()?.use { input ->
+                                FileOutputStream(partFile).buffered().use { output ->
+                                    val buf = ByteArray(65536)
+                                    var count: Int
+                                    while (input.read(buf).also { count = it } != -1) {
+                                        if (isCancelled()) {
+                                            throw CancellationException("Download cancelled")
+                                        }
+                                        output.write(buf, 0, count)
+                                        val current = downloadedLen.addAndGet(count.toLong())
+                                        if (System.currentTimeMillis() - lastUpdate.get() > 150) {
+                                            lastUpdate.set(System.currentTimeMillis())
+                                            launch(Dispatchers.Main) {
+                                                val currentMb = "%.1f".format(current / 1024.0 / 1024.0)
+                                                val totalMb = "%.1f".format(totalSize / 1024.0 / 1024.0)
+                                                task.progress = current.toFloat() / totalSize.toFloat()
+                                                task.status = context.getString(
+                                                    R.string.wanxiang_dl_mb_multithread,
+                                                    "$currentMb / $totalMb",
+                                                )
+                                                onProgress(task)
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     } catch (e: CancellationException) {
-                        partConn.disconnect()
                         throw e
-                    } finally {
-                        partConn.disconnect()
                     }
                 }
             }
@@ -299,55 +297,47 @@ object DownloadManager {
         onProgress: (TaskState) -> Unit,
         isCancelled: () -> Boolean,
     ) {
-        val conn = URL(urlStr).openConnection() as HttpURLConnection
+        val request = buildRequest(urlStr, token).get().build()
         try {
-            setHeaders(conn, token, urlStr)
-            val fallbackSize = conn.contentLength.toLong()
-            task.progress = if (fallbackSize > 0) 0f else -1f
-            conn.inputStream.buffered().use { input ->
-                FileOutputStream(tmpFile).buffered().use { output ->
-                    val buf = ByteArray(131072)
-                    var count: Int
-                    var downloaded = 0L
-                    var lastUpdate = System.currentTimeMillis()
-                    while (input.read(buf).also { count = it } != -1) {
-                        if (isCancelled()) {
-                            throw CancellationException("Download cancelled")
-                        }
-                        downloaded += count
-                        output.write(buf, 0, count)
-                        if (System.currentTimeMillis() - lastUpdate > 150) {
-                            lastUpdate = System.currentTimeMillis()
-                            val currentMb = "%.1f".format(downloaded / 1024.0 / 1024.0)
-                            task.progress = if (fallbackSize > 0) {
-                                downloaded.toFloat() / fallbackSize
-                            } else {
-                                -1f
+            client.newCall(request).execute().use { response ->
+                val body = response.body ?: return
+                val fallbackSize = body.contentLength()
+                task.progress = if (fallbackSize > 0) 0f else -1f
+                body.byteStream().buffered().use { input ->
+                    FileOutputStream(tmpFile).buffered().use { output ->
+                        val buf = ByteArray(131072)
+                        var count: Int
+                        var downloaded = 0L
+                        var lastUpdate = System.currentTimeMillis()
+                        while (input.read(buf).also { count = it } != -1) {
+                            if (isCancelled()) {
+                                throw CancellationException("Download cancelled")
                             }
-                            val sizeInfo = if (fallbackSize > 0) {
-                                val totalMb = "%.1f".format(fallbackSize / 1024.0 / 1024.0)
-                                "$currentMb / $totalMb"
-                            } else {
-                                currentMb
+                            downloaded += count
+                            output.write(buf, 0, count)
+                            if (System.currentTimeMillis() - lastUpdate > 150) {
+                                lastUpdate = System.currentTimeMillis()
+                                val currentMb = "%.1f".format(downloaded / 1024.0 / 1024.0)
+                                task.progress = if (fallbackSize > 0) {
+                                    downloaded.toFloat() / fallbackSize
+                                } else {
+                                    -1f
+                                }
+                                val sizeInfo = if (fallbackSize > 0) {
+                                    val totalMb = "%.1f".format(fallbackSize / 1024.0 / 1024.0)
+                                    "$currentMb / $totalMb"
+                                } else {
+                                    currentMb
+                                }
+                                task.status = context.getString(R.string.wanxiang_dl_mb_single, sizeInfo)
+                                onProgress(task)
                             }
-                            task.status = context.getString(R.string.wanxiang_dl_mb_single, sizeInfo)
-                            onProgress(task)
                         }
                     }
                 }
             }
         } catch (e: CancellationException) {
-            conn.disconnect()
             throw e
-        } finally {
-            conn.disconnect()
-        }
-    }
-
-    private fun setHeaders(conn: HttpURLConnection, token: String, urlStr: String) {
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0")
-        if (urlStr.contains("github.com") && token.isNotBlank()) {
-            conn.setRequestProperty("Authorization", "Bearer $token")
         }
     }
 

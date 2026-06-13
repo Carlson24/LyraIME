@@ -20,6 +20,7 @@ import androidx.preference.SwitchPreferenceCompat
 import com.osfans.trime.R
 import com.osfans.trime.daemon.launchOnReady
 import com.osfans.trime.data.backup.BackupRestoreDialog
+import com.osfans.trime.data.backup.WebDavSync
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegate
@@ -52,6 +53,7 @@ import splitties.views.dsl.core.add
 import splitties.views.dsl.core.editText
 import splitties.views.dsl.core.imageButton
 import splitties.views.dsl.core.matchParent
+import splitties.views.dsl.core.verticalLayout
 import splitties.views.dsl.core.wrapContent
 import splitties.views.imageDrawable
 import splitties.views.topPadding
@@ -64,16 +66,38 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
     private val lastSyncTime by prefs.lastBackgroundSyncTime
     private val lastSyncStatus by prefs.lastBackgroundSyncStatus
 
+    private val webdavEnabled = prefs.webdavEnabled
+
     private val backupRestoreDialog = BackupRestoreDialog(this)
 
     private val onBackgroundSyncEnable = PreferenceDelegate.OnChangeListener<Boolean> { _, v ->
         editSyncTimePreference.isEnabled = v
+        if (v) {
+            BackgroundSyncWork.scheduleNext(requireContext())
+            lifecycleScope.launch {
+                withContext(Dispatchers.IO) {
+                    BackgroundSyncWork.backupSettingsToSyncDir()
+                }
+                viewModel.rime.launchOnReady { it.syncUserData() }
+                withContext(Dispatchers.IO) {
+                    BackgroundSyncWork.syncWebDavIfEnabled()
+                }
+            }
+        } else {
+            BackgroundSyncWork.scheduleNext(requireContext())
+        }
+    }
+
+    private val onWebdavEnable = PreferenceDelegate.OnChangeListener<Boolean> { _, v ->
+        webdavUrlPreference.isEnabled = v
+        webdavTestPreference.isEnabled = v
+        webdavSyncPreference.isEnabled = v
     }
 
     private val onSyncTimeChange =
         PreferenceDelegate.OnChangeListener<String> { _, _ ->
             if (backgroundSyncEnable.getValue()) {
-                viewModel.restartBackgroundSyncWork.value = true
+                BackgroundSyncWork.scheduleNext(requireContext())
             }
         }
 
@@ -85,6 +109,9 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
     private var launcherResultCallback: ((path: String) -> Unit)? = null
 
     private lateinit var editSyncTimePreference: TimePreference
+    private lateinit var webdavUrlPreference: Preference
+    private lateinit var webdavTestPreference: Preference
+    private lateinit var webdavSyncPreference: Preference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,6 +119,7 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
         prefs.periodicBackgroundSync.registerOnChangeListener(onBackgroundSyncEnable)
         prefs.periodicBackgroundSyncTime.registerOnChangeListener(onSyncTimeChange)
         prefs.userDataDir.registerOnChangeListener(onUserDataDirChange)
+        prefs.webdavEnabled.registerOnChangeListener(onWebdavEnable)
 
         browseLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) {
             it ?: return@registerForActivityResult
@@ -168,7 +196,6 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                                     prefs.userDataDir.setValue(DataManager.defaultDataDir.absolutePath)
                                 }
                                 .setOnDismissListener {
-                                    // avoid memory leak
                                     launcherResultCallback = null
                                 }
                                 .show()
@@ -176,13 +203,22 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                         }
                     },
                 )
+                addPreference(R.string.app_data_folder, R.string.app_data_folder_summary) {
+                    val dir = requireContext().getExternalFilesDir(null) ?: return@addPreference
+                    browseLauncher.launch(requireContext().getUriForFile(dir))
+                }
             }
             addCategory(R.string.synchronization) {
                 isIconSpaceReserved = false
                 addPreference(R.string.sync_user_data_immediately) {
                     lifecycleScope.launch {
-                        BackgroundSyncWork.backupSettingsToSyncDir()
+                        withContext(Dispatchers.IO) {
+                            BackgroundSyncWork.backupSettingsToSyncDir()
+                        }
                         viewModel.rime.launchOnReady { it.syncUserData() }
+                        withContext(Dispatchers.IO) {
+                            BackgroundSyncWork.syncWebDavIfEnabled()
+                        }
                     }
                 }
                 addPreference(
@@ -228,6 +264,105 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                             TimePickerDialog(ctx, { _, h, m ->
                                 setTimeAndPersist(String.format("%02d:%02d", h, m))
                             }, hour, minute, true).show()
+                            true
+                        }
+                    },
+                )
+                addPreference(
+                    SwitchPreferenceCompat(ctx).apply {
+                        key = AppPrefs.Profile.WEBDAV_ENABLED
+                        isIconSpaceReserved = false
+                        setTitle(R.string.webdav_enabled)
+                        setSummary(R.string.webdav_sync_hint)
+                        setDefaultValue(false)
+                    },
+                )
+                addPreference(
+                    Preference(requireContext()).apply {
+                        webdavUrlPreference = this
+                        key = AppPrefs.Profile.WEBDAV_URL
+                        isIconSpaceReserved = false
+                        setTitle(R.string.webdav_url)
+                        summary = prefs.webdavUrl.getValue().ifEmpty { getString(R.string.disable) }
+                        isEnabled = webdavEnabled.getValue()
+                        setOnPreferenceClickListener {
+                            showWebdavConfigDialog(ctx)
+                            true
+                        }
+                    },
+                )
+                addPreference(
+                    Preference(requireContext()).apply {
+                        webdavTestPreference = this
+                        key = "webdav_test_connection"
+                        isIconSpaceReserved = false
+                        setTitle(R.string.webdav_test_connection)
+                        isEnabled = webdavEnabled.getValue()
+                        setOnPreferenceClickListener {
+                            if (prefs.webdavUrl.getValue().isEmpty()) {
+                                ctx.toast(R.string.webdav_invalid_url)
+                            } else {
+                                lifecycleScope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        WebDavSync.testConnection()
+                                    }.fold(
+                                        onSuccess = { ctx.toast(R.string.webdav_test_success) },
+                                        onFailure = {
+                                            ctx.toast(ctx.getString(R.string.webdav_test_failure, it.message))
+                                        },
+                                    )
+                                }
+                            }
+                            true
+                        }
+                    },
+                )
+                addPreference(
+                    Preference(requireContext()).apply {
+                        webdavSyncPreference = this
+                        key = "webdav_sync_now"
+                        isIconSpaceReserved = false
+                        setTitle(R.string.webdav_sync_now)
+                        setSummary(R.string.webdav_sync_hint)
+                        isEnabled = webdavEnabled.getValue()
+                        setOnPreferenceClickListener {
+                            AlertDialog.Builder(ctx)
+                                .setTitle(R.string.webdav_sync_direction)
+                                .setItems(
+                                    arrayOf(
+                                        getString(R.string.webdav_push),
+                                        getString(R.string.webdav_pull),
+                                    ),
+                                ) { _, which ->
+                                    lifecycleScope.launch {
+                                        val result =
+                                            withContext(Dispatchers.IO) {
+                                                if (which == 0) {
+                                                    WebDavSync.pushToServer()
+                                                } else {
+                                                    WebDavSync.pullFromServer()
+                                                }
+                                            }
+                                        result.fold(
+                                            onSuccess = { count ->
+                                                ctx.toast(
+                                                    getString(R.string.webdav_sync_success) +
+                                                        " ($count files)",
+                                                )
+                                            },
+                                            onFailure = {
+                                                ctx.toast(
+                                                    ctx.getString(
+                                                        R.string.webdav_sync_failure,
+                                                        it.message,
+                                                    ),
+                                                )
+                                            },
+                                        )
+                                    }
+                                }
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .show()
                             true
                         }
                     },
@@ -281,5 +416,66 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
         prefs.periodicBackgroundSync.unregisterOnChangeListener(onBackgroundSyncEnable)
         prefs.periodicBackgroundSyncTime.unregisterOnChangeListener(onSyncTimeChange)
         prefs.userDataDir.unregisterOnChangeListener(onUserDataDirChange)
+        prefs.webdavEnabled.unregisterOnChangeListener(onWebdavEnable)
+    }
+
+    private fun showWebdavConfigDialog(ctx: android.content.Context) {
+        val urlEdit = ctx.editText {
+            setText(prefs.webdavUrl.getValue())
+            hint = "https://example.com/remote.php/dav/files/user/"
+        }
+        val userEdit = ctx.editText {
+            setText(prefs.webdavUsername.getValue())
+            hint = getString(R.string.webdav_username)
+        }
+        val passwordEdit = ctx.editText {
+            setText(prefs.webdavPassword.getValue())
+            hint = getString(R.string.webdav_password)
+        }
+        val pathEdit = ctx.editText {
+            setText(prefs.webdavRemotePath.getValue())
+            hint = getString(R.string.webdav_remote_path)
+        }
+        val dialogContent = ctx.verticalLayout {
+            layoutParams = ViewGroup.LayoutParams(matchParent, wrapContent)
+            topPadding = dp(8)
+            add(
+                urlEdit,
+                ViewGroup.MarginLayoutParams(matchParent, wrapContent).apply {
+                    setMargins(dp(20), dp(4), dp(20), dp(4))
+                },
+            )
+            add(
+                userEdit,
+                ViewGroup.MarginLayoutParams(matchParent, wrapContent).apply {
+                    setMargins(dp(20), dp(4), dp(20), dp(4))
+                },
+            )
+            add(
+                passwordEdit,
+                ViewGroup.MarginLayoutParams(matchParent, wrapContent).apply {
+                    setMargins(dp(20), dp(4), dp(20), dp(4))
+                },
+            )
+            add(
+                pathEdit,
+                ViewGroup.MarginLayoutParams(matchParent, wrapContent).apply {
+                    setMargins(dp(20), dp(4), dp(20), dp(4))
+                },
+            )
+        }
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.webdav_sync)
+            .setView(dialogContent)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                prefs.webdavUrl.setValue(urlEdit.text.toString())
+                prefs.webdavUsername.setValue(userEdit.text.toString())
+                prefs.webdavPassword.setValue(passwordEdit.text.toString())
+                prefs.webdavRemotePath.setValue(pathEdit.text.toString())
+                webdavUrlPreference.summary =
+                    prefs.webdavUrl.getValue().ifEmpty { getString(R.string.disable) }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 }

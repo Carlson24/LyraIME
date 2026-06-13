@@ -6,14 +6,14 @@
 package com.osfans.trime.worker
 
 import android.content.Context
-import androidx.work.Constraints
 import androidx.work.CoroutineWorker
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.data.backup.BackupManager
+import com.osfans.trime.data.backup.WebDavSync
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import timber.log.Timber
@@ -28,9 +28,12 @@ class BackgroundSyncWork(
     override suspend fun doWork(): Result {
         try {
             Timber.i("Starting background sync ...")
-            return doBackgroundSync()
+            val result = doBackgroundSync()
+            scheduleNext(applicationContext)
+            return result
         } catch (e: Exception) {
             Timber.e(e, "Background sync job failed.")
+            scheduleNext(applicationContext)
             return Result.retry()
         }
     }
@@ -46,6 +49,8 @@ class BackgroundSyncWork(
         lastSyncStatus = success
         RimeDaemon.destroySession(javaClass.name)
 
+        syncWebDavIfEnabled()
+
         return if (success) Result.success() else Result.retry()
     }
 
@@ -58,6 +63,7 @@ class BackgroundSyncWork(
         private val syncTime by prefs.periodicBackgroundSyncTime
         private var lastSyncStatus by prefs.lastBackgroundSyncStatus
         private var lastSyncTime by prefs.lastBackgroundSyncTime
+        private val webdavEnabled by prefs.webdavEnabled
 
         suspend fun backupSettingsToSyncDir() {
             try {
@@ -79,6 +85,15 @@ class BackgroundSyncWork(
             }
         }
 
+        suspend fun syncWebDavIfEnabled() {
+            if (!webdavEnabled) return
+            if (prefs.webdavUrl.getValue().isEmpty()) return
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                WebDavSync.pushToServer()
+                    .onFailure { Timber.w(it, "WebDAV sync failed") }
+            }
+        }
+
         private fun readInstallationId(): String {
             val file = File(DataManager.userDataDir, "installation.yaml")
             if (file.exists()) {
@@ -91,29 +106,16 @@ class BackgroundSyncWork(
 
         fun start(context: Context) {
             Timber.i("BackgroundSyncWork scheduled!")
-            internalStart(context, ExistingPeriodicWorkPolicy.UPDATE)
+            scheduleNext(context)
         }
 
-        fun forceStart(context: Context) {
-            internalStart(context, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE)
-        }
-
-        private fun internalStart(
-            context: Context,
-            policy: ExistingPeriodicWorkPolicy,
-        ) {
-            val instance = WorkManager.getInstance(context.applicationContext)
+        fun scheduleNext(context: Context) {
             if (!enable) {
-                instance.cancelUniqueWork(PERIODIC_BACKGROUND_SYNC_KEY)
+                WorkManager.getInstance(context.applicationContext)
+                    .cancelUniqueWork(PERIODIC_BACKGROUND_SYNC_KEY)
                 Timber.i("BackgroundSyncWork canceled!")
                 return
             }
-            val constraints =
-                Constraints
-                    .Builder()
-                    .setRequiresBatteryNotLow(true)
-                    .setRequiresStorageNotLow(true)
-                    .build()
 
             val (hour, minute) = parseSyncTime(syncTime)
             val now = Calendar.getInstance()
@@ -129,18 +131,22 @@ class BackgroundSyncWork(
             val initialDelay = target.timeInMillis - now.timeInMillis
 
             val workRequest =
-                PeriodicWorkRequestBuilder<BackgroundSyncWork>(
-                    24,
-                    TimeUnit.HOURS,
-                    15,
-                    TimeUnit.MINUTES,
-                ).setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
-                    .setConstraints(constraints)
+                OneTimeWorkRequestBuilder<BackgroundSyncWork>()
+                    .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
                     .build()
-            instance.enqueueUniquePeriodicWork(
-                PERIODIC_BACKGROUND_SYNC_KEY,
-                policy,
-                workRequest,
+
+            WorkManager.getInstance(context.applicationContext)
+                .enqueueUniqueWork(
+                    PERIODIC_BACKGROUND_SYNC_KEY,
+                    ExistingWorkPolicy.REPLACE,
+                    workRequest,
+                )
+
+            Timber.i(
+                "BackgroundSyncWork scheduled at %02d:%02d (delay: %d min)",
+                hour,
+                minute,
+                TimeUnit.MILLISECONDS.toMinutes(initialDelay),
             )
         }
 

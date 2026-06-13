@@ -374,4 +374,24 @@
     <string name="wanxiang_dl_file_conflict">File conflict, cannot create: %s</string>
     <string name="wanxiang_dl_file_stream_busy">File stream busy, write denied: %s</string>
     <string name="wanxiang_dl_failed_item" formatted="false">%s(%s)</string>
+    <string name="app_data_folder">App data folder</string>
+    <string name="app_data_folder_summary">Open the app\'s data directory in file manager</string>
+    <string name="webdav_sync">WebDAV Sync</string>
+    <string name="webdav_enabled">Enable WebDAV sync</string>
+    <string name="webdav_url">Server URL</string>
+    <string name="webdav_username">Username</string>
+    <string name="webdav_password">Password</string>
+    <string name="webdav_sync_now">Sync now</string>
+    <string name="webdav_sync_success">WebDAV sync succeeded</string>
+    <string name="webdav_sync_failure">WebDAV sync failed: %s</string>
+    <string name="webdav_sync_hint">Sync user data via WebDAV server</string>
+    <string name="webdav_test_connection">Test connection</string>
+    <string name="webdav_test_success">Connection successful</string>
+    <string name="webdav_test_failure">Connection failed: %s</string>
+    <string name="webdav_sync_direction">Sync direction</string>
+    <string name="webdav_push">Upload to server</string>
+    <string name="webdav_pull">Download from server</string>
+    <string name="webdav_invalid_url">Invalid server URL</string>
+    <string name="webdav_connecting">Connecting to WebDAV server…</string>
+    <string name="webdav_remote_path">Remote folder name</string>
 </resources>

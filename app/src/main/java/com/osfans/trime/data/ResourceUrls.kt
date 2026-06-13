@@ -5,6 +5,8 @@
 package com.osfans.trime.data
 
 object ResourceUrls {
+    const val USER_AGENT = "Mozilla/5.0"
+
     // ---- Wanxiang API ----
     const val WANXIANG_API_LATEST_RELEASE =
         "https://api.github.com/repos/amzxyz/rime-wanxiang/releases/latest"

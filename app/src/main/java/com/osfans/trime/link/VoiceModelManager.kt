@@ -9,13 +9,20 @@ import com.osfans.trime.data.ResourceUrls
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.util.computeFileSha256
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
+import java.util.concurrent.TimeUnit
 
 object VoiceModelManager {
+    private val client: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
+            .build()
+    }
     val voiceDir: File
         get() {
             val sub = when (getSelectedVariant()) {
@@ -107,17 +114,14 @@ object VoiceModelManager {
         isCancelled: () -> Boolean = { false },
         onProgress: ((Float) -> Unit)? = null,
     ) {
-        val url = URL(urlString)
-        val connection = url.openConnection() as HttpURLConnection
-        try {
-            connection.connectTimeout = 30000
-            connection.readTimeout = 120000
-            connection.connect()
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                throw RuntimeException("HTTP ${connection.responseCode}")
+        val request = Request.Builder().url(urlString).get().build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw RuntimeException("HTTP ${response.code}")
             }
-            val contentLength = connection.contentLength.toLong()
-            connection.inputStream.use { input ->
+            val body = response.body ?: throw RuntimeException("Empty response body")
+            val contentLength = body.contentLength()
+            body.byteStream().use { input ->
                 FileOutputStream(destFile).use { output ->
                     val buffer = ByteArray(8192)
                     var totalRead = 0L
@@ -134,8 +138,6 @@ object VoiceModelManager {
                     }
                 }
             }
-        } finally {
-            connection.disconnect()
         }
     }
 

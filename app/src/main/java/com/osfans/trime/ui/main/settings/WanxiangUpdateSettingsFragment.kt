@@ -44,16 +44,24 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
 
 class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultInstance().wanxiang) {
     private val viewModel: MainViewModel by activityViewModels()
     private val prefs = AppPrefs.defaultInstance().wanxiang
+
+    private val client: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .build()
+    }
 
     private var isDownloading = false
     private var downloadJob: Job? = null
@@ -207,19 +215,21 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             var rateLimited = false
             withContext(Dispatchers.IO) {
                 try {
-                    val url = URL(ResourceUrls.WANXIANG_API_LATEST_RELEASE)
-                    val conn = url.openConnection() as HttpURLConnection
-                    conn.setRequestProperty("User-Agent", "WanxiangUpdater-Agent")
-                    conn.connectTimeout = 10000
-                    conn.connect()
-                    if (conn.responseCode == 200) {
-                        val content = conn.inputStream.bufferedReader().readText()
-                        val tag = JSONObject(content).optString("tag_name", "")
-                        if (tag.isNotEmpty()) latestStableTag = tag
-                    } else if (conn.responseCode in setOf(403, 429)) {
-                        val body = runCatching { conn.errorStream?.bufferedReader()?.readText() }.getOrNull() ?: ""
-                        if (body.contains("rate limit", ignoreCase = true) || body.contains("API rate limit", ignoreCase = true)) {
-                            rateLimited = true
+                    val request = Request.Builder()
+                        .url(ResourceUrls.WANXIANG_API_LATEST_RELEASE)
+                        .header("User-Agent", ResourceUrls.USER_AGENT)
+                        .get()
+                        .build()
+                    client.newCall(request).execute().use { response ->
+                        if (response.isSuccessful) {
+                            val content = response.body?.string() ?: ""
+                            val tag = JSONObject(content).optString("tag_name", "")
+                            if (tag.isNotEmpty()) latestStableTag = tag
+                        } else if (response.code in setOf(403, 429)) {
+                            val body = response.body?.string() ?: ""
+                            if (body.contains("rate limit", ignoreCase = true) || body.contains("API rate limit", ignoreCase = true)) {
+                                rateLimited = true
+                            }
                         }
                     }
                 } catch (_: Exception) {
@@ -393,23 +403,25 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
     private fun fetchRemoteModelSha256(): String? {
         return try {
-            val url = URL(ResourceUrls.WANXIANG_API_RIME_LMDG_TAGS_LTS)
-            val conn = url.openConnection() as HttpURLConnection
-            conn.setRequestProperty("User-Agent", "WanxiangUpdater-Agent")
-            conn.connectTimeout = 10000
-            conn.connect()
-            if (conn.responseCode != 200) return null
-            val content = conn.inputStream.bufferedReader().readText()
-            val json = JSONObject(content)
-            val assets = json.getJSONArray("assets")
-            for (i in 0 until assets.length()) {
-                val asset = assets.getJSONObject(i)
-                if (asset.getString("name") == "wanxiang-lts-zh-hans.gram") {
-                    val digest = asset.optString("digest", "")
-                    return digest.removePrefix("sha256:")
+            val request = Request.Builder()
+                .url(ResourceUrls.WANXIANG_API_RIME_LMDG_TAGS_LTS)
+                .header("User-Agent", ResourceUrls.USER_AGENT)
+                .get()
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return null
+                val content = response.body?.string() ?: return null
+                val json = JSONObject(content)
+                val assets = json.getJSONArray("assets")
+                for (i in 0 until assets.length()) {
+                    val asset = assets.getJSONObject(i)
+                    if (asset.getString("name") == "wanxiang-lts-zh-hans.gram") {
+                        val digest = asset.optString("digest", "")
+                        return digest.removePrefix("sha256:")
+                    }
                 }
+                null
             }
-            null
         } catch (_: Exception) {
             null
         }
@@ -417,25 +429,27 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
     private fun fetchReleaseAssetsSha256(tag: String): Map<String, String> {
         return try {
-            val url = URL("https://api.github.com/repos/amzxyz/rime-wanxiang/releases/tags/$tag")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.setRequestProperty("User-Agent", "WanxiangUpdater-Agent")
-            conn.connectTimeout = 10000
-            conn.connect()
-            if (conn.responseCode != 200) return emptyMap()
-            val content = conn.inputStream.bufferedReader().readText()
-            val json = JSONObject(content)
-            val assets = json.getJSONArray("assets")
-            val result = mutableMapOf<String, String>()
-            for (i in 0 until assets.length()) {
-                val asset = assets.getJSONObject(i)
-                val name = asset.optString("name", "") ?: ""
-                val digest = asset.optString("digest", "")
-                if (name.isNotEmpty() && digest.isNotEmpty()) {
-                    result[name] = digest.removePrefix("sha256:")
+            val request = Request.Builder()
+                .url("https://api.github.com/repos/amzxyz/rime-wanxiang/releases/tags/$tag")
+                .header("User-Agent", ResourceUrls.USER_AGENT)
+                .get()
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return emptyMap()
+                val content = response.body?.string() ?: return emptyMap()
+                val json = JSONObject(content)
+                val assets = json.getJSONArray("assets")
+                val result = mutableMapOf<String, String>()
+                for (i in 0 until assets.length()) {
+                    val asset = assets.getJSONObject(i)
+                    val name = asset.optString("name", "") ?: ""
+                    val digest = asset.optString("digest", "")
+                    if (name.isNotEmpty() && digest.isNotEmpty()) {
+                        result[name] = digest.removePrefix("sha256:")
+                    }
                 }
+                result
             }
-            result
         } catch (_: Exception) {
             emptyMap()
         }

@@ -35,6 +35,7 @@ set(BOOST_INCLUDE_LIBRARIES
     scope_exit
     signals2
     utility
-    uuid)
+    uuid
+    vmd)
 
 add_subdirectory(boost EXCLUDE_FROM_ALL)
