@@ -22,10 +22,13 @@ object SoundEffectManager {
             return FileUtils.rename(old, dest.name).getOrDefault(dest.also { it.mkdirs() })
         }
 
+    private val userDirFallback get() = File(DataManager.userDataDir, "soundeffect")
+
     private fun listSounds(): MutableList<SoundEffect> {
-        val files = userDir.listFiles { f -> f.name.endsWith("sound.yaml") }
+        fun list(dir: File) = dir.listFiles { f -> f.name.endsWith("sound.yaml") }.orEmpty().toList()
+        val files = list(userDir) + list(userDirFallback)
         return files
-            ?.mapNotNull decode@{ f ->
+            .mapNotNull decode@{ f ->
                 val effect = try {
                     val node = Yaml.parseToYamlNode(f.bufferedReader().readText())
                     val result = SoundEffect.decode(node)
@@ -39,7 +42,7 @@ object SoundEffectManager {
                     null
                 }
                 return@decode effect
-            }?.toMutableList() ?: mutableListOf()
+            }.toMutableList()
     }
 
     private fun getEffect(name: String) = userEffects.find { it.name == name }
@@ -70,7 +73,15 @@ object SoundEffectManager {
         get() {
             return activeSoundEffect?.let { e ->
                 val subPath = e.folder
-                e.sound.map { userDir.resolve(subPath).resolve(it).path }
+                e.sound.mapNotNull { name ->
+                    val primary = userDir.resolve(subPath).resolve(name)
+                    if (primary.exists()) {
+                        primary.path
+                    } else {
+                        val fallback = userDirFallback.resolve(subPath).resolve(name)
+                        if (fallback.exists()) fallback.path else primary.path
+                    }
+                }
             } ?: listOf()
         }
 

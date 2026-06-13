@@ -268,7 +268,11 @@ object ColorManager {
         if (default.exists()) return default.absolutePath
         val fallback = DataManager.userDataDir.resolve("themes/backgrounds/$value")
         if (fallback.exists()) return fallback.absolutePath
-        return default.absolutePath
+        val defaultNoThemes = DataManager.userDataDir.resolve("backgrounds/$backgroundFolder/$value")
+        if (defaultNoThemes.exists()) return defaultNoThemes.absolutePath
+        val fallbackNoThemes = DataManager.userDataDir.resolve("backgrounds/$value")
+        if (fallbackNoThemes.exists()) return fallbackNoThemes.absolutePath
+        return fallbackNoThemes.absolutePath
     }
 
     @ColorInt

@@ -31,6 +31,7 @@ object FontManager {
     }
 
     private val fontDir get() = File(DataManager.userDataDir, "themes/fonts")
+    private val fontDirFallback get() = File(DataManager.userDataDir, "fonts")
     lateinit var hanBFont: Typeface
         private set
     lateinit var latinFont: Typeface
@@ -92,6 +93,10 @@ object FontManager {
             if (fontFile.exists()) {
                 return Typeface.createFromFile(fontFile)
             }
+            val fallbackFile = File(fontDirFallback, fontName)
+            if (fallbackFile.exists()) {
+                return Typeface.createFromFile(fallbackFile)
+            }
             Timber.w("font %s not found", fontFile)
             return null
         }
@@ -124,6 +129,10 @@ object FontManager {
         val fontFile = File(fontDir, fontName)
         if (fontFile.exists()) {
             return FontFamily.Builder(Font.Builder(fontFile).build()).build()
+        }
+        val fallbackFile = File(fontDirFallback, fontName)
+        if (fallbackFile.exists()) {
+            return FontFamily.Builder(Font.Builder(fallbackFile).build()).build()
         }
         Timber.w("font %s not found", fontFile)
         return null

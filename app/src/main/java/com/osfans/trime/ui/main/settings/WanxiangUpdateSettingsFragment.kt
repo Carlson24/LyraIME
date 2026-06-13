@@ -60,8 +60,8 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
     private var latestStableTag = "v1.0.0"
     private var currentLocalVersion = "v0.0.0"
 
-    private var checkSchema = true
-    private var checkDict = false
+    private var checkSchema = false
+    private var checkDict = true
     private var checkModel = false
 
     private lateinit var versionDisplayPref: Preference
