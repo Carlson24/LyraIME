@@ -5,6 +5,7 @@
 
 package com.osfans.trime.ui.main.settings
 
+import android.app.TimePickerDialog
 import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
@@ -66,11 +67,11 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
     private val backupRestoreDialog = BackupRestoreDialog(this)
 
     private val onBackgroundSyncEnable = PreferenceDelegate.OnChangeListener<Boolean> { _, v ->
-        editSyncIntervalPreference.isEnabled = v
+        editSyncTimePreference.isEnabled = v
     }
 
-    private val onSyncIntervalChange =
-        PreferenceDelegate.OnChangeListener<Int> { _, _ ->
+    private val onSyncTimeChange =
+        PreferenceDelegate.OnChangeListener<String> { _, _ ->
             if (backgroundSyncEnable.getValue()) {
                 viewModel.restartBackgroundSyncWork.value = true
             }
@@ -83,13 +84,13 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
     private lateinit var browseLauncher: ActivityResultLauncher<Uri?>
     private var launcherResultCallback: ((path: String) -> Unit)? = null
 
-    private lateinit var editSyncIntervalPreference: EditTextIntPreference
+    private lateinit var editSyncTimePreference: TimePreference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         backupRestoreDialog.setupLaunchers()
         prefs.periodicBackgroundSync.registerOnChangeListener(onBackgroundSyncEnable)
-        prefs.periodicBackgroundSyncInterval.registerOnChangeListener(onSyncIntervalChange)
+        prefs.periodicBackgroundSyncTime.registerOnChangeListener(onSyncTimeChange)
         prefs.userDataDir.registerOnChangeListener(onUserDataDirChange)
 
         browseLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) {
@@ -213,15 +214,22 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                     },
                 )
                 addPreference(
-                    EditTextIntPreference(ctx).apply {
-                        editSyncIntervalPreference = this
-                        key = AppPrefs.Profile.PERIODIC_BACKGROUND_SYNC_INTERVAL
+                    TimePreference(ctx).apply {
+                        editSyncTimePreference = this
+                        key = AppPrefs.Profile.PERIODIC_BACKGROUND_SYNC_TIME
                         isIconSpaceReserved = false
-                        setTitle(R.string.periodic_background_sync_interval)
-                        min = 15
-                        setDefaultValue(30)
-                        summaryProvider = EditTextIntPreference.SimpleSummaryProvider
+                        setTitle(R.string.periodic_background_sync_time)
+                        setDefaultTime("02:00")
                         isEnabled = backgroundSyncEnable.getValue()
+                        setOnPreferenceClickListener {
+                            val timeParts = time.split(":")
+                            val hour = timeParts.getOrNull(0)?.toIntOrNull() ?: 2
+                            val minute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
+                            TimePickerDialog(ctx, { _, h, m ->
+                                setTimeAndPersist(String.format("%02d:%02d", h, m))
+                            }, hour, minute, true).show()
+                            true
+                        }
                     },
                 )
             }
@@ -271,7 +279,7 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
     override fun onDestroy() {
         super.onDestroy()
         prefs.periodicBackgroundSync.unregisterOnChangeListener(onBackgroundSyncEnable)
-        prefs.periodicBackgroundSyncInterval.unregisterOnChangeListener(onSyncIntervalChange)
+        prefs.periodicBackgroundSyncTime.unregisterOnChangeListener(onSyncTimeChange)
         prefs.userDataDir.unregisterOnChangeListener(onUserDataDirChange)
     }
 }

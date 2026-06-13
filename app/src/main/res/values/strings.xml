@@ -178,7 +178,7 @@
     <string name="setup_channel">Setup Wizard</string>
     <string name="forget_this_word">Forget this word</string>
     <string name="synchronization">Synchronization</string>
-    <string name="periodic_background_sync_interval">Interval of background syncing (in minutes)</string>
+    <string name="periodic_background_sync_time">Sync time</string>
     <string name="candidates_window">Candidates Window</string>
     <string name="show_candidates_window">Show candidates window</string>
     <string name="general">General</string>

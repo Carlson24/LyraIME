@@ -18,6 +18,7 @@ import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import timber.log.Timber
 import java.io.File
+import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 class BackgroundSyncWork(
@@ -54,7 +55,7 @@ class BackgroundSyncWork(
 
         private val prefs = AppPrefs.defaultInstance().profile
         private val enable by prefs.periodicBackgroundSync
-        private val interval by prefs.periodicBackgroundSyncInterval
+        private val syncTime by prefs.periodicBackgroundSyncTime
         private var lastSyncStatus by prefs.lastBackgroundSyncStatus
         private var lastSyncTime by prefs.lastBackgroundSyncTime
 
@@ -114,19 +115,40 @@ class BackgroundSyncWork(
                     .setRequiresStorageNotLow(true)
                     .build()
 
+            val (hour, minute) = parseSyncTime(syncTime)
+            val now = Calendar.getInstance()
+            val target = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, hour)
+                set(Calendar.MINUTE, minute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            if (target.timeInMillis <= now.timeInMillis) {
+                target.add(Calendar.DAY_OF_MONTH, 1)
+            }
+            val initialDelay = target.timeInMillis - now.timeInMillis
+
             val workRequest =
                 PeriodicWorkRequestBuilder<BackgroundSyncWork>(
-                    interval.toLong(),
+                    24,
+                    TimeUnit.HOURS,
+                    15,
                     TimeUnit.MINUTES,
-                    5,
-                    TimeUnit.MINUTES,
-                ).setConstraints(constraints)
+                ).setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                    .setConstraints(constraints)
                     .build()
             instance.enqueueUniquePeriodicWork(
                 PERIODIC_BACKGROUND_SYNC_KEY,
                 policy,
                 workRequest,
             )
+        }
+
+        private fun parseSyncTime(time: String): Pair<Int, Int> {
+            val parts = time.split(":")
+            val hour = parts.getOrNull(0)?.toIntOrNull() ?: 2
+            val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+            return hour to minute
         }
     }
 }

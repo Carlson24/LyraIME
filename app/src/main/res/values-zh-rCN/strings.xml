@@ -177,7 +177,7 @@
     <string name="setup_channel">设置向导</string>
     <string name="forget_this_word">忘记该词</string>
     <string name="synchronization">同步</string>
-    <string name="periodic_background_sync_interval">后台同步时间间隔（以分钟为单位）</string>
+    <string name="periodic_background_sync_time">后台同步时间</string>
     <string name="candidates_window">候选窗口</string>
     <string name="show_candidates_window">显示候选词窗口</string>
     <string name="general">常规</string>

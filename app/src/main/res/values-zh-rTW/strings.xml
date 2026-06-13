@@ -178,7 +178,7 @@
     <string name="setup_channel">設定精靈</string>
     <string name="forget_this_word">忘記該詞</string>
     <string name="synchronization">同步</string>
-    <string name="periodic_background_sync_interval">後台同步時間間隔（以分鐘為單位）</string>
+    <string name="periodic_background_sync_time">後台同步時間</string>
     <string name="candidates_window">候选視窗</string>
     <string name="show_candidates_window">顯示候選詞視窗</string>
     <string name="general">常規</string>

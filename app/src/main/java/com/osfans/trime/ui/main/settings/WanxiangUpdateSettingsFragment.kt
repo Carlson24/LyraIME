@@ -30,14 +30,14 @@ import com.osfans.trime.data.prefs.PreferenceDelegateFragment
 import com.osfans.trime.data.prefs.PreferenceDelegateProvider
 import com.osfans.trime.data.wanxiang.DownloadManager
 import com.osfans.trime.data.wanxiang.TaskState
-import com.osfans.trime.util.compareVersions
-import com.osfans.trime.util.readLocalWanxiangVersion
 import com.osfans.trime.ui.main.MainActivity
 import com.osfans.trime.ui.main.MainViewModel
 import com.osfans.trime.ui.main.NavigationRoute
 import com.osfans.trime.util.addCategory
+import com.osfans.trime.util.compareVersions
 import com.osfans.trime.util.computeFileSha256
 import com.osfans.trime.util.createNotificationChannel
+import com.osfans.trime.util.readLocalWanxiangVersion
 import com.osfans.trime.worker.WanxiangCheckWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

@@ -481,14 +481,14 @@ class AppPrefs(
         companion object {
             const val USER_DATA_DIR = "profile_user_data_dir"
             const val PERIODIC_BACKGROUND_SYNC = "periodic_background_sync"
-            const val PERIODIC_BACKGROUND_SYNC_INTERVAL = "periodic_background_sync_interval"
+            const val PERIODIC_BACKGROUND_SYNC_TIME = "periodic_background_sync_time"
             const val LAST_BACKGROUND_SYNC_STATUS = "last_background_sync_status"
             const val LAST_BACKGROUND_SYNC_TIME = "last_background_sync_time"
         }
 
         val userDataDir = string(USER_DATA_DIR, DataManager.defaultDataDir.path)
         val periodicBackgroundSync = bool(PERIODIC_BACKGROUND_SYNC, false)
-        val periodicBackgroundSyncInterval = int(PERIODIC_BACKGROUND_SYNC_INTERVAL, 720)
+        val periodicBackgroundSyncTime = string(PERIODIC_BACKGROUND_SYNC_TIME, "02:00")
         val lastBackgroundSyncStatus = bool(LAST_BACKGROUND_SYNC_STATUS, false)
         val lastBackgroundSyncTime = long(LAST_BACKGROUND_SYNC_TIME, 0L)
     }
