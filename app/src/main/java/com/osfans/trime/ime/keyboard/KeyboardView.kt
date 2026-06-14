@@ -12,10 +12,15 @@ import android.graphics.Color
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
-import androidx.core.view.children
+import android.widget.LinearLayout
+import android.widget.Space
 import androidx.transition.Slide
 import androidx.transition.TransitionManager
 import androidx.transition.TransitionSet
+import com.google.android.flexbox.AlignItems
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayout
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
@@ -29,7 +34,6 @@ import com.osfans.trime.link.VoiceOverlayUiBridge
 import timber.log.Timber
 import androidx.core.graphics.ColorUtils as AndroidColorUtils
 
-// TODO: move layout calculation responsibilities from Keyboard to KeyboardView using ConstraintLayout
 @SuppressLint("ViewConstructor")
 class KeyboardView(
     context: Context,
@@ -39,9 +43,7 @@ class KeyboardView(
     val service: TrimeInputMethodService,
     private val keyboardActionListener: KeyboardActionListener,
     private val enterKeyDisplay: EnterKeyDisplayDelegate,
-) : FrameLayout(context) {
-
-    private val keys get() = keyboard.keys
+) : LinearLayout(context) {
 
     internal val labelEnter: String
         get() = enterKeyDisplay.keyLabel
@@ -53,41 +55,67 @@ class KeyboardView(
     private var voiceOverlay: FrameLayout? = null
     private var voiceWave: WaveformView? = null
 
+    private val keyViews = mutableListOf<KeyView>()
+
     init {
+        orientation = VERTICAL
         setWillNotDraw(false)
         buildKeyViews()
     }
 
     private fun buildKeyViews() {
         removeAllViews()
+        keyViews.clear()
 
-        keys.forEachIndexed { index, key ->
-            val keyView = createKeyView(index, key)
-            addView(keyView)
+        for (rowLayout in keyboard.rowLayouts) {
+            val flexRow = FlexboxLayout(context).apply {
+                flexDirection = FlexDirection.ROW
+                flexWrap = FlexWrap.NOWRAP
+                alignItems = AlignItems.STRETCH
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, rowLayout.pixelHeight)
+            }
+
+            for (entry in rowLayout.entries) {
+                when (entry) {
+                    is Keyboard.RowLayoutEntry.KeyRef -> {
+                        val keyView = createKeyView(entry.key, entry.weight)
+                        flexRow.addView(keyView)
+                    }
+                    is Keyboard.RowLayoutEntry.Spacer -> {
+                        val space = Space(context)
+                        space.layoutParams = FlexboxLayout.LayoutParams(0, LayoutParams.MATCH_PARENT).apply {
+                            flexGrow = entry.weight
+                        }
+                        flexRow.addView(space)
+                    }
+                }
+            }
+
+            addView(flexRow)
         }
     }
 
-    private fun createKeyView(index: Int, key: Key): KeyView = KeyView(
+    private fun createKeyView(key: Key, weight: Float): KeyView = KeyView(
         context,
         key = key,
         keyboard = keyboard,
         keyboardView = this,
         keyboardActionListener = keyboardActionListener,
     ).apply {
-        id = index
+        id = key.index
 
-        val totalWidth = key.width + key.extraWidthLeft + key.extraWidthRight
-        layoutParams = LayoutParams(totalWidth, key.height)
-
-        translationX = (key.x - key.extraWidthLeft).toFloat()
-        translationY = key.y.toFloat()
+        layoutParams = FlexboxLayout.LayoutParams(0, LayoutParams.MATCH_PARENT).apply {
+            flexGrow = weight
+        }
 
         setPadding(
-            keyboard.horizontalGap / 2 + key.extraWidthLeft,
+            keyboard.horizontalGap / 2,
             keyboard.verticalGap / 2,
-            keyboard.horizontalGap / 2 + key.extraWidthRight,
+            keyboard.horizontalGap / 2,
             keyboard.verticalGap / 2,
         )
+
+        keyViews.add(this)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -109,11 +137,11 @@ class KeyboardView(
     }
 
     fun invalidateAllKeys() {
-        children.forEach { it.invalidate() }
+        keyViews.forEach { it.invalidate() }
     }
 
     fun invalidateKeyByIndex(index: Int) {
-        getChildAt(index)?.invalidate()
+        keyViews.getOrNull(index)?.invalidate()
     }
 
     val isCapsOn: Boolean

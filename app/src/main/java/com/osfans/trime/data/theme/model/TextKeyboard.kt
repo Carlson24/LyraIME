@@ -21,8 +21,6 @@ import kotlinx.parcelize.Parcelize
 data class TextKeyboard(
     val name: String,
     val author: String,
-    val width: Float,
-    val height: Float,
     val keyboardHeight: Int,
     val keyboardHeightLand: Int,
     val autoHeightIndex: Int,
@@ -30,7 +28,6 @@ data class TextKeyboard(
     val verticalGap: Int,
     val roundCorner: Float,
     val keyBorder: Int,
-    val columns: Int,
     val asciiMode: Boolean,
     val resetAsciiMode: Boolean,
     val labelTransform: LabelTransform,
@@ -48,17 +45,51 @@ data class TextKeyboard(
     val keyPressOffsetY: Float,
     val importPreset: String,
     val navbar: Boolean,
-    val keys: List<TextKey>,
+    val rows: List<KeyRow>,
 ) : Parcelable {
     enum class LabelTransform {
         NONE,
         UPPERCASE,
     }
 
+    sealed interface RowEntry : Parcelable {
+        @Parcelize
+        data class Key(val config: TextKey) : RowEntry
+
+        @Parcelize
+        data class Spacer(val weight: Float) : RowEntry
+    }
+
+    @Parcelize
+    data class KeyRow(
+        val entries: List<RowEntry>,
+        val height: Float = 1f,
+        val splitAfter: Int = -1,
+    ) : Parcelable {
+        companion object {
+            fun decode(node: Node.Mapping): KeyRow = KeyRow(
+                height = node["height"]?.float ?: 1f,
+                splitAfter = node["split_after"]?.int ?: -1,
+                entries = node["keys"]?.sequence?.mapNotNull { entry ->
+                    val mapping = entry.mapping
+                    if (mapping != null) {
+                        val spacerWeight = mapping["spacer"]?.float
+                        if (spacerWeight != null) {
+                            RowEntry.Spacer(spacerWeight)
+                        } else {
+                            RowEntry.Key(TextKey.decode(mapping))
+                        }
+                    } else {
+                        null
+                    }
+                } ?: emptyList(),
+            )
+        }
+    }
+
     @Parcelize
     data class TextKey(
-        val width: Float,
-        val height: Float,
+        val weight: Float,
         val roundCorner: Float,
         val keyBorder: Int,
         val label: String,
@@ -87,8 +118,7 @@ data class TextKeyboard(
     ) : Parcelable {
         companion object {
             fun decode(node: Node.Mapping): TextKey = TextKey(
-                width = node["width"]?.float ?: 0f,
-                height = node["height"]?.float ?: 0f,
+                weight = node["weight"]?.float ?: 1f,
                 roundCorner = node["round_corner"]?.float ?: -1f,
                 keyBorder = node["key_border"]?.int ?: -1,
                 label = node["label"]?.string ?: "",
@@ -130,8 +160,6 @@ data class TextKeyboard(
         fun decode(node: Node.Mapping): TextKeyboard = TextKeyboard(
             name = node["name"]?.string ?: "",
             author = node["author"]?.string ?: "",
-            width = node["width"]?.float ?: 0f,
-            height = node["height"]?.float ?: 0f,
             keyboardHeight = node["keyboard_height"]?.int ?: 0,
             keyboardHeightLand = node["keyboard_height_land"]?.int ?: 0,
             autoHeightIndex = node["auto_height_index"]?.int ?: -1,
@@ -139,7 +167,6 @@ data class TextKeyboard(
             verticalGap = node["vertical_gap"]?.int ?: 0,
             roundCorner = node["round_corner"]?.float ?: -1f,
             keyBorder = node["key_border"]?.int ?: -1,
-            columns = node["columns"]?.int ?: 30,
             asciiMode = (node["ascii_mode"]?.int ?: 1) == 1,
             resetAsciiMode = node["reset_ascii_mode"]?.boolean ?: false,
             labelTransform = node["label_transform"]?.enum<LabelTransform>() ?: LabelTransform.NONE,
@@ -157,8 +184,8 @@ data class TextKeyboard(
             keyPressOffsetY = node["key_press_offset_y"]?.float ?: 0f,
             importPreset = node["import_preset"]?.string ?: "",
             navbar = node["navbar"]?.boolean ?: false,
-            keys = node["keys"]?.sequence?.mapNotNull {
-                TextKey.decode(it.mapping!!)
+            rows = node["rows"]?.sequence?.mapNotNull {
+                KeyRow.decode(it.mapping!!)
             } ?: emptyList(),
         )
     }
