@@ -18,10 +18,29 @@ import com.osfans.trime.util.yaml.string
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
+data class TextRow(
+    val keys: List<TextKeyboard.TextKey>,
+    val weight: Float,
+    val height: Float,
+    val gap: Int,
+) : Parcelable {
+    companion object {
+        fun decode(node: Node.Mapping): TextRow = TextRow(
+            keys = node["keys"]?.sequence?.mapNotNull {
+                TextKeyboard.TextKey.decode(it.mapping!!)
+            } ?: emptyList(),
+            weight = node["weight"]?.float ?: 0f,
+            height = node["height"]?.float ?: 0f,
+            gap = node["gap"]?.int ?: 0,
+        )
+    }
+}
+
+@Parcelize
 data class TextKeyboard(
     val name: String,
     val author: String,
-    val width: Float,
+    val weight: Float,
     val height: Float,
     val keyboardHeight: Int,
     val keyboardHeightLand: Int,
@@ -30,7 +49,6 @@ data class TextKeyboard(
     val verticalGap: Int,
     val roundCorner: Float,
     val keyBorder: Int,
-    val columns: Int,
     val asciiMode: Boolean,
     val resetAsciiMode: Boolean,
     val labelTransform: LabelTransform,
@@ -48,7 +66,7 @@ data class TextKeyboard(
     val keyPressOffsetY: Float,
     val importPreset: String,
     val navbar: Boolean,
-    val keys: List<TextKey>,
+    val rows: List<TextRow>,
 ) : Parcelable {
     enum class LabelTransform {
         NONE,
@@ -57,7 +75,7 @@ data class TextKeyboard(
 
     @Parcelize
     data class TextKey(
-        val width: Float,
+        val weight: Float,
         val height: Float,
         val roundCorner: Float,
         val keyBorder: Int,
@@ -87,7 +105,7 @@ data class TextKeyboard(
     ) : Parcelable {
         companion object {
             fun decode(node: Node.Mapping): TextKey = TextKey(
-                width = node["width"]?.float ?: 0f,
+                weight = node["weight"]?.float ?: 0f,
                 height = node["height"]?.float ?: 0f,
                 roundCorner = node["round_corner"]?.float ?: -1f,
                 keyBorder = node["key_border"]?.int ?: -1,
@@ -130,7 +148,7 @@ data class TextKeyboard(
         fun decode(node: Node.Mapping): TextKeyboard = TextKeyboard(
             name = node["name"]?.string ?: "",
             author = node["author"]?.string ?: "",
-            width = node["width"]?.float ?: 0f,
+            weight = node["weight"]?.float ?: 0f,
             height = node["height"]?.float ?: 0f,
             keyboardHeight = node["keyboard_height"]?.int ?: 0,
             keyboardHeightLand = node["keyboard_height_land"]?.int ?: 0,
@@ -139,7 +157,6 @@ data class TextKeyboard(
             verticalGap = node["vertical_gap"]?.int ?: 0,
             roundCorner = node["round_corner"]?.float ?: -1f,
             keyBorder = node["key_border"]?.int ?: -1,
-            columns = node["columns"]?.int ?: 30,
             asciiMode = (node["ascii_mode"]?.int ?: 1) == 1,
             resetAsciiMode = node["reset_ascii_mode"]?.boolean ?: false,
             labelTransform = node["label_transform"]?.enum<LabelTransform>() ?: LabelTransform.NONE,
@@ -157,8 +174,8 @@ data class TextKeyboard(
             keyPressOffsetY = node["key_press_offset_y"]?.float ?: 0f,
             importPreset = node["import_preset"]?.string ?: "",
             navbar = node["navbar"]?.boolean ?: false,
-            keys = node["keys"]?.sequence?.mapNotNull {
-                TextKey.decode(it.mapping!!)
+            rows = node["rows"]?.sequence?.mapNotNull {
+                TextRow.decode(it.mapping!!)
             } ?: emptyList(),
         )
     }
