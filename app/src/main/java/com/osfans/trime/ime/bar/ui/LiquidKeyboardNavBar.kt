@@ -104,7 +104,7 @@ class LiquidKeyboardNavBar(
                 marginEnd = when {
                     isLastButton -> {
                         if (!keyItem.isStringFormat && keyItem.margin?.right != null) {
-                            context.dp(keyItem.margin.right!!).toInt()
+                            context.dp(keyItem.margin.right).toInt()
                         } else {
                             endEdgeMargin
                         }

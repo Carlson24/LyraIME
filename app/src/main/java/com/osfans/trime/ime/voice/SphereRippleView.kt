@@ -39,6 +39,7 @@ class SphereRippleView @JvmOverloads constructor(
     private var perVolume = 0f
     private var sensibility = DEFAULT_SENSIBILITY
 
+    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     private val renderLock = Object()
     private var silentFrameCount = 0
 
@@ -188,7 +189,7 @@ class SphereRippleView @JvmOverloads constructor(
         }
 
         paint.style = Paint.Style.FILL
-        val haloPulse = sin(haloTimeFactor * 1.2f).toFloat() * (baseRadius * 0.06f)
+        val haloPulse = sin(haloTimeFactor * 1.2f) * (baseRadius * 0.06f)
         paint.color = Color.argb(35, r, g, b)
         canvas.drawCircle(centerX, centerY, baseRadius * 1.3f + haloPulse, paint)
 
@@ -202,7 +203,7 @@ class SphereRippleView @JvmOverloads constructor(
         val b = Color.blue(_lineColor)
 
         paint.style = Paint.Style.FILL
-        val haloPulse = sin(haloTimeFactor * 1.2f).toFloat() * (baseRadius * 0.06f)
+        val haloPulse = sin(haloTimeFactor * 1.2f) * (baseRadius * 0.06f)
         paint.color = Color.argb(35, r, g, b)
         canvas.drawCircle(centerX, centerY, baseRadius * 1.3f + haloPulse, paint)
 

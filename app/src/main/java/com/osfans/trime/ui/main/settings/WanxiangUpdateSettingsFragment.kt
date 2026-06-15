@@ -222,11 +222,11 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                         .build()
                     client.newCall(request).execute().use { response ->
                         if (response.isSuccessful) {
-                            val content = response.body?.string() ?: ""
+                            val content = response.body.string()
                             val tag = JSONObject(content).optString("tag_name", "")
                             if (tag.isNotEmpty()) latestStableTag = tag
                         } else if (response.code in setOf(403, 429)) {
-                            val body = response.body?.string() ?: ""
+                            val body = response.body.string()
                             if (body.contains("rate limit", ignoreCase = true) || body.contains("API rate limit", ignoreCase = true)) {
                                 rateLimited = true
                             }
@@ -410,7 +410,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 .build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return null
-                val content = response.body?.string() ?: return null
+                val content = response.body.string()
                 val json = JSONObject(content)
                 val assets = json.getJSONArray("assets")
                 for (i in 0 until assets.length()) {
@@ -436,7 +436,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 .build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return emptyMap()
-                val content = response.body?.string() ?: return emptyMap()
+                val content = response.body.string()
                 val json = JSONObject(content)
                 val assets = json.getJSONArray("assets")
                 val result = mutableMapOf<String, String>()

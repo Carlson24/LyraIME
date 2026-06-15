@@ -24,12 +24,11 @@ plugins {
 android {
     namespace = "com.osfans.trime"
     compileSdk = 36
-    buildToolsVersion = "37.0.0"
 
     defaultConfig {
         applicationId = "com.carlson.lyraime"
         minSdk = 30
-        targetSdk = 37
+        targetSdk = 36
         versionCode = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
         versionName = "3.3.12"
 
@@ -124,12 +123,6 @@ android {
                     "/kotlin-tooling-metadata.json",
                 )
         }
-    }
-}
-
-kotlin {
-    sourceSets.configureEach {
-        kotlin.srcDir(layout.buildDirectory.dir("generated/ksp/$name/kotlin"))
     }
 }
 

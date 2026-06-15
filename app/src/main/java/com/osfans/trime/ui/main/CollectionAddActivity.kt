@@ -17,6 +17,7 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import splitties.systemservices.inputMethodManager
 
 class CollectionAddActivity : Activity() {
@@ -39,8 +40,10 @@ class CollectionAddActivity : Activity() {
     private fun finishAdding() {
         val str = editText.editableText.toString().trim()
         if (str.isNotEmpty()) {
-            scope.launch(NonCancellable) {
-                CollectionHelper.addNewBean(str)
+            scope.launch {
+                withContext(NonCancellable) {
+                    CollectionHelper.addNewBean(str)
+                }
             }
         }
         finish()

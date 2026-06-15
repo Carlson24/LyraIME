@@ -147,7 +147,7 @@ abstract class PreferenceDelegateUi<T : Preference>(
                 setDialogMessage(this@EditText.message)
             }
             if (this@EditText.onBindEditText != null) {
-                setOnBindEditTextListener(this@EditText.onBindEditText!!)
+                setOnBindEditTextListener(this@EditText.onBindEditText)
             }
         }
     }

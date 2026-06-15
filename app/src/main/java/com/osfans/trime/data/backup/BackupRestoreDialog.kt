@@ -97,7 +97,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                 fragment.lifecycleScope.withLoadingDialog(context, threshold = 0L) {
                     withContext(Dispatchers.IO) {
                         tempFile = File(context.cacheDir, "temp_backup.json")
-                        tempFile!!.delete()
+                        tempFile.delete()
 
                         val backupData =
                             BackupManager.createBackup(
@@ -108,7 +108,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                                 includeCustomTasks = includeCustomTasks,
                             )
 
-                        BackupManager.saveBackupToFile(backupData, tempFile!!).getOrThrow()
+                        BackupManager.saveBackupToFile(backupData, tempFile).getOrThrow()
                     }
                 }
 

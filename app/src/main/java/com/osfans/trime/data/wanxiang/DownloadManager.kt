@@ -240,7 +240,7 @@ object DownloadManager {
                     try {
                         client.newCall(request).execute().use { response ->
                             val partFile = File(stagingDir, "${tmpFile.name}.part$i")
-                            response.body?.byteStream()?.buffered()?.use { input ->
+                            response.body.byteStream().buffered().use { input ->
                                 FileOutputStream(partFile).buffered().use { output ->
                                     val buf = ByteArray(65536)
                                     var count: Int
@@ -300,7 +300,7 @@ object DownloadManager {
         val request = buildRequest(urlStr, token).get().build()
         try {
             client.newCall(request).execute().use { response ->
-                val body = response.body ?: return
+                val body = response.body
                 val fallbackSize = body.contentLength()
                 task.progress = if (fallbackSize > 0) 0f else -1f
                 body.byteStream().buffered().use { input ->

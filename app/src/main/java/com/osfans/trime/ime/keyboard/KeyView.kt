@@ -157,8 +157,8 @@ class KeyView(
         onSlide = { delta, _, _ ->
             if (isSlideCursor) {
                 when {
-                    delta > 0 -> keyboardActionListener?.onAction(KeyAction("Right"))
-                    delta < 0 -> keyboardActionListener?.onAction(KeyAction("Left"))
+                    delta > 0 -> keyboardActionListener.onAction(KeyAction("Right"))
+                    delta < 0 -> keyboardActionListener.onAction(KeyAction("Left"))
                 }
             } else if (isSlideDelete) {
                 val ic = service.currentInputConnection

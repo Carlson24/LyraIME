@@ -203,7 +203,7 @@ object WebDavSync {
             }.build()
             client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    val xml = response.body?.string() ?: return
+                    val xml = response.body.string()
                     parsePropfind(xml).forEach { item ->
                         if (item.isDirectory) {
                             if (item.href != url.substringAfterLast('/') &&
@@ -280,7 +280,7 @@ object WebDavSync {
             if (response.isSuccessful) {
                 localFile.parentFile?.mkdirs()
                 FileOutputStream(localFile).use { output ->
-                    response.body?.byteStream()?.copyTo(output)
+                    response.body.byteStream().copyTo(output)
                 }
                 Timber.i("Downloaded: $remoteUrl -> $localFile")
             } else {

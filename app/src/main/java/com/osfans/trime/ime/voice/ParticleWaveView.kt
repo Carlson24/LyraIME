@@ -53,6 +53,7 @@ class ParticleWaveView @JvmOverloads constructor(
     private var polygonSides = 8
 
     // 线程阻塞锁状态机
+    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     private val renderLock = Object()
     private var silentFrameCount = 0
 

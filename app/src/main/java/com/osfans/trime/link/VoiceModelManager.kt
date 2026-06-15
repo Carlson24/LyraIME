@@ -119,7 +119,7 @@ object VoiceModelManager {
             if (!response.isSuccessful) {
                 throw RuntimeException("HTTP ${response.code}")
             }
-            val body = response.body ?: throw RuntimeException("Empty response body")
+            val body = response.body
             val contentLength = body.contentLength()
             body.byteStream().use { input ->
                 FileOutputStream(destFile).use { output ->

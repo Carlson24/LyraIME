@@ -63,7 +63,7 @@ class WanxiangCheckWorker(
             .build()
         client.newCall(request).execute().use { response ->
             if (response.isSuccessful) {
-                val content = response.body?.string() ?: return null
+                val content = response.body.string()
                 JSONObject(content).optString("tag_name", "").ifEmpty { null }
             } else {
                 null

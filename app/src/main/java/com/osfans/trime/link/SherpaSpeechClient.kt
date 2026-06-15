@@ -363,7 +363,7 @@ object SherpaSpeechClient {
 
                         if (engine != null && stream != null) {
                             try {
-                                val tailSamples = ((SAMPLE_RATE * 480 / 1000).toInt()).coerceAtLeast(1)
+                                val tailSamples = ((SAMPLE_RATE * 480 / 1000)).coerceAtLeast(1)
                                 val tail = FloatArray(tailSamples)
                                 stream.acceptWaveform(tail, SAMPLE_RATE)
                                 stream.inputFinished()
