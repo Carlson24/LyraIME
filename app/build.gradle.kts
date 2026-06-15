@@ -23,15 +23,15 @@ plugins {
 
 android {
     namespace = "com.osfans.trime"
-    compileSdk = 35
-    buildToolsVersion = "35.0.0"
+    compileSdk = 36
+    buildToolsVersion = "37.0.0"
 
     defaultConfig {
         applicationId = "com.carlson.lyraime"
-        minSdk = 21
-        targetSdk = 35
+        minSdk = 30
+        targetSdk = 37
         versionCode = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
-        versionName = "3.3.11"
+        versionName = "3.3.12"
 
         multiDexEnabled = true
         buildConfigField("String", "BUILDER", "\"${project.builder}\"")
@@ -84,14 +84,14 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlin {
         compilerOptions {
             // https://youtrack.jetbrains.com/issue/KT-55947
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
             // https://youtrack.jetbrains.com/issue/KT-73255/Change-defaulting-rule-for-annotations
             freeCompilerArgs.add("-Xannotation-default-target=param-property")
         }
@@ -200,7 +200,6 @@ dependencies {
     }
 
     // Testing
-    testImplementation(libs.junit)
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     androidTestImplementation(libs.junit)

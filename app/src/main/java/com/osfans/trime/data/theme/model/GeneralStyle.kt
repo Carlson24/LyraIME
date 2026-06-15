@@ -43,7 +43,6 @@ data class GeneralStyle(
     val keyboardPaddingLandBottom: Int,
     val keyFont: List<String>,
     val keyBorder: Int,
-    val keyHeight: Int,
     val keyLongTextSize: Float,
     val keyTextSize: Float,
     val keyTextOffsetX: Float,
@@ -54,7 +53,6 @@ data class GeneralStyle(
     val keyHintOffsetY: Float,
     val keyPressOffsetX: Float,
     val keyPressOffsetY: Float,
-    val keyWidth: Float,
     val labelTextSize: Float,
     val labelFont: List<String>,
     val latinFont: List<String>,
@@ -136,7 +134,6 @@ data class GeneralStyle(
             keyFont = node["key_font"]?.sequence
                 ?.mapNotNull(Node::string) ?: emptyList(),
             keyBorder = node["key_border"]?.int ?: 0,
-            keyHeight = node["key_height"]?.int ?: 0,
             keyLongTextSize = node["key_long_text_size"]?.float ?: 15f,
             keyTextSize = node["key_text_size"]?.float ?: 15f,
             keyTextOffsetX = node["key_text_offset_x"]?.float ?: 0f,
@@ -147,7 +144,6 @@ data class GeneralStyle(
             keyHintOffsetY = node["key_hint_offset_y"]?.float ?: 0f,
             keyPressOffsetX = node["key_press_offset_x"]?.float ?: 0f,
             keyPressOffsetY = node["key_press_offset_y"]?.float ?: 0f,
-            keyWidth = node["key_width"]?.float ?: 0f,
             labelTextSize = node["label_text_size"]?.float ?: 0f,
             labelFont = node["label_font"]?.sequence
                 ?.mapNotNull(Node::string) ?: emptyList(),

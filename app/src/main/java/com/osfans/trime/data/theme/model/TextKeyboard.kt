@@ -16,13 +16,29 @@ import com.osfans.trime.util.yaml.mapping
 import com.osfans.trime.util.yaml.sequence
 import com.osfans.trime.util.yaml.string
 import kotlinx.parcelize.Parcelize
+import timber.log.Timber
+
+@Parcelize
+data class KeyboardRow(
+    val height: Float,
+    val split: Boolean,
+    val keys: List<TextKeyboard.TextKey>,
+) : Parcelable {
+    companion object {
+        fun decode(node: Node.Mapping): KeyboardRow = KeyboardRow(
+            height = node["height"]?.float ?: 0f,
+            split = node["split"]?.boolean ?: false,
+            keys = node["keys"]?.sequence?.mapNotNull {
+                TextKeyboard.TextKey.decode(it.mapping!!)
+            } ?: emptyList(),
+        )
+    }
+}
 
 @Parcelize
 data class TextKeyboard(
     val name: String,
     val author: String,
-    val width: Float,
-    val height: Float,
     val keyboardHeight: Int,
     val keyboardHeightLand: Int,
     val autoHeightIndex: Int,
@@ -30,7 +46,6 @@ data class TextKeyboard(
     val verticalGap: Int,
     val roundCorner: Float,
     val keyBorder: Int,
-    val columns: Int,
     val asciiMode: Boolean,
     val resetAsciiMode: Boolean,
     val labelTransform: LabelTransform,
@@ -48,7 +63,7 @@ data class TextKeyboard(
     val keyPressOffsetY: Float,
     val importPreset: String,
     val navbar: Boolean,
-    val keys: List<TextKey>,
+    val rows: List<KeyboardRow>,
 ) : Parcelable {
     enum class LabelTransform {
         NONE,
@@ -58,7 +73,7 @@ data class TextKeyboard(
     @Parcelize
     data class TextKey(
         val width: Float,
-        val height: Float,
+        val spacer: Boolean,
         val roundCorner: Float,
         val keyBorder: Int,
         val label: String,
@@ -86,43 +101,53 @@ data class TextKeyboard(
         val behaviors: Map<KeyBehavior, String>,
     ) : Parcelable {
         companion object {
-            fun decode(node: Node.Mapping): TextKey = TextKey(
-                width = node["width"]?.float ?: 0f,
-                height = node["height"]?.float ?: 0f,
-                roundCorner = node["round_corner"]?.float ?: -1f,
-                keyBorder = node["key_border"]?.int ?: -1,
-                label = node["label"]?.string ?: "",
-                labelSymbol = node["label_symbol"]?.string ?: "",
-                hint = node["hint"]?.string ?: "",
-                click = node["click"]?.string ?: "",
-                sendBindings = node["send_bindings"]?.boolean ?: true,
-                keyTextSize = node["key_text_size"]?.float ?: 0f,
-                symbolTextSize = node["symbol_text_size"]?.float ?: 0f,
-                keyTextOffsetX = node["key_text_offset_x"]?.float ?: 0f,
-                keyTextOffsetY = node["key_text_offset_y"]?.float ?: 0f,
-                keySymbolOffsetX = node["key_symbol_offset_x"]?.float ?: 0f,
-                keySymbolOffsetY = node["key_symbol_offset_y"]?.float ?: 0f,
-                keyHintOffsetX = node["key_hint_offset_x"]?.float ?: 0f,
-                keyHintOffsetY = node["key_hint_offset_y"]?.float ?: 0f,
-                keyPressOffsetX = node["key_press_offset_x"]?.float ?: 0f,
-                keyPressOffsetY = node["key_press_offset_y"]?.float ?: 0f,
-                keyTextColor = node["key_text_color"]?.string ?: "",
-                keyBackColor = node["key_back_color"]?.string ?: "",
-                keySymbolColor = node["key_symbol_color"]?.string ?: "",
-                hlKeyTextColor = node["hilited_key_text_color"]?.string ?: "",
-                hlKeyBackColor = node["hilited_key_back_color"]?.string ?: "",
-                hlKeySymbolColor = node["hilited_key_symbol_color"]?.string ?: "",
-                popup = node["popup"]?.sequence?.mapNotNull(Node::string) ?: emptyList(),
-                behaviors =
-                buildMap {
-                    KeyBehavior.entries.forEach { entry ->
-                        val action = node[entry.name.lowercase()]?.string ?: ""
-                        if (action.isNotEmpty() || entry == KeyBehavior.CLICK) {
-                            put(entry, action)
+            fun decode(node: Node.Mapping): TextKey {
+                val keyHeight = node["height"]?.float
+                if (keyHeight != null) {
+                    Timber.w("Per-key height is no longer supported, ignoring height=$keyHeight")
+                }
+                val keyWidth = node["width"]?.float ?: 0f
+                if (keyWidth > 1.0f) {
+                    error("Key width $keyWidth > 1.0, must be in range [0, 1]")
+                }
+                return TextKey(
+                    width = keyWidth,
+                    spacer = node["spacer"]?.boolean ?: false,
+                    roundCorner = node["round_corner"]?.float ?: -1f,
+                    keyBorder = node["key_border"]?.int ?: -1,
+                    label = node["label"]?.string ?: "",
+                    labelSymbol = node["label_symbol"]?.string ?: "",
+                    hint = node["hint"]?.string ?: "",
+                    click = node["click"]?.string ?: "",
+                    sendBindings = node["send_bindings"]?.boolean ?: true,
+                    keyTextSize = node["key_text_size"]?.float ?: 0f,
+                    symbolTextSize = node["symbol_text_size"]?.float ?: 0f,
+                    keyTextOffsetX = node["key_text_offset_x"]?.float ?: 0f,
+                    keyTextOffsetY = node["key_text_offset_y"]?.float ?: 0f,
+                    keySymbolOffsetX = node["key_symbol_offset_x"]?.float ?: 0f,
+                    keySymbolOffsetY = node["key_symbol_offset_y"]?.float ?: 0f,
+                    keyHintOffsetX = node["key_hint_offset_x"]?.float ?: 0f,
+                    keyHintOffsetY = node["key_hint_offset_y"]?.float ?: 0f,
+                    keyPressOffsetX = node["key_press_offset_x"]?.float ?: 0f,
+                    keyPressOffsetY = node["key_press_offset_y"]?.float ?: 0f,
+                    keyTextColor = node["key_text_color"]?.string ?: "",
+                    keyBackColor = node["key_back_color"]?.string ?: "",
+                    keySymbolColor = node["key_symbol_color"]?.string ?: "",
+                    hlKeyTextColor = node["hilited_key_text_color"]?.string ?: "",
+                    hlKeyBackColor = node["hilited_key_back_color"]?.string ?: "",
+                    hlKeySymbolColor = node["hilited_key_symbol_color"]?.string ?: "",
+                    popup = node["popup"]?.sequence?.mapNotNull(Node::string) ?: emptyList(),
+                    behaviors =
+                    buildMap {
+                        KeyBehavior.entries.forEach { entry ->
+                            val action = node[entry.name.lowercase()]?.string ?: ""
+                            if (action.isNotEmpty() || entry == KeyBehavior.CLICK) {
+                                put(entry, action)
+                            }
                         }
-                    }
-                },
-            )
+                    },
+                )
+            }
         }
     }
 
@@ -130,8 +155,6 @@ data class TextKeyboard(
         fun decode(node: Node.Mapping): TextKeyboard = TextKeyboard(
             name = node["name"]?.string ?: "",
             author = node["author"]?.string ?: "",
-            width = node["width"]?.float ?: 0f,
-            height = node["height"]?.float ?: 0f,
             keyboardHeight = node["keyboard_height"]?.int ?: 0,
             keyboardHeightLand = node["keyboard_height_land"]?.int ?: 0,
             autoHeightIndex = node["auto_height_index"]?.int ?: -1,
@@ -139,7 +162,6 @@ data class TextKeyboard(
             verticalGap = node["vertical_gap"]?.int ?: 0,
             roundCorner = node["round_corner"]?.float ?: -1f,
             keyBorder = node["key_border"]?.int ?: -1,
-            columns = node["columns"]?.int ?: 30,
             asciiMode = (node["ascii_mode"]?.int ?: 1) == 1,
             resetAsciiMode = node["reset_ascii_mode"]?.boolean ?: false,
             labelTransform = node["label_transform"]?.enum<LabelTransform>() ?: LabelTransform.NONE,
@@ -157,8 +179,8 @@ data class TextKeyboard(
             keyPressOffsetY = node["key_press_offset_y"]?.float ?: 0f,
             importPreset = node["import_preset"]?.string ?: "",
             navbar = node["navbar"]?.boolean ?: false,
-            keys = node["keys"]?.sequence?.mapNotNull {
-                TextKey.decode(it.mapping!!)
+            rows = node["rows"]?.sequence?.mapNotNull {
+                KeyboardRow.decode(it.mapping!!)
             } ?: emptyList(),
         )
     }

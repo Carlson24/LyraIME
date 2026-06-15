@@ -45,7 +45,12 @@ fun customFormatDateTime(
             "" to pattern
         }
     val date = timeMillis?.let { Date(it) } ?: Date()
-    val loc = Locale(locale)
+    val loc =
+        if (locale.isEmpty()) {
+            Locale.getDefault()
+        } else {
+            Locale.forLanguageTag(locale.replace('_', '-'))
+        }
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
         if (option.isEmpty()) {
             DateFormat.getDateInstance(DateFormat.LONG, loc).format(date)
