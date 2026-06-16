@@ -8,7 +8,6 @@ package com.osfans.trime.ui.main
 import android.app.Activity
 import android.os.Bundle
 import android.view.Gravity
-import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import com.osfans.trime.data.db.CollectionHelper
 import com.osfans.trime.databinding.ActivityClipEditBinding
@@ -34,7 +33,7 @@ class CollectionAddActivity : Activity() {
                 clipEditOk.setOnClickListener { finishAdding() }
             }
         setContentView(binding.root)
-        inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+        inputMethodManager.showSoftInput(editText, 0)
     }
 
     private fun finishAdding() {

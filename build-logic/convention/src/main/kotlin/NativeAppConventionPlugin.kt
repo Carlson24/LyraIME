@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 
@@ -32,7 +32,7 @@ class NativeAppConventionPlugin : NativeBaseConventionPlugin() {
     override fun apply(target: Project) {
         super.apply(target)
 
-        target.extensions.configure<BaseAppModuleExtension> {
+        target.extensions.configure<ApplicationExtension> {
             packaging {
                 jniLibs {
                     useLegacyPackaging = true

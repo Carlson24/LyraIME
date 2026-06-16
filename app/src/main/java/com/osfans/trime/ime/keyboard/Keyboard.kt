@@ -218,7 +218,7 @@ class Keyboard(
             }
             val bottomMarginWeight = topMarginWeight
 
-            val availableHeight = keyboardHeight - verticalGap * (rowCount - 1)
+            val availableHeight = keyboardHeight
             val topMarginPx = (topMarginWeight * availableHeight).toInt()
             val bottomMarginPx = (bottomMarginWeight * availableHeight).toInt()
 

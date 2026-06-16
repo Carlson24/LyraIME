@@ -20,6 +20,11 @@ include(Boost)
 option(WITH_GFLAGS "Use gflags" OFF)
 option(WITH_GTEST "Use googletest" OFF)
 option(WITH_UNWIND "Enable libunwind support" OFF)
+# Force-disable unwind for NDK r29 compatibility.
+# glog's FindUnwind.cmake picks up the host libunwind.so on NDK r29,
+# causing "incompatible with aarch64linux" linker errors.
+# Setting WITH_UNWIND=none tells glog to skip find_package(Unwind).
+set(WITH_UNWIND none CACHE STRING "" FORCE)
 add_subdirectory(librime/deps/glog)
 target_compile_options(
   glog_internal PRIVATE "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")

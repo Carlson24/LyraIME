@@ -38,7 +38,7 @@ class DataChecksumsPlugin : Plugin<Project> {
     }
 
     override fun apply(target: Project) {
-        target.tasks.register<DataChecksumsTask>(TASK) {
+        val task = target.tasks.register<DataChecksumsTask>(TASK) {
             inputDir.set(target.assetsDir)
             outputFile.set(target.assetsDir.resolve(FILE_NAME))
         }
@@ -46,6 +46,11 @@ class DataChecksumsPlugin : Plugin<Project> {
             delete(target.assetsDir.resolve(FILE_NAME))
         }.also {
             target.tasks.findByName("clean")?.dependsOn(it)
+        }
+        target.tasks.configureEach {
+            if (name.startsWith("merge") && name.endsWith("Assets")) {
+                dependsOn(task)
+            }
         }
     }
 

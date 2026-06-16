@@ -15,7 +15,6 @@ plugins {
     id("com.osfans.trime.native-cache-hash")
     id("com.osfans.trime.opencc-data")
     alias(libs.plugins.aboutlibraries)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.ksp)
@@ -23,12 +22,12 @@ plugins {
 
 android {
     namespace = "com.osfans.trime"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.carlson.lyraime"
         minSdk = 30
-        targetSdk = 36
+        targetSdk = 37
         versionCode = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
         versionName = "3.3.12"
 
@@ -80,6 +79,7 @@ android {
     buildFeatures {
         buildConfig = true
         viewBinding = true
+        resValues = true
     }
 
     compileOptions {
@@ -91,8 +91,6 @@ android {
         compilerOptions {
             // https://youtrack.jetbrains.com/issue/KT-55947
             jvmTarget.set(JvmTarget.JVM_17)
-            // https://youtrack.jetbrains.com/issue/KT-73255/Change-defaulting-rule-for-annotations
-            freeCompilerArgs.add("-Xannotation-default-target=param-property")
         }
     }
 
@@ -117,8 +115,9 @@ android {
             excludes +=
                 setOf(
                     "/META-INF/*.version",
-                    "/META-INF/*.kotlin_module", // cannot be excluded actually
+                    "/META-INF/*.kotlin_module",
                     "/META-INF/androidx/**",
+                    "/META-INF/com/android/build/gradle/app-metadata.properties",
                     "/DebugProbesKt.bin",
                     "/kotlin-tooling-metadata.json",
                 )
@@ -142,13 +141,6 @@ aboutLibraries {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
-}
-
-android.applicationVariants.all {
-    val variantName = name.replaceFirstChar { it.uppercase() }
-    tasks.findByName("generateDataChecksums")?.also {
-        tasks.getByName("merge${variantName}Assets").dependsOn(it)
-    }
 }
 
 dependencies {

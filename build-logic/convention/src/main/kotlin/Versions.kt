@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 object Versions {
-    const val DEFAULT_CMAKE = "3.31.6"
-    const val DEFAULT_NDK = "28.0.13004108"
+    const val DEFAULT_CMAKE = "4.1.2"
+    const val DEFAULT_NDK = "29.0.14206865"
 
-    val supportedAbis = setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+    val supportedAbis = setOf("arm64-v8a", "x86_64")
 }

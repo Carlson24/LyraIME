@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2015 - 2025 Rime community
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
-import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.Delete
@@ -11,7 +11,7 @@ import org.gradle.kotlin.dsl.register
 open class NativeBaseConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         target.pluginManager.apply("com.android.application")
-        target.extensions.configure(CommonExtension::class.java) {
+        target.extensions.configure(ApplicationExtension::class.java) {
             ndkVersion = target.ndkVersion
             defaultConfig {
                 @Suppress("UnstableApiUsage")
@@ -27,7 +27,7 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
             // $ ./gradlew app:assembleRelease
             // $ cp --recursive app/build/intermediates/stripped_native_libs/universalRelease/out/lib app/prebuilt
             if (target.file("prebuilt").exists()) {
-                sourceSets.getByName("main").jniLibs.srcDirs(setOf("prebuilt"))
+                sourceSets.getByName("main").jniLibs.directories.add("prebuilt")
             } else {
                 externalNativeBuild {
                     cmake {

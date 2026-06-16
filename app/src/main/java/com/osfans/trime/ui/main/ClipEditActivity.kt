@@ -9,7 +9,6 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
-import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import com.osfans.trime.data.db.ClipboardHelper
 import com.osfans.trime.data.db.CollectionHelper
@@ -38,7 +37,7 @@ class ClipEditActivity : Activity() {
                 clipEditOk.setOnClickListener { finishEditing() }
             }
         setContentView(binding.root)
-        inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+        inputMethodManager.showSoftInput(editText, 0)
         processIntent(intent)
     }
 
