@@ -17,6 +17,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 class Logcat(
@@ -26,6 +27,8 @@ class Logcat(
     private var emittingJob: Job? = null
 
     private val flow: MutableSharedFlow<String> = MutableSharedFlow()
+
+    private val excludedTags = listOf("InsetsSource", "ViewRootImplStubImpl", "MIUIInput")
 
     /**
      * Subscribe to this flow to receive log in app
@@ -38,7 +41,9 @@ class Logcat(
      */
     fun getLogAsync(): Deferred<Result<List<String>>> = async {
         runCatching {
-            subprocess("logcat", pid?.let { "--pid=$it" } ?: "", "-d").readLines()
+            subprocess("logcat", pid?.let { "--pid=$it" } ?: "", "-d")
+                .readLines()
+                .filter { line -> excludedTags.none { line.contains(it) } }
         }
     }
 
@@ -60,6 +65,7 @@ class Logcat(
                 subprocess("logcat", pid?.let { "--pid=$it" } ?: "", "-v", "time")
                     .also { process = it }
                     .asFlow()
+                    .filter { line -> excludedTags.none { line.contains(it) } }
                     .collect { flow.emit(it) }
             }
         }.also { emittingJob = it }

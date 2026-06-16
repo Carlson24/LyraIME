@@ -216,11 +216,10 @@ class Keyboard(
             } else {
                 0f
             }
-            val bottomMarginWeight = topMarginWeight
 
             val availableHeight = keyboardHeight
             val topMarginPx = (topMarginWeight * availableHeight).toInt()
-            val bottomMarginPx = (bottomMarginWeight * availableHeight).toInt()
+            val bottomMarginPx = (topMarginWeight * availableHeight).toInt()
 
             val rowHeightsPx = rowHeightWeights.map { (it * availableHeight).toInt() }
 
@@ -259,11 +258,11 @@ class Keyboard(
                     }
                 }
 
-            if (definedWidthSum - 1.0f > 0.0001f) {
-                Timber.e("Row %d: key width weights sum to %.3f, must be <= 1.0", rowIdx, definedWidthSum)
-                return@run
-            }
-            definedWidthSum = definedWidthSum.coerceAtMost(1.0f)
+                if (definedWidthSum - 1.0f > 0.0001f) {
+                    Timber.e("Row %d: key width weights sum to %.3f, must be <= 1.0", rowIdx, definedWidthSum)
+                    return@run
+                }
+                definedWidthSum = definedWidthSum.coerceAtMost(1.0f)
 
                 val hasUndefinedKeys = keys.any { it.width == 0f }
                 val isAllDefined = !hasUndefinedKeys

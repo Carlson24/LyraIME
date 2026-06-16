@@ -10,7 +10,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.view.Gravity
-import android.view.View
 import android.widget.FrameLayout
 import androidx.core.view.children
 import androidx.transition.Slide
@@ -33,7 +32,7 @@ import androidx.core.graphics.ColorUtils as AndroidColorUtils
 @SuppressLint("ViewConstructor")
 class KeyboardView(
     context: Context,
-    private val theme: Theme,
+    theme: Theme,
     private val keyboard: Keyboard,
     val popup: PopupDelegate,
     val service: TrimeInputMethodService,
@@ -139,7 +138,7 @@ class KeyboardView(
                 layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
                 isClickable = false
                 isFocusable = false
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
                 alpha = 0.75f
 
                 runCatching {
@@ -165,9 +164,9 @@ class KeyboardView(
         val wave =
             WaveformView(context, animationStyle = AppPrefs.defaultInstance().voiceInput.voiceAnimationStyle.getValue()).apply {
                 setWaveformColor(lineColor)
-                visibility = View.INVISIBLE
+                visibility = INVISIBLE
             }
-        overlay.addView(wave, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        overlay.addView(wave, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
         val transition =
             TransitionSet().apply {
@@ -199,7 +198,7 @@ class KeyboardView(
 
     internal fun startVoiceOverlayWave() {
         val wave = voiceWave ?: return
-        wave.visibility = View.VISIBLE
+        wave.visibility = VISIBLE
         wave.start()
     }
 

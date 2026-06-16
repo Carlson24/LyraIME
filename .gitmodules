@@ -14,30 +14,30 @@
 	ignore = dirty
 [submodule "librime-lua"]
 	path = app/src/main/jni/librime-lua
-	url = https://github.com/hchunhui/librime-lua
+	url = https://github.com/hchunhui/librime-lua.git
 	ignore = dirty
 [submodule "librime-lua-deps"]
 	path = app/src/main/jni/librime-lua-deps
-	url = https://github.com/hchunhui/librime-lua
+	url = https://github.com/hchunhui/librime-lua.git
 	branch = thirdparty
 [submodule "librime-octagram"]
 	path = app/src/main/jni/librime-octagram
 	url = https://github.com/lotem/librime-octagram.git
 [submodule "librime-predict"]
 	path = app/src/main/jni/librime-predict
-	url = https://github.com/rime/librime-predict
+	url = https://github.com/rime/librime-predict.git
 [submodule "prelude"]
 	path = app/data/rime/prelude
-	url = https://github.com/rime/rime-prelude
+	url = https://github.com/rime/rime-prelude.git
 [submodule "luna-pinyin"]
 	path = app/data/rime/luna-pinyin
-	url = https://github.com/rime/rime-luna-pinyin
+	url = https://github.com/rime/rime-luna-pinyin.git
 [submodule "stroke"]
 	path = app/data/rime/stroke
-	url = https://github.com/rime/rime-stroke
+	url = https://github.com/rime/rime-stroke.git
 [submodule "essay"]
 	path = app/data/rime/essay
-	url = https://github.com/rime/rime-essay
+	url = https://github.com/rime/rime-essay.git
 [submodule "wanxiang-zrm"]
 	path = app/data/rime/wanxiang-zrm
 	url = https://github.com/Carlson24/wanxiang-zrm.git

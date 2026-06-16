@@ -6,6 +6,7 @@
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 plugins {
@@ -28,7 +29,7 @@ android {
         applicationId = "com.carlson.lyraime"
         minSdk = 30
         targetSdk = 37
-        versionCode = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
+        versionCode = LocalDate.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
         versionName = "3.3.12"
 
         multiDexEnabled = true

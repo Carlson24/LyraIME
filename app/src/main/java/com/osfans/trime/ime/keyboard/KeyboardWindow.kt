@@ -127,14 +127,6 @@ class KeyboardWindow :
         return keyboardView
     }
 
-    private fun detachCurrentView() {
-        currentKeyboardView?.also {
-            it.onDetach()
-            keyboardView.removeView(it)
-        }
-        currentKeyboard?.lastAsciiMode = rime.run { statusCached }.isAsciiMode
-    }
-
     private fun selectKeyboardConfig(name: String): TextKeyboard? {
         val config = theme.presetKeyboards[name] ?: theme.presetKeyboards["default"]
         val importPreset = config?.importPreset
@@ -177,7 +169,7 @@ class KeyboardWindow :
 
         view.let {
             keyboardView.apply {
-                (it.parent as? android.view.ViewGroup)?.removeView(it)
+                removeAllViews()
                 if (config?.navbar == true) {
                     inputBarDelegate.navBar.attach(
                         title = config.name,
@@ -277,7 +269,8 @@ class KeyboardWindow :
                 keyboardSourceMap[target] = currentKeyboardId
                 persistKeyboardSourceMap()
             }
-            detachCurrentView()
+            currentKeyboardView?.onDetach()
+            currentKeyboard?.lastAsciiMode = rime.run { statusCached }.isAsciiMode
             attachKeyboard(target)
         }
         Timber.d("Switched to keyboard: $target")
@@ -285,7 +278,8 @@ class KeyboardWindow :
 
     fun refreshKeyboards(isAll: Boolean = false) {
         val id = currentKeyboardId.ifEmpty { return }
-        detachCurrentView()
+        currentKeyboardView?.onDetach()
+        currentKeyboard?.lastAsciiMode = rime.run { statusCached }.isAsciiMode
         if (isAll) {
             cachedKeyboards.clear()
         } else {
