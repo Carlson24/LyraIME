@@ -1,0 +1,88 @@
+name: "Catppuccin Latte"
+dark_scheme: default_dark
+# ===== Catppuccin Latte Palette =====
+rosewater: &rosewater 0xdc8a78
+flamingo: &flamingo 0xdd7878
+pink: &pink 0xea76cb
+mauve: &mauve 0x8839ef
+red: &red 0xd20f39
+maroon: &maroon 0xe64553
+peach: &peach 0xfe640b
+yellow: &yellow 0xdf8e1d
+green: &green 0x40a02b
+teal: &teal 0x179299
+sky: &sky 0x04a5e5
+sapphire: &sapphire 0x209fb5
+blue: &blue 0x1e66f5
+lavender: &lavender 0x7287fd
+text: &text 0x4c4f69
+subtext1: &subtext1 0x5c5f77
+subtext0: &subtext0 0x6c6f85
+overlay2: &overlay2 0x7c7f93
+overlay1: &overlay1 0x8c8fa1
+overlay0: &overlay0 0x9ca0b0
+surface2: &surface2 0xacb0be
+surface1: &surface1 0xbcc0cc
+surface0: &surface0 0xccd0da
+base: &base 0xeff1f5
+mantle: &mantle 0xe6e9ef
+crust: &crust 0xdce0e8
+none: &none 0x00
+# ===== 基础 (Base) =====
+back_color: *base
+text_color: *text
+border_color: *teal
+# ===== 候选区 (Candidate View) =====
+candidate_text_color: *text
+candidate_background: *base
+comment_text_color: *maroon
+hilited_candidate_text_color: *red
+hilited_candidate_back_color: *none
+hilited_candidate_button_color: *none
+hilited_comment_text_color: *red
+hilited_label_color: *blue
+hilited_text_color: *maroon
+hilited_back_color: *base
+label_color: *blue
+candidate_border_color: *sky
+candidate_separator_color: *sky
+# ===== 预编辑 (Preedit) =====
+text_back_color: *base
+# ===== 按键 (Keys) =====
+key_back_color: *base
+key_border_color: *surface2
+key_text_color: *text
+key_symbol_color: *text
+hilited_key_back_color: *surface2
+hilited_key_text_color: *text
+hilited_key_symbol_color: *text
+off_key_back_color: *surface2
+off_key_text_color: *text
+off_key_symbol_color: *text
+on_key_back_color: *surface2
+on_key_text_color: *maroon
+on_key_symbol_color: *maroon
+hilited_off_key_back_color: *base
+hilited_off_key_text_color: *text
+hilited_off_key_symbol_color: *text
+hilited_on_key_back_color: *base
+hilited_on_key_text_color: *maroon
+hilited_on_key_symbol_color: *maroon
+# ===== 弹出气泡 (Popup) =====
+popup_back_color: *base
+popup_text_color: *text
+hilited_popup_back_color: *lavender
+hilited_popup_text_color: *base
+# ===== 键盘 (Keyboard) =====
+keyboard_back_color: *crust
+keyboard_background: *crust
+liquid_keyboard_background: *crust
+shadow_color: *text
+root_background: *base
+# ===== 长文本 (Long Text) =====
+long_text_color: *text
+long_text_back_color: *base
+# ===== 回车键 (Enter) =====
+enter_text: *base
+enter_background: *lavender
+off_enter_background: *overlay2

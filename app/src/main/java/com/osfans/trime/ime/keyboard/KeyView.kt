@@ -8,6 +8,7 @@ package com.osfans.trime.ime.keyboard
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
@@ -465,7 +466,7 @@ class KeyView(
             paint.textSize = baseTextSize
             paint.typeface = basePaint.typeface
 
-            segment.color?.let { paint.color = it }
+            segment.colorKey?.let { paint.color = resolveColor(it, basePaint.color) }
 
             var adjustedY = y
             segment.scale?.let { scale ->
@@ -490,6 +491,23 @@ class KeyView(
         val newPaint = Paint(this)
         newPaint.typeface = this.typeface
         return newPaint
+    }
+
+    /**
+     * 在绘制时解析颜色标识符，支持深色/浅色模式动态切换。
+     * 优先作为主题色键通过 ColorManager 查找，回退为直接解析颜色值。
+     */
+    private fun resolveColor(
+        spec: String,
+        fallback: Int,
+    ): Int = try {
+        ColorManager.getColor(spec)
+    } catch (_: Exception) {
+        try {
+            Color.parseColor(if (spec.startsWith("#")) spec else "#$spec")
+        } catch (_: Exception) {
+            fallback
+        }
     }
 
     private fun drawBackground(canvas: Canvas, k: Key) {
@@ -583,7 +601,7 @@ class KeyView(
         val segmentBuilder = StringBuilder()
 
         var i = 0
-        var currentColor: Int? = null
+        var currentColorKey: String? = null
         var currentScale: Float? = null
         var currentBold = false
 
@@ -592,7 +610,7 @@ class KeyView(
                 segments.add(
                     StyledSegment(
                         text = segmentBuilder.toString(),
-                        color = currentColor,
+                        colorKey = currentColorKey,
                         scale = currentScale,
                         bold = currentBold,
                     ),
@@ -636,20 +654,9 @@ class KeyView(
                         tagContent == "b" -> currentBold = true
                         tagContent == "/b" -> currentBold = false
                         tagContent.startsWith("c=") -> {
-                            val colorStr = tagContent.substring(2)
-                            currentColor = try {
-                                ColorManager.getColor(colorStr)
-                            } catch (e: Exception) {
-                                try {
-                                    android.graphics.Color.parseColor(
-                                        if (colorStr.startsWith("#")) colorStr else "#$colorStr",
-                                    )
-                                } catch (e2: Exception) {
-                                    currentColor
-                                }
-                            }
+                            currentColorKey = tagContent.substring(2)
                         }
-                        tagContent == "/c" -> currentColor = null
+                        tagContent == "/c" -> currentColorKey = null
                         tagContent.startsWith("s=") -> {
                             val scaleStr = tagContent.substring(2)
                             try {
@@ -706,7 +713,7 @@ class KeyView(
                         currentLineSegments.add(
                             StyledSegment(
                                 text = part,
-                                color = segment.color,
+                                colorKey = segment.colorKey,
                                 scale = segment.scale,
                                 bold = segment.bold,
                             ),
@@ -728,11 +735,12 @@ class KeyView(
 }
 
 /**
- * 样式分段：存储一段文本及其样式
+ * 样式分段：存储一段文本及其样式。
+ * colorKey 存储原始颜色标识符（主题键名或十六进制值），在绘制时解析以支持深色/浅色模式切换。
  */
 private data class StyledSegment(
     val text: String,
-    val color: Int?, // null 表示使用默认颜色
+    val colorKey: String?, // null 表示使用默认颜色；非 null 为颜色标识符字符串
     val scale: Float?, // null 表示使用默认大小（缩放比例）
     val bold: Boolean, // 是否加粗
 )
