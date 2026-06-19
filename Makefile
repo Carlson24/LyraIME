@@ -16,7 +16,7 @@ endif
 
 
 .PHONY: all clean build debug spotlessCheck spotlessApply clang-format-lint clang-format style-lint \
-style-apply patch-apply release install translate ndk android
+style-apply patch-apply release install translate ndk android release-all-flavors
 
 all: release
 
@@ -54,7 +54,7 @@ patch-apply:
 #   export QNN_SDK_ROOT=$(HOME)/.local/share/Android/qairt/2.47.0.260601
 # If not set, the build falls back to CPU-only sherpa-onnx.
 debug: patch-apply
-	$(GRADLEW) :app:assembleDebug
+	$(GRADLEW) :app:assembleV81Debug
 
 # add SPDX license header
 reuse:
@@ -74,7 +74,12 @@ cliff:
 
 TRANSLATE=$(resDir)/values-zh-rCN/strings.xml
 release: patch-apply
-	$(GRADLEW) :app:assembleRelease
+	$(GRADLEW) :app:assembleV81Release
+
+release-all-flavors: patch-apply
+	$(GRADLEW) :app:assembleV81Release :app:assembleV79Release :app:assembleV75Release :app:assembleV73Release :app:assembleV69Release :app:assembleV68Release
+	mkdir -p app/release
+	find app/build/outputs/apk -path "*/release/*.apk" -exec cp {} app/release/ \;
 
 install: release
 	$(GRADLEW) installRelease

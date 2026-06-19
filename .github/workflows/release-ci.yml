@@ -10,7 +10,7 @@ on:
       - 'v*'
 env:
   CI_NAME: Release CI
-  SHERPA_ONNX_VERSION: "1.13.2"
+  QNN_SDK_VERSION: "2.47.0.260601"
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -28,7 +28,6 @@ jobs:
         with:
           distribution: "temurin"
           java-version: 17
-          # will restore cache of dependencies and wrappers
           cache: 'gradle'
 
       - name: Setup Android SDK
@@ -38,11 +37,28 @@ jobs:
         run: |
           sdkmanager --install "cmake;4.1.2"
 
-      - name: Download sherpa-onnx AAR
+      - name: Download QNN SDK
         run: |
-          mkdir -p app/libs
-          curl -fSL -o "app/libs/sherpa-onnx-${SHERPA_ONNX_VERSION}.aar" \
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_ONNX_VERSION}/sherpa-onnx-${SHERPA_ONNX_VERSION}.aar"
+          mkdir -p ${{ runner.temp }}/qnn
+          cd ${{ runner.temp }}/qnn
+          curl -fSL -o "v${QNN_SDK_VERSION}.zip" \
+            "https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/${QNN_SDK_VERSION}/v${QNN_SDK_VERSION}.zip"
+          unzip -q "v${QNN_SDK_VERSION}.zip"
+          echo "QNN_SDK_ROOT=${{ runner.temp }}/qnn/qairt/${QNN_SDK_VERSION}" >> $GITHUB_ENV
+
+      - name: Copy QNN runtime libs
+        run: |
+          QNN_SDK=${{ runner.temp }}/qnn/qairt/${QNN_SDK_VERSION}
+          DST=app/src/main/jniLibs/arm64-v8a
+          mkdir -p "$DST"
+          cp -v "$QNN_SDK/lib/aarch64-android/libQnnHtp.so" "$DST/"
+          cp -v "$QNN_SDK/lib/aarch64-android/libQnnSystem.so" "$DST/"
+          for v in 68 69 73 75 79 81; do
+            FDST="app/src/v${v}/jniLibs/arm64-v8a"
+            mkdir -p "$FDST"
+            cp -v "$QNN_SDK/lib/aarch64-android/libQnnHtpV${v}Stub.so" "$FDST/"
+            cp -v "$QNN_SDK/lib/hexagon-v${v}/unsigned/libQnnHtpV${v}Skel.so" "$FDST/"
+          done
 
       - name: Calculate JNI cache hash
         id: cache-hash
@@ -65,8 +81,10 @@ jobs:
           keyPassword=${{ secrets.KEY_PASSWORD }}
           EOF
 
-      - name: Build Trime
-        run: make release
+      - name: Build Trime (all QNN DSP flavors)
+        run: make release-all-flavors
+        env:
+          ORG_GRADLE_PROJECT_buildQnnFlavor: ""
 
       - name: Add JNI cache
         if: ${{ !steps.jni-cache.outputs.cache-hit }}
@@ -74,19 +92,33 @@ jobs:
 
       - name: Rename APK
         run: |
-          pushd app/build/outputs/apk/release
-            for apk in com.carlson.lyraime-v*.apk; do
+          cd app/build/outputs/apk
+          for dir in v*/; do
+            flavor=${dir%/}
+            for apk in "$flavor"/release/*.apk; do
+              [ -f "$apk" ] || continue
               arch=$(echo "$apk" | grep -oE '(arm64-v8a|x86_64)')
               ver=$(echo "$apk" | grep -oP 'v\d+\.\d+\.\d+\.\d+')
-              mv "$apk" "LyraIME-${arch}-${ver}.apk"
+              mv "$apk" "LyraIME-${arch}-${flavor}-${ver}.apk"
             done
-          popd
+          done
 
       - name: Create Stable release
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
-          artifacts: "app/build/outputs/apk/release/*.apk"
-          body: "Update Version: ${{ github.ref_name }}"
+          artifacts: "app/build/outputs/apk/LyraIME*.apk"
+          body: |
+            Update Version: ${{ github.ref_name }}
+
+            QNN DSP 版本 — SoC 对照：
+            | Flavor | SoC |
+            |--------|-----|
+            | v81 | SM8850 (Snapdragon 8 Elite) |
+            | v79 | SM8750 (Snapdragon 8 Gen 4) |
+            | v75 | SM8650 (Snapdragon 8 Gen 3) |
+            | v73 | SM8550 (Snapdragon 8 Gen 2) |
+            | v69 | SM8450 / SM8475 (Snapdragon 8 Gen 1 / 8+ Gen 1) |
+            | v68 | SM8350 (Snapdragon 888) |
           token: ${{ secrets.GITHUB_TOKEN }}

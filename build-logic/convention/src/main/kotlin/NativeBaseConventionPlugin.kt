@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.Delete
@@ -19,7 +20,7 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                     cmake {
                         arguments(
                             "-DANDROID_STL=c++_static",
-                            "-DQNN_SDK_ROOT=${System.getenv("QNN_SDK_ROOT") ?: ""}",
+                            "-DQNN_SDK_ROOT=${target.qnnSdkRoot ?: ""}",
                         )
                     }
                 }
@@ -50,6 +51,37 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
             }
         }
         registerCleanCxxTask(target)
+        registerPatchApplyTask(target)
+    }
+
+    private fun registerPatchApplyTask(project: Project) {
+        val rootDir = project.rootDir
+        val jniDir = "app/src/main/jni"
+        val macrosHeader = project.file("src/main/jni/sherpa-onnx/sherpa-onnx/csrc/macros.h")
+        val applyPatches =
+            project.tasks.register("applyNativePatches") {
+                group = "native"
+                description = "Apply patches required for native build (lua + sherpa-onnx-qnn)"
+                doLast {
+                    ProcessBuilder(
+                        "git", "apply",
+                        "--directory=$jniDir/librime-lua-deps",
+                        "patches/lua.patch",
+                    ).directory(rootDir).inheritIO().start().waitFor()
+                    ProcessBuilder(
+                        "git", "apply",
+                        "--directory=$jniDir/sherpa-onnx",
+                        "patches/sherpa-onnx-qnn.patch",
+                    ).directory(rootDir).inheritIO().start().waitFor()
+                }
+                outputs.upToDateWhen {
+                    macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")
+                }
+            }
+
+        project.tasks.withType(ExternalNativeBuildTask::class.java).configureEach {
+            dependsOn(applyPatches)
+        }
     }
 
     private fun registerCleanCxxTask(project: Project) {

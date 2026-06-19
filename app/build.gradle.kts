@@ -45,6 +45,24 @@ android {
         archivesName = "${android.defaultConfig.applicationId}-$buildVersionName"
     }
 
+    flavorDimensions += "qnnDsp"
+
+    val buildQnnFlavor = project.findProperty("buildQnnFlavor") as? String
+    val enabledFlavors = if (!buildQnnFlavor.isNullOrEmpty()) {
+        listOf(buildQnnFlavor)
+    } else {
+        listOf("v68", "v69", "v73", "v75", "v79", "v81")
+    }
+
+    productFlavors {
+        for (dsp in enabledFlavors) {
+            register(dsp) {
+                dimension = "qnnDsp"
+                versionNameSuffix = "-$dsp"
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true

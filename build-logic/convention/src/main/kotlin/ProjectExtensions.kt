@@ -39,6 +39,9 @@ val Project.ndkVersion
 val Project.buildAbiOverride
     get() = envOrPropOrNull("BUILD_ABI", "buildABI")
 
+val Project.qnnSdkRoot
+    get() = envOrPropOrNull("QNN_SDK_ROOT", "qnnSdkRoot")
+
 val Project.builder
     get() =
         envOrProp("CI_NAME", "ciName") {

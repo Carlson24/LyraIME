@@ -77,7 +77,9 @@ object VoiceModelManager {
 
     fun verifySha256AnyVariant(file: File): Boolean {
         val hash = computeFileSha256(file) ?: return false
-        return ModelVariant.entries.any { hash.equals(it.sha256, ignoreCase = true) }
+        if (ModelVariant.entries.any { hash.equals(it.sha256, ignoreCase = true) }) return true
+        if (ResourceUrls.VOICE_MODEL_QNN_MAP.values.any { hash.equals(it.sha256, ignoreCase = true) }) return true
+        return false
     }
 
     data class ModelFiles(
