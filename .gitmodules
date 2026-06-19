@@ -41,3 +41,6 @@
 [submodule "wanxiang-zrm"]
 	path = app/data/rime/wanxiang-zrm
 	url = https://github.com/Carlson24/wanxiang-zrm.git
+[submodule "sherpa-onnx"]
+	path = app/src/main/jni/sherpa-onnx
+	url = https://github.com/k2-fsa/sherpa-onnx.git

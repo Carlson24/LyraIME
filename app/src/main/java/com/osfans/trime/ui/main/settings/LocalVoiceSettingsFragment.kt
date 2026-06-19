@@ -261,16 +261,16 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         ctx: android.content.Context,
         onProceed: () -> Unit,
     ) {
-        val isInt8Name = displayName.contains("int8", ignoreCase = true)
-        val isInt8Selected = VoiceModelManager.getSelectedVariant() == VoiceModelManager.ModelVariant.INT8
+        val selectedVariant = VoiceModelManager.getSelectedVariant()
+        val detectedVariant = detectVariantFromName(displayName)
 
-        if (isInt8Name == isInt8Selected) {
+        if (detectedVariant == selectedVariant) {
             onProceed()
             return
         }
 
-        val fileType = ctx.getString(if (isInt8Name) R.string.voice_model_type_int8_name else R.string.voice_model_type_standard_name)
-        val selectedType = ctx.getString(if (isInt8Selected) R.string.voice_model_type_int8_name else R.string.voice_model_type_standard_name)
+        val fileType = ctx.getString(variantToStringResName(detectedVariant))
+        val selectedType = ctx.getString(variantToStringResName(selectedVariant))
 
         AlertDialog.Builder(ctx)
             .setTitle(R.string.voice_model_type_mismatch_title)
@@ -278,6 +278,22 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
             .setPositiveButton(android.R.string.ok) { _, _ -> onProceed() }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun detectVariantFromName(name: String): VoiceModelManager.ModelVariant {
+        return when {
+            name.contains("qnn", ignoreCase = true) || name.contains("SM8850") -> VoiceModelManager.ModelVariant.QNN
+            name.contains("int8", ignoreCase = true) -> VoiceModelManager.ModelVariant.INT8
+            else -> VoiceModelManager.ModelVariant.STANDARD
+        }
+    }
+
+    private fun variantToStringResName(variant: VoiceModelManager.ModelVariant): Int {
+        return when (variant) {
+            VoiceModelManager.ModelVariant.QNN -> R.string.voice_model_type_qnn_name
+            VoiceModelManager.ModelVariant.INT8 -> R.string.voice_model_type_int8_name
+            else -> R.string.voice_model_type_standard_name
+        }
     }
 
     private fun queryDisplayName(ctx: android.content.Context, uri: Uri): String? = ctx.contentResolver.query(uri, null, null, null, null)?.use { cursor ->

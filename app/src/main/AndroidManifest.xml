@@ -33,6 +33,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_app_icon_round"
         android:theme="@style/Theme.TrimeAppTheme">
+        <uses-native-library
+            android:name="libcdsprpc.so"
+            android:required="false" />
 
         <service
             android:name=".ime.core.TrimeInputMethodService"

@@ -265,6 +265,7 @@
     <string name="voice_model_type">Voice model type</string>
     <string name="voice_model_type_standard">Standard</string>
     <string name="voice_model_type_int8">Int8 (smaller, faster)</string>
+    <string name="voice_model_type_qnn">QNN (Qualcomm NPU)</string>
     <string name="local_voice_settings">Local voice settings</string>
     <string name="voice_model_missing_title">Voice model required</string>
     <string name="voice_model_missing_message">Built-in voice recognition requires model files. Download or select a ZIP file containing the model.</string>
@@ -291,6 +292,7 @@
     <string name="voice_model_type_mismatch_message" formatted="false">The selected file appears to be a %s model, but you have %s selected in settings. Continue anyway?</string>
     <string name="voice_model_type_standard_name">standard</string>
     <string name="voice_model_type_int8_name">int8</string>
+    <string name="voice_model_type_qnn_name">qnn</string>
     <string name="inline_suggestions">Show inline autofill suggestions</string>
     <string name="update_config">Update config</string>
     <string name="share">Share</string>

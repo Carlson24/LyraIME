@@ -209,6 +209,7 @@ class AppPrefs(
         enum class VoiceModelType(override val stringRes: Int) : PreferenceDelegateEnum {
             STANDARD(R.string.voice_model_type_standard),
             INT8(R.string.voice_model_type_int8),
+            QNN(R.string.voice_model_type_qnn),
         }
 
         val voiceModelType = enum(

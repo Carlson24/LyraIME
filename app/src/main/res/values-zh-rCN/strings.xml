@@ -263,6 +263,7 @@
     <string name="voice_model_type">语音模型类型</string>
     <string name="voice_model_type_standard">标准</string>
     <string name="voice_model_type_int8">Int8（更小更快）</string>
+    <string name="voice_model_type_qnn">QNN（高通 NPU）</string>
     <string name="local_voice_settings">本地语音设置</string>
     <string name="voice_model_missing_title">需要语音模型</string>
     <string name="voice_model_missing_message">内置语音识别需要语音模型文件。请下载或手动选择包含模型的ZIP文件。</string>
@@ -289,6 +290,7 @@
     <string name="voice_model_type_mismatch_message" formatted="false">所选文件似乎是%s模型，但你设置中选择的是%s。是否继续导入？</string>
     <string name="voice_model_type_standard_name">标准</string>
     <string name="voice_model_type_int8_name">Int8</string>
+    <string name="voice_model_type_qnn_name">QNN</string>
     <string name="inline_suggestions">显示内嵌自动填充建议</string>
     <string name="update_config">更新配置</string>
     <string name="share">分享</string>

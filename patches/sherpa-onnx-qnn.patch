@@ -1,0 +1,157 @@
+diff --git a/sherpa-onnx/csrc/macros.h b/sherpa-onnx/csrc/macros.h
+index a2ccf2cd..e4b81206 100644
+--- a/sherpa-onnx/csrc/macros.h
++++ b/sherpa-onnx/csrc/macros.h
+@@ -7,6 +7,8 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
++#include <stdexcept>
++#include <string>
+ #include <utility>
+ #if SHERPA_ONNX_ENABLE_WASM
+ #include <emscripten.h>
+@@ -56,11 +58,13 @@
+   } while (0)
+ #endif
+ 
+-#define SHERPA_ONNX_EXIT(code) \
+-  do {                         \
+-    fflush(stdout);            \
+-    fflush(stderr);            \
+-    _Exit(code);               \
++#define SHERPA_ONNX_EXIT(code)                                  \
++  do {                                                          \
++    fflush(stdout);                                             \
++    fflush(stderr);                                             \
++    throw std::runtime_error("sherpa-onnx internal error: " +   \
++                             std::string(__FILE__) + ":" +      \
++                             std::to_string(__LINE__));         \
+   } while (0)
+ 
+ // Read an integer
+diff --git a/sherpa-onnx/csrc/qnn/macros.h b/sherpa-onnx/csrc/qnn/macros.h
+index 58c65cf3..7e11ecb3 100644
+--- a/sherpa-onnx/csrc/qnn/macros.h
++++ b/sherpa-onnx/csrc/qnn/macros.h
+@@ -5,15 +5,20 @@
+ #ifndef SHERPA_ONNX_CSRC_QNN_MACROS_H_
+ #define SHERPA_ONNX_CSRC_QNN_MACROS_H_
+ 
++#include <stdexcept>
++#include <sstream>
++
+ #include "sherpa-onnx/csrc/macros.h"
+ 
+-#define SHERPA_ONNX_QNN_CHECK(ret, msg, ...)                             \
+-  do {                                                                   \
+-    if (ret != QNN_SUCCESS) {                                            \
+-      SHERPA_ONNX_LOGE("Return code is: %d", static_cast<int32_t>(ret)); \
+-      SHERPA_ONNX_LOGE(msg, ##__VA_ARGS__);                              \
+-      SHERPA_ONNX_EXIT(-1);                                              \
+-    }                                                                    \
++#define SHERPA_ONNX_QNN_CHECK(ret, msg, ...)                              \
++  do {                                                                    \
++    if (ret != QNN_SUCCESS) {                                             \
++      SHERPA_ONNX_LOGE("Return code is: %d", static_cast<int32_t>(ret));  \
++      SHERPA_ONNX_LOGE(msg, ##__VA_ARGS__);                               \
++      std::ostringstream oss;                                             \
++      oss << "QNN error " << static_cast<int32_t>(ret) << ": " << msg;    \
++      throw std::runtime_error(oss.str());                                \
++    }                                                                     \
+   } while (0)
+ 
+ #endif  // SHERPA_ONNX_CSRC_QNN_MACROS_H_
+diff --git a/sherpa-onnx/csrc/qnn/qnn-backend.cc b/sherpa-onnx/csrc/qnn/qnn-backend.cc
+index b482acf4..1dd40692 100644
+--- a/sherpa-onnx/csrc/qnn/qnn-backend.cc
++++ b/sherpa-onnx/csrc/qnn/qnn-backend.cc
+@@ -23,39 +23,55 @@ namespace sherpa_onnx {
+ class QnnBackend::Impl {
+  public:
+   explicit Impl(const std::string &backend_lib, bool debug) : debug_(debug) {
+-    bool ok = InitQnnInterface(backend_lib);
+-    if (!ok) {
+-      SHERPA_ONNX_LOGE("Failed to init qnn interface from '%s'",
+-                       backend_lib.c_str());
+-      return;
+-    }
++    try {
++      bool ok = InitQnnInterface(backend_lib);
++      if (!ok) {
++        SHERPA_ONNX_LOGE("Failed to init qnn interface from '%s'",
++                         backend_lib.c_str());
++        return;
++      }
+ 
+-    InitLog();
+-    InitBackend();
+-    InitDevice();
++      InitLog();
++      InitBackend();
++      InitDevice();
+ 
+-    is_initialized_ = true;
++      is_initialized_ = true;
++    } catch (const std::exception &e) {
++      SHERPA_ONNX_LOGE("QNN backend init exception: %s", e.what());
++    }
+   }
+ 
+   ~Impl() {
+     if (context_handle_) {
+       auto ret = qnn_interface_.contextFree(context_handle_, nullptr);
+-      SHERPA_ONNX_QNN_CHECK(ret, "Failed to call contextFree");
++      if (ret != QNN_SUCCESS) {
++        SHERPA_ONNX_LOGE("Failed to call contextFree, ret=%d",
++                         static_cast<int32_t>(ret));
++      }
+     }
+ 
+     if (device_handle_) {
+       auto ret = qnn_interface_.deviceFree(device_handle_);
+-      SHERPA_ONNX_QNN_CHECK(ret, "Failed to call deviceFree");
++      if (ret != QNN_SUCCESS) {
++        SHERPA_ONNX_LOGE("Failed to call deviceFree, ret=%d",
++                         static_cast<int32_t>(ret));
++      }
+     }
+ 
+     if (backend_handle_) {
+       auto ret = qnn_interface_.backendFree(backend_handle_);
+-      SHERPA_ONNX_QNN_CHECK(ret, "Failed to call backendFree");
++      if (ret != QNN_SUCCESS) {
++        SHERPA_ONNX_LOGE("Failed to call backendFree, ret=%d",
++                         static_cast<int32_t>(ret));
++      }
+     }
+ 
+     if (log_handle_) {
+       auto ret = qnn_interface_.logFree(log_handle_);
+-      SHERPA_ONNX_QNN_CHECK(ret, "Failed to call logFree");
++      if (ret != QNN_SUCCESS) {
++        SHERPA_ONNX_LOGE("Failed to call logFree, ret=%d",
++                         static_cast<int32_t>(ret));
++      }
+     }
+   }
+ 
+diff --git a/sherpa-onnx/jni/online-recognizer.cc b/sherpa-onnx/jni/online-recognizer.cc
+index 40f7ac10..720893b9 100644
+--- a/sherpa-onnx/jni/online-recognizer.cc
++++ b/sherpa-onnx/jni/online-recognizer.cc
+@@ -309,7 +309,13 @@ JNIEXPORT jlong JNICALL Java_com_k2fsa_sherpa_onnx_OnlineRecognizer_newFromFile(
+     return 0;
+   }
+ 
+-  auto recognizer = new sherpa_onnx::OnlineRecognizer(config);
++  sherpa_onnx::OnlineRecognizer *recognizer = nullptr;
++  try {
++    recognizer = new sherpa_onnx::OnlineRecognizer(config);
++  } catch (const std::exception &e) {
++    SHERPA_ONNX_LOGE("Failed to create OnlineRecognizer: %s", e.what());
++    return 0;
++  }
+ 
+   return (jlong)recognizer;
+ }

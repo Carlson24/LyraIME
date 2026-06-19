@@ -14,12 +14,14 @@ import android.media.MediaRecorder
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import android.os.Build
 import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.OnlineModelConfig
 import com.k2fsa.sherpa.onnx.OnlineRecognizer
 import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OnlineStream
 import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
+import com.k2fsa.sherpa.onnx.QnnConfig
 import com.osfans.trime.R
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.ime.core.TrimeInputMethodService
@@ -43,6 +45,9 @@ object SherpaSpeechClient {
     @Volatile
     var onHoldingChanged: ((Boolean) -> Unit)? = null
 
+    @Volatile
+    private var adspLibraryPathSet = false
+
     private val recognizerRef = AtomicReference<OnlineRecognizer?>(null)
     private val currentStreamRef = AtomicReference<OnlineStream?>(null)
 
@@ -50,7 +55,9 @@ object SherpaSpeechClient {
         val modelType: AppPrefs.LocalVoice.VoiceModelType,
         val numThreads: Int,
         val sensitivity: Int,
-    )
+    ) {
+        val useQnn: Boolean get() = modelType == AppPrefs.LocalVoice.VoiceModelType.QNN
+    }
 
     @Volatile
     private var lastEngineConfig: EngineConfig? = null
@@ -85,6 +92,22 @@ object SherpaSpeechClient {
     @Volatile
     private var lastRawText: String? = null
 
+    fun prewarmAsync(service: TrimeInputMethodService) {
+        if (!VoiceModelManager.checkModelFiles()) return
+        val currentConfig = readEngineConfig()
+        if (!currentConfig.useQnn) return
+        service.lifecycleScope.launch(Dispatchers.IO) {
+            if (!adspLibraryPathSet && Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a") {
+                val nativeLibDir = service.applicationInfo.nativeLibraryDir
+                if (nativeLibDir.isNotEmpty()) {
+                    OnlineRecognizer.prependAdspLibraryPath(nativeLibDir)
+                    adspLibraryPathSet = true
+                }
+            }
+            initEngineIfNeeded()
+        }
+    }
+
     private fun initEngineIfNeeded(): Boolean {
         val currentConfig = readEngineConfig()
 
@@ -107,12 +130,30 @@ object SherpaSpeechClient {
             }
 
             return try {
+                val isArm64 = Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a"
+                val effectiveQnn = modelFiles.isQnn && isArm64
+
                 val transducerConfig =
-                    OnlineTransducerModelConfig(
-                        encoder = modelFiles.encoder.absolutePath,
-                        decoder = modelFiles.decoder.absolutePath,
-                        joiner = modelFiles.joiner.absolutePath,
-                    )
+                    if (effectiveQnn) {
+                        OnlineTransducerModelConfig(
+                            encoder = "",
+                            decoder = "",
+                            joiner = "",
+                            qnnConfig = QnnConfig(
+                                backendLib = "libQnnHtp.so",
+                                systemLib = "libQnnSystem.so",
+                                contextBinary = "${modelFiles.encoder.absolutePath}," +
+                                    "${modelFiles.decoder.absolutePath}," +
+                                    "${modelFiles.joiner.absolutePath}",
+                            ),
+                        )
+                    } else {
+                        OnlineTransducerModelConfig(
+                            encoder = modelFiles.encoder.absolutePath,
+                            decoder = modelFiles.decoder.absolutePath,
+                            joiner = modelFiles.joiner.absolutePath,
+                        )
+                    }
 
                 val useBpe = modelFiles.bpeVocab != null
 
@@ -120,9 +161,9 @@ object SherpaSpeechClient {
                     OnlineModelConfig(
                         transducer = transducerConfig,
                         tokens = modelFiles.tokens.absolutePath,
-                        numThreads = currentConfig.numThreads,
-                        provider = "cpu",
-                        modelType = "",
+                        numThreads = if (effectiveQnn) 1 else currentConfig.numThreads,
+                        provider = if (effectiveQnn) "qnn" else "cpu",
+                        modelType = if (effectiveQnn) "zipformer" else "",
                         debug = false,
                         modelingUnit = "",
                         bpeVocab = modelFiles.bpeVocab?.absolutePath ?: "",
@@ -138,11 +179,16 @@ object SherpaSpeechClient {
                     )
 
                 val encoderPath = modelFiles.encoder.absolutePath
-                val isInt8 = modelFiles.encoder.nameWithoutExtension.contains("int8", ignoreCase = true)
-                Timber.i("Creating OnlineRecognizer: encoder=$encoderPath, bpe=$useBpe, int8=$isInt8")
+                val engineVariant = when {
+                    effectiveQnn -> "qnn"
+                    modelFiles.isQnn -> "qnn-fallback-cpu"
+                    modelFiles.encoder.nameWithoutExtension.contains("int8", ignoreCase = true) -> "int8"
+                    else -> "standard"
+                }
+                Timber.i("Creating OnlineRecognizer: encoder=$encoderPath, bpe=$useBpe, variant=$engineVariant")
                 recognizerRef.set(OnlineRecognizer(null, config))
                 lastEngineConfig = currentConfig
-                Timber.i("Sherpa-onnx online ASR engine initialized (bpe=$useBpe, int8=$isInt8)")
+                Timber.i("Sherpa-onnx online ASR engine initialized (bpe=$useBpe, variant=$engineVariant)")
                 true
             } catch (e: Throwable) {
                 Timber.e(e, "Sherpa engine init crashed")
@@ -177,7 +223,18 @@ object SherpaSpeechClient {
             }
 
             val startTime = System.currentTimeMillis()
-            val initSuccess = withContext(Dispatchers.IO) { initEngineIfNeeded() }
+            val initSuccess = withContext(Dispatchers.IO) {
+                if (!adspLibraryPathSet && currentConfig.useQnn &&
+                    Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a"
+                ) {
+                    val nativeLibDir = service.applicationInfo.nativeLibraryDir
+                    if (nativeLibDir.isNotEmpty()) {
+                        OnlineRecognizer.prependAdspLibraryPath(nativeLibDir)
+                        adspLibraryPathSet = true
+                    }
+                }
+                initEngineIfNeeded()
+            }
             val elapsed = System.currentTimeMillis() - startTime
 
             if (initSuccess && initWasFirst) {

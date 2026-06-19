@@ -50,6 +50,7 @@ import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.ime.composition.CandidatesView
 import com.osfans.trime.ime.keyboard.InputFeedbackManager
+import com.osfans.trime.link.SherpaSpeechClient
 import com.osfans.trime.receiver.RimeIntentReceiver
 import com.osfans.trime.util.any
 import com.osfans.trime.util.findSectionFrom
@@ -192,6 +193,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         InputFeedbackManager.init(this)
         registerReceiver()
         super.onCreate()
+        SherpaSpeechClient.prewarmAsync(this)
         Timber.d("onCreate")
         decorView = window.window!!.decorView
         contentView = decorView.findViewById(android.R.id.content)

@@ -27,6 +27,7 @@ object VoiceModelManager {
         get() {
             val sub = when (getSelectedVariant()) {
                 ModelVariant.INT8 -> "xasr-int8"
+                ModelVariant.QNN -> "xasr-qnn"
                 else -> "xasr"
             }
             return File(DataManager.voiceDataDir, sub).also { it.mkdirs() }
@@ -38,19 +39,33 @@ object VoiceModelManager {
     ) {
         STANDARD(ResourceUrls.VOICE_MODEL_DOWNLOAD, ResourceUrls.VOICE_MODEL_SHA256),
         INT8(ResourceUrls.VOICE_MODEL_INT8_DOWNLOAD, ResourceUrls.VOICE_MODEL_INT8_SHA256),
+        QNN("", ""),
+    }
+
+    private fun resolveQnnModelEntry(): ResourceUrls.QnnModelEntry {
+        val soc = android.os.Build.SOC_MODEL
+        return ResourceUrls.VOICE_MODEL_QNN_MAP[soc]
+            ?: ResourceUrls.VOICE_MODEL_QNN_MAP["SM8850"]!!
     }
 
     fun getSelectedVariant(): ModelVariant {
         val pref = AppPrefs.defaultInstance().localVoice.voiceModelType.getValue()
         return when (pref) {
             AppPrefs.LocalVoice.VoiceModelType.INT8 -> ModelVariant.INT8
+            AppPrefs.LocalVoice.VoiceModelType.QNN -> ModelVariant.QNN
             else -> ModelVariant.STANDARD
         }
     }
 
-    fun getDownloadUrl(): String = getSelectedVariant().url
+    fun getDownloadUrl(): String {
+        if (getSelectedVariant() == ModelVariant.QNN) return resolveQnnModelEntry().url
+        return getSelectedVariant().url
+    }
 
-    fun getExpectedSha256(): String = getSelectedVariant().sha256
+    fun getExpectedSha256(): String {
+        if (getSelectedVariant() == ModelVariant.QNN) return resolveQnnModelEntry().sha256
+        return getSelectedVariant().sha256
+    }
 
     fun verifySha256(
         file: File,
@@ -71,17 +86,22 @@ object VoiceModelManager {
         val decoder: File,
         val joiner: File,
         val bpeVocab: File?,
+        val isQnn: Boolean = false,
     )
 
     fun resolveModelFiles(): ModelFiles? {
         val dir = voiceDir
         if (!dir.isDirectory) return null
 
-        val onnxFiles = dir.listFiles { f -> f.isFile && f.extension == "onnx" } ?: return null
+        val isQnn = getSelectedVariant() == ModelVariant.QNN
+        val ext = if (isQnn) "bin" else "onnx"
+        val label = if (isQnn) "bin" else "onnx"
 
-        val encoder = onnxFiles.find { it.nameWithoutExtension.startsWith("encoder") }
-        val decoder = onnxFiles.find { it.nameWithoutExtension.startsWith("decoder") }
-        val joiner = onnxFiles.find { it.nameWithoutExtension.startsWith("joiner") }
+        val modelFiles = dir.listFiles { f -> f.isFile && f.extension == ext } ?: return null
+
+        val encoder = modelFiles.find { it.nameWithoutExtension.startsWith("encoder") }
+        val decoder = modelFiles.find { it.nameWithoutExtension.startsWith("decoder") }
+        val joiner = modelFiles.find { it.nameWithoutExtension.startsWith("joiner") }
 
         val tokensFile = File(dir, "tokens.txt")
         val bpeFile = File(dir, "bpe.model").takeIf { it.exists() }
@@ -91,19 +111,19 @@ object VoiceModelManager {
             return null
         }
         if (encoder == null) {
-            Timber.w("Voice model check: encoder onnx not found")
+            Timber.w("Voice model check: encoder $label not found")
             return null
         }
         if (decoder == null) {
-            Timber.w("Voice model check: decoder onnx not found")
+            Timber.w("Voice model check: decoder $label not found")
             return null
         }
         if (joiner == null) {
-            Timber.w("Voice model check: joiner onnx not found")
+            Timber.w("Voice model check: joiner $label not found")
             return null
         }
 
-        return ModelFiles(tokensFile, encoder, decoder, joiner, bpeFile)
+        return ModelFiles(tokensFile, encoder, decoder, joiner, bpeFile, isQnn)
     }
 
     fun checkModelFiles(): Boolean = resolveModelFiles() != null

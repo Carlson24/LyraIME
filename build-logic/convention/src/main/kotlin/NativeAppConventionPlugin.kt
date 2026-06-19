@@ -22,12 +22,11 @@ class NativeAppConventionPlugin : NativeBaseConventionPlugin() {
             )
 
     private val Project.sherpaOnnxVersion: String
-        get() {
-            val aar = file("libs").listFiles()?.find {
-                it.name.startsWith("sherpa-onnx-") && it.name.endsWith(".aar")
-            }
-            return aar?.name?.removePrefix("sherpa-onnx-")?.removeSuffix(".aar") ?: "unknown"
-        }
+        get() =
+            runCmd(
+                "git -C app/src/main/jni/sherpa-onnx describe " +
+                    "--tags --long --always --exclude=latest",
+            )
 
     override fun apply(target: Project) {
         super.apply(target)

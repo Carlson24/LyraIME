@@ -17,7 +17,10 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                 @Suppress("UnstableApiUsage")
                 externalNativeBuild {
                     cmake {
-                        arguments("-DANDROID_STL=c++_static")
+                        arguments(
+                            "-DANDROID_STL=c++_static",
+                            "-DQNN_SDK_ROOT=${System.getenv("QNN_SDK_ROOT") ?: ""}",
+                        )
                     }
                 }
             }

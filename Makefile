@@ -48,7 +48,11 @@ style-apply: spotlessApply clang-format
 
 patch-apply:
 	-git apply --directory=$(jniDir)/librime-lua-deps patches/lua.patch
+	-git apply --directory=$(jniDir)/sherpa-onnx patches/sherpa-onnx-qnn.patch
 
+# QNN (Qualcomm NPU) build requires QNN_SDK_ROOT environment variable:
+#   export QNN_SDK_ROOT=$(HOME)/.local/share/Android/qairt/2.47.0.260601
+# If not set, the build falls back to CPU-only sherpa-onnx.
 debug: patch-apply
 	$(GRADLEW) :app:assembleDebug
 
