@@ -280,20 +280,16 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
             .show()
     }
 
-    private fun detectVariantFromName(name: String): VoiceModelManager.ModelVariant {
-        return when {
-            name.contains("qnn", ignoreCase = true) || name.contains("SM8850") -> VoiceModelManager.ModelVariant.QNN
-            name.contains("int8", ignoreCase = true) -> VoiceModelManager.ModelVariant.INT8
-            else -> VoiceModelManager.ModelVariant.STANDARD
-        }
+    private fun detectVariantFromName(name: String): VoiceModelManager.ModelVariant = when {
+        name.contains("qnn", ignoreCase = true) || name.contains("SM8850") -> VoiceModelManager.ModelVariant.QNN
+        name.contains("int8", ignoreCase = true) -> VoiceModelManager.ModelVariant.INT8
+        else -> VoiceModelManager.ModelVariant.STANDARD
     }
 
-    private fun variantToStringResName(variant: VoiceModelManager.ModelVariant): Int {
-        return when (variant) {
-            VoiceModelManager.ModelVariant.QNN -> R.string.voice_model_type_qnn_name
-            VoiceModelManager.ModelVariant.INT8 -> R.string.voice_model_type_int8_name
-            else -> R.string.voice_model_type_standard_name
-        }
+    private fun variantToStringResName(variant: VoiceModelManager.ModelVariant): Int = when (variant) {
+        VoiceModelManager.ModelVariant.QNN -> R.string.voice_model_type_qnn_name
+        VoiceModelManager.ModelVariant.INT8 -> R.string.voice_model_type_int8_name
+        else -> R.string.voice_model_type_standard_name
     }
 
     private fun queryDisplayName(ctx: android.content.Context, uri: Uri): String? = ctx.contentResolver.query(uri, null, null, null, null)?.use { cursor ->

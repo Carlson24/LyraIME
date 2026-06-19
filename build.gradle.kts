@@ -24,6 +24,11 @@ plugins {
 spotless {
     kotlin {
         target("**/*.kt", "**/*.kts")
+        targetExclude(
+            "app/src/main/java/com/k2fsa/sherpa/onnx/**",
+            "app/src/main/jni/sherpa-onnx/**",
+            "app/src/main/jni/sherpa-onnx/scripts/go/**",
+        )
         ktlint("1.7.1")
     }
 }

@@ -179,10 +179,7 @@ dependencies {
     implementation(libs.splitties.views.dsl.recyclerview)
     implementation(libs.splitties.views.recyclerview)
     implementation(libs.aboutlibraries.core)
-    implementation(fileTree("libs") {
-        include("*.aar")
-        exclude("sherpa-onnx-*.aar")
-    })
+    implementation(fileTree("libs") { include("*.aar") })
     implementation(libs.iconics.core)
     implementation(libs.community.material.typeface) {
         artifact { type = "aar" }
