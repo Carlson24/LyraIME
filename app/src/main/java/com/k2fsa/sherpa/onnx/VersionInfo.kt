@@ -1,1 +1,0 @@
-../../../../../jni/sherpa-onnx/sherpa-onnx/kotlin-api/VersionInfo.kt

@@ -342,6 +342,7 @@
     <string name="wanxiang_task_alias">任務別名（選填）</string>
     <string name="wanxiang_url_or_path">URL 或本地路徑</string>
     <string name="wanxiang_target_path">目標路徑</string>
+    <string name="wanxiang_must_decompress">需要解壓</string>
     <string name="wanxiang_delete_task">刪除任務</string>
     <string name="wanxiang_execute_task">執行此任務</string>
     <string name="wanxiang_batch_delete">批量刪除</string>

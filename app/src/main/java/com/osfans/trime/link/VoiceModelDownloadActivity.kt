@@ -15,6 +15,7 @@ import com.osfans.trime.R
 import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.common.confirmDialog
 import com.osfans.trime.ui.common.progressDialog
+import com.osfans.trime.util.FileDownloader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -77,24 +78,18 @@ class VoiceModelDownloadActivity : ComponentActivity() {
             try {
                 val destFile = File(cacheDir, destName)
                 withContext(Dispatchers.IO) {
-                    VoiceModelManager.downloadFile(
-                        downloadUrl,
-                        destFile,
-                    ) { progress ->
-                        runOnUiThread {
-                            progressDialog.text = "${(progress * 100).toInt()}%"
-                        }
-                    }
-                }
-
-                progressDialog.setTitle(R.string.voice_model_verifying)
-                val verified =
-                    withContext(Dispatchers.IO) {
-                        VoiceModelManager.verifySha256(destFile)
-                    }
-                if (!verified) {
-                    destFile.delete()
-                    throw SecurityException(getString(R.string.voice_model_verification_failed))
+                    FileDownloader.download(
+                        url = downloadUrl,
+                        destFile = destFile,
+                        expectedSha256 = VoiceModelManager.getExpectedSha256(),
+                        onProgress = { progress ->
+                            if (progress >= 0f) {
+                                runOnUiThread {
+                                    progressDialog.text = "${(progress * 100).toInt()}%"
+                                }
+                            }
+                        },
+                    )
                 }
 
                 progressDialog.setTitle(R.string.voice_model_extracting)

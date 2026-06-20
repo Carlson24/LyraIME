@@ -207,7 +207,11 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         } else {
             getString(R.string.wanxiang_preview)
         }
-        val variant = if (isPro == "pro") "Pro" else "Base"
+        val variant = when (isPro) {
+            "pro" -> "Pro"
+            "pure" -> "Pure"
+            else -> "Base"
+        }
         versionDisplayPref.summary = "$channelLabel ($variant) ($currentLocalVersion → $latestStableTag)"
     }
 
@@ -308,7 +312,11 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         val downloadSource = prefs.downloadSource.getValue()
         val updateChannel = prefs.updateChannel.getValue()
 
-        val schemeStr = if (isPro == "pro") auxScheme else "base"
+        val schemeStr = when (isPro) {
+            "pro" -> auxScheme
+            "pure" -> "pure"
+            else -> "base"
+        }
         val activeTag = if (downloadSource == "CNB") {
             if (updateChannel == "Stable") latestStableTag else "v1.0.0"
         } else {
@@ -335,7 +343,12 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             urls.add("$baseUrl/$activeTag/rime-wanxiang-$schemeStr${if (isPro == "pro") "-fuzhu" else ""}.zip")
         }
         if (checkDict) {
-            urls.add("$dictBaseUrl/${if (isPro == "pro") "pro-$schemeStr-fuzhu" else "base"}-dicts.zip")
+            val dictPrefix = when (isPro) {
+                "pro" -> "pro-$schemeStr-fuzhu"
+                "pure" -> "pure"
+                else -> "base"
+            }
+            urls.add("$dictBaseUrl/$dictPrefix-dicts.zip")
         }
         if (checkModel) {
             val result = withContext(Dispatchers.IO) { checkModelUpdate() }
@@ -386,10 +399,17 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
     ): Map<String, String> {
         val result = mutableMapOf<String, String>()
         val schemaTag = if (updateChannel == "Stable") latestStableTag else "dict-nightly"
-        val schemaFile = "rime-wanxiang-$schemeStr${if (isPro == "pro") "-fuzhu" else ""}.zip"
+        val schemaFile = when (isPro) {
+            "pro" -> "rime-wanxiang-$schemeStr-fuzhu.zip"
+            else -> "rime-wanxiang-$schemeStr.zip"
+        }
         val schemaAssets = fetchReleaseAssetsSha256(schemaTag)
         schemaAssets[schemaFile]?.let { result[schemaFile] = it }
-        val dictFile = "${if (isPro == "pro") "pro-$schemeStr-fuzhu" else "base"}-dicts.zip"
+        val dictFile = when (isPro) {
+            "pro" -> "pro-$schemeStr-fuzhu-dicts.zip"
+            "pure" -> "pure-dicts.zip"
+            else -> "base-dicts.zip"
+        }
         val dictAssets = fetchReleaseAssetsSha256("dict-nightly")
         dictAssets[dictFile]?.let { result[dictFile] = it }
         return result

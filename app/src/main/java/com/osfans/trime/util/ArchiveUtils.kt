@@ -14,21 +14,90 @@ import java.util.zip.ZipInputStream
 fun extractTarBz2(
     tarBz2File: File,
     targetDir: File,
-) {
+): File {
     targetDir.mkdirs()
-    val process =
-        ProcessBuilder(
-            "tar",
-            "-xjf",
-            tarBz2File.absolutePath,
-            "-C",
-            targetDir.absolutePath,
-            "--strip-components=1",
-        ).redirectErrorStream(true).start()
+    execTar(listOf("xjf"), tarBz2File, targetDir)
+    return singleSubDirOrSelf(targetDir)
+}
+
+fun extractTarGz(
+    tarGzFile: File,
+    targetDir: File,
+): File {
+    targetDir.mkdirs()
+    execTar(listOf("xzf"), tarGzFile, targetDir)
+    return singleSubDirOrSelf(targetDir)
+}
+
+fun extractTarZst(
+    tarZstFile: File,
+    targetDir: File,
+): File {
+    targetDir.mkdirs()
+    execTar(listOf("--zstd", "-xf"), tarZstFile, targetDir)
+    return singleSubDirOrSelf(targetDir)
+}
+
+fun extractTarGzToDir(
+    inputStream: InputStream,
+    targetDir: File,
+): File {
+    targetDir.mkdirs()
+    val tmp = File.createTempFile("tar_", ".tar.gz", targetDir.parentFile)
+    try {
+        tmp.outputStream().use { inputStream.copyTo(it) }
+        return extractTarGz(tmp, targetDir)
+    } finally {
+        tmp.delete()
+    }
+}
+
+fun extractTarBz2ToDir(
+    inputStream: InputStream,
+    targetDir: File,
+): File {
+    targetDir.mkdirs()
+    val tmp = File.createTempFile("tar_", ".tar.bz2", targetDir.parentFile)
+    try {
+        tmp.outputStream().use { inputStream.copyTo(it) }
+        return extractTarBz2(tmp, targetDir)
+    } finally {
+        tmp.delete()
+    }
+}
+
+fun extractTarZstToDir(
+    inputStream: InputStream,
+    targetDir: File,
+): File {
+    targetDir.mkdirs()
+    val tmp = File.createTempFile("tar_", ".tar.zst", targetDir.parentFile)
+    try {
+        tmp.outputStream().use { inputStream.copyTo(it) }
+        return extractTarZst(tmp, targetDir)
+    } finally {
+        tmp.delete()
+    }
+}
+
+private fun execTar(flags: List<String>, file: File, targetDir: File) {
+    val cmd = mutableListOf("tar")
+    cmd.addAll(flags)
+    cmd.addAll(listOf(file.absolutePath, "-C", targetDir.absolutePath, "--strip-components=1"))
+    val process = ProcessBuilder(cmd).redirectErrorStream(true).start()
     val exitCode = process.waitFor()
     if (exitCode != 0) {
         val stderr = process.inputStream.bufferedReader().use { it.readText() }
         throw RuntimeException("tar extraction failed (exit $exitCode): $stderr")
+    }
+}
+
+private fun singleSubDirOrSelf(targetDir: File): File {
+    val subFiles = targetDir.listFiles()
+    return if (subFiles != null && subFiles.size == 1 && subFiles[0].isDirectory) {
+        subFiles[0]
+    } else {
+        targetDir
     }
 }
 
@@ -65,7 +134,7 @@ fun extractZip(
     zip.close()
 }
 
-fun extractZipToTempDir(
+fun extractZipToDir(
     inputStream: InputStream,
     targetDir: File,
 ): File {
@@ -85,12 +154,7 @@ fun extractZipToTempDir(
         }
     }
 
-    val subFiles = targetDir.listFiles()
-    return if (subFiles != null && subFiles.size == 1 && subFiles[0].isDirectory) {
-        subFiles[0]
-    } else {
-        targetDir
-    }
+    return singleSubDirOrSelf(targetDir)
 }
 
 private fun findCommonZipPrefix(entries: List<String>): String? {

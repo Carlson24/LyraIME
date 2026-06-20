@@ -341,6 +341,7 @@
     <string name="wanxiang_task_alias">任务别名（选填）</string>
     <string name="wanxiang_url_or_path">URL 或本地路径</string>
     <string name="wanxiang_target_path">目标路径</string>
+    <string name="wanxiang_must_decompress">需要解压</string>
     <string name="wanxiang_delete_task">删除任务</string>
     <string name="wanxiang_execute_task">执行此任务</string>
     <string name="wanxiang_batch_delete">批量删除</string>

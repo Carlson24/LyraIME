@@ -9,20 +9,10 @@ import com.osfans.trime.data.ResourceUrls
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.util.computeFileSha256
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import timber.log.Timber
 import java.io.File
-import java.io.FileOutputStream
-import java.util.concurrent.TimeUnit
 
 object VoiceModelManager {
-    private val client: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(120, TimeUnit.SECONDS)
-            .build()
-    }
     val voiceDir: File
         get() {
             val sub = when (getSelectedVariant()) {
@@ -129,39 +119,6 @@ object VoiceModelManager {
     }
 
     fun checkModelFiles(): Boolean = resolveModelFiles() != null
-
-    fun downloadFile(
-        urlString: String,
-        destFile: File,
-        isCancelled: () -> Boolean = { false },
-        onProgress: ((Float) -> Unit)? = null,
-    ) {
-        val request = Request.Builder().url(urlString).get().build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw RuntimeException("HTTP ${response.code}")
-            }
-            val body = response.body
-            val contentLength = body.contentLength()
-            body.byteStream().use { input ->
-                FileOutputStream(destFile).use { output ->
-                    val buffer = ByteArray(8192)
-                    var totalRead = 0L
-                    var bytesRead: Int
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        if (isCancelled()) {
-                            throw java.io.IOException("Download cancelled")
-                        }
-                        output.write(buffer, 0, bytesRead)
-                        totalRead += bytesRead
-                        if (contentLength > 0) {
-                            onProgress?.invoke(totalRead.toFloat() / contentLength)
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     fun extractZip(
         zipFile: File,

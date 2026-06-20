@@ -699,8 +699,8 @@ class AppPrefs(
             R.string.wanxiang_scheme_type,
             IS_PRO,
             "pro",
-            { listOf("pro", "base") },
-            { listOf("Pro", "Base") },
+            { listOf("pro", "base", "pure") },
+            { listOf("Pro", "Base", "Pure") },
         )
         val auxScheme = list(
             R.string.wanxiang_aux_scheme,

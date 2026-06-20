@@ -343,6 +343,7 @@
     <string name="wanxiang_task_alias">Task Alias</string>
     <string name="wanxiang_url_or_path">URL or Absolute Path (.zip)</string>
     <string name="wanxiang_target_path">Target Path</string>
+    <string name="wanxiang_must_decompress">Decompress</string>
     <string name="wanxiang_delete_task">Delete Task</string>
     <string name="wanxiang_execute_task">Execute</string>
     <string name="wanxiang_batch_delete">Batch Delete</string>

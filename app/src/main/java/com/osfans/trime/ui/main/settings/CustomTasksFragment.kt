@@ -425,6 +425,46 @@ class CustomTasksFragment : Fragment() {
         pathRow.addView(configBtn)
         content.addView(pathRow)
 
+        val decompressRow = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = 10.dp() }
+        }
+        val decompressLabel = TextView(ctx).apply {
+            text = getString(R.string.wanxiang_must_decompress)
+            textSize = 13f
+            setTextColor(color(R.color.text))
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        decompressRow.addView(decompressLabel)
+        val decompressCheck = TextView(ctx).apply {
+            textSize = 13f
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(24.dp(), 24.dp()).apply { marginStart = 8.dp() }
+            val accent = accentColor(ctx)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = (4 * ctx.resources.displayMetrics.density)
+                if (task.needsDecompress) {
+                    setColor(accent)
+                } else {
+                    setColor(Color.argb(0x18, Color.red(accent), Color.green(accent), Color.blue(accent)))
+                    setStroke(2.dp(), accent)
+                }
+            }
+            text = if (task.needsDecompress) "✓" else ""
+            setTextColor(if (task.needsDecompress) color(android.R.color.white) else accent)
+            setOnClickListener {
+                customTasks[index] = customTasks[index].copy(needsDecompress = !customTasks[index].needsDecompress)
+                saveAndRefresh()
+            }
+        }
+        decompressRow.addView(decompressCheck)
+        content.addView(decompressRow)
+
         val actionRow = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -488,6 +528,7 @@ class CustomTasksFragment : Fragment() {
             TaskState(
                 "${t.name.ifBlank { getString(R.string.wanxiang_default_short) }} ($fName)",
                 t.url,
+                needsDecompress = t.needsDecompress,
             )
         }
 
@@ -536,6 +577,7 @@ class CustomTasksFragment : Fragment() {
         val uiState = TaskState(
             task.name.ifBlank { getString(R.string.wanxiang_default_short) } + " (${task.url.substringAfterLast("/")})",
             task.url,
+            needsDecompress = task.needsDecompress,
         )
         addDownloadProgressItem(llCustomProgress, uiState, requireContext())
 

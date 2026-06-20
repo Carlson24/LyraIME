@@ -14,6 +14,7 @@ data class TaskState(
     val title: String,
     val url: String,
     val expectedSha256: String? = null,
+    val needsDecompress: Boolean = true,
     var progress: Float = 0f,
     var status: String = "",
     var isFinished: Boolean = false,
@@ -27,6 +28,7 @@ data class CustomTask(
     val boundPath: String = "DEFAULT",
     val isSelected: Boolean = false,
     val isExpanded: Boolean = true,
+    val needsDecompress: Boolean = true,
 )
 
 fun loadCustomTasks(jsonStr: String): MutableList<CustomTask> {
@@ -43,6 +45,7 @@ fun loadCustomTasks(jsonStr: String): MutableList<CustomTask> {
                     boundPath = obj.optString("boundPath", "DEFAULT"),
                     isSelected = obj.optBoolean("isSelected", false),
                     isExpanded = obj.optBoolean("isExpanded", true),
+                    needsDecompress = obj.optBoolean("needsDecompress", true),
                 ),
             )
         }
@@ -61,6 +64,7 @@ fun saveCustomTasks(tasks: List<CustomTask>, sharedPref: SharedPreferences) {
         obj.put("boundPath", it.boundPath)
         obj.put("isSelected", it.isSelected)
         obj.put("isExpanded", it.isExpanded)
+        obj.put("needsDecompress", it.needsDecompress)
         array.put(obj)
     }
     sharedPref.edit { putString("custom_tasks_data", array.toString()) }

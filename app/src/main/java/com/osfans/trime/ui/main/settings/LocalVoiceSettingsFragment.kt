@@ -18,6 +18,7 @@ import com.osfans.trime.link.VoiceModelManager
 import com.osfans.trime.ui.common.ProgressDialog
 import com.osfans.trime.ui.common.confirmDialog
 import com.osfans.trime.ui.common.progressDialog
+import com.osfans.trime.util.FileDownloader
 import com.osfans.trime.util.toast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -120,25 +121,19 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 val destFile = File(requireContext().cacheDir, destName)
                 val activity = requireActivity()
                 withContext(Dispatchers.IO) {
-                    VoiceModelManager.downloadFile(
-                        downloadUrl,
-                        destFile,
-                        { downloadCancelled },
-                    ) { progress ->
-                        activity.runOnUiThread {
-                            progressDialog.text = "${(progress * 100).toInt()}%"
-                        }
-                    }
-                }
-
-                progressDialog.setTitle(R.string.voice_model_verifying)
-                val verified =
-                    withContext(Dispatchers.IO) {
-                        VoiceModelManager.verifySha256(destFile)
-                    }
-                if (!verified) {
-                    destFile.delete()
-                    throw SecurityException(getString(R.string.voice_model_verification_failed))
+                    FileDownloader.download(
+                        url = downloadUrl,
+                        destFile = destFile,
+                        expectedSha256 = VoiceModelManager.getExpectedSha256(),
+                        onProgress = { progress ->
+                            if (progress >= 0f) {
+                                activity.runOnUiThread {
+                                    progressDialog.text = "${(progress * 100).toInt()}%"
+                                }
+                            }
+                        },
+                        isCancelled = { downloadCancelled },
+                    )
                 }
 
                 progressDialog.setTitle(R.string.voice_model_extracting)
