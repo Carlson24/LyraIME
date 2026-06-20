@@ -486,6 +486,7 @@ class AppPrefs(
             const val PERIODIC_BACKGROUND_SYNC_TIME = "periodic_background_sync_time"
             const val LAST_BACKGROUND_SYNC_STATUS = "last_background_sync_status"
             const val LAST_BACKGROUND_SYNC_TIME = "last_background_sync_time"
+            const val LAST_SYNC_SETTINGS_HASH = "last_sync_settings_hash"
             const val WEBDAV_ENABLED = "webdav_enabled"
             const val WEBDAV_URL = "webdav_url"
             const val WEBDAV_USERNAME = "webdav_username"
@@ -498,6 +499,7 @@ class AppPrefs(
         val periodicBackgroundSyncTime = string(PERIODIC_BACKGROUND_SYNC_TIME, "02:00")
         val lastBackgroundSyncStatus = bool(LAST_BACKGROUND_SYNC_STATUS, false)
         val lastBackgroundSyncTime = long(LAST_BACKGROUND_SYNC_TIME, 0L)
+        val lastSyncSettingsHash = string(LAST_SYNC_SETTINGS_HASH, "")
         val webdavEnabled = bool(WEBDAV_ENABLED, false)
         val webdavUrl = string(WEBDAV_URL, "")
         val webdavUsername = string(WEBDAV_USERNAME, "")

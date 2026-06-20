@@ -30,7 +30,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-class WanxiangCheckWorker(
+class WanxiangCheckWork(
     context: Context,
     workerParams: WorkerParameters,
 ) : CoroutineWorker(context, workerParams) {
@@ -114,7 +114,7 @@ class WanxiangCheckWorker(
                 .setRequiresBatteryNotLow(true)
                 .build()
 
-            val workRequest = PeriodicWorkRequestBuilder<WanxiangCheckWorker>(
+            val workRequest = PeriodicWorkRequestBuilder<WanxiangCheckWork>(
                 intervalHours.toLong(),
                 TimeUnit.HOURS,
                 15,

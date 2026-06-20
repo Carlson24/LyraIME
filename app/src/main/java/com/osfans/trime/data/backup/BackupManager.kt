@@ -6,6 +6,7 @@
 package com.osfans.trime.data.backup
 
 import android.content.Context
+import android.util.Base64
 import androidx.paging.PagingSource
 import androidx.preference.PreferenceManager
 import androidx.room.Room
@@ -26,9 +27,40 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import timber.log.Timber
 import java.io.File
+import java.security.MessageDigest
 
 object BackupManager {
     private const val CUSTOM_TASKS_KEY = "custom_tasks_data"
+
+    private val passwordKeys = setOf(
+        AppPrefs.Profile.WEBDAV_PASSWORD,
+        AppPrefs.Clipboard.SYNC_CLIPBOARD_PASSWORD,
+        AppPrefs.Wanxiang.GH_TOKEN,
+    )
+
+    fun computeSettingsFingerprint(): String {
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
+        val allPrefs = sharedPreferences.all
+        val wanxiangPrefs = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+
+        val sb = StringBuilder()
+
+        val keys = allPrefs.keys
+            .filter { it != AppPrefs.Internal.PID }
+            .sorted()
+        for (key in keys) {
+            val value = allPrefs[key]
+            sb.append(key).append('=').append(value).append('\n')
+        }
+
+        val customTasks = wanxiangPrefs.getString(CUSTOM_TASKS_KEY, null)
+        sb.append(CUSTOM_TASKS_KEY).append('=').append(customTasks).append('\n')
+
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(sb.toString().toByteArray())
+        return hash.joinToString("") { "%02x".format(it) }
+    }
+
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -199,21 +231,28 @@ object BackupManager {
 
         for ((key, value) in allPrefs) {
             if (key != AppPrefs.Internal.PID && !key.startsWith("wanxiang_")) {
-                filteredPrefs[key] = valueToBackupPreference(value)
+                filteredPrefs[key] = valueToBackupPreference(key, value)
             }
         }
 
         return filteredPrefs
     }
 
-    private fun valueToBackupPreference(value: Any?): BackupPreference = when (value) {
+    private fun valueToBackupPreference(key: String, value: Any?): BackupPreference = when (value) {
         null -> BackupPreference(JsonNull, PreferenceType.STRING)
         is Int -> BackupPreference(JsonPrimitive(value), PreferenceType.INT)
         is Long -> BackupPreference(JsonPrimitive(value), PreferenceType.LONG)
         is Float -> BackupPreference(JsonPrimitive(value), PreferenceType.FLOAT)
         is Double -> BackupPreference(JsonPrimitive(value), PreferenceType.FLOAT)
         is Boolean -> BackupPreference(JsonPrimitive(value), PreferenceType.BOOLEAN)
-        is String -> BackupPreference(JsonPrimitive(value), PreferenceType.STRING)
+        is String -> {
+            if (key in passwordKeys && value.isNotEmpty()) {
+                val encoded = Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP)
+                BackupPreference(JsonPrimitive(encoded), PreferenceType.STRING, encoded = true)
+            } else {
+                BackupPreference(JsonPrimitive(value), PreferenceType.STRING)
+            }
+        }
         is Set<*> -> {
             val jsonArray = JsonArray(value.map { JsonPrimitive(it.toString()) })
             BackupPreference(jsonArray, PreferenceType.STRING_SET)
@@ -270,7 +309,7 @@ object BackupManager {
                             editor.putFloat(key, content.toFloatOrNull() ?: 0f)
                         }
                         PreferenceType.STRING -> {
-                            editor.putString(key, content)
+                            editor.putString(key, importStringValue(key, content, backupPref.encoded))
                         }
                         else -> {
                             editor.putString(key, content)
@@ -286,6 +325,20 @@ object BackupManager {
         }
 
         editor.apply()
+    }
+
+    private fun importStringValue(
+        key: String,
+        content: String,
+        encoded: Boolean,
+    ): String {
+        if (!encoded || key !in passwordKeys) return content
+        return try {
+            String(Base64.decode(content, Base64.NO_WRAP))
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to decode base64 for key '$key', using raw value")
+            content
+        }
     }
 
     private suspend fun exportClipboard(): List<BackupBean> {
@@ -467,7 +520,7 @@ object BackupManager {
 
         for ((key, value) in allPrefs) {
             if (key.startsWith("wanxiang_")) {
-                result[key] = valueToBackupPreference(value)
+                result[key] = valueToBackupPreference(key, value)
             }
         }
 
@@ -530,7 +583,7 @@ object BackupManager {
                             editor.putFloat(key, content.toFloatOrNull() ?: 0f)
                         }
                         PreferenceType.STRING -> {
-                            editor.putString(key, content)
+                            editor.putString(key, importStringValue(key, content, backupPref.encoded))
                         }
                         else -> {
                             editor.putString(key, content)

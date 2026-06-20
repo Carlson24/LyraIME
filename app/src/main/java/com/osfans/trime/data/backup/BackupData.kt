@@ -27,6 +27,7 @@ data class BackupData(
 data class BackupPreference(
     val value: JsonElement,
     val type: PreferenceType,
+    val encoded: Boolean = false,
 )
 
 @Serializable

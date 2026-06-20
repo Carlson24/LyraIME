@@ -39,7 +39,7 @@ import com.osfans.trime.util.compareVersions
 import com.osfans.trime.util.computeFileSha256
 import com.osfans.trime.util.createNotificationChannel
 import com.osfans.trime.util.readLocalWanxiangVersion
-import com.osfans.trime.worker.WanxiangCheckWorker
+import com.osfans.trime.worker.WanxiangCheckWork
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -79,13 +79,13 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         when (key) {
             AppPrefs.Wanxiang.AUTO_CHECK -> {
                 if (prefs.autoCheck.getValue()) {
-                    WanxiangCheckWorker.start(requireContext())
+                    WanxiangCheckWork.start(requireContext())
                 } else {
-                    WanxiangCheckWorker.cancel(requireContext())
+                    WanxiangCheckWork.cancel(requireContext())
                 }
             }
             AppPrefs.Wanxiang.CHECK_INTERVAL -> {
-                WanxiangCheckWorker.start(requireContext())
+                WanxiangCheckWork.start(requireContext())
             }
         }
     }

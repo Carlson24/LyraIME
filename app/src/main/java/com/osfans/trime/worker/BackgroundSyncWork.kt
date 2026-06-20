@@ -63,10 +63,17 @@ class BackgroundSyncWork(
         private val syncTime by prefs.periodicBackgroundSyncTime
         private var lastSyncStatus by prefs.lastBackgroundSyncStatus
         private var lastSyncTime by prefs.lastBackgroundSyncTime
+        private var lastSyncSettingsHash by prefs.lastSyncSettingsHash
         private val webdavEnabled by prefs.webdavEnabled
 
         suspend fun backupSettingsToSyncDir() {
             try {
+                val currentHash = BackupManager.computeSettingsFingerprint()
+                if (currentHash == lastSyncSettingsHash && lastSyncSettingsHash.isNotEmpty()) {
+                    Timber.d("Settings unchanged, skipping backup")
+                    return
+                }
+
                 val userId = readInstallationId()
                 val syncDir = File(DataManager.userDataDir, "sync").resolve(userId)
                 syncDir.mkdirs()
@@ -79,6 +86,7 @@ class BackgroundSyncWork(
                     includeCustomTasks = true,
                 )
                 BackupManager.saveBackupToFile(backupData, backupFile)
+                lastSyncSettingsHash = currentHash
                 Timber.d("Settings backup saved to sync dir: ${backupFile.absolutePath}")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to backup settings to sync dir")
