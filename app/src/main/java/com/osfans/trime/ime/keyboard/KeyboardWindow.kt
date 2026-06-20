@@ -21,6 +21,7 @@ import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.ime.bar.InputBarDelegate
+import com.osfans.trime.ime.t9.T9InputController
 import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
 import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
 import com.osfans.trime.ime.core.TrimeInputMethodService
@@ -75,7 +76,11 @@ class KeyboardWindow :
 
     companion object : ResidentWindow.Key {
         lateinit var currentKeyboard: Keyboard
+        var t9Controller: T9InputController? = null
+            private set
     }
+
+    private var t9Controller: T9InputController? = null
 
     override val key: ResidentWindow.Key
         get() = KeyboardWindow
@@ -142,11 +147,30 @@ class KeyboardWindow :
 
         val config = selectKeyboardConfig(target)
         val keyboard = currentKeyboard ?: Keyboard(context, theme, config)
-        val view = currentKeyboardView ?: KeyboardView(context, theme, keyboard, popup, service, keyboardActionListener, enterKeyDisplay)
+
+        val newT9Controller =
+            if (keyboard.isT9Mode) {
+                t9Controller?.destroy()
+                t9Controller?.clear()
+                T9InputController(rime).also { t9Controller = it }
+            } else {
+                t9Controller?.destroy()
+                t9Controller?.clear()
+                t9Controller = null
+                null
+            }
+        KeyboardWindow.t9Controller = newT9Controller
+
+        val view = currentKeyboardView ?: KeyboardView(
+            context, theme, keyboard, popup, service,
+            keyboardActionListener, enterKeyDisplay, newT9Controller,
+        )
 
         if (currentKeyboard == null) {
             cachedKeyboards[target] = keyboard to view
             keyboard.lastAsciiMode = keyboard.asciiMode
+        } else if (keyboard.isT9Mode) {
+            view.updateT9Controller(newT9Controller)
         }
 
         keyboard.also {
@@ -185,6 +209,13 @@ class KeyboardWindow :
     }
 
     private fun smartMatchKeyboard(): String {
+        for (id in presetKeyboardIds) {
+            if (id == "default" || id.startsWith(".")) continue
+            val option = "_keyboard_$id"
+            val enabled = runCatching { rime.run { getRuntimeOption(option) } }.getOrDefault(false)
+            if (enabled) return id
+        }
+
         // 主题的布局中包含方案id，直接采用
         val currentSchema = rime.run { statusCached }.schemaId
         if (presetKeyboardIds.contains(currentSchema)) {
@@ -258,11 +289,24 @@ class KeyboardWindow :
         return final
     }
 
+    private fun refreshT9SidebarForReopen() {
+        t9Controller?.destroy()
+        t9Controller?.clear()
+        val newController = T9InputController(rime).also { t9Controller = it }
+        KeyboardWindow.t9Controller = newController
+        currentKeyboardView?.updateT9Controller(newController)
+    }
+
     fun switchKeyboard(to: String) {
         val target = evalKeyboard(to)
         ContextCompat.getMainExecutor(service).execute {
             if (cachedKeyboards.containsKey(target)) {
-                if (target == currentKeyboardId) return@execute
+                if (target == currentKeyboardId) {
+                    if (currentKeyboard?.isT9Mode == true) {
+                        refreshT9SidebarForReopen()
+                    }
+                    return@execute
+                }
             }
             // 保存上一个键盘ID，用于来源键盘回退（如果不是返回类操作且不是重新弹出则记录）
             if (to.isNotEmpty() && to !in setOf(".previous", ".last_lock")) {
@@ -407,6 +451,12 @@ class KeyboardWindow :
 
     override fun onAttached() {
         expandKeypressAreaPref.registerOnChangeListener(onExpandKeypressAreaChangeListener)
+        if (t9Controller == null && currentKeyboard?.isT9Mode == true) {
+            val newController = T9InputController(rime)
+            t9Controller = newController
+            KeyboardWindow.t9Controller = newController
+            currentKeyboardView?.updateT9Controller(newController)
+        }
     }
 
     override fun onDetached() {

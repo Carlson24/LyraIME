@@ -74,6 +74,8 @@ interface RimeApi {
 
     suspend fun getRawInput(): String
 
+    suspend fun setRawInput(input: String): Boolean
+
     suspend fun setRuntimeOption(
         option: String,
         value: Boolean,

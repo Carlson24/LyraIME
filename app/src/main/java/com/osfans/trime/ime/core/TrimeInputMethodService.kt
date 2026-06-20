@@ -50,6 +50,7 @@ import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.ime.composition.CandidatesView
 import com.osfans.trime.ime.keyboard.InputFeedbackManager
+import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.link.SherpaSpeechClient
 import com.osfans.trime.receiver.RimeIntentReceiver
 import com.osfans.trime.util.any
@@ -583,6 +584,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
 
     override fun onFinishInputView(finishingInput: Boolean) {
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
+        KeyboardWindow.t9Controller?.clear()
         decorLocationUpdated = false
         inputDeviceManager.onFinishInputView()
         currentInputConnection?.apply {

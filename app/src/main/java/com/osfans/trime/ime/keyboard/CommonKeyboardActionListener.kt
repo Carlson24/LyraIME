@@ -209,6 +209,14 @@ class CommonKeyboardActionListener {
                     "apply" -> handleApplyCommand(arg)
                     "share_text" -> service.shareText()
                     "select_candidate" -> handleSelectCandidate(arg)
+                    "t9_clear" -> {
+                        KeyboardWindow.t9Controller?.clear()
+                        rime.launchOnReady { api ->
+                            service.lifecycleScope.launch {
+                                api.clearComposition()
+                            }
+                        }
+                    }
                     else -> handleIntentAction(action.command, arg)
                 }
             }
@@ -362,6 +370,28 @@ class CommonKeyboardActionListener {
                 metaState: Int,
             ) {
                 shouldReleaseKey = false
+
+                val t9c = KeyboardWindow.t9Controller
+                if (t9c != null && KeyboardWindow.currentKeyboard.isT9Mode) {
+                    when {
+                        keyEventCode in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> {
+                            val digit = (keyEventCode - KeyEvent.KEYCODE_0).toString()
+                            t9c.onDigitKey(digit)
+                        }
+                        keyEventCode == KeyEvent.KEYCODE_DEL -> {
+                            if (t9c.onBackspace()) {
+                                t9c.updateRimeInput()
+                                return
+                            }
+                        }
+                        t9c.isSegmentKeyCode(keyEventCode) -> {
+                            if (t9c.onSegmentKey()) {
+                                return
+                            }
+                        }
+                    }
+                }
+
                 val value =
                     RimeKeyMapping
                         .keyCodeToVal(keyEventCode)

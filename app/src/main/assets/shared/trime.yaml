@@ -961,6 +961,10 @@ preset_keys:
   RestartRime: {label: 重啟, send: function, command: apply, option: "RESTART_RIME"} #重启算法服务
   updateConfig: {label: 更新配置, send: function, command: apply, option: "UPDATE_CONFIG"} #更新配置文件
   RepeatCommit: {label: 重复, command: commit, option: "%1$s"}    #重复输入刚上屏的内容
+  # T9 键盘
+  T9_segment: {label: 分词, send: "'"}
+  T9_clear: {command: t9_clear}
+  Keyboard_t9: {label: "T9", send: Eisu_toggle, select: t9}
 
 preset_keyboards:
   default:
@@ -1015,7 +1019,7 @@ preset_keyboards:
           - {click: '/', long_click: '?'}
       - keys:
           - {click: Shift_L}
-          - {click: Keyboard_symbols, long_click: Keyboard_number}
+          - {click: Keyboard_symbols, long_click: Keyboard_number, swipe_up: Keyboard_t9}
           - {click: Mode_switch, long_click: Menu}
           - {click: space, width: 0.3}
           - {click: "'", long_click: '"'}
@@ -1755,3 +1759,40 @@ preset_keyboards:
           - {click: "'", long_click: "?"}
       - keys:
           - {click: Return, long_click: CommitComment, width: 0.255}
+  t9:
+    name: T9鍵盤
+    author: "danjian & LyraIME"
+    ascii_mode: 0
+    lock: true
+    t9_mode: true
+    t9_sidebar_width: 0.15
+    t9_sidebar_position: left
+    t9_sidebar_span_rows: 3
+    t9_sidebar_show_items: 4
+    t9_sidebar_symbols: ["。", "，", "！", "？"]
+    reset_ascii_mode: false
+    rows:
+      - keys:
+          - {spacer: true, width: 0.15}
+          - {click: T9_segment, label: 分词}
+          - {click: '2', label: ABC, popup: ["a","b","c"]}
+          - {click: '3', label: DEF, popup: ["d","e","f"]}
+          - {click: BackSpace, width: 0.15}
+      - keys:
+          - {spacer: true, width: 0.15}
+          - {click: '4', label: GHI, popup: ["g","h","i"]}
+          - {click: '5', label: JKL, popup: ["j","k","l"]}
+          - {click: '6', label: MNO, popup: ["m","n","o"]}
+          - {click: T9_clear, width: 0.15}
+      - keys:
+          - {spacer: true, width: 0.15}
+          - {click: '7', label: PQRS, popup: ["p","q","r","s"]}
+          - {click: '8', label: TUV, popup: ["t","u","v"]}
+          - {click: '9', label: WXYZ, popup: ["w","x","y","z"]}
+          - {click: Keyboard_symbols, width: 0.15}
+      - keys:
+          - {click: Keyboard_default, width: 0.2}
+          - {click: Mode_switch, width: 0.2}
+          - {click: space, width: 0.2}
+          - {click: ',', width: 0.2}
+          - {click: Return, width: 0.2}

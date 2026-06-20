@@ -161,7 +161,33 @@ class Keyboard(
             return (defaultWidth * SEARCH_DISTANCE).pow(2).toInt()
         }
     val isLock = selfConfig?.lock ?: false // 切換程序時記憶鍵盤
+    val isT9Mode: Boolean = selfConfig?.t9Mode ?: false
+    val t9SidebarWidth: Float = selfConfig?.t9SidebarWidth ?: 0.15f
+    val t9SidebarPosition: String = selfConfig?.t9SidebarPosition ?: "left"
+    val t9SidebarSpanRows: Int = selfConfig?.t9SidebarSpanRows ?: 3
+    val t9SidebarShowItems: Int = selfConfig?.t9SidebarShowItems ?: 4
+    val t9SidebarSymbols: List<String> = selfConfig?.t9SidebarSymbols ?: emptyList()
+
+    val t9SideTextFont: List<String>
+        get() = theme.generalStyle.t9SideTextFont.ifEmpty { theme.generalStyle.keyFont }
+    val t9SideTextSize: Float
+        get() {
+            val v = theme.generalStyle.t9SideTextSize
+            return if (v > 0f) v else theme.generalStyle.keyTextSize
+        }
+    val t9SideRoundCorner: Float
+        get() {
+            val v = theme.generalStyle.t9SideRoundCorner
+            return if (v >= 0f) v else roundCorner
+        }
+
     val asciiKeyboard: String? = selfConfig?.asciiKeyboard // 英文鍵盤
+
+    fun getT9SidebarHeight(): Int {
+        val spanRow = t9SidebarSpanRows
+        val firstKeyInNextRow = mKeys.firstOrNull { it.row >= spanRow }
+        return firstKeyInNextRow?.y ?: height
+    }
 
     val keyboardHeight: Int =
         intArrayOf(
@@ -314,6 +340,7 @@ class Keyboard(
                         val widthPx = (weight * keyAreaWidthPx).toInt()
                         if (expandKeypressArea) spacers.add(Triple(xPos, widthPx, rowIdx))
                         xPos += widthPx
+                        column++
                         continue
                     }
 
@@ -379,7 +406,12 @@ class Keyboard(
                 }
             }
 
-            mKeys.lastOrNull()?.edgeFlags = mKeys.lastOrNull()?.edgeFlags?.or(EDGE_RIGHT) ?: 0
+            mKeys.forEachIndexed { index, key ->
+                val isLastInRow = index == mKeys.size - 1 || mKeys[index + 1].row != key.row
+                if (isLastInRow) {
+                    key.edgeFlags = key.edgeFlags or EDGE_RIGHT
+                }
+            }
 
             height = yPos + bottomMarginPx
 

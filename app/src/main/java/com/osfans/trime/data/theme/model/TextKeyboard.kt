@@ -63,6 +63,12 @@ data class TextKeyboard(
     val keyPressOffsetY: Float,
     val importPreset: String,
     val navbar: Boolean,
+    val t9Mode: Boolean,
+    val t9SidebarWidth: Float,
+    val t9SidebarPosition: String,
+    val t9SidebarSpanRows: Int,
+    val t9SidebarShowItems: Int,
+    val t9SidebarSymbols: List<String>,
     val rows: List<KeyboardRow>,
 ) : Parcelable {
     enum class LabelTransform {
@@ -179,6 +185,12 @@ data class TextKeyboard(
             keyPressOffsetY = node["key_press_offset_y"]?.float ?: 0f,
             importPreset = node["import_preset"]?.string ?: "",
             navbar = node["navbar"]?.boolean ?: false,
+            t9Mode = node["t9_mode"]?.boolean ?: false,
+            t9SidebarWidth = node["t9_sidebar_width"]?.float ?: 0.15f,
+            t9SidebarPosition = node["t9_sidebar_position"]?.string ?: "left",
+            t9SidebarSpanRows = node["t9_sidebar_span_rows"]?.int ?: 3,
+            t9SidebarShowItems = node["t9_sidebar_show_items"]?.int ?: 4,
+            t9SidebarSymbols = node["t9_sidebar_symbols"]?.sequence?.mapNotNull(Node::string) ?: emptyList(),
             rows = node["rows"]?.sequence?.mapNotNull {
                 KeyboardRow.decode(it.mapping!!)
             } ?: emptyList(),

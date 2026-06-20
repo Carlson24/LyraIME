@@ -4110,6 +4110,43 @@ preset_keyboards:
           - {label: '丿', click: Keyboard_r2, long_click: Tab, composing: Keyboard_h, ascii: 'h', combo: h, width: 0.115, key_back_color: bh4, key_text_color: th4}
           - {label: '丶', click: space_R1, long_click: Zcj, composing: Keyboard_r, ascii: 'r', combo: r, width: 0.115, key_text_size: "18", key_back_color: bgn, key_text_color: tgn}
           - {label: 'Enter', long_click: Return, click: Return, swipe_up: Escape, composing: Keyboard_e0, width: 0.155, round_corner: *round3, key_back_color: benter, key_text_color: tenter}
+  t9:
+    name: T9鍵盤
+    author: "danjian & LyraIME"
+    ascii_mode: 0
+    lock: true
+    t9_mode: true
+    t9_sidebar_width: 0.15
+    t9_sidebar_position: left
+    t9_sidebar_span_rows: 3
+    t9_sidebar_show_items: 4
+    t9_sidebar_symbols: ["。", "，", "！", "？"]
+    reset_ascii_mode: false
+    rows:
+      - keys:
+          - {spacer: true, width: 0.15}
+          - {click: T9_segment, label: 分词}
+          - {click: '2', label: ABC, popup: ["a","b","c"]}
+          - {click: '3', label: DEF, popup: ["d","e","f"]}
+          - {click: BackSpace, width: 0.15}
+      - keys:
+          - {spacer: true, width: 0.15}
+          - {click: '4', label: GHI, popup: ["g","h","i"]}
+          - {click: '5', label: JKL, popup: ["j","k","l"]}
+          - {click: '6', label: MNO, popup: ["m","n","o"]}
+          - {click: T9_clear, width: 0.15}
+      - keys:
+          - {spacer: true, width: 0.15}
+          - {click: '7', label: PQRS, popup: ["p","q","r","s"]}
+          - {click: '8', label: TUV, popup: ["t","u","v"]}
+          - {click: '9', label: WXYZ, popup: ["w","x","y","z"]}
+          - {click: Keyboard_symbols, width: 0.15}
+      - keys:
+          - {click: Keyboard_default, width: 0.2}
+          - {click: Mode_switch, width: 0.2}
+          - {click: space, width: 0.2}
+          - {click: ',', width: 0.2}
+          - {click: Return, width: 0.2}
 preset_keys:
   # 安卓
   BRIGHTNESS_DOWN: {label: 亮度-, send: BRIGHTNESS_DOWN}
@@ -4377,3 +4414,7 @@ preset_keys:
   标点: {text: '{Escape}/bd', label: 标点, functional: false}
   偏旁: {text: '{Escape}/pp', label: 偏旁, functional: false}
   竖标点: {text: '{Escape}/bdz', label: 竖标, functional: false}
+  # T9 键盘
+  T9_segment: {label: 分词, send: "'"}
+  T9_clear: {command: t9_clear}
+  Keyboard_t9: {label: "T9", send: Eisu_toggle, select: t9}

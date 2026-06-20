@@ -74,6 +74,9 @@ data class GeneralStyle(
     val backgroundFolder: String,
     val enterLabelMode: Int,
     val enterLabel: EnterLabel,
+    val t9SideTextFont: List<String>,
+    val t9SideTextSize: Float,
+    val t9SideRoundCorner: Float,
 ) : Parcelable {
     enum class CommentPosition {
         RIGHT,
@@ -170,6 +173,10 @@ data class GeneralStyle(
             backgroundFolder = node["background_folder"]?.string ?: "backgrounds",
             enterLabelMode = node["enter_label_mode"]?.int ?: 0,
             enterLabel = EnterLabel.decode(node["enter_labels"]),
+            t9SideTextFont = node["t9_side_text_font"]?.sequence
+                ?.mapNotNull(Node::string) ?: emptyList(),
+            t9SideTextSize = node["t9_side_text_size"]?.float ?: -1f,
+            t9SideRoundCorner = node["t9_side_round_corner"]?.float ?: -1f,
         )
     }
 }
