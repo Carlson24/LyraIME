@@ -58,24 +58,28 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
         val rootDir = project.rootDir
         val jniDir = "app/src/main/jni"
         val macrosHeader = project.file("src/main/jni/sherpa-onnx/sherpa-onnx/csrc/macros.h")
+        val luaLiolib = project.file("src/main/jni/librime-lua-deps/lua5.4/liolib.c")
         val applyPatches =
             project.tasks.register("applyNativePatches") {
                 group = "native"
                 description = "Apply patches required for native build (lua + sherpa-onnx-qnn)"
                 doLast {
                     ProcessBuilder(
-                        "git", "apply",
+                        "git",
+                        "apply",
                         "--directory=$jniDir/librime-lua-deps",
                         "patches/lua.patch",
                     ).directory(rootDir).inheritIO().start().waitFor()
                     ProcessBuilder(
-                        "git", "apply",
+                        "git",
+                        "apply",
                         "--directory=$jniDir/sherpa-onnx",
                         "patches/sherpa-onnx-qnn.patch",
                     ).directory(rootDir).inheritIO().start().waitFor()
                 }
                 outputs.upToDateWhen {
-                    macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")
+                    (macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")) &&
+                        (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)"))
                 }
             }
 

@@ -5,13 +5,13 @@
 
 package com.osfans.trime.ime.clipboard
 
-import android.app.AlertDialog
 import android.content.Context
 import com.osfans.trime.R
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
+import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.util.extractAll
 import kotlin.text.Regex
 
@@ -42,15 +42,14 @@ class ClipboardExtractor(
     fun showExtractDialog(text: String) {
         val extracted = text.extractAll(extractRules)
         if (extracted.isEmpty()) {
-            val dialog = AlertDialog.Builder(context)
+            val dialog = context.buildDialog()
                 .setMessage(R.string.no_extraction_results)
                 .setPositiveButton(R.string.ok, null)
                 .create()
             service.showDialog(dialog)
             return
         }
-        val dialog = AlertDialog.Builder(context)
-            .setTitle(R.string.select_extracted_content)
+        val dialog = context.buildDialog(R.string.select_extracted_content)
             .setItems(extracted.toTypedArray()) { _, which ->
                 service.commitText(extracted[which])
                 if (clipboardReturnAfterPaste) {

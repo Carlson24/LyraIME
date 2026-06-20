@@ -21,11 +21,11 @@ fun compareVersions(a: String, b: String): Int {
 }
 
 fun readLocalWanxiangVersion(): String = try {
-    val userDataFile = File(DataManager.userDataDir, "lua/wanxiang/wanxiang.lua")
-    val sharedDataFile = File(DataManager.sharedDataDir, "lua/wanxiang/wanxiang.lua")
+    val userDataFileLua = File(DataManager.userDataDir, "lua/wanxiang/wanxiang.lua")
+    val userDataFile = File(DataManager.userDataDir, "lua/wanxiang.lua")
     val file = when {
+        userDataFileLua.exists() -> userDataFileLua
         userDataFile.exists() -> userDataFile
-        sharedDataFile.exists() -> sharedDataFile
         else -> null
     }
     if (file != null) {

@@ -11,6 +11,7 @@ import android.graphics.Typeface
 import androidx.annotation.Keep
 import com.osfans.trime.R
 import com.osfans.trime.data.base.DataManager
+import com.osfans.trime.data.clipboard.SyncClipboardPrefs
 import com.osfans.trime.data.wanxiang.DefaultExcludeRules
 import com.osfans.trime.ime.candidates.compact.CompactCandidateMode
 import com.osfans.trime.ime.candidates.popup.PopupCandidatesLayout
@@ -506,7 +507,8 @@ class AppPrefs(
 
     class Clipboard(
         shared: SharedPreferences,
-    ) : PreferenceDelegateOwner(shared, R.string.clipboard) {
+    ) : PreferenceDelegateOwner(shared, R.string.clipboard),
+        SyncClipboardPrefs {
         companion object {
             const val CLIPBOARD_LISTENING = "clipboard_listening"
             const val CLIPBOARD_LIMIT = "clipboard_clipboard_limit"
@@ -516,6 +518,14 @@ class AppPrefs(
             const val CLIPBOARD_SUGGESTION = "clipboard_suggestion"
             const val CLIPBOARD_SUGGESTION_TIMEOUT = "clipboard_suggestion_timeout"
             const val CLIPBOARD_RETURN_AFTER_PASTE = "clipboard_return_after_paste"
+            const val SYNC_CLIPBOARD_ENABLED = "sync_clipboard_enabled"
+            const val SYNC_CLIPBOARD_SERVER_BASE = "sync_clipboard_server_base"
+            const val SYNC_CLIPBOARD_USERNAME = "sync_clipboard_username"
+            const val SYNC_CLIPBOARD_PASSWORD = "sync_clipboard_password"
+            const val SYNC_CLIPBOARD_AUTO_PULL = "sync_clipboard_auto_pull"
+            const val SYNC_CLIPBOARD_PULL_INTERVAL_SEC = "sync_clipboard_pull_interval_sec"
+            const val SYNC_CLIPBOARD_LAST_UPLOADED_HASH = "sync_clipboard_last_uploaded_hash"
+            const val SYNC_CLIPBOARD_LAST_FILE_NAME = "sync_clipboard_last_file_name"
         }
         val clipboardListening = switch(R.string.clipboard_listening, CLIPBOARD_LISTENING, true)
         val clipboardLimit = int(
@@ -577,6 +587,63 @@ class AppPrefs(
             CLIPBOARD_RETURN_AFTER_PASTE,
             true,
         ) { clipboardListening.getValue() }
+
+        val syncEnabled = switch(
+            R.string.sync_clipboard_enabled,
+            SYNC_CLIPBOARD_ENABLED,
+            false,
+            R.string.sync_clipboard_enabled_summary,
+        )
+        val syncServerBase = editText(
+            R.string.sync_clipboard_server_base,
+            SYNC_CLIPBOARD_SERVER_BASE,
+            "",
+            enableUiOn = { syncEnabled.getValue() },
+        )
+        val syncUsername = editText(
+            R.string.sync_clipboard_username,
+            SYNC_CLIPBOARD_USERNAME,
+            "",
+            enableUiOn = { syncEnabled.getValue() },
+        )
+        val syncPassword = editText(
+            R.string.sync_clipboard_password,
+            SYNC_CLIPBOARD_PASSWORD,
+            "",
+            enableUiOn = { syncEnabled.getValue() },
+            password = true,
+        )
+        val syncAutoPullEnabled = switch(
+            R.string.sync_clipboard_auto_pull,
+            SYNC_CLIPBOARD_AUTO_PULL,
+            true,
+            R.string.sync_clipboard_auto_pull_summary,
+            enableUiOn = { syncEnabled.getValue() },
+        )
+        val syncPullIntervalSec = int(
+            R.string.sync_clipboard_pull_interval,
+            SYNC_CLIPBOARD_PULL_INTERVAL_SEC,
+            5,
+            1,
+            600,
+            "s",
+            enableUiOn = { syncEnabled.getValue() && syncAutoPullEnabled.getValue() },
+        )
+        val syncLastUploadedHash = string(SYNC_CLIPBOARD_LAST_UPLOADED_HASH, "")
+        val syncLastFileName = string(SYNC_CLIPBOARD_LAST_FILE_NAME, "")
+
+        override val syncClipboardEnabled: Boolean get() = syncEnabled.getValue()
+        override val syncClipboardServerBase: String get() = syncServerBase.getValue()
+        override val syncClipboardUsername: String get() = syncUsername.getValue()
+        override val syncClipboardPassword: String get() = syncPassword.getValue()
+        override val syncClipboardAutoPullEnabled: Boolean get() = syncAutoPullEnabled.getValue()
+        override val syncClipboardPullIntervalSec: Int get() = syncPullIntervalSec.getValue()
+        override var syncClipboardLastUploadedHash: String
+            get() = syncLastUploadedHash.getValue()
+            set(value) = syncLastUploadedHash.setValue(value)
+        override var syncClipboardLastFileName: String
+            get() = syncLastFileName.getValue()
+            set(value) = syncLastFileName.setValue(value)
     }
 
     class Advanced(

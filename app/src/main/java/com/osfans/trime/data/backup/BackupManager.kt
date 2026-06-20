@@ -296,6 +296,7 @@ object BackupManager {
         while (retryCount < maxRetries) {
             try {
                 val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
+                    .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
                     .build()
                 val dao = db.databaseDao()
                 val pagingSource = dao.allBeans()
@@ -336,6 +337,7 @@ object BackupManager {
         while (retryCount < maxRetries) {
             try {
                 val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
+                    .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
                     .build()
                 val dao = db.databaseDao()
 
@@ -380,6 +382,7 @@ object BackupManager {
         while (retryCount < maxRetries) {
             try {
                 val db = Room.databaseBuilder(appContext, Database::class.java, "collection.db")
+                    .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
                     .build()
                 val dao = db.databaseDao()
                 val pagingSource = dao.allBeans()
@@ -420,6 +423,7 @@ object BackupManager {
         while (retryCount < maxRetries) {
             try {
                 val db = Room.databaseBuilder(appContext, Database::class.java, "collection.db")
+                    .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
                     .build()
                 val dao = db.databaseDao()
 

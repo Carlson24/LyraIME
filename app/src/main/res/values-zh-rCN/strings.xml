@@ -169,6 +169,7 @@
     <string name="enable_schemata">启用方案</string>
     <string name="no_schema_to_select">当前没有方案可选择。请前往启用方案。</string>
     <string name="no_schema_to_enable">没有方案可启用。请确保您已在用户文件夹中放入了前置文件和方案文件。</string>
+    <string name="no_items">暂无可用选项。</string>
     <string name="schemata">方案</string>
     <string name="navbar_background">导航栏背景</string>
     <string name="no_theme_to_select">当前没有主题可选择。</string>
@@ -232,6 +233,15 @@
     <string name="restart">重启</string>
     <string name="clipboard_listening">记录剪贴板历史</string>
     <string name="clipboard_return_after_paste">粘贴后返回</string>
+    <string name="sync_clipboard">同步剪贴板</string>
+    <string name="sync_clipboard_enabled">启用剪贴板同步</string>
+    <string name="sync_clipboard_enabled_summary">与 SyncClipboard 服务器同步剪贴板文本和文件</string>
+    <string name="sync_clipboard_server_base">服务器地址</string>
+    <string name="sync_clipboard_username">用户名</string>
+    <string name="sync_clipboard_password">密码</string>
+    <string name="sync_clipboard_auto_pull">自动拉取</string>
+    <string name="sync_clipboard_auto_pull_summary">自动从服务器拉取剪贴板内容</string>
+    <string name="sync_clipboard_pull_interval">拉取间隔</string>
     <string name="source_code">源代码</string>
     <string name="git_repo">Git 仓库</string>
     <string name="light">亮色</string>
@@ -345,6 +355,7 @@
     <string name="wanxiang_hint_url">https://… 或 /storage/…</string>
     <string name="wanxiang_auth_prefix">授权: </string>
     <string name="wanxiang_confirm_execute">确认执行选中的更新操作？\n目标目录: %s</string>
+    <string name="wanxiang_will_update">将要更新：%s</string>
     <string name="wanxiang_package_dicts">词库包</string>
     <string name="wanxiang_package_model">模型</string>
     <string name="wanxiang_package_schema">方案</string>

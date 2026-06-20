@@ -10,10 +10,11 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [DatabaseBean::class], version = 4)
-@TypeConverters(DatabaseBean.Converters::class)
+@Database(entities = [DatabaseBean::class, ClipboardSyncEntity::class], version = 5)
+@TypeConverters(DatabaseBean.Converters::class, ClipboardSyncConverters::class)
 abstract class Database : RoomDatabase() {
     abstract fun databaseDao(): DatabaseDao
+    abstract fun clipboardSyncDao(): ClipboardSyncDao
 
     companion object {
         val MIGRATION_3_4 =
@@ -42,6 +43,30 @@ abstract class Database : RoomDatabase() {
                         )
                         db.execSQL("DROP TABLE _t_data")
                     }
+                }
+            }
+
+        val MIGRATION_4_5 =
+            object : Migration(4, 5) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS ${ClipboardSyncEntity.TABLE_NAME} (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            text TEXT NOT NULL DEFAULT '',
+                            ts INTEGER NOT NULL,
+                            pinned INTEGER NOT NULL,
+                            type INTEGER NOT NULL,
+                            fileName TEXT,
+                            fileSize INTEGER,
+                            mimeType TEXT,
+                            localFilePath TEXT,
+                            downloadStatus INTEGER NOT NULL,
+                            serverFileName TEXT,
+                            uuid TEXT NOT NULL
+                        )
+                        """.trimIndent(),
+                    )
                 }
             }
     }

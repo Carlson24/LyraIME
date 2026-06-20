@@ -30,6 +30,7 @@ import com.osfans.trime.data.prefs.PreferenceDelegateFragment
 import com.osfans.trime.data.prefs.PreferenceDelegateProvider
 import com.osfans.trime.data.wanxiang.DownloadManager
 import com.osfans.trime.data.wanxiang.TaskState
+import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.main.MainActivity
 import com.osfans.trime.ui.main.MainViewModel
 import com.osfans.trime.ui.main.NavigationRoute
@@ -290,9 +291,10 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         if (checkModel) names.add(getString(R.string.wanxiang_model_only))
         val name = names.joinToString(" ")
 
-        AlertDialog.Builder(requireContext())
-            .setTitle(name)
-            .setMessage(getString(R.string.wanxiang_confirm_execute, DataManager.userDataDir.absolutePath))
+        val dirPath = DataManager.userDataDir.absolutePath.removePrefix("/storage/emulated/0/")
+        requireContext().buildDialog()
+            .setTitle(getString(R.string.wanxiang_will_update, name))
+            .setMessage(getString(R.string.wanxiang_confirm_execute, dirPath))
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 lifecycleScope.launch { doExecuteSelected() }
             }
@@ -340,7 +342,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             when (result) {
                 ModelCheckResult.FETCH_FAILED -> {
                     val proceed = suspendCancellableCoroutine { cont ->
-                        AlertDialog.Builder(requireContext())
+                        requireContext().buildDialog()
                             .setMessage(R.string.wanxiang_model_check_failed)
                             .setPositiveButton(R.string.wanxiang_continue_anyway) { _, _ -> cont.resume(true) }
                             .setNegativeButton(android.R.string.cancel) { _, _ -> cont.resume(false) }
@@ -502,8 +504,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             }.also { taskContainer.addView(it) }
         }
 
-        val dialog = AlertDialog.Builder(ctx)
-            .setTitle(R.string.wanxiang_task_progress)
+        val dialog = ctx.buildDialog(R.string.wanxiang_task_progress)
             .setView(scrollView)
             .setCancelable(false)
             .setNegativeButton(android.R.string.cancel) { _, _ ->

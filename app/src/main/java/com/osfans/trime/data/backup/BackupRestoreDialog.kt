@@ -5,7 +5,6 @@
 
 package com.osfans.trime.data.backup
 
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -14,6 +13,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
+import com.osfans.trime.ui.common.buildDialog
+import com.osfans.trime.ui.common.confirmDialog
+import com.osfans.trime.ui.common.pickMultiple
 import com.osfans.trime.ui.common.withLoadingDialog
 import com.osfans.trime.util.getFileFromUri
 import com.osfans.trime.util.toast
@@ -57,17 +59,18 @@ class BackupRestoreDialog(private val fragment: Fragment) {
             )
         val checked = booleanArrayOf(true, true, true, true, true)
 
-        AlertDialog
-            .Builder(context)
-            .setTitle(R.string.select_backup_items)
-            .setMultiChoiceItems(items, checked) { _, which, isChecked ->
-                checked[which] = isChecked
-            }.setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                if (isBackupInProgress) return@setPositiveButton
-                val timestamp = System.currentTimeMillis()
-                val fileName = "trime_backup_$timestamp.json"
-                performBackup(checked[0], checked[1], checked[2], checked[3], checked[4], fileName)
+        context.buildDialog(R.string.select_backup_items)
+            .apply {
+                setMultiChoiceItems(items, checked) { _, which, isChecked ->
+                    checked[which] = isChecked
+                }
+                setNegativeButton(android.R.string.cancel, null)
+                setPositiveButton(android.R.string.ok) { _, _ ->
+                    if (isBackupInProgress) return@setPositiveButton
+                    val timestamp = System.currentTimeMillis()
+                    val fileName = "trime_backup_$timestamp.json"
+                    performBackup(checked[0], checked[1], checked[2], checked[3], checked[4], fileName)
+                }
             }.show()
     }
 
@@ -252,22 +255,23 @@ class BackupRestoreDialog(private val fragment: Fragment) {
             checked.add(true)
         }
 
-        AlertDialog
-            .Builder(context)
-            .setTitle(R.string.select_restore_items)
-            .setMultiChoiceItems(items.toTypedArray(), checked.toBooleanArray()) { _, which, isChecked ->
-                checked[which] = isChecked
-            }.setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                var idx = 0
-                performRestore(
-                    backupData,
-                    if (hasPreferences) checked[idx++] else false,
-                    if (hasClipboard) checked[idx++] else false,
-                    if (hasCollection) checked[idx++] else false,
-                    if (hasWanxiang) checked[idx++] else false,
-                    if (hasCustomTasks) checked[idx] else false,
-                )
+        context.buildDialog(R.string.select_restore_items)
+            .apply {
+                setMultiChoiceItems(items.toTypedArray(), checked.toBooleanArray()) { _, which, isChecked ->
+                    checked[which] = isChecked
+                }
+                setNegativeButton(android.R.string.cancel, null)
+                setPositiveButton(android.R.string.ok) { _, _ ->
+                    var idx = 0
+                    performRestore(
+                        backupData,
+                        if (hasPreferences) checked[idx++] else false,
+                        if (hasClipboard) checked[idx++] else false,
+                        if (hasCollection) checked[idx++] else false,
+                        if (hasWanxiang) checked[idx++] else false,
+                        if (hasCustomTasks) checked[idx] else false,
+                    )
+                }
             }.show()
     }
 
@@ -310,14 +314,12 @@ class BackupRestoreDialog(private val fragment: Fragment) {
     }
 
     private fun showRestartDialog(context: Context) {
-        AlertDialog.Builder(context)
-            .setTitle(R.string.restart_app)
-            .setMessage(R.string.restart_app_hint)
-            .setPositiveButton(R.string.restart) { _, _ ->
-                restartApp(context)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        context.confirmDialog(
+            title = R.string.restart_app,
+            message = R.string.restart_app_hint,
+            positiveText = R.string.restart,
+            onConfirm = { restartApp(context) },
+        )
     }
 
     private fun restartApp(context: Context) {

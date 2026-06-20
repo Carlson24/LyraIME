@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-SPDX-FileCopyrightText: 2024 Rime community
+SPDX-FileCopyrightText: 2015 - 2025 Rime community
 
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
@@ -11,8 +11,14 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <item name="colorPrimary">@color/text</item>
         <item name="colorPrimaryDark">@color/crust</item>
         <item name="colorAccent">@color/blue</item>
-        <item name="android:colorAccent" >@color/blue</item>
+        <item name="android:colorAccent">@color/blue</item>
     </style>
 
-    <style name="Theme.DialogTheme" parent="@android:style/Theme.DeviceDefault.Dialog" />
+    <style name="Theme.DialogTheme" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="colorPrimary">@color/blue</item>
+        <item name="colorPrimaryDark">@color/crust</item>
+        <item name="colorAccent">@color/blue</item>
+        <item name="android:colorAccent">@color/blue</item>
+        <item name="android:textColorPrimary">@color/text</item>
+    </style>
 </resources>

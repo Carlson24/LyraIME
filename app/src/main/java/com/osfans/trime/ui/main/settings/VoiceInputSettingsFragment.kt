@@ -5,6 +5,7 @@
 
 package com.osfans.trime.ui.main.settings
 
+import android.os.Bundle
 import androidx.annotation.Keep
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
@@ -37,7 +38,8 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         localVoicePref?.isEnabled = isBuiltin && !isAidlEnabled
     }
 
-    init {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         voiceInputPrefs.registerOnChangeListener(onVoiceInputChangeListener)
     }
 

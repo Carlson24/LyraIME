@@ -5,15 +5,16 @@
 
 package com.osfans.trime.link
 
-import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
+import com.osfans.trime.ui.common.buildDialog
+import com.osfans.trime.ui.common.confirmDialog
+import com.osfans.trime.ui.common.progressDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,14 +40,21 @@ class VoiceModelDownloadActivity : ComponentActivity() {
             return
         }
 
-        AlertDialog.Builder(this)
-            .setTitle(R.string.voice_model_missing_title)
+        buildDialog(R.string.voice_model_missing_title)
             .setMessage(R.string.voice_model_missing_message)
             .setPositiveButton(R.string.voice_model_download) { _, _ ->
                 startDownload()
             }
             .setNeutralButton(R.string.voice_model_select_file) { _, _ ->
-                selectFileLauncher.launch(arrayOf("application/zip", "application/x-bzip2", "application/x-tar", "application/octet-stream", "*/*"))
+                selectFileLauncher.launch(
+                    arrayOf(
+                        "application/zip",
+                        "application/x-bzip2",
+                        "application/x-tar",
+                        "application/octet-stream",
+                        "*/*",
+                    ),
+                )
             }
             .setNegativeButton(android.R.string.cancel) { _, _ ->
                 setResult(RESULT_CANCELED)
@@ -57,13 +65,10 @@ class VoiceModelDownloadActivity : ComponentActivity() {
     }
 
     private fun startDownload() {
-        val progressDialog =
-            AlertDialog.Builder(this)
-                .setTitle(R.string.voice_model_downloading)
-                .setMessage("0%")
-                .setCancelable(false)
-                .create()
-        progressDialog.show()
+        val progressDialog = progressDialog(
+            title = R.string.voice_model_downloading,
+            message = "0%",
+        ).show()
 
         lifecycleScope.launch {
             val downloadUrl = VoiceModelManager.getDownloadUrl()
@@ -77,7 +82,7 @@ class VoiceModelDownloadActivity : ComponentActivity() {
                         destFile,
                     ) { progress ->
                         runOnUiThread {
-                            progressDialog.setMessage("${(progress * 100).toInt()}%")
+                            progressDialog.text = "${(progress * 100).toInt()}%"
                         }
                     }
                 }
@@ -163,12 +168,11 @@ class VoiceModelDownloadActivity : ComponentActivity() {
         val fileType = getString(variantToStringResName(detectedVariant))
         val selectedType = getString(variantToStringResName(selectedVariant))
 
-        AlertDialog.Builder(this)
-            .setTitle(R.string.voice_model_type_mismatch_title)
-            .setMessage(getString(R.string.voice_model_type_mismatch_message, fileType, selectedType))
-            .setPositiveButton(android.R.string.ok) { _, _ -> onProceed() }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        confirmDialog(
+            title = R.string.voice_model_type_mismatch_title,
+            message = getString(R.string.voice_model_type_mismatch_message, fileType, selectedType),
+            onConfirm = onProceed,
+        )
     }
 
     private fun detectVariantFromName(name: String): VoiceModelManager.ModelVariant = when {
@@ -183,18 +187,18 @@ class VoiceModelDownloadActivity : ComponentActivity() {
         else -> R.string.voice_model_type_standard_name
     }
 
-    private fun queryDisplayName(uri: Uri): String? = contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (idx >= 0) cursor.getString(idx) else null
-        } else {
-            null
+    private fun queryDisplayName(uri: Uri): String? = contentResolver.query(uri, null, null, null, null)
+        ?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (idx >= 0) cursor.getString(idx) else null
+            } else {
+                null
+            }
         }
-    }
 
     private fun showError(message: String) {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.voice_model_missing_title)
+        buildDialog(R.string.voice_model_missing_title)
             .setMessage(message)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 finish()

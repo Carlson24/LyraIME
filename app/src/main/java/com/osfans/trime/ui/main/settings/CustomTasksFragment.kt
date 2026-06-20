@@ -24,7 +24,6 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.ColorRes
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
@@ -38,6 +37,7 @@ import com.osfans.trime.data.wanxiang.addDownloadProgressItem
 import com.osfans.trime.data.wanxiang.loadCustomTasks
 import com.osfans.trime.data.wanxiang.saveCustomTasks
 import com.osfans.trime.data.wanxiang.updateDownloadProgressItem
+import com.osfans.trime.ui.common.confirmDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -516,15 +516,14 @@ class CustomTasksFragment : Fragment() {
 
     private fun executeBatchDelete() {
         val targets = customTasks.filter { it.isSelected }
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.wanxiang_batch_delete)
-            .setMessage(getString(R.string.wanxiang_batch_delete_confirm, targets.size))
-            .setPositiveButton(android.R.string.ok) { _, _ ->
+        requireContext().confirmDialog(
+            title = R.string.wanxiang_batch_delete,
+            message = getString(R.string.wanxiang_batch_delete_confirm, targets.size),
+            onConfirm = {
                 customTasks.removeAll(targets.toSet())
                 saveAndRefresh()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            },
+        )
     }
 
     private fun executeSingleTask(task: CustomTask) {

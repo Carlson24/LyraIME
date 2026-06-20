@@ -28,7 +28,7 @@ object CollectionHelper : CoroutineScope by CoroutineScope(SupervisorJob() + Dis
         cltDb =
             Room
                 .databaseBuilder(context, Database::class.java, "collection.db")
-                .addMigrations(Database.MIGRATION_3_4)
+                .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
                 .build()
         cltDao = cltDb.databaseDao()
     }

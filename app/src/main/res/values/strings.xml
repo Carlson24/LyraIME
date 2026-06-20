@@ -170,6 +170,7 @@
     <string name="enable_schemata">Enable schemata</string>
     <string name="no_schema_to_select">Currently there is no schema to select. Please go to enable schemata from the available list.</string>
     <string name="no_schema_to_enable">No schema to enable. Make sure you have prelude and schema files in the user directory.</string>
+    <string name="no_items">No items available.</string>
     <string name="schemata">Schemata</string>
     <string name="navbar_background">Navigation bar background</string>
     <string name="no_theme_to_select">Currently there is no theme to select.</string>
@@ -233,6 +234,15 @@
     <string name="restart">Restart</string>
     <string name="clipboard_listening">Clipboard listening</string>
     <string name="clipboard_return_after_paste">Return after pasting</string>
+    <string name="sync_clipboard">Sync Clipboard</string>
+    <string name="sync_clipboard_enabled">Enable sync clipboard</string>
+    <string name="sync_clipboard_enabled_summary">Sync clipboard text and files with a SyncClipboard server</string>
+    <string name="sync_clipboard_server_base">Server URL</string>
+    <string name="sync_clipboard_username">Username</string>
+    <string name="sync_clipboard_password">Password</string>
+    <string name="sync_clipboard_auto_pull">Auto pull</string>
+    <string name="sync_clipboard_auto_pull_summary">Automatically pull clipboard content from server</string>
+    <string name="sync_clipboard_pull_interval">Pull interval</string>
     <string name="source_code">Source code</string>
     <string name="git_repo">Git repository</string>
     <string name="light">Light</string>
@@ -347,6 +357,7 @@
     <string name="wanxiang_hint_url">https://… or /storage/…</string>
     <string name="wanxiang_auth_prefix">Granted: </string>
     <string name="wanxiang_confirm_execute">Confirm to execute selected updates?\nTarget: %s</string>
+    <string name="wanxiang_will_update">Will update: %s</string>
     <string name="wanxiang_package_dicts">Dict Pack</string>
     <string name="wanxiang_package_model">Model</string>
     <string name="wanxiang_package_schema">Schema</string>

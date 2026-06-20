@@ -122,12 +122,22 @@ abstract class PreferenceDelegateUi<T : Preference>(
         val onBindEditText: ((AndroidEditText) -> Unit)? = null,
         @StringRes
         val summaryCountFormat: Int? = null,
+        val password: Boolean = false,
     ) : PreferenceDelegateUi<EditTextPreference>(key, enableUiOn) {
         override fun createUi(context: Context) = EditTextPreference(context).apply {
             key = this@EditText.key
             isIconSpaceReserved = false
             isSingleLineTitle = false
-            summaryProvider = if (this@EditText.summaryCountFormat != null) {
+            summaryProvider = if (this@EditText.password) {
+                Preference.SummaryProvider<EditTextPreference> { pref ->
+                    val text = pref.sharedPreferences?.getString(pref.key, "") ?: ""
+                    if (text.isEmpty()) {
+                        context.getString(R.string.disable)
+                    } else {
+                        "••••••••"
+                    }
+                }
+            } else if (this@EditText.summaryCountFormat != null) {
                 Preference.SummaryProvider<EditTextPreference> { pref ->
                     val text = pref.sharedPreferences?.getString(pref.key, "") ?: ""
                     val count = text.lines().count { it.isNotBlank() }

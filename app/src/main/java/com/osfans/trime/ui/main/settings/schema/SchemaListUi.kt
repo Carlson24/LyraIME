@@ -6,7 +6,6 @@
 package com.osfans.trime.ui.main.settings.schema
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +23,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.osfans.trime.R
 import com.osfans.trime.core.SchemaItem
 import com.osfans.trime.ui.common.OnItemChangedListener
+import com.osfans.trime.ui.common.buildDialog
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.resources.styledColor
@@ -94,9 +94,7 @@ class SchemaListUi(
             fab.setOnClickListener {
                 val items = source.map { it.name }.toTypedArray()
                 val checked = BooleanArray(items.size) { false }
-                AlertDialog
-                    .Builder(ctx)
-                    .setTitle(R.string.enable_schemata)
+                ctx.buildDialog(R.string.enable_schemata)
                     .setMultiChoiceItems(items, checked) { _, which, isChecked ->
                         checked[which] = isChecked
                     }

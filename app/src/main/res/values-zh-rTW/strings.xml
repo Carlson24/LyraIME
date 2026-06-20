@@ -170,6 +170,7 @@
     <string name="enable_schemata">啓用方案</string>
     <string name="no_schema_to_select">當前沒有方案可選擇。請前往啟用方案。</string>
     <string name="no_schema_to_enable">沒有方案可啟用。請確保您已在使用者資料夾中放入了前置檔案和方案檔案。</string>
+    <string name="no_items">暫無可用選項。</string>
     <string name="schemata">方案</string>
     <string name="navbar_background">導航欄背景</string>
     <string name="no_theme_to_select">當前沒有主題可選擇。</string>
@@ -233,6 +234,15 @@
     <string name="restart">重啟</string>
     <string name="clipboard_listening">監聽剪貼簿</string>
     <string name="clipboard_return_after_paste">貼上後返回</string>
+    <string name="sync_clipboard">同步剪貼簿</string>
+    <string name="sync_clipboard_enabled">啟用剪貼簿同步</string>
+    <string name="sync_clipboard_enabled_summary">與 SyncClipboard 伺服器同步剪貼簿文字和檔案</string>
+    <string name="sync_clipboard_server_base">伺服器位址</string>
+    <string name="sync_clipboard_username">使用者名稱</string>
+    <string name="sync_clipboard_password">密碼</string>
+    <string name="sync_clipboard_auto_pull">自動拉取</string>
+    <string name="sync_clipboard_auto_pull_summary">自動從伺服器拉取剪貼簿內容</string>
+    <string name="sync_clipboard_pull_interval">拉取間隔</string>
     <string name="source_code">原始碼</string>
     <string name="git_repo">Git 儲存庫</string>
     <string name="light">亮色</string>
@@ -346,6 +356,7 @@
     <string name="wanxiang_hint_url">https://… 或 /storage/…</string>
     <string name="wanxiang_auth_prefix">授權: </string>
     <string name="wanxiang_confirm_execute">確認執行選中的更新操作？\n目標目錄: %s</string>
+    <string name="wanxiang_will_update">將要更新：%s</string>
     <string name="wanxiang_package_dicts">詞庫包</string>
     <string name="wanxiang_package_model">模型</string>
     <string name="wanxiang_package_schema">方案</string>

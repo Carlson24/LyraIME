@@ -7,11 +7,7 @@ package com.osfans.trime.ui.main.settings
 
 import android.net.Uri
 import android.provider.OpenableColumns
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceScreen
@@ -19,6 +15,9 @@ import com.osfans.trime.R
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegateFragment
 import com.osfans.trime.link.VoiceModelManager
+import com.osfans.trime.ui.common.ProgressDialog
+import com.osfans.trime.ui.common.confirmDialog
+import com.osfans.trime.ui.common.progressDialog
 import com.osfans.trime.util.toast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -79,12 +78,11 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
 
     private fun maybeConfirmThenDownload() {
         if (VoiceModelManager.checkModelFiles()) {
-            AlertDialog.Builder(requireContext())
-                .setTitle(R.string.voice_model_exists_title)
-                .setMessage(R.string.voice_model_exists_re_download)
-                .setPositiveButton(android.R.string.ok) { _, _ -> startDownload() }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
+            requireContext().confirmDialog(
+                title = R.string.voice_model_exists_title,
+                message = R.string.voice_model_exists_re_download,
+                onConfirm = { startDownload() },
+            )
         } else {
             startDownload()
         }
@@ -92,36 +90,27 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
 
     private fun maybeConfirmThenImport() {
         if (VoiceModelManager.checkModelFiles()) {
-            AlertDialog.Builder(requireContext())
-                .setTitle(R.string.voice_model_exists_title)
-                .setMessage(R.string.voice_model_exists_re_import)
-                .setPositiveButton(android.R.string.ok) { _, _ ->
-                    selectFileLauncher.launch(
-                        importMimeTypes,
-                    )
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
-        } else {
-            selectFileLauncher.launch(
-                importMimeTypes,
+            requireContext().confirmDialog(
+                title = R.string.voice_model_exists_title,
+                message = R.string.voice_model_exists_re_import,
+                onConfirm = { selectFileLauncher.launch(importMimeTypes) },
             )
+        } else {
+            selectFileLauncher.launch(importMimeTypes)
         }
     }
 
     private fun startDownload() {
         downloadCancelled = false
-        val progressDialog =
-            AlertDialog.Builder(requireContext())
-                .setTitle(R.string.voice_model_downloading)
-                .setMessage("0%")
-                .setNegativeButton(android.R.string.cancel) { _, _ ->
-                    downloadCancelled = true
-                    downloadJob?.cancel()
-                }
-                .setCancelable(false)
-                .create()
-        progressDialog.show()
+        val progressDialog = requireContext().progressDialog(
+            title = R.string.voice_model_downloading,
+            message = "0%",
+            cancelable = true,
+            onCancel = {
+                downloadCancelled = true
+                downloadJob?.cancel()
+            },
+        ).show()
 
         downloadJob = lifecycleScope.launch {
             val downloadUrl = VoiceModelManager.getDownloadUrl()
@@ -137,7 +126,7 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                         { downloadCancelled },
                     ) { progress ->
                         activity.runOnUiThread {
-                            progressDialog.setMessage("${(progress * 100).toInt()}%")
+                            progressDialog.text = "${(progress * 100).toInt()}%"
                         }
                     }
                 }
@@ -195,28 +184,9 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         uri: Uri,
         displayName: String,
     ) {
-        val statusText =
-            TextView(ctx).apply {
-                setText(R.string.voice_model_importing)
-            }
-        val progressBar =
-            ProgressBar(ctx).apply {
-                isIndeterminate = true
-            }
-        val layout =
-            LinearLayout(ctx).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(72, 32, 72, 32)
-                addView(progressBar)
-                addView(statusText)
-            }
-
-        val progressDialog =
-            AlertDialog.Builder(ctx)
-                .setView(layout)
-                .setCancelable(false)
-                .create()
-        progressDialog.show()
+        val progressDialog = ctx.progressDialog(
+            message = ctx.getString(R.string.voice_model_importing),
+        ).show()
 
         lifecycleScope.launch {
             val tempName = "voice_selected_$displayName"
@@ -230,7 +200,7 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                     } ?: throw RuntimeException("Cannot open file")
                 }
 
-                statusText.setText(R.string.voice_model_verifying)
+                progressDialog.text = ctx.getString(R.string.voice_model_verifying)
                 val valid =
                     withContext(Dispatchers.IO) {
                         VoiceModelManager.verifySha256AnyVariant(tempFile)
@@ -240,7 +210,7 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                     throw SecurityException(getString(R.string.voice_model_verification_failed))
                 }
 
-                statusText.setText(R.string.voice_model_extracting)
+                progressDialog.text = ctx.getString(R.string.voice_model_extracting)
                 withContext(Dispatchers.IO) {
                     VoiceModelManager.autoExtract(tempFile, VoiceModelManager.voiceDir)
                     tempFile.delete()
@@ -272,12 +242,11 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         val fileType = ctx.getString(variantToStringResName(detectedVariant))
         val selectedType = ctx.getString(variantToStringResName(selectedVariant))
 
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.voice_model_type_mismatch_title)
-            .setMessage(ctx.getString(R.string.voice_model_type_mismatch_message, fileType, selectedType))
-            .setPositiveButton(android.R.string.ok) { _, _ -> onProceed() }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        ctx.confirmDialog(
+            title = R.string.voice_model_type_mismatch_title,
+            message = ctx.getString(R.string.voice_model_type_mismatch_message, fileType, selectedType),
+            onConfirm = onProceed,
+        )
     }
 
     private fun detectVariantFromName(name: String): VoiceModelManager.ModelVariant = when {

@@ -6,15 +6,14 @@
 package com.osfans.trime.util
 
 import android.content.Context
-import androidx.appcompat.app.AlertDialog
 import com.osfans.trime.R
+import com.osfans.trime.ui.common.buildDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 suspend fun Context.importErrorDialog(message: String) {
     withContext(Dispatchers.Main.immediate) {
-        AlertDialog.Builder(this@importErrorDialog)
-            .setTitle(R.string.import_error)
+        buildDialog(R.string.import_error)
             .setMessage(message)
             .setPositiveButton(android.R.string.ok, null)
             .setIconAttribute(android.R.attr.alertDialogIcon)

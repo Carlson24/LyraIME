@@ -12,9 +12,9 @@ import android.provider.DocumentsContract
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.SwitchPreferenceCompat
 import com.osfans.trime.R
@@ -25,6 +25,8 @@ import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegate
 import com.osfans.trime.ui.common.PaddingPreferenceFragment
+import com.osfans.trime.ui.common.buildDialog
+import com.osfans.trime.ui.common.pickMultiple
 import com.osfans.trime.ui.common.withLoadingDialog
 import com.osfans.trime.ui.main.MainViewModel
 import com.osfans.trime.util.ResourceUtils
@@ -90,6 +92,9 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
 
     private val onWebdavEnable = PreferenceDelegate.OnChangeListener<Boolean> { _, v ->
         webdavUrlPreference.isEnabled = v
+        webdavUsernamePreference.isEnabled = v
+        webdavPasswordPreference.isEnabled = v
+        webdavRemotePathPreference.isEnabled = v
         webdavTestPreference.isEnabled = v
         webdavSyncPreference.isEnabled = v
     }
@@ -109,7 +114,10 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
     private var launcherResultCallback: ((path: String) -> Unit)? = null
 
     private lateinit var editSyncTimePreference: TimePreference
-    private lateinit var webdavUrlPreference: Preference
+    private lateinit var webdavUrlPreference: EditTextPreference
+    private lateinit var webdavUsernamePreference: EditTextPreference
+    private lateinit var webdavPasswordPreference: EditTextPreference
+    private lateinit var webdavRemotePathPreference: EditTextPreference
     private lateinit var webdavTestPreference: Preference
     private lateinit var webdavSyncPreference: Preference
 
@@ -185,8 +193,7 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                                     },
                                 )
                             }
-                            AlertDialog.Builder(ctx)
-                                .setTitle(R.string.user_data_dir)
+                            ctx.buildDialog(R.string.user_data_dir)
                                 .setView(dialogContent)
                                 .setPositiveButton(android.R.string.ok) { _, _ ->
                                     prefs.userDataDir.setValue(dirNameText.text.toString())
@@ -278,16 +285,59 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                     },
                 )
                 addPreference(
-                    Preference(requireContext()).apply {
+                    EditTextPreference(ctx).apply {
                         webdavUrlPreference = this
                         key = AppPrefs.Profile.WEBDAV_URL
                         isIconSpaceReserved = false
                         setTitle(R.string.webdav_url)
-                        summary = prefs.webdavUrl.getValue().ifEmpty { getString(R.string.disable) }
+                        setDialogTitle(R.string.webdav_url)
+                        setDefaultValue("")
                         isEnabled = webdavEnabled.getValue()
-                        setOnPreferenceClickListener {
-                            showWebdavConfigDialog(ctx)
-                            true
+                        summaryProvider = Preference.SummaryProvider<EditTextPreference> {
+                            it.text?.takeIf { t -> t.isNotEmpty() } ?: getString(R.string.disable)
+                        }
+                    },
+                )
+                addPreference(
+                    EditTextPreference(ctx).apply {
+                        webdavUsernamePreference = this
+                        key = AppPrefs.Profile.WEBDAV_USERNAME
+                        isIconSpaceReserved = false
+                        setTitle(R.string.webdav_username)
+                        setDialogTitle(R.string.webdav_username)
+                        setDefaultValue("")
+                        isEnabled = webdavEnabled.getValue()
+                        summaryProvider = Preference.SummaryProvider<EditTextPreference> {
+                            it.text?.takeIf { t -> t.isNotEmpty() } ?: getString(R.string.disable)
+                        }
+                    },
+                )
+                addPreference(
+                    EditTextPreference(ctx).apply {
+                        webdavPasswordPreference = this
+                        key = AppPrefs.Profile.WEBDAV_PASSWORD
+                        isIconSpaceReserved = false
+                        setTitle(R.string.webdav_password)
+                        setDialogTitle(R.string.webdav_password)
+                        setDefaultValue("")
+                        isEnabled = webdavEnabled.getValue()
+                        summaryProvider = Preference.SummaryProvider<EditTextPreference> {
+                            it.text?.takeIf { t -> t.isNotEmpty() }
+                                ?.let { "••••••••" } ?: getString(R.string.disable)
+                        }
+                    },
+                )
+                addPreference(
+                    EditTextPreference(ctx).apply {
+                        webdavRemotePathPreference = this
+                        key = AppPrefs.Profile.WEBDAV_REMOTE_PATH
+                        isIconSpaceReserved = false
+                        setTitle(R.string.webdav_remote_path)
+                        setDialogTitle(R.string.webdav_remote_path)
+                        setDefaultValue("Rime")
+                        isEnabled = webdavEnabled.getValue()
+                        summaryProvider = Preference.SummaryProvider<EditTextPreference> {
+                            it.text?.takeIf { t -> t.isNotEmpty() } ?: getString(R.string.disable)
                         }
                     },
                 )
@@ -326,8 +376,7 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                         setSummary(R.string.webdav_sync_hint)
                         isEnabled = webdavEnabled.getValue()
                         setOnPreferenceClickListener {
-                            AlertDialog.Builder(ctx)
-                                .setTitle(R.string.webdav_sync_direction)
+                            ctx.buildDialog(R.string.webdav_sync_direction)
                                 .setItems(
                                     arrayOf(
                                         getString(R.string.webdav_push),
@@ -373,12 +422,12 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                 addPreference(R.string.reset, R.string.reset_hint) {
                     val items = ctx.assets.list("shared") ?: return@addPreference
                     val checked = BooleanArray(items.size) { false }
-                    AlertDialog
-                        .Builder(context)
-                        .setTitle(R.string.reset)
-                        .setMultiChoiceItems(items, checked) { _, id, isChecked ->
-                            checked[id] = isChecked
-                        }.setNegativeButton(android.R.string.cancel, null)
+                    ctx.pickMultiple(
+                        title = R.string.reset,
+                        items = items,
+                        checked = checked,
+                    )
+                        .setNegativeButton(android.R.string.cancel, null)
                         .setPositiveButton(android.R.string.ok) { _, _ ->
                             var res = true
                             lifecycleScope.withLoadingDialog(context) {
@@ -394,7 +443,7 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                                                     .fold({ acc and true }, { acc and false })
                                             }
                                 }
-                                ctx.toast((if (res) R.string.reset_success else R.string.reset_failure))
+                                ctx.toast(if (res) R.string.reset_success else R.string.reset_failure)
                             }
                         }.show()
                 }
@@ -417,65 +466,5 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
         prefs.periodicBackgroundSyncTime.unregisterOnChangeListener(onSyncTimeChange)
         prefs.userDataDir.unregisterOnChangeListener(onUserDataDirChange)
         prefs.webdavEnabled.unregisterOnChangeListener(onWebdavEnable)
-    }
-
-    private fun showWebdavConfigDialog(ctx: android.content.Context) {
-        val urlEdit = ctx.editText {
-            setText(prefs.webdavUrl.getValue())
-            hint = "https://example.com/remote.php/dav/files/user/"
-        }
-        val userEdit = ctx.editText {
-            setText(prefs.webdavUsername.getValue())
-            hint = getString(R.string.webdav_username)
-        }
-        val passwordEdit = ctx.editText {
-            setText(prefs.webdavPassword.getValue())
-            hint = getString(R.string.webdav_password)
-        }
-        val pathEdit = ctx.editText {
-            setText(prefs.webdavRemotePath.getValue())
-            hint = getString(R.string.webdav_remote_path)
-        }
-        val dialogContent = ctx.verticalLayout {
-            layoutParams = ViewGroup.LayoutParams(matchParent, wrapContent)
-            topPadding = dp(8)
-            add(
-                urlEdit,
-                ViewGroup.MarginLayoutParams(matchParent, wrapContent).apply {
-                    setMargins(dp(20), dp(4), dp(20), dp(4))
-                },
-            )
-            add(
-                userEdit,
-                ViewGroup.MarginLayoutParams(matchParent, wrapContent).apply {
-                    setMargins(dp(20), dp(4), dp(20), dp(4))
-                },
-            )
-            add(
-                passwordEdit,
-                ViewGroup.MarginLayoutParams(matchParent, wrapContent).apply {
-                    setMargins(dp(20), dp(4), dp(20), dp(4))
-                },
-            )
-            add(
-                pathEdit,
-                ViewGroup.MarginLayoutParams(matchParent, wrapContent).apply {
-                    setMargins(dp(20), dp(4), dp(20), dp(4))
-                },
-            )
-        }
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.webdav_sync)
-            .setView(dialogContent)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                prefs.webdavUrl.setValue(urlEdit.text.toString())
-                prefs.webdavUsername.setValue(userEdit.text.toString())
-                prefs.webdavPassword.setValue(passwordEdit.text.toString())
-                prefs.webdavRemotePath.setValue(pathEdit.text.toString())
-                webdavUrlPreference.summary =
-                    prefs.webdavUrl.getValue().ifEmpty { getString(R.string.disable) }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 }

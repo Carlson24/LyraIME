@@ -153,9 +153,10 @@ abstract class PreferenceDelegateOwner(
         onBindEditText: ((android.widget.EditText) -> Unit)? = null,
         @StringRes
         summaryCountFormat: Int? = null,
+        password: Boolean = false,
     ): PreferenceDelegate<String> {
         val pref = PreferenceDelegate(sharedPreferences, key, defaultValue)
-        val ui = PreferenceDelegateUi.EditText(title, key, defaultValue, message, enableUiOn, onBindEditText, summaryCountFormat)
+        val ui = PreferenceDelegateUi.EditText(title, key, defaultValue, message, enableUiOn, onBindEditText, summaryCountFormat, password)
         pref.register()
         ui.registerUi()
         return pref

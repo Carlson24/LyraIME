@@ -9,9 +9,9 @@ import android.content.Context
 import android.content.res.TypedArray
 import android.util.AttributeSet
 import android.widget.SeekBar
-import androidx.appcompat.app.AlertDialog
 import androidx.preference.DialogPreference
 import com.osfans.trime.R
+import com.osfans.trime.ui.common.buildDialog
 import splitties.dimensions.dp
 import splitties.resources.resolveThemeAttribute
 import splitties.views.dsl.core.add
@@ -158,8 +158,7 @@ class DialogSeekBarPreference : DialogPreference {
                 },
             )
         }
-        AlertDialog
-            .Builder(this)
+        buildDialog(null)
             .setTitle(this@DialogSeekBarPreference.title)
             .setView(dialogView)
             .setPositiveButton(android.R.string.ok) { _, _ ->

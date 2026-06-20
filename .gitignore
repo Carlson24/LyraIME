@@ -476,6 +476,7 @@ keystore.properties
 
 # Project
 app/release/output-metadata.json
+app/v*/release/output-metadata.json
 app/src/main/assets/checksums.json
 app/src/main/assets/shared/opencc
 app/src/main/assets/shared/dicts

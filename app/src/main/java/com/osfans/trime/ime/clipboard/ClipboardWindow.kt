@@ -5,7 +5,6 @@
 
 package com.osfans.trime.ime.clipboard
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Typeface
 import android.view.View
@@ -25,6 +24,7 @@ import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.segments.SegmentsWindow
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
+import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.main.ClipEditActivity
 import com.osfans.trime.util.AppUtils
 import kotlinx.coroutines.Job
@@ -219,8 +219,7 @@ class ClipboardWindow(private val initialTab: Int = 0) : BoardWindow.BarBoardWin
     }
 
     private fun promptDeleteAll(action: suspend () -> Unit) {
-        val dialog = AlertDialog.Builder(context)
-            .setTitle(R.string.delete_all)
+        val dialog = context.buildDialog(R.string.delete_all)
             .setMessage(R.string.ask_to_delete_all)
             .setPositiveButton(R.string.ok) { _, _ ->
                 service.lifecycleScope.launch {
