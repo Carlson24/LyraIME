@@ -31,6 +31,7 @@ class SegmentUi(override val ctx: Context, theme: Theme) : Ui {
             textSize = 16f
             isSingleLine = true
             typeface = FontManager.getTypeface("key_font")
+            fontFeatureSettings = FontManager.fontFeatureSettings
             setPaddingDp(8, 4, 8, 4)
             setTextColor(
                 ColorStateList(

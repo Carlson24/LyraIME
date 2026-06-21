@@ -37,6 +37,7 @@ class ClipboardBeanUi(override val ctx: Context, private val theme: Theme) : Ui 
             maxLines = 4
             textSize = 14f
             typeface = FontManager.getTypeface("key_font")
+            fontFeatureSettings = FontManager.fontFeatureSettings
             setPaddingDp(8, 4, 8, 4)
             ellipsize = TextUtils.TruncateAt.END
             setTextColor(ColorManager.getColor("key_text_color"))

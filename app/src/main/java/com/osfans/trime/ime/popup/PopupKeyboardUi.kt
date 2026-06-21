@@ -74,6 +74,7 @@ class PopupKeyboardUi(
             textSize = theme.generalStyle.popupTextSize
             setTextColor(ColorManager.getColor("popup_text_color"))
             typeface = FontManager.getTypeface("POPUP_FONT")
+            fontFeatureSettings = FontManager.fontFeatureSettings
         }
 
         val imageView = view(::AppCompatImageView) {}

@@ -190,6 +190,7 @@ class ClipboardWindow(private val initialTab: Int = 0) : BoardWindow.BarBoardWin
                     setText(label)
                     textSize = theme.generalStyle.candidateTextSize
                     setTypeface(FontManager.getTypeface("candidate_font"), Typeface.BOLD)
+                    fontFeatureSettings = FontManager.fontFeatureSettings
                     setTextColor(ColorManager.getColor("key_text_color"))
                 }
             }

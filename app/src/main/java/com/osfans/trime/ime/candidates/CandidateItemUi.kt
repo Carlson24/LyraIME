@@ -70,6 +70,7 @@ class CandidateItemUi(
             id = View.generateViewId()
             this.textSize = this@CandidateItemUi.textSize
             typeface = textFont
+            fontFeatureSettings = FontManager.fontFeatureSettings
             isSingleLine = true
             gravity = gravityCenter
             scaleMode = AutoScaleTextView.Mode.Proportional
@@ -80,6 +81,7 @@ class CandidateItemUi(
             id = View.generateViewId()
             this.textSize = commentSize
             typeface = commentFont
+            fontFeatureSettings = FontManager.fontFeatureSettings
             isSingleLine = true
             gravity = gravityCenter
             scaleMode = AutoScaleTextView.Mode.Proportional

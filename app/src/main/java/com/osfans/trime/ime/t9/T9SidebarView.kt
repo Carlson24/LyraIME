@@ -154,6 +154,7 @@ class T9SidebarView(
             textSize = sideTextSizeSp
             gravity = Gravity.CENTER
             typeface = sideTypeface
+            fontFeatureSettings = FontManager.fontFeatureSettings
             includeFontPadding = false
         }
         return FrameLayout(context).apply {
@@ -214,6 +215,7 @@ class T9SidebarView(
             textSize = sideTextSizeSp
             gravity = Gravity.CENTER
             typeface = sideTypeface
+            fontFeatureSettings = FontManager.fontFeatureSettings
             includeFontPadding = false
         }
 

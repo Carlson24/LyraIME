@@ -40,6 +40,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, keyHeigh
         gravity = gravityCenter
         setTextColor(ColorManager.getColor("popup_text_color"))
         typeface = FontManager.getTypeface("POPUP_FONT")
+        fontFeatureSettings = FontManager.fontFeatureSettings
     }
 
     val imageView = view(::AppCompatImageView) {

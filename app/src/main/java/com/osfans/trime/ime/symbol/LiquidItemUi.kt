@@ -33,6 +33,7 @@ class LiquidItemUi(
         background = null
         textSize = theme.generalStyle.keyTextSize
         typeface = FontManager.getTypeface("key_font")
+        fontFeatureSettings = FontManager.fontFeatureSettings
         setPaddingDp(8, 4, 8, 4)
         setTextColor(ColorManager.getColor("key_text_color"))
     }

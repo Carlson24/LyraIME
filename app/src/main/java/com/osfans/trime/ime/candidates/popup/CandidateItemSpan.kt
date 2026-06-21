@@ -9,6 +9,7 @@ import android.graphics.Typeface
 import android.text.TextPaint
 import android.text.style.MetricAffectingSpan
 import androidx.annotation.ColorInt
+import com.osfans.trime.data.theme.FontManager
 
 class CandidateItemSpan(
     @ColorInt
@@ -28,5 +29,6 @@ class CandidateItemSpan(
     private fun updateState(textPaint: TextPaint) {
         textPaint.textSize = textSize
         textPaint.typeface = typeface
+        textPaint.fontFeatureSettings = FontManager.fontFeatureSettings
     }
 }

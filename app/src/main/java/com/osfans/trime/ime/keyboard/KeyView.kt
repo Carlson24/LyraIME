@@ -342,6 +342,7 @@ class KeyView(
                 color = textColor
                 this.textSize = textSize
                 typeface = FontManager.getTypeface("symbol_font")
+                fontFeatureSettings = FontManager.fontFeatureSettings
             }
 
             val hasRichText = text.contains(Regex("<(/?b>|/?c(=|>)|/?s(=|>))"))
@@ -490,6 +491,7 @@ class KeyView(
     private fun Paint.copy(): Paint {
         val newPaint = Paint(this)
         newPaint.typeface = this.typeface
+        newPaint.fontFeatureSettings = this.fontFeatureSettings
         return newPaint
     }
 
@@ -538,6 +540,7 @@ class KeyView(
                 color = textColor
                 this.textSize = textSize
                 typeface = FontManager.getTypeface("key_font")
+                fontFeatureSettings = FontManager.fontFeatureSettings
                 clearShadowLayer()
             }
 

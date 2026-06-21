@@ -45,6 +45,7 @@ class LabeledCandidateItemUi(
             val v = dp(theme.window.itemPadding.vertical)
             val h = dp(theme.window.itemPadding.horizontal)
             setPadding(h, v, h, v)
+            fontFeatureSettings = FontManager.fontFeatureSettings
         }
 
     private inline fun SpannableStringBuilder.inSpanWith(

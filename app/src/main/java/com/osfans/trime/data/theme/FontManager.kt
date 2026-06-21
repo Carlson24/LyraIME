@@ -37,6 +37,9 @@ object FontManager {
         private set
     lateinit var latinFont: Typeface
         private set
+    var fontFeatureSettings: String = ""
+        private set
+
     private val typefaceCache = mutableMapOf<String, Typeface>()
     private val fontFamilyCache = mutableMapOf<String, FontFamily>()
 
@@ -44,6 +47,7 @@ object FontManager {
         typefaceCache.clear()
         fontFamilyCache.clear()
         this.theme = theme
+        fontFeatureSettings = theme.generalStyle.fontVariations.joinToString(", ")
         hanBFont = getTypefaceOrDefault(FontKey.HANB_FONT.name)
         latinFont = getTypefaceOrDefault(FontKey.LATIN_FONT.name)
     }

@@ -124,6 +124,7 @@ class ToolButton : GestureFrame {
                 label.textSize = foreground.fontSize
                 label.padding = dp(foreground.padding)
                 label.typeface = FontManager.getTypeface("toolbar_font")
+                label.fontFeatureSettings = FontManager.fontFeatureSettings
                 add(label, lParams(wrapContent, wrapContent, gravityCenter))
             }
             ContentType.LOCAL_IMAGE -> drawable?.let { image.setImageDrawable(it) }

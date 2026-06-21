@@ -42,6 +42,7 @@ class LiquidTabsUi(
             textView {
                 textSize = theme.generalStyle.candidateTextSize
                 typeface = FontManager.getTypeface("candidate_font")
+                fontFeatureSettings = FontManager.fontFeatureSettings
                 setTextColor(textColor)
             }
 
