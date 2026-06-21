@@ -10,6 +10,7 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.widget.PopupWindow
+import timber.log.Timber
 
 class TouchEventReceiverWindow(
     private val contentView: View,
@@ -38,20 +39,29 @@ class TouchEventReceiverWindow(
         h: Int,
     ) {
         isWindowShowing = true
-        if (window.isShowing) {
-            window.update(x, y, w, h)
-        } else {
-            window.width = w
-            window.height = h
-            window.showAtLocation(contentView, Gravity.TOP or Gravity.START, x, y)
+        try {
+            if (window.isShowing) {
+                window.update(x, y, w, h)
+            } else {
+                window.width = w
+                window.height = h
+                window.showAtLocation(contentView, Gravity.TOP or Gravity.START, x, y)
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "TouchEventReceiverWindow.showAt failed")
+            isWindowShowing = false
         }
     }
 
     fun show() {
-        val (x, y) = cachedLocation.also { contentView.getLocationInWindow(it) }
-        val width = contentView.width
-        val height = contentView.height
-        showAt(x, y, width, height)
+        try {
+            val (x, y) = cachedLocation.also { contentView.getLocationInWindow(it) }
+            val width = contentView.width
+            val height = contentView.height
+            showAt(x, y, width, height)
+        } catch (e: Exception) {
+            Timber.w(e, "TouchEventReceiverWindow.show failed")
+        }
     }
 
     fun dismiss() {

@@ -183,6 +183,24 @@ class Keyboard(
 
     val asciiKeyboard: String? = selfConfig?.asciiKeyboard // 英文鍵盤
 
+    fun recalculateLayout(width: Int) {
+        if (width <= 0 || mKeys.isEmpty()) return
+        val scaleX = width.toFloat() / allowedWidth.toFloat()
+        minWidth = (minWidth * scaleX).toInt()
+        var yPos = 0f
+        for (rowIdx in mKeys.map { it.row }.distinct().sorted()) {
+            val rowKeys = mKeys.filter { it.row == rowIdx }
+            var xPos = 0f
+            for (key in rowKeys) {
+                key.x = (key.x * scaleX).toInt()
+                key.y = yPos.toInt()
+                key.width = (key.width * scaleX).toInt()
+                xPos = (key.x + key.width).toFloat()
+            }
+            yPos += rowKeys.first().height
+        }
+    }
+
     fun getT9SidebarHeight(): Int {
         val spanRow = t9SidebarSpanRows
         val firstKeyInNextRow = mKeys.firstOrNull { it.row >= spanRow }

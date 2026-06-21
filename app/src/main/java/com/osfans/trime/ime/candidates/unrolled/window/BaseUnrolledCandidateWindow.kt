@@ -8,7 +8,6 @@ package com.osfans.trime.ime.candidates.unrolled.window
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
 import android.view.View
-import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.Pager
@@ -31,7 +30,10 @@ import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.kodein.di.instance
@@ -49,7 +51,7 @@ abstract class BaseUnrolledCandidateWindow :
     private val windowManager: BoardWindowManager by di.instance()
     private val compactCandidate: CompactCandidateDelegate by di.instance()
 
-    private lateinit var lifecycleCoroutineScope: LifecycleCoroutineScope
+    private lateinit var lifecycleCoroutineScope: CoroutineScope
     private lateinit var candidateLayout: UnrolledCandidateLayout
 
     protected val separatorDrawable by lazy {
@@ -99,7 +101,8 @@ abstract class BaseUnrolledCandidateWindow :
     private var candidatesSubmitJob: Job? = null
 
     override fun onAttached() {
-        lifecycleCoroutineScope = candidateLayout.findViewTreeLifecycleOwner()!!.lifecycleScope
+        lifecycleCoroutineScope = candidateLayout.findViewTreeLifecycleOwner()?.lifecycleScope
+            ?: CoroutineScope(Dispatchers.Main + SupervisorJob())
         bar.unrollButtonStateMachine.push(UnrollButtonStateMachine.TransitionEvent.UnrolledCandidatesAttached)
         offsetJob =
             lifecycleCoroutineScope.launch {

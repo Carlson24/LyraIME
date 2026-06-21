@@ -15,6 +15,7 @@ import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.util.LruCache
 import android.view.KeyEvent
 import com.mikepenz.iconics.IconicsDrawable
 import com.mikepenz.iconics.utils.sizeDp
@@ -75,9 +76,17 @@ class KeyView(
     private val symbolPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
     }
+    private val richTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.LEFT
+    }
 
-    private var cachedIcon: IconicsDrawable? = null
-    private var cachedIconName: String? = null
+    private val iconCache = object : LruCache<String, IconicsDrawable>(4) {}
+
+    private var lastRoundCorner: Float? = null
+    private var lastKeyBorder: Int? = null
+    private val richTextCache = mutableMapOf<String, List<RichTextLine>>()
+    private var cachedRichTextSymbol: String? = null
+    private var cachedRichTextSymbolResult: List<RichTextLine>? = null
 
     private val cachedLocation = intArrayOf(0, 0)
     private val cachedBounds = Rect()
@@ -219,6 +228,7 @@ class KeyView(
             } else {
                 key.onReleased()
             }
+            setLayerType(LAYER_TYPE_HARDWARE, null)
             invalidate()
         }
     }
@@ -348,8 +358,14 @@ class KeyView(
             val hasRichText = text.contains(Regex("<(/?b>|/?c(=|>)|/?s(=|>))"))
 
             if (hasRichText) {
-                // 有富文本标签，使用富文本绘制
-                val lines = parseRichText(text)
+                val lines = if (text == cachedRichTextSymbol) {
+                    cachedRichTextSymbolResult!!
+                } else {
+                    parseRichText(text).also {
+                        cachedRichTextSymbol = text
+                        cachedRichTextSymbolResult = it
+                    }
+                }
                 val (centerX, linePositions) = calculateTextPosition(lines, offsetX, offsetY, isTop, isDynamic = true)
 
                 drawRichText(canvas, lines, centerX, linePositions)
@@ -443,8 +459,6 @@ class KeyView(
             return
         }
 
-        val paint = basePaint.copy()
-
         val baseTextSize = basePaint.textSize
         val fontMetrics = basePaint.fontMetrics
         val baseAscent = fontMetrics.ascent
@@ -454,45 +468,33 @@ class KeyView(
 
         val totalWidth = line.segments.sumOf { segment ->
             val textSize = segment.scale?.let { baseTextSize * it } ?: baseTextSize
-            paint.textSize = textSize
-            paint.measureText(segment.text).toDouble()
+            richTextPaint.textSize = textSize
+            richTextPaint.measureText(segment.text).toDouble()
         }
 
-        // 重要：将 textAlign 改为 LEFT，因为我们使用绝对位置绘制
-        paint.textAlign = Paint.Align.LEFT
         var currentX = x - totalWidth.toFloat() / 2
 
         line.segments.forEach { segment ->
-            paint.color = basePaint.color
-            paint.textSize = baseTextSize
-            paint.typeface = basePaint.typeface
+            richTextPaint.color = basePaint.color
+            richTextPaint.textSize = baseTextSize
+            richTextPaint.typeface = basePaint.typeface
 
-            segment.colorKey?.let { paint.color = resolveColor(it, basePaint.color) }
+            segment.colorKey?.let { richTextPaint.color = resolveColor(it, basePaint.color) }
 
             var adjustedY = y
             segment.scale?.let { scale ->
-                paint.textSize = baseTextSize * scale
+                richTextPaint.textSize = baseTextSize * scale
                 val scaledAscent = baseAscent * scale
                 val scaledDescent = baseDescent * scale
                 adjustedY = y + (baseAscent + baseDescent - scaledAscent - scaledDescent) / 2
             }
             if (segment.bold) {
-                paint.typeface = boldTypeface
+                richTextPaint.typeface = boldTypeface
             }
 
-            canvas.drawText(segment.text, currentX, adjustedY, paint)
-            currentX += paint.measureText(segment.text)
+            canvas.drawText(segment.text, currentX, adjustedY, richTextPaint)
+            currentX += richTextPaint.measureText(segment.text)
         }
-    }
-
-    /**
-     * 复制 Paint 对象
-     */
-    private fun Paint.copy(): Paint {
-        val newPaint = Paint(this)
-        newPaint.typeface = this.typeface
-        newPaint.fontFeatureSettings = this.fontFeatureSettings
-        return newPaint
     }
 
     /**
@@ -516,8 +518,18 @@ class KeyView(
         val bg = k.getBackgroundDrawable() ?: return
 
         if (bg is GradientDrawable) {
-            (k.roundCorner ?: keyboard.roundCorner).takeIf { it > 0f }?.let { bg.cornerRadius = dp(it) }
-            (k.keyBorder ?: keyboard.keyBorder).takeIf { it > 0 }?.let { bg.setStroke(dp(it), ColorManager.getColor("key_border_color")) }
+            val rc = k.roundCorner ?: keyboard.roundCorner
+            if (rc != lastRoundCorner) {
+                lastRoundCorner = rc
+                bg.cornerRadius = dp(rc)
+            }
+            val kb = k.keyBorder ?: keyboard.keyBorder
+            if (kb != lastKeyBorder) {
+                lastKeyBorder = kb
+                if (kb > 0) {
+                    bg.setStroke(dp(kb), ColorManager.getColor("key_border_color"))
+                }
+            }
         }
 
         bg.setBounds(
@@ -565,16 +577,9 @@ class KeyView(
         val halfSize = size / 2
 
         val cmdName = iconName.toIconName()
-        val icon = if (cachedIconName == cmdName) {
-            cachedIcon!!
-        } else {
-            IconicsDrawable(context, cmdName).apply {
-                sizeDp = size
-            }.also {
-                cachedIcon = it
-                cachedIconName = cmdName
-            }
-        }
+        val icon = iconCache[cmdName] ?: IconicsDrawable(context, cmdName).apply {
+            sizeDp = size
+        }.also { iconCache.put(cmdName, it) }
 
         icon.colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
 

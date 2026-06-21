@@ -13,7 +13,10 @@ import android.widget.FrameLayout
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.data.prefs.AppPrefs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -39,7 +42,8 @@ open class GestureFrame(context: Context) : FrameLayout(context) {
     private var lastSwipeBehavior: KeyBehavior = KeyBehavior.CLICK
 
     private val lifecycleScope by lazy {
-        findViewTreeLifecycleOwner()?.lifecycleScope!!
+        findViewTreeLifecycleOwner()?.lifecycleScope
+            ?: CoroutineScope(Dispatchers.Main + SupervisorJob())
     }
 
     var onClick: (() -> Unit)? = null

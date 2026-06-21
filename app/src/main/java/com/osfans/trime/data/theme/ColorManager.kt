@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.NinePatch
 import android.graphics.Rect
@@ -18,6 +19,7 @@ import androidx.annotation.ColorInt
 import androidx.collection.LruCache
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.math.MathUtils
+import com.caverock.androidsvg.SVG
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.theme.model.ColorScheme
 import com.osfans.trime.util.ColorUtils
@@ -25,6 +27,7 @@ import com.osfans.trime.util.NinePatchBitmapFactory
 import com.osfans.trime.util.WeakHashSet
 import com.osfans.trime.util.isNightMode
 import timber.log.Timber
+import java.io.FileInputStream
 
 object ColorManager {
     private lateinit var theme: Theme
@@ -94,6 +97,7 @@ object ColorManager {
         )
 
     private var bitmapCache: LruCache<String, Bitmap>? = null
+    private var gradientDrawableCache: LruCache<Int, GradientDrawable>? = null
 
     fun interface OnColorChangeListener {
         fun onColorChange(theme: Theme)
@@ -128,6 +132,8 @@ object ColorManager {
                     value: Bitmap,
                 ): Int = value.byteCount / 1024
             }
+        gradientDrawableCache =
+            object : LruCache<Int, GradientDrawable>(32) {}
     }
 
     fun onSystemNightModeChange(isNight: Boolean) {
@@ -165,6 +171,7 @@ object ColorManager {
     /** 每次切换主题后，都要调用此函数，初始化配色 */
     fun switchTheme(theme: Theme) {
         bitmapCache?.evictAll()
+        gradientDrawableCache?.evictAll()
         this.theme = theme
         val defaultScheme = colorScheme("default") ?: theme.colorSchemes.first()
         lightModeColorScheme = defaultScheme.colors["light_scheme"]?.let { colorScheme(it) }
@@ -232,6 +239,14 @@ object ColorManager {
         if (value.isEmpty()) return null
         if (SUPPORTED_IMG_FORMATS.any { value.endsWith(it) }) {
             val path = resolveImageFilePath(value)
+            if (value.endsWith(".svg")) {
+                val bitmap =
+                    bitmapCache?.get(path)
+                        ?: loadSvgBitmap(path)?.also {
+                            bitmapCache?.put(path, it)
+                        } ?: return null
+                return bitmap.toDrawable(Resources.getSystem())
+            }
             val bitmap =
                 bitmapCache?.get(path)
                     ?: BitmapFactory.decodeFile(path)?.also {
@@ -255,7 +270,12 @@ object ColorManager {
                 } catch (_: Exception) {
                     Color.TRANSPARENT
                 }
-            return GradientDrawable().apply { setColor(color) }
+            val cached = gradientDrawableCache?.get(color)
+            return cached?.constantState?.newDrawable()
+                ?: GradientDrawable().apply {
+                    setColor(color)
+                    gradientDrawableCache?.put(color, this)
+                }
         }
     }
 
@@ -273,6 +293,23 @@ object ColorManager {
         val fallbackNoThemes = DataManager.userDataDir.resolve("backgrounds/$value")
         if (fallbackNoThemes.exists()) return fallbackNoThemes.absolutePath
         return fallbackNoThemes.absolutePath
+    }
+
+    private fun loadSvgBitmap(path: String): Bitmap? {
+        return try {
+            val svg = SVG.getFromInputStream(FileInputStream(path))
+            val docWidth = svg.documentWidth
+            val docHeight = svg.documentHeight
+            val width = if (docWidth > 0f) docWidth.toInt() else 256
+            val height = if (docHeight > 0f) docHeight.toInt() else 256
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            svg.renderToCanvas(canvas)
+            bitmap
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to load SVG: $path")
+            null
+        }
     }
 
     @ColorInt
@@ -302,5 +339,5 @@ object ColorManager {
         else -> drawable?.also { it.alpha = MathUtils.clamp(alpha, 0, 255) }
     }
 
-    private val SUPPORTED_IMG_FORMATS = arrayOf(".png", ".webp", ".jpg", ".gif")
+    private val SUPPORTED_IMG_FORMATS = arrayOf(".png", ".webp", ".jpg", ".gif", ".svg")
 }

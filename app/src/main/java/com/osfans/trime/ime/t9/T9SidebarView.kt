@@ -29,7 +29,7 @@ class T9SidebarView(
 
     private val scrollView = ScrollView(context).apply {
         isVerticalScrollBarEnabled = false
-        overScrollMode = ScrollView.OVER_SCROLL_NEVER
+        overScrollMode = OVER_SCROLL_NEVER
         clipToPadding = true
     }
 
@@ -95,9 +95,9 @@ class T9SidebarView(
 
         scrollView.addView(
             itemContainer,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT,
             ).apply {
                 gravity = Gravity.TOP
             },
@@ -105,9 +105,9 @@ class T9SidebarView(
 
         addView(
             scrollView,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT,
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT,
             ).apply {
                 gravity = Gravity.TOP
             },
@@ -168,9 +168,9 @@ class T9SidebarView(
             background = createPressStateDrawable()
             addView(
                 label,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                LayoutParams(
+                    LayoutParams.WRAP_CONTENT,
+                    LayoutParams.WRAP_CONTENT,
                 ).apply {
                     gravity = Gravity.CENTER
                 },
@@ -199,7 +199,7 @@ class T9SidebarView(
         heightMeasureSpec: Int,
     ) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val specH = View.MeasureSpec.getSize(heightMeasureSpec)
+        val specH = MeasureSpec.getSize(heightMeasureSpec)
         if (measuredHeight < specH) {
             setMeasuredDimension(measuredWidth, specH)
         }
@@ -231,9 +231,9 @@ class T9SidebarView(
 
             addView(
                 label,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                LayoutParams(
+                    LayoutParams.WRAP_CONTENT,
+                    LayoutParams.WRAP_CONTENT,
                 ).apply {
                     gravity = Gravity.CENTER
                 },

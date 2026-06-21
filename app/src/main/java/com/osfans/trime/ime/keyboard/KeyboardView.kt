@@ -63,6 +63,7 @@ class KeyboardView(
         if (keyboard.isT9Mode && t9Controller != null) {
             createT9Sidebar()
         }
+        setLayerType(LAYER_TYPE_HARDWARE, null)
     }
 
     private fun createT9Sidebar() {
@@ -149,10 +150,7 @@ class KeyboardView(
         val fullHeight = keyboard.height + paddingTop + paddingBottom
 
         val measuredWidth =
-            minOf(
-                MeasureSpec.getSize(widthMeasureSpec),
-                fullWidth,
-            )
+            minOf(MeasureSpec.getSize(widthMeasureSpec), fullWidth)
 
         measureChildren(widthMeasureSpec, heightMeasureSpec)
         setMeasuredDimension(measuredWidth, fullHeight)
@@ -164,6 +162,12 @@ class KeyboardView(
 
     fun invalidateAllKeys() {
         children.forEach { it.invalidate() }
+    }
+
+    fun invalidateKeysByIndices(indices: Set<Int>) {
+        for (idx in indices) {
+            getChildAt(idx)?.invalidate()
+        }
     }
 
     fun invalidateKeyByIndex(index: Int) {

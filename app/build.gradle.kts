@@ -202,6 +202,7 @@ dependencies {
     implementation(libs.community.material.typeface) {
         artifact { type = "aar" }
     }
+    implementation("com.caverock:androidsvg-aar:1.4")
 
     // Testing
     testImplementation(libs.kotest.runner.junit5)
