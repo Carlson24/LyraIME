@@ -21,12 +21,12 @@ import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.ime.bar.InputBarDelegate
-import com.osfans.trime.ime.t9.T9InputController
 import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
 import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
 import com.osfans.trime.ime.popup.PopupDelegate
+import com.osfans.trime.ime.t9.T9InputController
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.ResidentWindow
 import com.osfans.trime.util.isLandscape
@@ -96,7 +96,7 @@ class KeyboardWindow :
     private var lastLockKeyboardId = ""
     private val cachedKeyboards = mutableMapOf<String, Pair<Keyboard, KeyboardView>>()
     private val currentKeyboard: Keyboard? get() = cachedKeyboards[currentKeyboardId]?.first
-    private val currentKeyboardView: KeyboardView? get() = cachedKeyboards[currentKeyboardId]?.second
+    internal val currentKeyboardView: KeyboardView? get() = cachedKeyboards[currentKeyboardId]?.second
 
     private val keyboardActionListener = commonKeyboardActionListener.listener
 
@@ -162,8 +162,14 @@ class KeyboardWindow :
         KeyboardWindow.t9Controller = newT9Controller
 
         val view = currentKeyboardView ?: KeyboardView(
-            context, theme, keyboard, popup, service,
-            keyboardActionListener, enterKeyDisplay, newT9Controller,
+            context,
+            theme,
+            keyboard,
+            popup,
+            service,
+            keyboardActionListener,
+            enterKeyDisplay,
+            newT9Controller,
         )
 
         if (currentKeyboard == null) {

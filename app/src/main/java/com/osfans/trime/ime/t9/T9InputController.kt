@@ -111,8 +111,7 @@ class T9InputController(
         return false
     }
 
-    fun isSegmentKeyCode(keyEventCode: Int): Boolean =
-        keyEventCode == KeyEvent.KEYCODE_APOSTROPHE
+    fun isSegmentKeyCode(keyEventCode: Int): Boolean = keyEventCode == KeyEvent.KEYCODE_APOSTROPHE
 
     fun onSelectPinyin(
         pos: Int,

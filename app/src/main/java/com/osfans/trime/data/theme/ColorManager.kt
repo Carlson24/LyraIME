@@ -295,21 +295,19 @@ object ColorManager {
         return fallbackNoThemes.absolutePath
     }
 
-    private fun loadSvgBitmap(path: String): Bitmap? {
-        return try {
-            val svg = SVG.getFromInputStream(FileInputStream(path))
-            val docWidth = svg.documentWidth
-            val docHeight = svg.documentHeight
-            val width = if (docWidth > 0f) docWidth.toInt() else 256
-            val height = if (docHeight > 0f) docHeight.toInt() else 256
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            svg.renderToCanvas(canvas)
-            bitmap
-        } catch (e: Exception) {
-            Timber.w(e, "Failed to load SVG: $path")
-            null
-        }
+    private fun loadSvgBitmap(path: String): Bitmap? = try {
+        val svg = SVG.getFromInputStream(FileInputStream(path))
+        val docWidth = svg.documentWidth
+        val docHeight = svg.documentHeight
+        val width = if (docWidth > 0f) docWidth.toInt() else 256
+        val height = if (docHeight > 0f) docHeight.toInt() else 256
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        svg.renderToCanvas(canvas)
+        bitmap
+    } catch (e: Exception) {
+        Timber.w(e, "Failed to load SVG: $path")
+        null
     }
 
     @ColorInt

@@ -133,6 +133,7 @@
     <string name="virtual_keyboard">Virtual Keyboard</string>
     <string name="voice_input">Voice Input</string>
     <string name="theme">Keyboard Style</string>
+    <string name="floating_keyboard">Floating Keyboard</string>
     <string name="about">About</string>
     <string name="storage">Storage</string>
     <string name="maintenance">Maintenance</string>
@@ -157,6 +158,7 @@
     <string name="a_regular_expression_per_line">A regular expression per line</string>
     <string name="custom_sound_effect_enabled">Use custom key sound</string>
     <string name="enable_landscape_mode">Enable Landscape Mode</string>
+    <string name="auto_float_landscape">Auto-float in landscape</string>
     <string name="split_space_percent">Auto Split Keyboard Space Ratio</string>
     <string name="setup__step_three">Setup 3</string>
     <string name="setup__request_permission_hint">Currently LyraIME requests storage permissions to access its configuration and allow users to modify easily.</string>

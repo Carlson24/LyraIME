@@ -133,11 +133,23 @@ class AppPrefs(
             const val PID = "general__pid"
             const val PREVIOUS_KEYBOARD_IDS = "internal__previous_keyboard_ids"
             const val INITIALIZE_KEYBOARD_ID = "internal__initialize_keyboard_id"
+            const val FLOATING_KEYBOARD_WIDTH = "floating_keyboard_width"
+            const val FLOATING_KEYBOARD_HEIGHT = "floating_keyboard_height"
+            const val FLOATING_KEYBOARD_X_PORTRAIT = "floating_keyboard_x_portrait"
+            const val FLOATING_KEYBOARD_Y_PORTRAIT = "floating_keyboard_y_portrait"
+            const val FLOATING_KEYBOARD_X_LANDSCAPE = "floating_keyboard_x_landscape"
+            const val FLOATING_KEYBOARD_Y_LANDSCAPE = "floating_keyboard_y_landscape"
         }
 
         val pid = int(PID, 0)
         val previousKeyboardIds = string(PREVIOUS_KEYBOARD_IDS, "")
         val initializeKeyboardId = string(INITIALIZE_KEYBOARD_ID, "")
+        val floatingKeyboardWidth = int(FLOATING_KEYBOARD_WIDTH, 0)
+        val floatingKeyboardHeight = int(FLOATING_KEYBOARD_HEIGHT, 0)
+        val floatingKeyboardXPortrait = int(FLOATING_KEYBOARD_X_PORTRAIT, -1)
+        val floatingKeyboardYPortrait = int(FLOATING_KEYBOARD_Y_PORTRAIT, -1)
+        val floatingKeyboardXLandscape = int(FLOATING_KEYBOARD_X_LANDSCAPE, -1)
+        val floatingKeyboardYLandscape = int(FLOATING_KEYBOARD_Y_LANDSCAPE, -1)
     }
 
     class General(
@@ -279,6 +291,7 @@ class AppPrefs(
             const val MAX_SPAN_COUNT = "max_span_count"
             const val MAX_SPAN_COUNT_LANDSCAPE = "max_span_count_landscape"
             const val HORIZONTAL_CANDIDATE_MODE = "horizontal_candidate_mode"
+            const val AUTO_FLOAT_LANDSCAPE = "auto_float_landscape"
         }
 
         enum class LandscapeMode(override val stringRes: Int) : PreferenceDelegateEnum {
@@ -289,6 +302,7 @@ class AppPrefs(
         }
 
         val landscapeMode = enum(R.string.enable_landscape_mode, LANDSCAPE_MODE, LandscapeMode.NEVER)
+        val autoFloatLandscape = switch(R.string.auto_float_landscape, AUTO_FLOAT_LANDSCAPE, false)
         val splitSpacePercent = int(
             R.string.split_space_percent,
             SPLIT_SPACE_PERCENT,

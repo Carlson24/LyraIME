@@ -6,17 +6,28 @@
 package com.osfans.trime.ime.core
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
+import android.graphics.Outline
+import android.graphics.Rect
+import android.graphics.Region
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Build
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewOutlineProvider
 import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.widget.ImageView
 import androidx.annotation.RequiresApi
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
+import com.osfans.trime.R
 import com.osfans.trime.core.CompositionProto
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.daemon.RimeSession
@@ -107,6 +118,7 @@ class InputView(
     private val liquidWindow: LiquidWindow by di.instance()
 
     private val inlinePreeditMode by AppPrefs.defaultInstance().general.inlinePreeditMode
+    private val appPrefs = AppPrefs.defaultInstance()
     private val effectiveWindowMode get() = service.inputDeviceManager.effectiveWindowMode
 
     private val keyboardSidePadding = theme.generalStyle.keyboardPadding
@@ -141,11 +153,232 @@ class InputView(
             return dp(value)
         }
 
-    val keyboardView: View
+    var isFloating = false
+        private set
+
+    private val isLandscapeOrientation: Boolean
+        get() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    private val isEffectiveFloating: Boolean
+        get() = isFloating
+
+    private val internalPrefs = appPrefs.internal
+
+    private var floatingWidthPx by internalPrefs.floatingKeyboardWidth
+    private var floatingHeightPx by internalPrefs.floatingKeyboardHeight
+    private var floatingXPortrait by internalPrefs.floatingKeyboardXPortrait
+    private var floatingYPortrait by internalPrefs.floatingKeyboardYPortrait
+    private var floatingXLandscape by internalPrefs.floatingKeyboardXLandscape
+    private var floatingYLandscape by internalPrefs.floatingKeyboardYLandscape
+
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+
+    private var floatingResizeStartWidth = 0
+    private var floatingResizeStartHeight = 0
+    private var lastResizeTouchX = 0f
+    private var lastResizeTouchY = 0f
+
+    private val minFloatingWidthPx: Int
+        get() = dp(180).coerceAtMost(resources.displayMetrics.widthPixels)
+
+    private val maxFloatingWidthPx: Int
+        get() = resources.displayMetrics.widthPixels.coerceAtLeast(minFloatingWidthPx)
+
+    private val minFloatingHeightPx: Int
+        get() = dp(100).coerceAtMost(resources.displayMetrics.heightPixels)
+
+    private val maxFloatingHeightPx: Int
+        get() = (resources.displayMetrics.heightPixels - dp(80)).coerceAtLeast(minFloatingHeightPx)
+
+    private val floatingCornerRadiusPx: Int
+        get() = dp(10)
+
+    private val keyboardOutlineProvider = object : ViewOutlineProvider() {
+        override fun getOutline(view: View, outline: Outline) {
+            val width = view.width
+            val height = view.height
+            if (width <= 0 || height <= 0) return
+            val radius = if (isEffectiveFloating) floatingCornerRadiusPx.toFloat() else 0f
+            outline.setRoundRect(0, 0, width, height, radius)
+        }
+    }
+
+    private fun resolveFloatingWidth(): Int {
+        val stored = floatingWidthPx.takeIf { it > 0 } ?: run {
+            val default = (resources.displayMetrics.widthPixels * 0.8).toInt()
+            floatingWidthPx = default.coerceIn(minFloatingWidthPx, maxFloatingWidthPx)
+            floatingWidthPx
+        }
+        floatingWidthPx = stored.coerceIn(minFloatingWidthPx, maxFloatingWidthPx)
+        return floatingWidthPx
+    }
+
+    private val defaultKeyboardHeightPx: Int
+        get() {
+            val keyboard = runCatching { KeyboardWindow.currentKeyboard }.getOrNull()
+            if (keyboard != null && keyboard.height > 0) {
+                return keyboard.height
+            }
+            var h = theme.generalStyle.keyboardHeight
+            if (context.isLandscapeMode()) {
+                val land = theme.generalStyle.keyboardHeightLand
+                if (land > 0) h = land
+            }
+            return dp(h)
+        }
+
+    private fun resolveFloatingHeight(): Int {
+        val stored = floatingHeightPx.takeIf { it > 0 } ?: run {
+            floatingHeightPx = defaultKeyboardHeightPx.coerceIn(minFloatingHeightPx, maxFloatingHeightPx)
+            floatingHeightPx
+        }
+        floatingHeightPx = stored.coerceIn(minFloatingHeightPx, maxFloatingHeightPx)
+        return floatingHeightPx
+    }
+
+    private fun getStoredFloatingPosition(): Pair<Int, Int> = if (isLandscapeOrientation) {
+        floatingXLandscape to floatingYLandscape
+    } else {
+        floatingXPortrait to floatingYPortrait
+    }
+
+    private fun saveFloatingPosition(x: Int, y: Int) {
+        if (isLandscapeOrientation) {
+            floatingXLandscape = x
+            floatingYLandscape = y
+        } else {
+            floatingXPortrait = x
+            floatingYPortrait = y
+        }
+    }
+
+    val keyboardView: ConstraintLayout
+
+    private fun createHandleDrawable(radius: Float? = null): GradientDrawable {
+        val r = radius ?: dp(3).toFloat()
+        return GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setSize(dp(6), dp(6))
+            cornerRadius = r
+            setColor(0x80FFFFFF.toInt())
+        }
+    }
+
+    private val floatingRightHandle =
+        view(::View) {
+            visibility = View.GONE
+            // TODO: T9 sidebar text disappears when resizing width in floating mode,
+            //  because KeyboardWindow.refreshKeyboards() is triggered on every layout change.
+            setOnTouchListener { v, event ->
+                if (!isFloating) return@setOnTouchListener false
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        floatingResizeStartWidth = resolveFloatingWidth()
+                        lastResizeTouchX = event.rawX
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                        v.isPressed = true
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val delta = (event.rawX - lastResizeTouchX).toInt()
+                        floatingWidthPx =
+                            (floatingResizeStartWidth + delta).coerceIn(minFloatingWidthPx, maxFloatingWidthPx)
+                        applyFloatingWidth()
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                        v.isPressed = false
+                        saveFloatingPosition(
+                            keyboardView.translationX.toInt(),
+                            keyboardView.translationY.toInt(),
+                        )
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }
+
+    private val floatingBottomHandle =
+        view(::View) {
+            visibility = View.GONE
+            setOnTouchListener { v, event ->
+                if (!isEffectiveFloating) return@setOnTouchListener false
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        floatingResizeStartHeight = resolveFloatingHeight()
+                        lastResizeTouchY = event.rawY
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                        v.isPressed = true
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val delta = (event.rawY - lastResizeTouchY).toInt()
+                        floatingHeightPx =
+                            (floatingResizeStartHeight + delta).coerceIn(minFloatingHeightPx, maxFloatingHeightPx)
+            applyFloatingHeight()
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                        v.isPressed = false
+                        saveFloatingPosition(
+                            keyboardView.translationX.toInt(),
+                            keyboardView.translationY.toInt(),
+                        )
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }
+
+    private val adjustableHandle =
+        view(::View) {
+            visibility = View.GONE
+            setOnTouchListener { v, event ->
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        lastTouchX = event.rawX
+                        lastTouchY = event.rawY
+                        v.isPressed = true
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val dx = event.rawX - lastTouchX
+                        val dy = event.rawY - lastTouchY
+                        keyboardView.translationX += dx
+                        keyboardView.translationY += dy
+                        clampFloatingPosition()
+                        preedit.ui.root.translationX = keyboardView.translationX
+                        preedit.ui.root.translationY = keyboardView.translationY
+                        updateHandlePosition()
+                        lastTouchX = event.rawX
+                        lastTouchY = event.rawY
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                        v.isPressed = false
+                        saveFloatingPosition(
+                            keyboardView.translationX.toInt(),
+                            keyboardView.translationY.toInt(),
+                        )
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }
 
     init {
         // MUST call before any operation
         inputDepMgr.start()
+
+        isFloating = rime.run { getRuntimeOption("_floating_keyboard") }
 
         windowManager.cacheResidentWindow(keyboardWindow, createView = true)
         windowManager.cacheResidentWindow(liquidWindow)
@@ -156,11 +389,15 @@ class InputView(
 
         keyboardView =
             constraintLayout {
+                id = View.generateViewId()
                 isMotionEventSplittingEnabled = true
                 add(
                     keyboardBackground,
-                    lParams {
-                        centerInParent()
+                    lParams(matchParent, matchParent) {
+                        startOfParent()
+                        endOfParent()
+                        topOfParent()
+                        bottomOfParent()
                     },
                 )
                 add(
@@ -207,7 +444,15 @@ class InputView(
             service.lifecycleScope.launch {
                 keyboardWindow.currentKeyboardHeight.collect {
                     windowManager.view.updateLayoutParams {
-                        height = it
+                        height = if (isEffectiveFloating) resolveFloatingHeight() else it
+                    }
+                    if (isEffectiveFloating) {
+                        applyKeyboardViewScale()
+                    } else {
+                        keyboardWindow.currentKeyboardView?.apply {
+                            scaleY = 1f
+                            scaleX = 1f
+                        }
                     }
                 }
             }
@@ -230,15 +475,103 @@ class InputView(
             },
         )
 
+        keyboardView.clipToOutline = true
+        keyboardView.outlineProvider = keyboardOutlineProvider
+
+        add(
+            floatingRightHandle,
+            lParams(dp(10), dp(10)) {
+                startOfParent()
+                topOfParent()
+            },
+        )
+        add(
+            floatingBottomHandle,
+            lParams(dp(10), dp(10)) {
+                startOfParent()
+                topOfParent()
+            },
+        )
+        add(
+            adjustableHandle,
+            lParams(dp(24), dp(24)) {
+                startOfParent()
+                topOfParent()
+            },
+        )
+        updateFloatingHandlesVisibility()
+
         add(
             popup.root,
             lParams(matchParent, matchParent) {
                 centerInParent()
             },
         )
+
+        inputBar.view.setOnTouchListener { v, event ->
+            if (!isFloating) return@setOnTouchListener false
+            v.parent?.requestDisallowInterceptTouchEvent(true)
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    lastTouchX = event.rawX
+                    lastTouchY = event.rawY
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.rawX - lastTouchX
+                    val dy = event.rawY - lastTouchY
+                    keyboardView.translationX += dx
+                    keyboardView.translationY += dy
+                    clampFloatingPosition()
+                    preedit.ui.root.translationX = keyboardView.translationX
+                    preedit.ui.root.translationY = keyboardView.translationY
+                    updateHandlePosition()
+                    lastTouchX = event.rawX
+                    lastTouchY = event.rawY
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                    saveFloatingPosition(
+                        keyboardView.translationX.toInt(),
+                        keyboardView.translationY.toInt(),
+                    )
+                    true
+                }
+                else -> false
+            }
+        }
+
+        applyFloatingLayout()
     }
 
     private fun updateKeyboardSize() {
+        if (isEffectiveFloating) {
+            val marginPx = dp(2)
+            val bottomPx = dp(2)
+            bottomPaddingSpace.visibility = View.VISIBLE
+            bottomPaddingSpace.updateLayoutParams {
+                height = bottomPx
+            }
+            leftPaddingSpace.visibility = View.VISIBLE
+            leftPaddingSpace.updateLayoutParams {
+                width = marginPx
+            }
+            rightPaddingSpace.visibility = View.VISIBLE
+            rightPaddingSpace.updateLayoutParams {
+                width = marginPx
+            }
+            windowManager.view.updateLayoutParams<LayoutParams> {
+                startToStart = ConstraintLayout.LayoutParams.UNSET
+                endToEnd = ConstraintLayout.LayoutParams.UNSET
+                startToEndOf(leftPaddingSpace)
+                endToStartOf(rightPaddingSpace)
+            }
+            inputBar.view.setPadding(marginPx, 0, marginPx, 0)
+            return
+        }
+
+        bottomPaddingSpace.visibility = View.VISIBLE
         bottomPaddingSpace.updateLayoutParams {
             height = keyboardBottomPaddingPx
         }
@@ -335,6 +668,15 @@ class InputView(
                     updateKeyboardSize()
                     keyboardWindow.refreshKeyboards(true)
                 }
+
+                if (it.data.option == "_floating_keyboard") {
+                    val floating = rime.run { getRuntimeOption("_floating_keyboard") }
+                    if (floating != isFloating) {
+                        isFloating = floating
+                        popup.dismissAll()
+                        applyFloatingLayout()
+                    }
+                }
             }
             is RimeMessage.CompositionMessage -> {
                 val data = if (effectiveWindowMode == PopupCandidatesMode.ALWAYS_SHOW) {
@@ -378,5 +720,268 @@ class InputView(
         popup.root.removeAllViews()
         inputDepMgr.stop()
         super.onDetachedFromWindow()
+    }
+
+    private fun applyFloatingLayout() {
+        val params = keyboardView.layoutParams as ConstraintLayout.LayoutParams
+        if (isEffectiveFloating) {
+            params.width = resolveFloatingWidth()
+            params.bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+            params.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+            params.startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+            params.endToEnd = ConstraintLayout.LayoutParams.UNSET
+            keyboardView.layoutParams = params
+
+            layoutParams?.height = matchParent
+
+            applyFloatingHeight()
+
+            bottomPaddingSpace.updateLayoutParams<LayoutParams> {
+                bottomMargin = 0
+            }
+
+            val (storedX, storedY) = getStoredFloatingPosition()
+            if (storedX != -1 && storedY != -1) {
+                keyboardView.translationX = storedX.toFloat()
+                keyboardView.translationY = storedY.toFloat()
+            } else if (keyboardView.translationX == 0f && keyboardView.translationY == 0f) {
+                keyboardView.translationX = (resources.displayMetrics.widthPixels * 0.1).toFloat()
+                keyboardView.translationY = (resources.displayMetrics.heightPixels * 0.6).toFloat()
+            }
+
+            updateHandlePosition()
+            keyboardView.post {
+                clampFloatingPosition()
+                updateHandlePosition()
+            }
+
+            preedit.ui.root.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                width = 0
+                startToStart = keyboardView.id
+                endToEnd = keyboardView.id
+                bottomToTop = keyboardView.id
+                topToBottom = ConstraintLayout.LayoutParams.UNSET
+                topToTop = ConstraintLayout.LayoutParams.UNSET
+                bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+            }
+            preedit.ui.root.translationX = keyboardView.translationX
+            preedit.ui.root.translationY = keyboardView.translationY
+        } else {
+            applyDockedLayout()
+        }
+        updateKeyboardSize()
+        updateHandlePosition()
+        updateFloatingHandlesVisibility()
+        keyboardView.invalidateOutline()
+        requestLayout()
+    }
+
+    private fun applyDockedLayout() {
+        keyboardWindow.currentKeyboardView?.apply {
+            scaleY = 1f
+            scaleX = 1f
+        }
+
+        val params = keyboardView.layoutParams as ConstraintLayout.LayoutParams
+        params.matchConstraintMaxWidth = ConstraintLayout.LayoutParams.UNSET
+        params.matchConstraintMinWidth = ConstraintLayout.LayoutParams.UNSET
+        params.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+        params.topToTop = ConstraintLayout.LayoutParams.UNSET
+        params.width = matchParent
+        params.startToEnd = ConstraintLayout.LayoutParams.UNSET
+        params.endToStart = ConstraintLayout.LayoutParams.UNSET
+        params.startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+        params.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+        keyboardView.layoutParams = params
+        keyboardView.translationX = 0f
+        keyboardView.translationY = 0f
+
+        preedit.ui.root.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            width = wrapContent
+            startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+            endToEnd = ConstraintLayout.LayoutParams.UNSET
+            bottomToTop = keyboardView.id
+            topToBottom = ConstraintLayout.LayoutParams.UNSET
+            topToTop = ConstraintLayout.LayoutParams.UNSET
+            bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+        }
+        preedit.ui.root.translationX = 0f
+        preedit.ui.root.translationY = 0f
+
+        requestApplyInsets()
+
+        keyboardView.invalidateOutline()
+        requestLayout()
+    }
+
+    private fun applyFloatingWidth() {
+        keyboardView.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            width = resolveFloatingWidth()
+        }
+        keyboardView.invalidateOutline()
+        requestLayout()
+        updateHandlePosition()
+    }
+
+    private fun applyFloatingHeight() {
+        val targetHeight = resolveFloatingHeight()
+        windowManager.view.updateLayoutParams {
+            height = targetHeight
+        }
+        applyKeyboardViewScale()
+        keyboardView.invalidateOutline()
+        requestLayout()
+        updateHandlePosition()
+    }
+
+    private fun applyKeyboardViewScale() {
+        val targetHeight = resolveFloatingHeight()
+        val keyboard = runCatching { KeyboardWindow.currentKeyboard }.getOrNull()
+        val kv = keyboardWindow.currentKeyboardView
+        if (keyboard != null && kv != null && targetHeight > 0) {
+            val layoutHeight = keyboard.keyboardHeight
+            if (layoutHeight > 0) {
+                kv.scaleY = targetHeight.toFloat() / layoutHeight.toFloat()
+                kv.pivotY = 0f
+            }
+        }
+    }
+
+    private fun updateFloatingHandlesVisibility() {
+        if (isEffectiveFloating) {
+            floatingRightHandle.visibility = View.VISIBLE
+            floatingBottomHandle.visibility = View.VISIBLE
+            adjustableHandle.visibility = View.VISIBLE
+        } else {
+            floatingRightHandle.visibility = View.GONE
+            floatingBottomHandle.visibility = View.GONE
+            adjustableHandle.visibility = View.GONE
+        }
+    }
+
+    private fun updateHandlePosition() {
+        if (!isFloating) return
+
+        val kX = keyboardView.translationX
+        val kY = keyboardView.translationY
+        val kWidth = if (keyboardView.width > 0) keyboardView.width else resolveFloatingWidth()
+        val kHeight = if (keyboardView.height > 0) {
+            keyboardView.height
+        } else {
+            resolveFloatingHeight() + dp(inputBar.themedHeight) + dp(2)
+        }
+
+        val handleThickness = dp(6)
+        val handleLength = dp(48)
+        val touchPadding = dp(12)
+        val viewThickness = handleThickness + touchPadding * 2
+        val viewLength = handleLength + touchPadding * 2
+
+        floatingRightHandle.translationX = kX + kWidth - viewThickness / 2
+        floatingRightHandle.translationY = kY + (kHeight - viewLength) / 2
+        val rightDrawable = createHandleDrawable()
+        floatingRightHandle.background = InsetDrawable(
+            rightDrawable,
+            touchPadding,
+            touchPadding,
+            touchPadding,
+            touchPadding,
+        )
+        floatingRightHandle.updateLayoutParams {
+            width = viewThickness
+            height = viewLength
+        }
+
+        floatingBottomHandle.translationX = kX + (kWidth - viewLength) / 2
+        floatingBottomHandle.translationY = kY + kHeight - viewThickness / 2
+        val bottomDrawable = createHandleDrawable()
+        floatingBottomHandle.background = InsetDrawable(
+            bottomDrawable,
+            touchPadding,
+            touchPadding,
+            touchPadding,
+            touchPadding,
+        )
+        floatingBottomHandle.updateLayoutParams {
+            width = viewLength
+            height = viewThickness
+        }
+
+        val moveHandleSize = dp(24)
+        adjustableHandle.translationX = kX + (kWidth - moveHandleSize) / 2
+        adjustableHandle.translationY = kY - moveHandleSize - dp(8)
+        val moveBgDrawable = createHandleDrawable(moveHandleSize / 2f)
+        val moveIconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_move_handle_cross)?.mutate()
+        val finalDrawable = if (moveIconDrawable != null) {
+            moveIconDrawable.setTint(0x80FFFFFF.toInt())
+            val inset = dp(4)
+            val ld = LayerDrawable(arrayOf(moveBgDrawable, moveIconDrawable))
+            ld.setLayerInset(1, inset, inset, inset, inset)
+            ld
+        } else {
+            moveBgDrawable
+        }
+        adjustableHandle.background = finalDrawable
+        adjustableHandle.updateLayoutParams {
+            width = moveHandleSize
+            height = moveHandleSize
+        }
+    }
+
+    private fun clampFloatingPosition() {
+        if (!isEffectiveFloating) return
+        val containerWidth = if (width > 0) width else resources.displayMetrics.widthPixels
+        val containerHeight = if (height > 0) height else resources.displayMetrics.heightPixels
+        val keyboardWidth = if (keyboardView.width > 0) keyboardView.width else resolveFloatingWidth()
+        val keyboardHeight = if (keyboardView.height > 0) {
+            keyboardView.height
+        } else {
+            resolveFloatingHeight() + dp(inputBar.themedHeight) + dp(2) + keyboardBottomPaddingPx
+        }
+
+        val maxX = (containerWidth - keyboardWidth).coerceAtLeast(0)
+        val maxY = (containerHeight - keyboardHeight).coerceAtLeast(0)
+        val clampedX = keyboardView.translationX.coerceIn(0f, maxX.toFloat())
+        val clampedY = keyboardView.translationY.coerceIn(0f, maxY.toFloat())
+
+        if (clampedX != keyboardView.translationX || clampedY != keyboardView.translationY) {
+            keyboardView.translationX = clampedX
+            keyboardView.translationY = clampedY
+        }
+        preedit.ui.root.translationX = keyboardView.translationX
+        preedit.ui.root.translationY = keyboardView.translationY
+    }
+
+    fun getFloatingKeyboardRegion(outRegion: Region) {
+        if (!isEffectiveFloating) return
+        val rect = Rect()
+
+        keyboardView.getHitRect(rect)
+
+        if (preedit.ui.root.visibility == View.VISIBLE) {
+            val preeditRect = Rect()
+            preedit.ui.root.getHitRect(preeditRect)
+            rect.union(preeditRect)
+        }
+
+        if (floatingRightHandle.visibility == View.VISIBLE) {
+            val handleRect = Rect()
+            floatingRightHandle.getHitRect(handleRect)
+            rect.union(handleRect)
+        }
+
+        if (floatingBottomHandle.visibility == View.VISIBLE) {
+            val handleRect = Rect()
+            floatingBottomHandle.getHitRect(handleRect)
+            rect.union(handleRect)
+        }
+
+        if (adjustableHandle.visibility == View.VISIBLE) {
+            val handleRect = Rect()
+            adjustableHandle.getHitRect(handleRect)
+            rect.union(handleRect)
+        }
+
+        outRegion.set(rect)
     }
 }

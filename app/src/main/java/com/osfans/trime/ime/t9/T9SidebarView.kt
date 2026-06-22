@@ -245,16 +245,15 @@ class T9SidebarView(
         }
     }
 
-    private fun createDivider(): View =
-        View(context).apply {
-            layoutParams =
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    context.dp(1),
-                )
-            setBackgroundColor(sideSpacingColor)
-            alpha = 0.3f
-        }
+    private fun createDivider(): View = View(context).apply {
+        layoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                context.dp(1),
+            )
+        setBackgroundColor(sideSpacingColor)
+        alpha = 0.3f
+    }
 
     private fun createPressStateDrawable(): StateListDrawable {
         val pressed = GradientDrawable().apply {

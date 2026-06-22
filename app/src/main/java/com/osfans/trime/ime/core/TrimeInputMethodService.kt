@@ -11,6 +11,7 @@ import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.RectF
+import android.graphics.Region
 import android.inputmethodservice.InputMethodService
 import android.os.Build
 import android.os.Bundle
@@ -356,6 +357,10 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         if (orientationChanged) {
             inputDeviceManager.reapplyWindowMode(this)
             inputView?.updateInputBarVisibility()
+            if (prefs.keyboard.autoFloatLandscape.getValue()) {
+                val isLandscape = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
+                postRimeJob { setRuntimeOption("_floating_keyboard", isLandscape) }
+            }
         }
         lastKnownConfig.setTo(newConfig)
     }
@@ -478,6 +483,15 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private val inputViewLocation = intArrayOf(0, 0)
 
     override fun onComputeInsets(outInsets: Insets) {
+        val inputView = this.inputView
+        if (inputView?.isFloating == true) {
+            outInsets.contentTopInsets = inputView.height
+            outInsets.visibleTopInsets = inputView.height
+            outInsets.touchableInsets = Insets.TOUCHABLE_INSETS_REGION
+            inputView.getFloatingKeyboardRegion(outInsets.touchableRegion)
+            return
+        }
+
         if (inputDeviceManager.isVirtualKeyboard) {
             inputView?.keyboardView?.getLocationInWindow(inputViewLocation)
             outInsets.apply {

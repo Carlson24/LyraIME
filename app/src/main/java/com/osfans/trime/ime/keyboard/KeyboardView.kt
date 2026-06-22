@@ -81,6 +81,18 @@ class KeyboardView(
         }
     }
 
+    fun repositionT9Sidebar(availableWidth: Int) {
+        val sidebar = t9Sidebar ?: return
+        val sidebarWidth = (keyboard.minWidth * keyboard.t9SidebarWidth).toInt()
+        val isRight = keyboard.t9SidebarPosition == "right"
+        val x = if (isRight) {
+            (availableWidth - sidebarWidth).coerceAtLeast(0).toFloat()
+        } else {
+            0f
+        }
+        sidebar.translationX = x
+    }
+
     private fun createT9SidebarWithController(controller: T9InputController) {
         val sidebarWidth = (keyboard.minWidth * keyboard.t9SidebarWidth).toInt()
         val sidebarHeight = keyboard.getT9SidebarHeight()
