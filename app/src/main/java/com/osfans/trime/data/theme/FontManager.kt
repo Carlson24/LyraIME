@@ -10,6 +10,7 @@ import android.graphics.fonts.FontFamily
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.osfans.trime.data.base.DataManager
+import com.osfans.trime.util.UnicodeVariantUtils
 import timber.log.Timber
 import java.io.File
 
@@ -25,6 +26,7 @@ object FontManager {
         LABEL_FONT,
         POPUP_FONT,
         SYMBOL_FONT,
+        HINT_FONT,
         TEXT_FONT,
         LONG_TEXT_FONT,
         TOOLBAR_FONT,
@@ -47,7 +49,13 @@ object FontManager {
         typefaceCache.clear()
         fontFamilyCache.clear()
         this.theme = theme
-        fontFeatureSettings = theme.generalStyle.fontVariations.joinToString(", ")
+        fontFeatureSettings = theme.generalStyle.fontVariations
+            .filter { (key, value) -> value && key != "cpct" }
+            .keys.joinToString(", ")
+        UnicodeVariantUtils.configure(
+            variants = theme.generalStyle.displayVariants,
+            enabled = theme.generalStyle.fontVariations["cpct"] == true,
+        )
         hanBFont = getTypefaceOrDefault(FontKey.HANB_FONT.name)
         latinFont = getTypefaceOrDefault(FontKey.LATIN_FONT.name)
     }
@@ -120,6 +128,7 @@ object FontManager {
             FontKey.LABEL_FONT -> style.labelFont
             FontKey.POPUP_FONT -> style.popupFont
             FontKey.SYMBOL_FONT -> style.symbolFont
+            FontKey.HINT_FONT -> style.hintFont
             FontKey.TEXT_FONT -> style.textFont
             FontKey.TOOLBAR_FONT -> theme.toolBar.buttonFont
             FontKey.T9_SIDE_TEXT_FONT -> style.t9SideTextFont

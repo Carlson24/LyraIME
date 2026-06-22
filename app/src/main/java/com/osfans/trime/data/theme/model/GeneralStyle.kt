@@ -12,6 +12,7 @@ import com.osfans.trime.util.yaml.enum
 import com.osfans.trime.util.yaml.float
 import com.osfans.trime.util.yaml.get
 import com.osfans.trime.util.yaml.int
+import com.osfans.trime.util.yaml.mapping
 import com.osfans.trime.util.yaml.sequence
 import com.osfans.trime.util.yaml.string
 import kotlinx.parcelize.Parcelize
@@ -69,6 +70,8 @@ data class GeneralStyle(
     val shadowRadius: Float,
     val symbolFont: List<String>,
     val symbolTextSize: Float,
+    val hintFont: List<String>,
+    val hintTextSize: Float,
     val textFont: List<String>,
     val verticalGap: Int,
     val backgroundFolder: String,
@@ -77,7 +80,8 @@ data class GeneralStyle(
     val t9SideTextFont: List<String>,
     val t9SideTextSize: Float,
     val t9SideRoundCorner: Float,
-    val fontVariations: List<String>,
+    val fontVariations: Map<String, Boolean>,
+    val displayVariants: Map<String, String>,
 ) : Parcelable {
     enum class CommentPosition {
         RIGHT,
@@ -168,6 +172,9 @@ data class GeneralStyle(
             symbolFont = node["symbol_font"]?.sequence
                 ?.mapNotNull(Node::string) ?: emptyList(),
             symbolTextSize = node["symbol_text_size"]?.float ?: 0f,
+            hintFont = node["hint_font"]?.sequence
+                ?.mapNotNull(Node::string) ?: emptyList(),
+            hintTextSize = node["hint_text_size"]?.float ?: 0f,
             textFont = node["text_font"]?.sequence
                 ?.mapNotNull(Node::string) ?: emptyList(),
             verticalGap = node["vertical_gap"]?.int ?: 0,
@@ -178,8 +185,12 @@ data class GeneralStyle(
                 ?.mapNotNull(Node::string) ?: emptyList(),
             t9SideTextSize = node["t9_side_text_size"]?.float ?: -1f,
             t9SideRoundCorner = node["t9_side_round_corner"]?.float ?: -1f,
-            fontVariations = node["font_variations"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
+            fontVariations = node["font_variations"]?.mapping?.entries?.associate {
+                it.key.string!! to (it.value.boolean ?: false)
+            } ?: emptyMap(),
+            displayVariants = node["display_variants"]?.mapping?.entries?.associate {
+                it.key.string!! to it.value.string!!
+            } ?: emptyMap(),
         )
     }
 }

@@ -15,6 +15,7 @@ import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.keyboard.Keyboard
+import com.osfans.trime.util.UnicodeVariantUtils
 import com.osfans.trime.util.sp
 import splitties.dimensions.dp
 
@@ -105,13 +106,17 @@ class T9SidebarView(
 
         addView(
             scrollView,
-            LayoutParams(
-                LayoutParams.MATCH_PARENT,
-                LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
             ).apply {
                 gravity = Gravity.TOP
             },
         )
+
+        if (defaultSymbols.isNotEmpty()) {
+            showDefaultSymbols()
+        }
     }
 
     fun updateItems(items: List<T9InputController.PinYinToken>) {
@@ -149,7 +154,7 @@ class T9SidebarView(
 
     private fun createSymbolItemView(symbol: String, itemHeight: Int): View {
         val label = TextView(context).apply {
-            text = symbol
+            text = UnicodeVariantUtils.toDisplay(symbol)
             setTextColor(sideTextColor)
             textSize = sideTextSizeSp
             gravity = Gravity.CENTER
@@ -210,7 +215,7 @@ class T9SidebarView(
         itemHeight: Int,
     ): View {
         val label = TextView(context).apply {
-            text = token.display
+            text = UnicodeVariantUtils.toDisplay(token.display)
             setTextColor(sideTextColor)
             textSize = sideTextSizeSp
             gravity = Gravity.CENTER

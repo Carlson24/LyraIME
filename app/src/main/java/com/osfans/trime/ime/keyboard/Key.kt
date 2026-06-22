@@ -55,8 +55,10 @@ class Key(
 
     val keyTextSize: Float = selfConfig?.keyTextSize ?: 0f
     val symbolTextSize: Float = selfConfig?.symbolTextSize ?: 0f
+    val hintTextSize: Float = selfConfig?.hintTextSize ?: 0f
     val roundCorner: Float? = selfConfig?.roundCorner?.takeIf { it >= 0 }
     val keyBorder: Int? = selfConfig?.keyBorder?.takeIf { it >= 0 }
+    val keyBorderColor: String? = selfConfig?.keyBorderColor?.takeIf { it.isNotEmpty() }
     var keyTextOffsetX = 0f
         get() = field + keyOffsetX
     var keyTextOffsetY = 0f
@@ -283,6 +285,15 @@ class Key(
         2 -> if (isPressed) hlOnKeySymbolColor else onKeySymbolColor
         1 -> if (isPressed) hlOffKeySymbolColor else offKeySymbolColor
         else -> if (isPressed) hlKeySymbolColor else keySymbolColor
+    }
+
+    fun getKeyBorderColor(): Int {
+        val perKey = keyBorderColor
+        return if (perKey != null) {
+            runCatching { ColorManager.getColor(perKey) }.getOrDefault(ColorManager.getColor("key_border_color"))
+        } else {
+            ColorManager.getColor("key_border_color")
+        }
     }
 }
 

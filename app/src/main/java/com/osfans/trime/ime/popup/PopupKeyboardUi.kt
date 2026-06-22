@@ -22,6 +22,7 @@ import com.osfans.trime.ime.core.AutoScaleTextView
 import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.keyboard.isIconFont
 import com.osfans.trime.ime.keyboard.toIconName
+import com.osfans.trime.util.UnicodeVariantUtils
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.add
@@ -205,7 +206,7 @@ class PopupKeyboardUi(
                 }
             }
 
-        PopupKeyUi(ctx, theme, displayLabel)
+        PopupKeyUi(ctx, theme, UnicodeVariantUtils.toDisplay(displayLabel))
     }
 
     init {

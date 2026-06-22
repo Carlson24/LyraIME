@@ -318,7 +318,7 @@ class InputView(
                         val delta = (event.rawY - lastResizeTouchY).toInt()
                         floatingHeightPx =
                             (floatingResizeStartHeight + delta).coerceIn(minFloatingHeightPx, maxFloatingHeightPx)
-            applyFloatingHeight()
+                        applyFloatingHeight()
                         true
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -676,6 +676,7 @@ class InputView(
                         popup.dismissAll()
                         applyFloatingLayout()
                     }
+                    keyboardWindow.currentKeyboardView?.invalidateAllKeys()
                 }
             }
             is RimeMessage.CompositionMessage -> {

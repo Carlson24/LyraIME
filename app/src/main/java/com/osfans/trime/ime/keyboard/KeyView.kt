@@ -27,6 +27,7 @@ import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.popup.PopupAction
 import com.osfans.trime.ime.popup.PopupDelegate
 import com.osfans.trime.link.AsrkbVoiceHoldSessionController
+import com.osfans.trime.util.UnicodeVariantUtils
 import com.osfans.trime.util.sp
 import splitties.dimensions.dp
 import timber.log.Timber
@@ -82,8 +83,6 @@ class KeyView(
 
     private val iconCache = object : LruCache<String, IconicsDrawable>(4) {}
 
-    private var lastRoundCorner: Float? = null
-    private var lastKeyBorder: Int? = null
     private val richTextCache = mutableMapOf<String, List<RichTextLine>>()
     private var cachedRichTextSymbol: String? = null
     private var cachedRichTextSymbolResult: List<RichTextLine>? = null
@@ -341,7 +340,14 @@ class KeyView(
         if (!isTop && !showHint) return
 
         val textColor = key.getSymbolColor()
-        val textSize = sp(key.symbolTextSize.takeIf { it > 0f } ?: keyboardView.symbolTextSize)
+        val textSize = sp(
+            if (isTop) {
+                key.symbolTextSize.takeIf { it > 0f } ?: keyboardView.symbolTextSize
+            } else {
+                key.hintTextSize.takeIf { it > 0f } ?: keyboardView.hintTextSize
+            },
+        )
+        val fontKey = if (isTop) "symbol_font" else "hint_font"
         val offsetX = if (isTop) key.keySymbolOffsetX else key.keyHintOffsetX
         val offsetY = if (isTop) key.keySymbolOffsetY else key.keyHintOffsetY
 
@@ -351,7 +357,7 @@ class KeyView(
             symbolPaint.apply {
                 color = textColor
                 this.textSize = textSize
-                typeface = FontManager.getTypeface("symbol_font")
+                typeface = FontManager.getTypeface(fontKey)
                 fontFeatureSettings = FontManager.fontFeatureSettings
             }
 
@@ -376,7 +382,7 @@ class KeyView(
 
                 for (i in lines.indices) {
                     val (lineY, _) = linePositions[i]
-                    canvas.drawText(lines[i], centerX, lineY, symbolPaint)
+                    canvas.drawText(UnicodeVariantUtils.toDisplay(lines[i]), centerX, lineY, symbolPaint)
                 }
             }
         }
@@ -455,7 +461,7 @@ class KeyView(
     private fun drawRichTextLine(canvas: Canvas, line: RichTextLine, x: Float, y: Float, basePaint: Paint) {
         if (line.segments.isEmpty()) {
             // 没有样式，直接绘制
-            canvas.drawText(line.text, x, y, basePaint)
+            canvas.drawText(UnicodeVariantUtils.toDisplay(line.text), x, y, basePaint)
             return
         }
 
@@ -463,8 +469,8 @@ class KeyView(
         val fontMetrics = basePaint.fontMetrics
         val baseAscent = fontMetrics.ascent
         val baseDescent = fontMetrics.descent
-        val symbolTypeface = FontManager.getTypeface("symbol_font")
-        val boldTypeface = Typeface.create(symbolTypeface, Typeface.BOLD)
+        val baseTypeface = basePaint.typeface ?: Typeface.DEFAULT
+        val boldTypeface = Typeface.create(baseTypeface, Typeface.BOLD)
 
         val totalWidth = line.segments.sumOf { segment ->
             val textSize = segment.scale?.let { baseTextSize * it } ?: baseTextSize
@@ -492,7 +498,7 @@ class KeyView(
                 richTextPaint.typeface = boldTypeface
             }
 
-            canvas.drawText(segment.text, currentX, adjustedY, richTextPaint)
+            canvas.drawText(UnicodeVariantUtils.toDisplay(segment.text), currentX, adjustedY, richTextPaint)
             currentX += richTextPaint.measureText(segment.text)
         }
     }
@@ -518,18 +524,8 @@ class KeyView(
         val bg = k.getBackgroundDrawable() ?: return
 
         if (bg is GradientDrawable) {
-            val rc = k.roundCorner ?: keyboard.roundCorner
-            if (rc != lastRoundCorner) {
-                lastRoundCorner = rc
-                bg.cornerRadius = dp(rc)
-            }
-            val kb = k.keyBorder ?: keyboard.keyBorder
-            if (kb != lastKeyBorder) {
-                lastKeyBorder = kb
-                if (kb > 0) {
-                    bg.setStroke(dp(kb), ColorManager.getColor("key_border_color"))
-                }
-            }
+            (k.roundCorner ?: keyboard.roundCorner).takeIf { it > 0f }?.let { bg.cornerRadius = dp(it) }
+            (k.keyBorder ?: keyboard.keyBorder).takeIf { it > 0 }?.let { bg.setStroke(dp(it), k.getKeyBorderColor()) }
         }
 
         bg.setBounds(
@@ -561,7 +557,7 @@ class KeyView(
             val fontMetrics = textPaint.fontMetrics
             val adjustmentY = -(fontMetrics.ascent + fontMetrics.descent) / 2f
 
-            canvas.drawText(label, centerX + sp(key.keyTextOffsetX), centerY + adjustmentY + sp(key.keyTextOffsetY), textPaint)
+            canvas.drawText(UnicodeVariantUtils.toDisplay(label), centerX + sp(key.keyTextOffsetX), centerY + adjustmentY + sp(key.keyTextOffsetY), textPaint)
         }
     }
 
