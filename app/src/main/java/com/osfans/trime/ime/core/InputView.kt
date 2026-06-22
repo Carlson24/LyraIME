@@ -16,6 +16,7 @@ import android.graphics.drawable.LayerDrawable
 import android.os.Build
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
@@ -318,7 +319,7 @@ class InputView(
                         val delta = (event.rawY - lastResizeTouchY).toInt()
                         floatingHeightPx =
                             (floatingResizeStartHeight + delta).coerceIn(minFloatingHeightPx, maxFloatingHeightPx)
-                        applyFloatingHeight()
+            applyFloatingHeight()
                         true
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -771,6 +772,9 @@ class InputView(
             applyDockedLayout()
         }
         updateKeyboardSize()
+        if (!isEffectiveFloating) {
+            requestApplyInsets()
+        }
         updateHandlePosition()
         updateFloatingHandlesVisibility()
         keyboardView.invalidateOutline()
@@ -809,10 +813,7 @@ class InputView(
         preedit.ui.root.translationX = 0f
         preedit.ui.root.translationY = 0f
 
-        requestApplyInsets()
-
         keyboardView.invalidateOutline()
-        requestLayout()
     }
 
     private fun applyFloatingWidth() {

@@ -313,6 +313,7 @@ class KeyboardWindow :
                     }
                     return@execute
                 }
+                cachedKeyboards.remove(target)
             }
             // 保存上一个键盘ID，用于来源键盘回退（如果不是返回类操作且不是重新弹出则记录）
             if (to.isNotEmpty() && to !in setOf(".previous", ".last_lock")) {
