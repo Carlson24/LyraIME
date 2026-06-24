@@ -69,6 +69,8 @@ data class TextKeyboard(
     val t9SidebarSpanRows: Int,
     val t9SidebarShowItems: Int,
     val t9SidebarSymbols: List<String>,
+    val sanpinMode: Boolean,
+    val sanpinOriginal: String,
     val rows: List<KeyboardRow>,
 ) : Parcelable {
     enum class LabelTransform {
@@ -106,6 +108,7 @@ data class TextKeyboard(
         val hlKeyBackColor: String,
         val hlKeySymbolColor: String,
         val popup: List<String> = emptyList(),
+        val sanpin: String,
         val behaviors: Map<KeyBehavior, String>,
     ) : Parcelable {
         companion object {
@@ -147,6 +150,7 @@ data class TextKeyboard(
                     hlKeyBackColor = node["hilited_key_back_color"]?.string ?: "",
                     hlKeySymbolColor = node["hilited_key_symbol_color"]?.string ?: "",
                     popup = node["popup"]?.sequence?.mapNotNull(Node::string) ?: emptyList(),
+                    sanpin = node["sanpin"]?.string ?: "",
                     behaviors =
                     buildMap {
                         KeyBehavior.entries.forEach { entry ->
@@ -195,6 +199,8 @@ data class TextKeyboard(
             t9SidebarSpanRows = node["t9_sidebar_span_rows"]?.int ?: 3,
             t9SidebarShowItems = node["t9_sidebar_show_items"]?.int ?: 4,
             t9SidebarSymbols = node["t9_sidebar_symbols"]?.sequence?.mapNotNull(Node::string) ?: emptyList(),
+            sanpinMode = node["sanpin_mode"]?.boolean ?: false,
+            sanpinOriginal = node["sanpin_original"]?.string ?: "",
             rows = node["rows"]?.sequence?.mapNotNull {
                 KeyboardRow.decode(it.mapping!!)
             } ?: emptyList(),

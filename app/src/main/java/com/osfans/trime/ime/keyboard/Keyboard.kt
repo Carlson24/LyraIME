@@ -162,6 +162,8 @@ class Keyboard(
         }
     val isLock = selfConfig?.lock ?: false // 切換程序時記憶鍵盤
     val isT9Mode: Boolean = selfConfig?.t9Mode ?: false
+    val isSanpinMode: Boolean = selfConfig?.sanpinMode ?: false
+    val sanpinOriginal: String = selfConfig?.sanpinOriginal?.takeIf { it.isNotEmpty() } ?: ".default"
     val t9SidebarWidth: Float = selfConfig?.t9SidebarWidth ?: 0.15f
     val t9SidebarPosition: String = selfConfig?.t9SidebarPosition ?: "left"
     val t9SidebarSpanRows: Int = selfConfig?.t9SidebarSpanRows ?: 3

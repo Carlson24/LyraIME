@@ -26,6 +26,7 @@ import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
 import com.osfans.trime.ime.popup.PopupDelegate
+import com.osfans.trime.ime.sanpin.SanpinController
 import com.osfans.trime.ime.t9.T9InputController
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.ResidentWindow
@@ -78,9 +79,12 @@ class KeyboardWindow :
         lateinit var currentKeyboard: Keyboard
         var t9Controller: T9InputController? = null
             private set
+        var sanpinController: SanpinController? = null
+            private set
     }
 
     private var t9Controller: T9InputController? = null
+    private var sanpinController: SanpinController? = null
 
     override val key: ResidentWindow.Key
         get() = KeyboardWindow
@@ -160,6 +164,22 @@ class KeyboardWindow :
                 null
             }
         KeyboardWindow.t9Controller = newT9Controller
+
+        val newSanpinController =
+            if (keyboard.isSanpinMode) {
+                sanpinController?.destroy()
+                sanpinController?.clear()
+                SanpinController(rime) { switchKeyboard(it) }.also {
+                    it.originalKeyboard = keyboard.sanpinOriginal
+                    sanpinController = it
+                }
+            } else {
+                sanpinController?.destroy()
+                sanpinController?.clear()
+                sanpinController = null
+                null
+            }
+        KeyboardWindow.sanpinController = newSanpinController
 
         val view = currentKeyboardView ?: KeyboardView(
             context,
@@ -310,6 +330,14 @@ class KeyboardWindow :
                 if (target == currentKeyboardId) {
                     if (currentKeyboard?.isT9Mode == true) {
                         refreshT9SidebarForReopen()
+                    }
+                    if (currentKeyboard?.isSanpinMode == true) {
+                        sanpinController?.destroy()
+                        sanpinController?.clear()
+                        val newController = SanpinController(rime) { switchKeyboard(it) }
+                        newController.originalKeyboard = currentKeyboard!!.sanpinOriginal
+                        sanpinController = newController
+                        KeyboardWindow.sanpinController = newController
                     }
                     return@execute
                 }
@@ -463,6 +491,12 @@ class KeyboardWindow :
             t9Controller = newController
             KeyboardWindow.t9Controller = newController
             currentKeyboardView?.updateT9Controller(newController)
+        }
+        if (sanpinController == null && currentKeyboard?.isSanpinMode == true) {
+            val newController = SanpinController(rime) { switchKeyboard(it) }
+            newController.originalKeyboard = currentKeyboard!!.sanpinOriginal
+            sanpinController = newController
+            KeyboardWindow.sanpinController = newController
         }
     }
 

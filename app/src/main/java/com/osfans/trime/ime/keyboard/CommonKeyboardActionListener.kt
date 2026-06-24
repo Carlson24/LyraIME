@@ -136,7 +136,7 @@ class CommonKeyboardActionListener {
                 }
             }
 
-            override fun onAction(action: KeyAction) {
+            override fun onAction(action: KeyAction, key: Key?) {
                 val shouldHandle = when {
                     action.commit.isNotEmpty() -> {
                         service.commitText(action.commit)
@@ -162,6 +162,21 @@ class CommonKeyboardActionListener {
                         KeyEvent.KEYCODE_MENU -> showEnabledSchemaPicker()
                         KeyEvent.KEYCODE_VOICE_ASSIST -> switchToVoiceInputMethod()
                         else -> handleDefaultKeyAction(action)
+                    }
+                }
+
+                val currentKeyboard = KeyboardWindow.currentKeyboard
+                if (currentKeyboard.isSanpinMode) {
+                    val sc = KeyboardWindow.sanpinController ?: return
+                    key?.sanpinTarget?.let { target ->
+                        when (target) {
+                            ".original" -> sc.clear()
+                            else -> sc.push(target)
+                        }
+                    } ?: run {
+                        if (!sc.isEmpty) {
+                            sc.clear()
+                        }
                     }
                 }
             }
@@ -211,6 +226,14 @@ class CommonKeyboardActionListener {
                     "select_candidate" -> handleSelectCandidate(arg)
                     "t9_clear" -> {
                         KeyboardWindow.t9Controller?.clear()
+                        rime.launchOnReady { api ->
+                            service.lifecycleScope.launch {
+                                api.clearComposition()
+                            }
+                        }
+                    }
+                    "sanpin_clear" -> {
+                        KeyboardWindow.sanpinController?.clear()
                         rime.launchOnReady { api ->
                             service.lifecycleScope.launch {
                                 api.clearComposition()
@@ -388,6 +411,15 @@ class CommonKeyboardActionListener {
                             if (t9c.onSegmentKey()) {
                                 return
                             }
+                        }
+                    }
+                }
+
+                val sanpinC = KeyboardWindow.sanpinController
+                if (sanpinC != null && KeyboardWindow.currentKeyboard.isSanpinMode) {
+                    if (keyEventCode == KeyEvent.KEYCODE_DEL && !sanpinC.isEmpty) {
+                        sanpinC.pop()?.let { prevKb ->
+                            keyboardWindow.switchKeyboard(prevKb)
                         }
                     }
                 }

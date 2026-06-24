@@ -23,7 +23,7 @@ interface KeyboardActionListener {
      */
     fun onRelease(keyEventCode: Int)
 
-    fun onAction(action: KeyAction)
+    fun onAction(action: KeyAction, key: Key? = null)
 
     /**
      * Send a key press to the listener.

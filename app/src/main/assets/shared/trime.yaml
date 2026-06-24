@@ -965,6 +965,9 @@ preset_keys:
   T9_segment: {label: 分词, send: "'"}
   T9_clear: {command: t9_clear}
   Keyboard_t9: {label: "T9", send: Eisu_toggle, select: t9}
+  # 三拼键盘
+  Sanpin_clear: {label: 清空, command: sanpin_clear}
+  Keyboard_sanpin: {label: "三拼", send: Eisu_toggle, select: sanpin}
 
 preset_keyboards:
   default:
@@ -1790,6 +1793,95 @@ preset_keyboards:
           - {click: '8', label: TUV, popup: ["t","u","v"]}
           - {click: '9', label: WXYZ, popup: ["w","x","y","z"]}
           - {click: Keyboard_symbols, width: 0.15}
+      - keys:
+          - {click: Keyboard_default, width: 0.2}
+          - {click: Mode_switch, width: 0.2}
+          - {click: space, width: 0.2}
+          - {click: ',', width: 0.2}
+          - {click: Return, width: 0.2}
+  sanpin:
+    name: 三拼
+    author: "LyraIME"
+    ascii_mode: 0
+    lock: true
+    sanpin_mode: true
+    sanpin_original: "default"
+    reset_ascii_mode: false
+    rows:
+      - keys:
+          - {click: q, sanpin: lssp1_dtyb1}
+          - {click: w, sanpin: lssp1_erk1}
+          - {click: e, sanpin: lssp1_bvf1}
+          - {click: r, sanpin: lssp1_tmq1}
+          - {click: t, sanpin: lssp1_yup1}
+          - {click: y, sanpin: lssp1_shn1}
+          - {click: u, sanpin: lssp1_qcz1}
+          - {click: i, sanpin: lssp1_hxk1}
+          - {click: o, sanpin: lssp1_gna1}
+          - {click: p, sanpin: lssp1_lfp1}
+      - keys:
+          - {click: a, sanpin: lssp1_jsz1}
+          - {click: s, sanpin: lssp1_dtyb2}
+          - {click: d, sanpin: lssp1_erk2}
+          - {click: f, sanpin: lssp1_bvf2}
+          - {click: g, sanpin: lssp1_tmq2}
+          - {click: h, sanpin: lssp1_yup2}
+          - {click: j, sanpin: lssp1_shn2}
+          - {click: k, sanpin: lssp1_qcz2}
+          - {click: l, sanpin: lssp1_hxk2}
+      - keys:
+          - {click: z, sanpin: lssp1_gna2}
+          - {click: x, sanpin: lssp1_lfp2}
+          - {click: c, sanpin: lssp1_jsz2}
+          - {click: v, sanpin: lssp1_dtyb3}
+          - {click: b, sanpin: lssp1_erk3}
+          - {click: n, sanpin: lssp1_bvf3}
+          - {click: m, sanpin: lssp1_tmq3}
+          - {click: BackSpace}
+          - {click: Sanpin_clear}
+      - keys:
+          - {click: Keyboard_default, width: 0.2}
+          - {click: Mode_switch, width: 0.2}
+          - {click: space, width: 0.2}
+          - {click: ',', width: 0.2}
+          - {click: Return, width: 0.2}
+  # 三拼第二码键盘 (示例，可大量复用)
+  lssp1_dtyb1:
+    name: 三拼-dtyb1
+    ascii_mode: 0
+    sanpin_mode: true
+    rows:
+      - keys:
+          - {click: q, sanpin: .original}
+          - {click: w, sanpin: .original}
+          - {click: e, sanpin: .original}
+          - {click: r, sanpin: .original}
+          - {click: t, sanpin: .original}
+          - {click: y, sanpin: .original}
+          - {click: u, sanpin: .original}
+          - {click: i, sanpin: .original}
+          - {click: o, sanpin: .original}
+          - {click: p, sanpin: .original}
+      - keys:
+          - {click: a, sanpin: .original}
+          - {click: s, sanpin: .original}
+          - {click: d, sanpin: .original}
+          - {click: f, sanpin: .original}
+          - {click: g, sanpin: .original}
+          - {click: h, sanpin: .original}
+          - {click: j, sanpin: .original}
+          - {click: k, sanpin: .original}
+          - {click: l, sanpin: .original}
+      - keys:
+          - {click: z, sanpin: .original}
+          - {click: x, sanpin: .original}
+          - {click: c, sanpin: .original}
+          - {click: v, sanpin: .original}
+          - {click: b, sanpin: .original}
+          - {click: n, sanpin: .original}
+          - {click: m, sanpin: .original}
+          - {click: BackSpace}
+          - {click: Sanpin_clear}
       - keys:
           - {click: Keyboard_default, width: 0.2}
           - {click: Mode_switch, width: 0.2}

@@ -86,6 +86,8 @@ class KeyView(
     private val richTextCache = mutableMapOf<String, List<RichTextLine>>()
     private var cachedRichTextSymbol: String? = null
     private var cachedRichTextSymbolResult: List<RichTextLine>? = null
+    private var cachedRichTextLabel: String? = null
+    private var cachedRichTextLabelResult: List<RichTextLine>? = null
 
     private val cachedLocation = intArrayOf(0, 0)
     private val cachedBounds = Rect()
@@ -246,7 +248,7 @@ class KeyView(
             return
         }
 
-        keyboardActionListener.onAction(action)
+        keyboardActionListener.onAction(action, key)
 
         val hookArrow = if (hookShiftArrow) {
             when (action.code) {
@@ -372,13 +374,15 @@ class KeyView(
                         cachedRichTextSymbolResult = it
                     }
                 }
-                val (centerX, linePositions) = calculateTextPosition(lines, offsetX, offsetY, isTop, isDynamic = true)
+                val mode = if (isTop) PositionMode.TOP else PositionMode.BOTTOM
+                val (centerX, linePositions) = calculateTextPosition(lines, offsetX, offsetY, mode, symbolPaint.fontMetrics, isDynamic = true)
 
                 drawRichText(canvas, lines, centerX, linePositions)
             } else {
                 // 没有富文本标签，使用原版绘制逻辑
                 val lines = text.split("\n")
-                val (centerX, linePositions) = calculateTextPosition(lines, offsetX, offsetY, isTop)
+                val mode = if (isTop) PositionMode.TOP else PositionMode.BOTTOM
+                val (centerX, linePositions) = calculateTextPosition(lines, offsetX, offsetY, mode, symbolPaint.fontMetrics)
 
                 for (i in lines.indices) {
                     val (lineY, _) = linePositions[i]
@@ -391,25 +395,30 @@ class KeyView(
     /**
      * 计算文本绘制位置
      * @param lines 文本行列表
+     * @param fontMetrics 使用的字体度量
      * @param isDynamic 是否使用动态行高（默认false）
      */
     private fun calculateTextPosition(
         lines: List<*>,
         offsetX: Float,
         offsetY: Float,
-        isTop: Boolean,
+        mode: PositionMode,
+        fontMetrics: Paint.FontMetrics,
         isDynamic: Boolean = false,
     ): Pair<Float, List<Pair<Float, Float>>> {
-        val fontMetrics = symbolPaint.fontMetrics
         val baseLineHeight = fontMetrics.descent - fontMetrics.ascent
 
         val totalHeight: Float
         val linePositions = mutableListOf<Pair<Float, Float>>()
 
-        var currentY = if (isTop) {
-            paddingTop - fontMetrics.top + sp(offsetY)
-        } else {
-            height - paddingBottom - fontMetrics.bottom + sp(offsetY)
+        var currentY = when (mode) {
+            PositionMode.TOP -> paddingTop - fontMetrics.top + sp(offsetY)
+            PositionMode.BOTTOM -> height - paddingBottom - fontMetrics.bottom + sp(offsetY)
+            PositionMode.CENTER -> {
+                val centerY = (height - paddingTop - paddingBottom) / 2f + paddingTop
+                val adjustmentY = -(fontMetrics.ascent + fontMetrics.descent) / 2f
+                centerY + adjustmentY + sp(offsetY)
+            }
         }
 
         if (isDynamic) {
@@ -446,12 +455,12 @@ class KeyView(
     /**
      * 绘制富文本到 canvas
      */
-    private fun drawRichText(canvas: Canvas, lines: List<RichTextLine>, x: Float, linePositions: List<Pair<Float, Float>>) {
-        symbolPaint.textAlign = Paint.Align.CENTER
+    private fun drawRichText(canvas: Canvas, lines: List<RichTextLine>, x: Float, linePositions: List<Pair<Float, Float>>, paint: Paint = symbolPaint) {
+        paint.textAlign = Paint.Align.CENTER
 
         lines.forEachIndexed { index, line ->
             val (lineY, _) = linePositions[index]
-            drawRichTextLine(canvas, line, x, lineY, symbolPaint)
+            drawRichTextLine(canvas, line, x, lineY, paint)
         }
     }
 
@@ -543,21 +552,61 @@ class KeyView(
 
         if (label.isIconFont) {
             drawIcon(canvas, label, textSize.toInt(), textColor, key.keyTextOffsetX, key.keyTextOffsetY)
-        } else {
-            textPaint.apply {
-                color = textColor
-                this.textSize = textSize
-                typeface = FontManager.getTypeface("key_font")
-                fontFeatureSettings = FontManager.fontFeatureSettings
-                clearShadowLayer()
-            }
+            return
+        }
 
+        textPaint.apply {
+            color = textColor
+            this.textSize = textSize
+            typeface = FontManager.getTypeface("key_font")
+            fontFeatureSettings = FontManager.fontFeatureSettings
+            clearShadowLayer()
+        }
+
+        val hasNewline = '\n' in label
+        val hasRichText = label.contains(Regex("<(/?b>|/?c(=|>)|/?s(=|>))"))
+
+        val offsetX = key.keyTextOffsetX
+        val offsetY = key.keyTextOffsetY
+
+        if (hasRichText) {
+            val lines = if (label == cachedRichTextLabel) {
+                cachedRichTextLabelResult!!
+            } else {
+                parseRichText(label).also {
+                    cachedRichTextLabel = label
+                    cachedRichTextLabelResult = it
+                }
+            }
+            val (centerX, linePositions) = calculateTextPosition(
+                lines,
+                offsetX,
+                offsetY,
+                PositionMode.CENTER,
+                textPaint.fontMetrics,
+                isDynamic = true,
+            )
+            drawRichText(canvas, lines, centerX, linePositions, textPaint)
+        } else if (hasNewline) {
+            val lines = label.split("\n")
+            val (centerX, linePositions) = calculateTextPosition(
+                lines,
+                offsetX,
+                offsetY,
+                PositionMode.CENTER,
+                textPaint.fontMetrics,
+            )
+            for (i in lines.indices) {
+                val (lineY, _) = linePositions[i]
+                canvas.drawText(UnicodeVariantUtils.toDisplay(lines[i]), centerX, lineY, textPaint)
+            }
+        } else {
             val centerX = (width - paddingLeft - paddingRight) / 2f + paddingLeft
             val centerY = (height - paddingTop - paddingBottom) / 2f + paddingTop
             val fontMetrics = textPaint.fontMetrics
             val adjustmentY = -(fontMetrics.ascent + fontMetrics.descent) / 2f
 
-            canvas.drawText(UnicodeVariantUtils.toDisplay(label), centerX + sp(key.keyTextOffsetX), centerY + adjustmentY + sp(key.keyTextOffsetY), textPaint)
+            canvas.drawText(UnicodeVariantUtils.toDisplay(label), centerX + sp(offsetX), centerY + adjustmentY + sp(offsetY), textPaint)
         }
     }
 
@@ -757,3 +806,5 @@ private data class RichTextLine(
     val segments: List<StyledSegment>, // 样式分段
     val maxScale: Float = 1.0f, // 该行最大字体缩放比例（用于计算行高）
 )
+
+private enum class PositionMode { TOP, CENTER, BOTTOM }
