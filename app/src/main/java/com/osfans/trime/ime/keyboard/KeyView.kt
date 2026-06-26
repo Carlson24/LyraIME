@@ -484,6 +484,7 @@ class KeyView(
         val totalWidth = line.segments.sumOf { segment ->
             val textSize = segment.scale?.let { baseTextSize * it } ?: baseTextSize
             richTextPaint.textSize = textSize
+            richTextPaint.typeface = if (segment.bold) boldTypeface else baseTypeface
             richTextPaint.measureText(segment.text).toDouble()
         }
 

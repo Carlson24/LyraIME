@@ -37,8 +37,10 @@ object DownloadManager {
         val tmpFile = File(stagingDir, "${task.url.substringAfterLast("/")}.tmp")
 
         try {
-            val downloadOnProgress: (Float) -> Unit = { progress ->
+            val downloadOnProgress: (Float, Long, Long) -> Unit = { progress, downloaded, total ->
                 task.progress = progress
+                task.downloadedBytes = downloaded
+                task.totalBytes = total
                 when {
                     task.url.startsWith("/") || task.url.startsWith("file://") || task.url.startsWith("content://") -> {
                         task.status = if (progress < 0f) {

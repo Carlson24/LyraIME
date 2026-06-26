@@ -16,6 +16,8 @@ data class TaskState(
     val expectedSha256: String? = null,
     val needsDecompress: Boolean = true,
     var progress: Float = 0f,
+    var downloadedBytes: Long = 0L,
+    var totalBytes: Long = 0L,
     var status: String = "",
     var isFinished: Boolean = false,
     var isError: Boolean = false,

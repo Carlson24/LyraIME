@@ -51,7 +51,7 @@ class Key(
     private val label = selfConfig?.label ?: ""
     private val labelSymbol = selfConfig?.labelSymbol ?: ""
     val hint: String = selfConfig?.hint ?: ""
-    val sanpinTarget: String? = selfConfig?.sanpin?.takeIf { it.isNotEmpty() }
+    val dynamicTarget: String? = selfConfig?.dynamic?.takeIf { it.isNotEmpty() }
     val popup = selfConfig?.popup ?: emptyList()
 
     val keyTextSize: Float = selfConfig?.keyTextSize ?: 0f

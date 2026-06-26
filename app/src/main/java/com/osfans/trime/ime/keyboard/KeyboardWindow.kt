@@ -24,9 +24,9 @@ import com.osfans.trime.ime.bar.InputBarDelegate
 import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
 import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
 import com.osfans.trime.ime.core.TrimeInputMethodService
+import com.osfans.trime.ime.dynamic.DynamicController
 import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
 import com.osfans.trime.ime.popup.PopupDelegate
-import com.osfans.trime.ime.sanpin.SanpinController
 import com.osfans.trime.ime.t9.T9InputController
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.ResidentWindow
@@ -79,12 +79,12 @@ class KeyboardWindow :
         lateinit var currentKeyboard: Keyboard
         var t9Controller: T9InputController? = null
             private set
-        var sanpinController: SanpinController? = null
+        var dynamicController: DynamicController? = null
             private set
     }
 
     private var t9Controller: T9InputController? = null
-    private var sanpinController: SanpinController? = null
+    private var dynamicController: DynamicController? = null
 
     override val key: ResidentWindow.Key
         get() = KeyboardWindow
@@ -165,21 +165,27 @@ class KeyboardWindow :
             }
         KeyboardWindow.t9Controller = newT9Controller
 
-        val newSanpinController =
-            if (keyboard.isSanpinMode) {
-                sanpinController?.destroy()
-                sanpinController?.clear()
-                SanpinController(rime) { switchKeyboard(it) }.also {
-                    it.originalKeyboard = keyboard.sanpinOriginal
-                    sanpinController = it
+        val newDynamicController =
+            if (keyboard.isDynamicMode) {
+                if (dynamicController == null) {
+                    DynamicController(rime) { switchKeyboard(it) }.also {
+                        it.originalKeyboard = keyboard.dynamicOriginal
+                        dynamicController = it
+                        Timber.d("dynamic controller created: original=${it.originalKeyboard}")
+                    }
+                } else {
+                    dynamicController!!.originalKeyboard = keyboard.dynamicOriginal
+                    Timber.d("dynamic controller reused: original=${dynamicController!!.originalKeyboard}")
+                    dynamicController
                 }
             } else {
-                sanpinController?.destroy()
-                sanpinController?.clear()
-                sanpinController = null
+                if (dynamicController?.isEmpty != false) {
+                    dynamicController?.destroy()
+                    dynamicController = null
+                }
                 null
             }
-        KeyboardWindow.sanpinController = newSanpinController
+        KeyboardWindow.dynamicController = newDynamicController
 
         val view = currentKeyboardView ?: KeyboardView(
             context,
@@ -331,13 +337,11 @@ class KeyboardWindow :
                     if (currentKeyboard?.isT9Mode == true) {
                         refreshT9SidebarForReopen()
                     }
-                    if (currentKeyboard?.isSanpinMode == true) {
-                        sanpinController?.destroy()
-                        sanpinController?.clear()
-                        val newController = SanpinController(rime) { switchKeyboard(it) }
-                        newController.originalKeyboard = currentKeyboard!!.sanpinOriginal
-                        sanpinController = newController
-                        KeyboardWindow.sanpinController = newController
+                    if (currentKeyboard?.isDynamicMode == true && dynamicController == null) {
+                        val newController = DynamicController(rime) { switchKeyboard(it) }
+                        newController.originalKeyboard = currentKeyboard!!.dynamicOriginal
+                        dynamicController = newController
+                        KeyboardWindow.dynamicController = newController
                     }
                     return@execute
                 }
@@ -492,17 +496,19 @@ class KeyboardWindow :
             KeyboardWindow.t9Controller = newController
             currentKeyboardView?.updateT9Controller(newController)
         }
-        if (sanpinController == null && currentKeyboard?.isSanpinMode == true) {
-            val newController = SanpinController(rime) { switchKeyboard(it) }
-            newController.originalKeyboard = currentKeyboard!!.sanpinOriginal
-            sanpinController = newController
-            KeyboardWindow.sanpinController = newController
+        if (dynamicController == null && currentKeyboard?.isDynamicMode == true) {
+            val newController = DynamicController(rime) { switchKeyboard(it) }
+            newController.originalKeyboard = currentKeyboard!!.dynamicOriginal
+            dynamicController = newController
+            KeyboardWindow.dynamicController = newController
+            Timber.d("dynamic controller recreated in onAttached: original=${newController.originalKeyboard}")
         }
     }
 
     override fun onDetached() {
         expandKeypressAreaPref.unregisterOnChangeListener(onExpandKeypressAreaChangeListener)
         inputBarDelegate.navBar.detach()
+        dynamicController?.reset()
         currentKeyboardView?.onDetach()
     }
 }

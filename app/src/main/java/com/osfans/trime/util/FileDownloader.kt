@@ -40,7 +40,7 @@ object FileDownloader {
         token: String = "",
         expectedSha256: String? = null,
         contentResolver: ContentResolver? = null,
-        onProgress: ((Float) -> Unit)? = null,
+        onProgress: ((Float, Long, Long) -> Unit)? = null,
         isCancelled: () -> Boolean = { false },
     ) {
         val isLocalFile = url.startsWith("/") ||
@@ -119,7 +119,7 @@ object FileDownloader {
         url: String,
         tmpFile: File,
         token: String,
-        onProgress: ((Float) -> Unit)?,
+        onProgress: ((Float, Long, Long) -> Unit)?,
         isCancelled: () -> Boolean,
     ): Boolean {
         val finalUrlStr = resolveRedirects(url, token)
@@ -168,7 +168,7 @@ object FileDownloader {
         urlStr: String,
         token: String,
         totalSize: Long,
-        onProgress: ((Float) -> Unit)?,
+        onProgress: ((Float, Long, Long) -> Unit)?,
         isCancelled: () -> Boolean,
     ) {
         val threadCount = 3
@@ -198,7 +198,7 @@ object FileDownloader {
                                         }
                                         output.write(buf, 0, count)
                                         downloadedLen.addAndGet(count.toLong())
-                                        onProgress?.invoke(downloadedLen.get().toFloat() / totalSize.toFloat())
+                                        onProgress?.invoke(downloadedLen.get().toFloat() / totalSize.toFloat(), downloadedLen.get(), totalSize)
                                     }
                                 }
                             }
@@ -226,7 +226,7 @@ object FileDownloader {
         tmpFile: File,
         urlStr: String,
         token: String,
-        onProgress: ((Float) -> Unit)?,
+        onProgress: ((Float, Long, Long) -> Unit)?,
         isCancelled: () -> Boolean,
     ) {
         val request = buildRequest(urlStr, token).get().build()
@@ -245,9 +245,9 @@ object FileDownloader {
                         downloaded += count
                         output.write(buf, 0, count)
                         if (fallbackSize > 0) {
-                            onProgress?.invoke(downloaded.toFloat() / fallbackSize)
+                            onProgress?.invoke(downloaded.toFloat() / fallbackSize, downloaded, fallbackSize)
                         } else {
-                            onProgress?.invoke(-1f)
+                            onProgress?.invoke(-1f, downloaded, -1L)
                         }
                     }
                 }

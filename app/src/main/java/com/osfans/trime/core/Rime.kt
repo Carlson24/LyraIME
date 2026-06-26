@@ -515,12 +515,14 @@ class Rime :
             messageFlow_.tryEmit(message)
         }
 
-        private fun registerRimeMessageHandler(handler: (RimeMessage<*>) -> Unit) {
+        @JvmStatic
+        fun registerRimeMessageHandler(handler: (RimeMessage<*>) -> Unit) {
             if (rimeMessageHandlers.contains(handler)) return
             rimeMessageHandlers.add(handler)
         }
 
-        private fun unregisterRimeMessageHandler(handler: (RimeMessage<*>) -> Unit) {
+        @JvmStatic
+        fun unregisterRimeMessageHandler(handler: (RimeMessage<*>) -> Unit) {
             rimeMessageHandlers.remove(handler)
         }
     }

@@ -125,11 +125,18 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                         url = downloadUrl,
                         destFile = destFile,
                         expectedSha256 = VoiceModelManager.getExpectedSha256(),
-                        onProgress = { progress ->
-                            if (progress >= 0f) {
-                                activity.runOnUiThread {
-                                    progressDialog.text = "${(progress * 100).toInt()}%"
-                                }
+                        onProgress = { progress, downloaded, total ->
+                            val pct = (progress * 100).toInt()
+                            val status = if (progress >= 0f && total > 0) {
+                                "$pct% - ${formatBytes(downloaded)}/${formatBytes(total)}"
+                            } else if (progress >= 0f) {
+                                "$pct%"
+                            } else {
+                                "…"
+                            }
+                            activity.runOnUiThread {
+                                progressDialog.text = status
+                                progressDialog.progress = if (progress < 0) -1 else pct.coerceIn(0, 100)
                             }
                         },
                         isCancelled = { downloadCancelled },
@@ -263,5 +270,11 @@ class LocalVoiceSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         } else {
             null
         }
+    }
+
+    private fun formatBytes(bytes: Long): String = when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024}KB"
+        else -> String.format("%.1fM", bytes / (1024.0 * 1024.0))
     }
 }

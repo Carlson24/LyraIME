@@ -12,6 +12,7 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -515,13 +516,24 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             TaskState(title, url, expectedSha256 = expectedShas[fName])
         }
 
-        val progressViews = tasks.map { task ->
-            TextView(ctx).apply {
+        val progressViews = mutableListOf<TextView>()
+        val progressBars = mutableListOf<ProgressBar>()
+
+        for (task in tasks) {
+            val tv = TextView(ctx).apply {
                 text = task.title
-                setPadding(0, 8.dp(), 0, 8.dp())
+                setPadding(0, 8.dp(), 0, 4.dp())
                 textSize = 14f
                 typeface = Typeface.DEFAULT_BOLD
-            }.also { taskContainer.addView(it) }
+            }
+            taskContainer.addView(tv)
+            progressViews.add(tv)
+
+            val bar = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply {
+                max = 100
+            }
+            taskContainer.addView(bar)
+            progressBars.add(bar)
         }
 
         val dialog = ctx.buildDialog(R.string.wanxiang_task_progress)
@@ -556,16 +568,24 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                         isDict = task.url.contains("dicts"),
                         onProgress = { t ->
                             lifecycleScope.launch(Dispatchers.Main) {
-                                val status = if (t.progress >= 0f) {
-                                    getString(R.string.wanxiang_dl_progress_status, (t.progress * 100).toInt(), t.status)
-                                } else {
-                                    t.status.ifEmpty { "…" }
+                                val status = when {
+                                    t.isFinished || t.isError -> t.status
+                                    t.progress >= 0f && t.totalBytes > 0 ->
+                                        "${(t.progress * 100).toInt()}% - ${formatBytes(t.downloadedBytes)}/${formatBytes(t.totalBytes)}"
+                                    t.progress >= 0f -> "${(t.progress * 100).toInt()}%"
+                                    else -> t.status.ifEmpty { "…" }
                                 }
                                 progressViews[i].text = getString(
                                     R.string.wanxiang_dl_progress_line,
                                     task.title,
                                     status,
                                 )
+                                if (t.progress < 0) {
+                                    progressBars[i].isIndeterminate = true
+                                } else {
+                                    progressBars[i].isIndeterminate = false
+                                    progressBars[i].progress = (t.progress * 100).toInt().coerceIn(0, 100)
+                                }
                             }
                         },
                         isCancelled = { downloadJob?.isActive != true },
@@ -605,5 +625,11 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 }
             }
         }
+    }
+
+    private fun formatBytes(bytes: Long): String = when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024}KB"
+        else -> String.format("%.1fM", bytes / (1024.0 * 1024.0))
     }
 }

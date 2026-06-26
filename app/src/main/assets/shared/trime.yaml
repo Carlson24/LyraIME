@@ -965,9 +965,9 @@ preset_keys:
   T9_segment: {label: 分词, send: "'"}
   T9_clear: {command: t9_clear}
   Keyboard_t9: {label: "T9", send: Eisu_toggle, select: t9}
-  # 三拼键盘
-  Sanpin_clear: {label: 清空, command: sanpin_clear}
-  Keyboard_sanpin: {label: "三拼", send: Eisu_toggle, select: sanpin}
+  # 动态键盘
+  Dynamic_clear: {label: 清空, command: dynamic_clear}
+  Keyboard_dynamic: {label: "动态", send: Eisu_toggle, select: dynamic}
 
 preset_keyboards:
   default:
@@ -1022,7 +1022,7 @@ preset_keyboards:
           - {click: '/', long_click: '?'}
       - keys:
           - {click: Shift_L}
-          - {click: Keyboard_symbols, long_click: Keyboard_number, swipe_up: Keyboard_t9}
+          - {click: Keyboard_symbols, long_click: Keyboard_number, swipe_up: Keyboard_t9, swipe_down: Keyboard_dynamic}
           - {click: Mode_switch, long_click: Menu}
           - {click: space, width: 0.3}
           - {click: "'", long_click: '"'}
@@ -1799,89 +1799,89 @@ preset_keyboards:
           - {click: space, width: 0.2}
           - {click: ',', width: 0.2}
           - {click: Return, width: 0.2}
-  sanpin:
-    name: 三拼
+  dynamic:
+    name: 动态
     author: "LyraIME"
     ascii_mode: 0
     lock: true
-    sanpin_mode: true
-    sanpin_original: "default"
+    dynamic_mode: true
+    dynamic_original: "default"
     reset_ascii_mode: false
     rows:
       - keys:
-          - {click: q, sanpin: lssp1_dtyb1}
-          - {click: w, sanpin: lssp1_erk1}
-          - {click: e, sanpin: lssp1_bvf1}
-          - {click: r, sanpin: lssp1_tmq1}
-          - {click: t, sanpin: lssp1_yup1}
-          - {click: y, sanpin: lssp1_shn1}
-          - {click: u, sanpin: lssp1_qcz1}
-          - {click: i, sanpin: lssp1_hxk1}
-          - {click: o, sanpin: lssp1_gna1}
-          - {click: p, sanpin: lssp1_lfp1}
+          - {click: q, dynamic: lssp1_dtyb1}
+          - {click: w, dynamic: lssp1_erk1}
+          - {click: e, dynamic: lssp1_bvf1}
+          - {click: r, dynamic: lssp1_tmq1}
+          - {click: t, dynamic: lssp1_yup1}
+          - {click: y, dynamic: lssp1_shn1}
+          - {click: u, dynamic: lssp1_qcz1}
+          - {click: i, dynamic: lssp1_hxk1}
+          - {click: o, dynamic: lssp1_gna1}
+          - {click: p, dynamic: lssp1_lfp1}
       - keys:
-          - {click: a, sanpin: lssp1_jsz1}
-          - {click: s, sanpin: lssp1_dtyb2}
-          - {click: d, sanpin: lssp1_erk2}
-          - {click: f, sanpin: lssp1_bvf2}
-          - {click: g, sanpin: lssp1_tmq2}
-          - {click: h, sanpin: lssp1_yup2}
-          - {click: j, sanpin: lssp1_shn2}
-          - {click: k, sanpin: lssp1_qcz2}
-          - {click: l, sanpin: lssp1_hxk2}
+          - {click: a, dynamic: lssp1_jsz1}
+          - {click: s, dynamic: lssp1_dtyb2}
+          - {click: d, dynamic: lssp1_erk2}
+          - {click: f, dynamic: lssp1_bvf2}
+          - {click: g, dynamic: lssp1_tmq2}
+          - {click: h, dynamic: lssp1_yup2}
+          - {click: j, dynamic: lssp1_shn2}
+          - {click: k, dynamic: lssp1_qcz2}
+          - {click: l, dynamic: lssp1_hxk2}
       - keys:
-          - {click: z, sanpin: lssp1_gna2}
-          - {click: x, sanpin: lssp1_lfp2}
-          - {click: c, sanpin: lssp1_jsz2}
-          - {click: v, sanpin: lssp1_dtyb3}
-          - {click: b, sanpin: lssp1_erk3}
-          - {click: n, sanpin: lssp1_bvf3}
-          - {click: m, sanpin: lssp1_tmq3}
+          - {click: z, dynamic: lssp1_gna2}
+          - {click: x, dynamic: lssp1_lfp2}
+          - {click: c, dynamic: lssp1_jsz2}
+          - {click: v, dynamic: lssp1_dtyb3}
+          - {click: b, dynamic: lssp1_erk3}
+          - {click: n, dynamic: lssp1_bvf3}
+          - {click: m, dynamic: lssp1_tmq3}
           - {click: BackSpace}
-          - {click: Sanpin_clear}
+          - {click: Dynamic_clear}
       - keys:
           - {click: Keyboard_default, width: 0.2}
           - {click: Mode_switch, width: 0.2}
           - {click: space, width: 0.2}
           - {click: ',', width: 0.2}
           - {click: Return, width: 0.2}
-  # 三拼第二码键盘 (示例，可大量复用)
+  # 动态第二码键盘 (示例，可大量复用)
   lssp1_dtyb1:
-    name: 三拼-dtyb1
+    name: 动态-dtyb1
     ascii_mode: 0
-    sanpin_mode: true
+    dynamic_mode: true
     rows:
       - keys:
-          - {click: q, sanpin: .original}
-          - {click: w, sanpin: .original}
-          - {click: e, sanpin: .original}
-          - {click: r, sanpin: .original}
-          - {click: t, sanpin: .original}
-          - {click: y, sanpin: .original}
-          - {click: u, sanpin: .original}
-          - {click: i, sanpin: .original}
-          - {click: o, sanpin: .original}
-          - {click: p, sanpin: .original}
+          - {click: q, dynamic: .original}
+          - {click: w, dynamic: .original}
+          - {click: e, dynamic: .original}
+          - {click: r, dynamic: .original}
+          - {click: t, dynamic: .original}
+          - {click: y, dynamic: .original}
+          - {click: u, dynamic: .original}
+          - {click: i, dynamic: .original}
+          - {click: o, dynamic: .original}
+          - {click: p, dynamic: .original}
       - keys:
-          - {click: a, sanpin: .original}
-          - {click: s, sanpin: .original}
-          - {click: d, sanpin: .original}
-          - {click: f, sanpin: .original}
-          - {click: g, sanpin: .original}
-          - {click: h, sanpin: .original}
-          - {click: j, sanpin: .original}
-          - {click: k, sanpin: .original}
-          - {click: l, sanpin: .original}
+          - {click: a, dynamic: .original}
+          - {click: s, dynamic: .original}
+          - {click: d, dynamic: .original}
+          - {click: f, dynamic: .original}
+          - {click: g, dynamic: .original}
+          - {click: h, dynamic: .original}
+          - {click: j, dynamic: .original}
+          - {click: k, dynamic: .original}
+          - {click: l, dynamic: .original}
       - keys:
-          - {click: z, sanpin: .original}
-          - {click: x, sanpin: .original}
-          - {click: c, sanpin: .original}
-          - {click: v, sanpin: .original}
-          - {click: b, sanpin: .original}
-          - {click: n, sanpin: .original}
-          - {click: m, sanpin: .original}
+          - {click: z, dynamic: .original}
+          - {click: x, dynamic: .original}
+          - {click: c, dynamic: .original}
+          - {click: v, dynamic: .original}
+          - {click: b, dynamic: .original}
+          - {click: n, dynamic: .original}
+          - {click: m, dynamic: .original}
           - {click: BackSpace}
-          - {click: Sanpin_clear}
+          - {click: Dynamic_clear}
       - keys:
           - {click: Keyboard_default, width: 0.2}
           - {click: Mode_switch, width: 0.2}

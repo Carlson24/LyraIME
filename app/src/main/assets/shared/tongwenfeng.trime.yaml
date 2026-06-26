@@ -4419,5 +4419,5 @@ preset_keys:
   T9_clear: {command: t9_clear}
   Keyboard_t9: {label: "T9", send: Eisu_toggle, select: t9}
   # 三拼键盘
-  Sanpin_clear: {label: 清空, command: sanpin_clear}
-  Keyboard_sanpin: {label: "三拼", send: Eisu_toggle, select: sanpin}
+  Dynamic_clear: {label: 清空, command: dynamic_clear}
+  Keyboard_dynamic: {label: "三拼", send: Eisu_toggle, select: dynamic}

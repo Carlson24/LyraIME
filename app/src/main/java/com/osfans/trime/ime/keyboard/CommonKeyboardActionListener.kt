@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.view.KeyEvent
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.core.KeyModifier
@@ -154,7 +155,12 @@ class CommonKeyboardActionListener {
                 if (shouldHandle) {
                     when (action.code) {
                         KeyEvent.KEYCODE_SWITCH_CHARSET -> handleSwitchCharset(action)
-                        KeyEvent.KEYCODE_EISU -> keyboardWindow.switchKeyboard(action.select)
+                        KeyEvent.KEYCODE_EISU -> {
+                            if (KeyboardWindow.currentKeyboard.isDynamicMode) {
+                                KeyboardWindow.dynamicController?.reset()
+                            }
+                            keyboardWindow.switchKeyboard(action.select)
+                        }
                         KeyEvent.KEYCODE_LANGUAGE_SWITCH -> handleLanguageSwitch(action)
                         KeyEvent.KEYCODE_FUNCTION -> handleFunctionCommand(action)
                         KeyEvent.KEYCODE_SETTINGS -> handleSettings(action)
@@ -165,18 +171,28 @@ class CommonKeyboardActionListener {
                     }
                 }
 
-                val currentKeyboard = KeyboardWindow.currentKeyboard
-                if (currentKeyboard.isSanpinMode) {
-                    val sc = KeyboardWindow.sanpinController ?: return
-                    key?.sanpinTarget?.let { target ->
-                        when (target) {
-                            ".original" -> sc.clear()
-                            else -> sc.push(target)
-                        }
-                    } ?: run {
-                        if (!sc.isEmpty) {
-                            sc.clear()
-                        }
+                val sc = KeyboardWindow.dynamicController
+                if (sc != null) {
+                    val skip = action.code in setOf(
+                        KeyEvent.KEYCODE_SWITCH_CHARSET,
+                        KeyEvent.KEYCODE_EISU,
+                        KeyEvent.KEYCODE_LANGUAGE_SWITCH,
+                        KeyEvent.KEYCODE_FUNCTION,
+                        KeyEvent.KEYCODE_SETTINGS,
+                        KeyEvent.KEYCODE_PROG_RED,
+                        KeyEvent.KEYCODE_MENU,
+                        KeyEvent.KEYCODE_VOICE_ASSIST,
+                    ) || action.code == KeyEvent.KEYCODE_DEL ||
+                        action.code == KeyEvent.KEYCODE_SPACE ||
+                        action.code == KeyEvent.KEYCODE_ENTER
+                    if (!skip) {
+                        sc.onInput(key?.dynamicTarget)
+                    }
+                    if (!sc.isEmpty && KeyboardWindow.currentKeyboard.isDynamicMode &&
+                        action.code in setOf(KeyEvent.KEYCODE_SPACE, KeyEvent.KEYCODE_ENTER)
+                    ) {
+                        sc.reset()
+                        keyboardWindow.switchKeyboard(sc.originalKeyboard)
                     }
                 }
             }
@@ -232,8 +248,8 @@ class CommonKeyboardActionListener {
                             }
                         }
                     }
-                    "sanpin_clear" -> {
-                        KeyboardWindow.sanpinController?.clear()
+                    "dynamic_clear" -> {
+                        KeyboardWindow.dynamicController?.clear()
                         rime.launchOnReady { api ->
                             service.lifecycleScope.launch {
                                 api.clearComposition()
@@ -415,14 +431,7 @@ class CommonKeyboardActionListener {
                     }
                 }
 
-                val sanpinC = KeyboardWindow.sanpinController
-                if (sanpinC != null && KeyboardWindow.currentKeyboard.isSanpinMode) {
-                    if (keyEventCode == KeyEvent.KEYCODE_DEL && !sanpinC.isEmpty) {
-                        sanpinC.pop()?.let { prevKb ->
-                            keyboardWindow.switchKeyboard(prevKb)
-                        }
-                    }
-                }
+                val dc = KeyboardWindow.dynamicController
 
                 val value =
                     RimeKeyMapping
@@ -440,7 +449,28 @@ class CommonKeyboardActionListener {
                         Timber.d("handleKey: hook")
                         return@postRimeJob
                     }
-                    if (processKey(value, modifiers)) {
+
+                    val isDel = keyEventCode == KeyEvent.KEYCODE_DEL
+                    val lenBefore = getRawInput().length
+                    dc?.isKeyProcessing = true
+
+                    val handled = processKey(value, modifiers)
+                    val lenAfter = getRawInput().length
+
+                    dc?.isKeyProcessing = false
+
+                    if (dc != null) {
+                        if (isDel) {
+                            if (lenAfter < lenBefore) {
+                                ContextCompat.getMainExecutor(service).execute { dc.onDelete() }
+                            }
+                        } else if (lenAfter < lenBefore) {
+                            val committed = lenBefore - lenAfter
+                            ContextCompat.getMainExecutor(service).execute { dc.trimCommitted(committed) }
+                        }
+                    }
+
+                    if (handled) {
                         shouldReleaseKey = true
                         Timber.d("handleKey: processKey")
                         return@postRimeJob
