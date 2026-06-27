@@ -525,6 +525,12 @@ class AppPrefs(
         shared: SharedPreferences,
     ) : PreferenceDelegateOwner(shared, R.string.clipboard),
         SyncClipboardPrefs {
+        enum class SyncServerType(override val stringRes: Int) : PreferenceDelegateEnum {
+            SYNC_CLIPBOARD(R.string.sync_clipboard_server_type_syncclipboard),
+            WEBDAV(R.string.sync_clipboard_server_type_webdav),
+            S3(R.string.sync_clipboard_server_type_s3),
+        }
+
         companion object {
             const val CLIPBOARD_LISTENING = "clipboard_listening"
             const val CLIPBOARD_LIMIT = "clipboard_clipboard_limit"
@@ -542,6 +548,14 @@ class AppPrefs(
             const val SYNC_CLIPBOARD_PULL_INTERVAL_SEC = "sync_clipboard_pull_interval_sec"
             const val SYNC_CLIPBOARD_LAST_UPLOADED_HASH = "sync_clipboard_last_uploaded_hash"
             const val SYNC_CLIPBOARD_LAST_FILE_NAME = "sync_clipboard_last_file_name"
+            const val SYNC_CLIPBOARD_SERVER_TYPE = "sync_clipboard_server_type"
+            const val SYNC_CLIPBOARD_S3_REGION = "sync_clipboard_s3_region"
+            const val SYNC_CLIPBOARD_S3_BUCKET = "sync_clipboard_s3_bucket"
+            const val SYNC_CLIPBOARD_S3_OBJECT_PREFIX = "sync_clipboard_s3_object_prefix"
+            const val SYNC_CLIPBOARD_S3_FORCE_PATH_STYLE = "sync_clipboard_s3_force_path_style"
+            const val SYNC_CLIPBOARD_SIGNALR_ENABLED = "sync_clipboard_signalr_enabled"
+            const val SYNC_CLIPBOARD_AUTO_DOWNLOAD_MAX_SIZE = "sync_clipboard_auto_download_max_size"
+            const val SYNC_CLIPBOARD_WEBDAV_REMOTE_PATH = "sync_clipboard_webdav_remote_path"
         }
         val clipboardListening = switch(R.string.clipboard_listening, CLIPBOARD_LISTENING, true)
         val clipboardLimit = int(
@@ -610,6 +624,12 @@ class AppPrefs(
             false,
             R.string.sync_clipboard_enabled_summary,
         )
+        val syncServerType = enum(
+            R.string.sync_clipboard_server_type,
+            SYNC_CLIPBOARD_SERVER_TYPE,
+            SyncServerType.SYNC_CLIPBOARD,
+            enableUiOn = { syncEnabled.getValue() },
+        )
         val syncServerBase = editText(
             R.string.sync_clipboard_server_base,
             SYNC_CLIPBOARD_SERVER_BASE,
@@ -629,6 +649,14 @@ class AppPrefs(
             enableUiOn = { syncEnabled.getValue() },
             password = true,
         )
+        val syncWebdavRemotePath = editText(
+            R.string.sync_clipboard_webdav_remote_path,
+            SYNC_CLIPBOARD_WEBDAV_REMOTE_PATH,
+            "",
+            enableUiOn = {
+                syncEnabled.getValue() && syncServerType.getValue() == SyncServerType.WEBDAV
+            },
+        )
         val syncAutoPullEnabled = switch(
             R.string.sync_clipboard_auto_pull,
             SYNC_CLIPBOARD_AUTO_PULL,
@@ -639,7 +667,7 @@ class AppPrefs(
         val syncPullIntervalSec = int(
             R.string.sync_clipboard_pull_interval,
             SYNC_CLIPBOARD_PULL_INTERVAL_SEC,
-            5,
+            60,
             1,
             600,
             "s",
@@ -647,6 +675,12 @@ class AppPrefs(
         )
         val syncLastUploadedHash = string(SYNC_CLIPBOARD_LAST_UPLOADED_HASH, "")
         val syncLastFileName = string(SYNC_CLIPBOARD_LAST_FILE_NAME, "")
+        val syncS3Region = string(SYNC_CLIPBOARD_S3_REGION, "")
+        val syncS3BucketName = string(SYNC_CLIPBOARD_S3_BUCKET, "")
+        val syncS3ObjectPrefix = string(SYNC_CLIPBOARD_S3_OBJECT_PREFIX, "")
+        val syncS3ForcePathStyle = bool(SYNC_CLIPBOARD_S3_FORCE_PATH_STYLE, false)
+        val syncSignalREnabled = bool(SYNC_CLIPBOARD_SIGNALR_ENABLED, true)
+        val syncAutoDownloadMaxSize = int(SYNC_CLIPBOARD_AUTO_DOWNLOAD_MAX_SIZE, 5)
 
         override val syncClipboardEnabled: Boolean get() = syncEnabled.getValue()
         override val syncClipboardServerBase: String get() = syncServerBase.getValue()
@@ -660,6 +694,14 @@ class AppPrefs(
         override var syncClipboardLastFileName: String
             get() = syncLastFileName.getValue()
             set(value) = syncLastFileName.setValue(value)
+        override val syncClipboardServerType: String get() = syncServerType.getValue().name.lowercase()
+        override val syncClipboardS3Region: String get() = syncS3Region.getValue()
+        override val syncClipboardS3BucketName: String get() = syncS3BucketName.getValue()
+        override val syncClipboardS3ObjectPrefix: String get() = syncS3ObjectPrefix.getValue()
+        override val syncClipboardS3ForcePathStyle: Boolean get() = syncS3ForcePathStyle.getValue()
+        override val syncClipboardSignalREnabled: Boolean get() = syncSignalREnabled.getValue()
+        override val syncClipboardAutoDownloadMaxSize: Long get() = syncAutoDownloadMaxSize.getValue().toLong()
+        override val syncClipboardWebdavRemotePath: String get() = syncWebdavRemotePath.getValue()
     }
 
     class Advanced(

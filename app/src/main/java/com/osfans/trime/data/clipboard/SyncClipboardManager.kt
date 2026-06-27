@@ -9,6 +9,17 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
 import android.util.Base64
+import com.osfans.trime.data.clipboard.model.ClipboardContent
+import com.osfans.trime.data.clipboard.model.ClipboardContentType
+import com.osfans.trime.data.clipboard.model.ProfileDto
+import com.osfans.trime.data.clipboard.model.contentToProfileDto
+import com.osfans.trime.data.clipboard.model.profileDtoToContent
+import com.osfans.trime.data.clipboard.sync.BackendFactory
+import com.osfans.trime.data.clipboard.sync.ISyncClipboardAPI
+import com.osfans.trime.data.clipboard.sync.ServerConfig
+import com.osfans.trime.data.clipboard.sync.ServerType
+import com.osfans.trime.data.clipboard.sync.SignalRClient
+import com.osfans.trime.data.clipboard.util.HashUtils
 import com.osfans.trime.data.db.DownloadStatus
 import com.osfans.trime.data.db.SyncEntryType
 import kotlinx.coroutines.CoroutineScope
@@ -17,16 +28,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
+import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
 
 interface SyncClipboardPrefs {
     val syncClipboardEnabled: Boolean
@@ -37,25 +40,15 @@ interface SyncClipboardPrefs {
     val syncClipboardPullIntervalSec: Int
     var syncClipboardLastUploadedHash: String
     var syncClipboardLastFileName: String
+    val syncClipboardServerType: String
+    val syncClipboardS3Region: String
+    val syncClipboardS3BucketName: String
+    val syncClipboardS3ObjectPrefix: String
+    val syncClipboardS3ForcePathStyle: Boolean
+    val syncClipboardSignalREnabled: Boolean
+    val syncClipboardAutoDownloadMaxSize: Long
+    val syncClipboardWebdavRemotePath: String
 }
-
-@Serializable
-private data class UploadClipboardPayload(
-    val hasData: Boolean = false,
-    val text: String,
-    val type: String = "Text",
-)
-
-@Serializable
-private data class PullClipboardPayload(
-    val text: String? = null,
-    val type: String? = null,
-    val hasData: Boolean? = null,
-    val dataName: String? = null,
-    @SerialName("Clipboard") val legacyClipboard: String? = null,
-    @SerialName("Type") val legacyType: String? = null,
-    @SerialName("File") val legacyFile: String? = null,
-)
 
 class SyncClipboardManager(
     private val context: Context,
@@ -71,22 +64,19 @@ class SyncClipboardManager(
         fun onFilePulled(type: SyncEntryType, fileName: String, serverFileName: String)
     }
 
-    private val clipboard by lazy {
-        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    }
-    private val client by lazy {
-        OkHttpClient.Builder()
-            .connectTimeout(8, TimeUnit.SECONDS)
-            .readTimeout(8, TimeUnit.SECONDS)
-            .writeTimeout(8, TimeUnit.SECONDS)
-            .build()
-    }
-    private val json by lazy { Json { ignoreUnknownKeys = true } }
-    private val fileManager by lazy { ClipboardFileManager(context) }
-
     companion object {
         private const val TAG = "SyncClipboardManager"
     }
+
+    private val clipboard by lazy {
+        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    }
+    private val fileManager by lazy { ClipboardFileManager(context) }
+    private val backendLock = Any()
+
+    @Volatile private var backend: ISyncClipboardAPI? = null
+
+    @Volatile private var signalRClient: SignalRClient? = null
 
     private var pullJob: Job? = null
     private var listenerRegistered = false
@@ -94,6 +84,10 @@ class SyncClipboardManager(
     @Volatile private var suppressNextChange = false
 
     @Volatile private var lastPulledServerHash: String? = null
+
+    @Volatile private var justUploadedHash: String? = null
+
+    @Volatile private var justSetLocalHash: String? = null
 
     private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {
         if (suppressNextChange) {
@@ -103,9 +97,9 @@ class SyncClipboardManager(
         if (!prefs.syncClipboardEnabled) return@OnPrimaryClipChangedListener
         scope.launch(Dispatchers.IO) {
             try {
-                uploadCurrentClipboardText()
+                handleLocalClipboardChange()
             } catch (e: Throwable) {
-                Timber.tag(TAG).e(e, "Failed to upload clipboard text on change")
+                Timber.tag(TAG).e(e, "Failed to handle local clipboard change")
             }
         }
     }
@@ -114,6 +108,7 @@ class SyncClipboardManager(
         if (!prefs.syncClipboardEnabled) return
         ensureListener()
         ensurePullLoop()
+        connectSignalR()
     }
 
     fun stop() {
@@ -125,8 +120,110 @@ class SyncClipboardManager(
         listenerRegistered = false
         pullJob?.cancel()
         pullJob = null
+        signalRClient?.disconnect()
+        signalRClient = null
         suppressNextChange = false
         lastPulledServerHash = null
+        justUploadedHash = null
+        justSetLocalHash = null
+        synchronized(backendLock) {
+            BackendFactory.clearCache()
+            backend = null
+        }
+    }
+
+    fun onPrefsChanged() {
+        pullJob?.cancel()
+        pullJob = null
+        signalRClient?.disconnect()
+        signalRClient = null
+        synchronized(backendLock) {
+            BackendFactory.clearCache()
+            backend = null
+        }
+        if (prefs.syncClipboardEnabled) {
+            ensureListener()
+            ensurePullLoop()
+            connectSignalR()
+        } else {
+            try {
+                if (listenerRegistered) clipboard.removePrimaryClipChangedListener(clipListener)
+            } catch (e: Throwable) {
+                Timber.tag(TAG).e(e, "Failed to remove clipboard listener")
+            }
+            listenerRegistered = false
+        }
+    }
+
+    private fun getBackend(): ISyncClipboardAPI? {
+        synchronized(backendLock) {
+            if (backend != null) return backend
+            val config = buildServerConfig() ?: return null
+            backend = BackendFactory.createBackend(config, fileManager)
+            return backend
+        }
+    }
+
+    private fun buildServerConfig(): ServerConfig? {
+        val url = prefs.syncClipboardServerBase.trim()
+        if (url.isBlank()) return null
+        val serverType = ServerType.fromString(prefs.syncClipboardServerType)
+        return ServerConfig(
+            type = serverType,
+            url = url,
+            username = prefs.syncClipboardUsername.takeIf { it.isNotBlank() },
+            password = prefs.syncClipboardPassword.takeIf { it.isNotBlank() },
+            region = prefs.syncClipboardS3Region.takeIf { it.isNotBlank() },
+            bucketName = prefs.syncClipboardS3BucketName.takeIf { it.isNotBlank() },
+            objectPrefix = prefs.syncClipboardS3ObjectPrefix.takeIf { it.isNotBlank() },
+            forcePathStyle = prefs.syncClipboardS3ForcePathStyle,
+            remotePath = prefs.syncClipboardWebdavRemotePath.takeIf { it.isNotBlank() },
+        )
+    }
+
+    private fun connectSignalR() {
+        val serverType = ServerType.fromString(prefs.syncClipboardServerType)
+        if (serverType != ServerType.SYNC_CLIPBOARD) return
+        if (!prefs.syncClipboardSignalREnabled) return
+
+        val url = prefs.syncClipboardServerBase.trim()
+        if (url.isBlank()) return
+        val hubUrl = "${url.trimEnd('/')}/SyncClipboardHub"
+        val authHeader = buildAuthHeader()
+
+        val client = SignalRClient(
+            hubUrl = hubUrl,
+            authHeader = authHeader,
+            scope = scope,
+        ).apply {
+            listener = object : SignalRClient.Listener {
+                override fun onProfileChanged(profile: ProfileDto) {
+                    scope.launch(Dispatchers.IO) {
+                        handleRemoteProfileDto(profile, updateClipboard = true)
+                    }
+                }
+
+                override fun onHistoryChanged(hash: String, type: String) {
+                    Timber.tag(TAG).d("History changed: $hash ($type)")
+                }
+
+                override fun onStateChanged(state: SignalRClient.ConnectionState) {
+                    Timber.tag(TAG).d("SignalR state: $state")
+                }
+            }
+        }
+
+        signalRClient = client
+        client.connect()
+    }
+
+    private fun buildAuthHeader(): String? {
+        val u = prefs.syncClipboardUsername
+        val p = prefs.syncClipboardPassword
+        if (u.isBlank() || p.isBlank()) return null
+        val token = "$u:$p".toByteArray(Charsets.UTF_8)
+        val b64 = Base64.encodeToString(token, Base64.NO_WRAP)
+        return "Basic $b64"
     }
 
     private fun ensureListener() {
@@ -143,6 +240,10 @@ class SyncClipboardManager(
     private fun ensurePullLoop() {
         pullJob?.cancel()
         if (!prefs.syncClipboardAutoPullEnabled) return
+        val serverType = ServerType.fromString(prefs.syncClipboardServerType)
+        if (serverType == ServerType.SYNC_CLIPBOARD && prefs.syncClipboardSignalREnabled) {
+            return
+        }
         val intervalSec = prefs.syncClipboardPullIntervalSec.coerceIn(1, 600)
         pullJob = scope.launch(Dispatchers.IO) {
             while (isActive && prefs.syncClipboardEnabled && prefs.syncClipboardAutoPullEnabled) {
@@ -156,29 +257,403 @@ class SyncClipboardManager(
         }
     }
 
-    private fun buildUrl(): String? {
-        val raw = prefs.syncClipboardServerBase.trim()
-        if (raw.isBlank()) return null
-        val base = raw.trimEnd('/')
-        val lower = base.lowercase()
-        return if (lower.endsWith(".json")) base else "$base/SyncClipboard.json"
+    private suspend fun handleLocalClipboardChange() {
+        val content = readClipboardContent() ?: return
+        val profileHash = content.profileHash
+            ?: HashUtils.calculateTextHash(content.text)
+        if (profileHash.isEmpty()) return
+
+        if (profileHash == justSetLocalHash) {
+            justSetLocalHash = null
+            Timber.tag(TAG).d("Skipping local change: just set by remote pull")
+            return
+        }
+
+        val lastHash = try {
+            prefs.syncClipboardLastUploadedHash
+        } catch (e: Throwable) {
+            Timber.tag(TAG).e(e, "Failed to read last uploaded hash")
+            ""
+        }
+        if (profileHash == lastHash) {
+            Timber.tag(TAG).d("Skipping local change: same as last uploaded")
+            return
+        }
+
+        uploadContent(content)
     }
 
-    private fun sha256Hex(s: String): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        val bytes = md.digest(s.toByteArray(Charsets.UTF_8))
-        val sb = StringBuilder(bytes.size * 2)
-        for (b in bytes) sb.append(String.format("%02x", b))
-        return sb.toString()
+    private fun readClipboardContent(): ClipboardContent? {
+        val clip = try {
+            clipboard.primaryClip
+        } catch (e: Throwable) {
+            Timber.tag(TAG).e(e, "Failed to read clipboard")
+            null
+        } ?: return null
+        if (clip.itemCount <= 0) return null
+
+        val item = clip.getItemAt(0)
+        val text = try {
+            item.coerceToText(context)?.toString()
+        } catch (e: Throwable) {
+            Timber.tag(TAG).e(e, "Failed to coerce clipboard item to text")
+            null
+        }
+
+        val uri = try {
+            item.uri
+        } catch (e: Throwable) {
+            null
+        }
+
+        val html = try {
+            item.htmlText
+        } catch (e: Throwable) {
+            null
+        }
+
+        return when {
+            text != null && text.isNotEmpty() -> {
+                val hash = HashUtils.calculateTextHash(text)
+                ClipboardContent(
+                    type = ClipboardContentType.Text,
+                    text = text,
+                    profileHash = hash,
+                    localClipboardHash = hash,
+                )
+            }
+            uri != null -> {
+                ClipboardContent(
+                    type = ClipboardContentType.File,
+                    text = text ?: "",
+                    fileUri = uri.toString(),
+                    hasData = true,
+                )
+            }
+            html != null && html.isNotEmpty() -> {
+                val hash = HashUtils.calculateTextHash(html)
+                ClipboardContent(
+                    type = ClipboardContentType.Text,
+                    text = html,
+                    profileHash = hash,
+                    localClipboardHash = hash,
+                )
+            }
+            else -> null
+        }
     }
 
-    private fun authHeaderB64(): String? {
-        val u = prefs.syncClipboardUsername
-        val p = prefs.syncClipboardPassword
-        if (u.isBlank() || p.isBlank()) return null
-        val token = "$u:$p".toByteArray(Charsets.UTF_8)
-        val b64 = Base64.encodeToString(token, Base64.NO_WRAP)
-        return "Basic $b64"
+    private suspend fun uploadContent(content: ClipboardContent) {
+        val backend = getBackend() ?: return
+        try {
+            val profile = contentToProfileDto(content)
+            Timber.tag(TAG).i("Upload: type=${profile.type} text_len=${content.text.length}")
+            justUploadedHash = profile.hash
+            backend.putContent(content)
+
+            val hash = profile.hash
+            if (hash != null && hash.isNotEmpty()) {
+                try {
+                    prefs.syncClipboardLastUploadedHash = hash
+                } catch (e: Throwable) {
+                    Timber.tag(TAG).e(e, "Failed to save uploaded hash")
+                }
+            }
+            Timber.tag(TAG).i("Upload success")
+            try {
+                listener?.onUploadSuccess()
+            } catch (e: Throwable) {
+                Timber.tag(TAG).e(e, "Failed to notify upload success listener")
+            }
+        } catch (e: Throwable) {
+            Timber.tag(TAG).i("Upload failed: ${e.message}")
+            try {
+                listener?.onUploadFailed(e.message)
+            } catch (t: Throwable) {
+                Timber.tag(TAG).e(t, "Failed to notify upload failed listener")
+            }
+        }
+    }
+
+    suspend fun pullNow(updateClipboard: Boolean): Pair<Boolean, String?> {
+        val backend = getBackend() ?: return false to null
+        return try {
+            val profile = backend.getClipboard()
+            Timber.tag(TAG).i("Pull: type=${profile.type} hasData=${profile.hasData} text_len=${profile.text.length}")
+            if (!profile.hasData && profile.text.isEmpty()) {
+                Timber.tag(TAG).i("Pull: empty clipboard, skipping")
+                return false to null
+            }
+            val result = handleRemoteProfileDto(profile, updateClipboard)
+            Timber.tag(TAG).i("Pull: done, result_len=${result.length}")
+            true to result
+        } catch (e: Throwable) {
+            Timber.tag(TAG).i("Pull failed: ${e.message}")
+            false to null
+        }
+    }
+
+    private suspend fun handleRemoteProfileDto(
+        profile: ProfileDto,
+        updateClipboard: Boolean,
+    ): String {
+        val profileHash = profile.hash
+
+        if (profileHash != null && profileHash == justUploadedHash) {
+            justUploadedHash = null
+            Timber.tag(TAG).d("Skipping remote profile: just uploaded from this device")
+            return profile.text
+        }
+
+        val content = profileDtoToContent(profile)
+
+        return when (content.type) {
+            ClipboardContentType.Text -> handleTextPayload(content, profile, updateClipboard)
+            ClipboardContentType.Image -> handleFilePayload(
+                content,
+                profile,
+                SyncEntryType.IMAGE,
+                updateClipboard,
+            )
+            ClipboardContentType.File -> handleFilePayload(
+                content,
+                profile,
+                SyncEntryType.FILE,
+                updateClipboard,
+            )
+            ClipboardContentType.Group -> handleFilePayload(
+                content,
+                profile,
+                SyncEntryType.FILE,
+                updateClipboard,
+            )
+        }
+    }
+
+    private suspend fun handleTextPayload(
+        content: ClipboardContent,
+        profile: ProfileDto,
+        updateClipboard: Boolean,
+    ): String {
+        val text = content.text
+        val newServerHash = profile.hash
+
+        try {
+            clipboardStore?.clearFileEntries()
+            prefs.syncClipboardLastFileName = ""
+        } catch (t: Throwable) {
+            Timber.tag(TAG).e(t, "Failed to clear file entries on text payload")
+        }
+
+        val prevServerHash = lastPulledServerHash
+        lastPulledServerHash = newServerHash
+
+        if (updateClipboard) {
+            if (newServerHash != null && newServerHash == prevServerHash) {
+                Timber.tag(TAG).d("Pull: text unchanged, skipping")
+                return text
+            }
+            val cur = readClipboardText()
+            if (text.isNotEmpty() && text != cur) {
+                justSetLocalHash = if (newServerHash != null) newServerHash else HashUtils.calculateTextHash(text)
+                writeClipboardText(text)
+                Timber.tag(TAG).i("Pull: wrote text to clipboard (len=${text.length})")
+                try {
+                    prefs.syncClipboardLastUploadedHash = HashUtils.calculateTextHash(text)
+                } catch (e: Throwable) {
+                    Timber.tag(TAG).e(e, "Failed to save pulled hash")
+                }
+                try {
+                    listener?.onPulledNewContent(text)
+                } catch (e: Throwable) {
+                    Timber.tag(TAG).e(e, "Failed to notify pulled content listener")
+                }
+            }
+        }
+        return text
+    }
+
+    private suspend fun handleFilePayload(
+        content: ClipboardContent,
+        profile: ProfileDto,
+        entryType: SyncEntryType,
+        updateClipboard: Boolean,
+    ): String {
+        val fileName = content.fileName
+        if (fileName.isNullOrBlank()) {
+            Timber.tag(TAG).w("File payload has no file name")
+            return ""
+        }
+
+        val prevName = try {
+            prefs.syncClipboardLastFileName
+        } catch (e: Throwable) {
+            Timber.tag(TAG).e(e, "Failed to read last file name")
+            ""
+        }
+        if (fileName == prevName) {
+            Timber.tag(TAG).d("File payload unchanged, skip: $fileName")
+            return fileName
+        }
+
+        val shouldAutoDownload = content.fileSize != null &&
+            content.fileSize <= prefs.syncClipboardAutoDownloadMaxSize * 1024 * 1024
+
+        val localFile = fileManager.getFile(fileName)
+        val downloadStatus = if (localFile.exists()) {
+            DownloadStatus.COMPLETED
+        } else {
+            DownloadStatus.NONE
+        }
+
+        val localPath = if (localFile.exists()) localFile.absolutePath else null
+
+        clipboardStore?.addFileEntry(
+            type = entryType,
+            fileName = fileName,
+            serverFileName = fileName,
+            fileSize = content.fileSize,
+            localFilePath = localPath,
+            downloadStatus = downloadStatus,
+        )
+
+        if (updateClipboard && shouldAutoDownload && !localFile.exists()) {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    downloadFileForPayload(fileName, content.fileSize)
+                } catch (e: Throwable) {
+                    Timber.tag(TAG).e(e, "Auto-download failed: $fileName")
+                }
+            }
+        }
+
+        try {
+            listener?.onFilePulled(entryType, fileName, fileName)
+        } catch (e: Throwable) {
+            Timber.tag(TAG).e(e, "Failed to notify file pulled listener")
+        }
+
+        try {
+            prefs.syncClipboardLastFileName = fileName
+        } catch (e: Throwable) {
+            Timber.tag(TAG).e(e, "Failed to save last file name")
+        }
+
+        Timber.tag(TAG).d("File payload handled: $fileName (type: $entryType)")
+        return fileName
+    }
+
+    private suspend fun downloadFileForPayload(fileName: String, expectedSize: Long?) {
+        val backend = getBackend() ?: return
+        val store = clipboardStore ?: return
+
+        val entries = store.getAll()
+        val entry = entries.find { it.serverFileName == fileName || it.fileName == fileName }
+            ?: return
+
+        if (fileManager.fileExists(fileName, expectedSize)) {
+            val localFile = fileManager.getFile(fileName)
+            store.updateFileEntry(entry.uuid, localFile.absolutePath, DownloadStatus.COMPLETED)
+            return
+        }
+
+        store.updateFileEntry(entry.uuid, null, DownloadStatus.DOWNLOADING)
+
+        val (ok, localPath) = backend.downloadFile(fileName)
+
+        if (ok && localPath != null) {
+            store.updateFileEntry(entry.uuid, localPath, DownloadStatus.COMPLETED)
+        } else {
+            store.updateFileEntry(entry.uuid, null, DownloadStatus.FAILED)
+        }
+    }
+
+    suspend fun downloadFile(uuid: String, progressCallback: ((Long, Long) -> Unit)? = null): Boolean {
+        val backend = getBackend() ?: return false
+        val store = clipboardStore ?: return false
+        val entry = store.getEntryByUuid(uuid) ?: return false
+        val serverFileName = entry.serverFileName ?: entry.fileName ?: return false
+
+        if (fileManager.fileExists(serverFileName, entry.fileSize)) {
+            Timber.tag(TAG).d("File already downloaded: $serverFileName")
+            store.updateFileEntry(uuid, fileManager.getFile(serverFileName).absolutePath, DownloadStatus.COMPLETED)
+            return true
+        }
+
+        store.updateFileEntry(uuid, null, DownloadStatus.DOWNLOADING)
+
+        val (ok, localPath) = backend.downloadFile(serverFileName, progressCallback)
+
+        if (ok && localPath != null) {
+            store.updateFileEntry(uuid, localPath, DownloadStatus.COMPLETED)
+            return true
+        }
+
+        store.updateFileEntry(uuid, null, DownloadStatus.FAILED)
+        return false
+    }
+
+    suspend fun downloadFileDirect(
+        fileName: String,
+        progressCallback: ((Long, Long) -> Unit)? = null,
+    ): Pair<Boolean, String?> {
+        val backend = getBackend() ?: return false to null
+        if (fileName.isBlank()) return false to null
+
+        if (fileManager.fileExists(fileName)) {
+            val local = fileManager.getFile(fileName)
+            return true to local.absolutePath
+        }
+
+        return backend.downloadFile(fileName, progressCallback)
+    }
+
+    fun uploadOnce(): Boolean {
+        if (!prefs.syncClipboardEnabled) return false
+        val content = readClipboardContent() ?: return false
+        var succeeded = false
+        scope.launch(Dispatchers.IO) {
+            try {
+                uploadContent(content)
+                succeeded = true
+            } catch (e: Throwable) {
+                Timber.tag(TAG).e(e, "uploadOnce failed")
+            }
+        }
+        return succeeded
+    }
+
+    fun proactiveUploadIfChanged() {
+        if (!prefs.syncClipboardEnabled) return
+        val content = readClipboardContent() ?: return
+        val profileHash = content.profileHash
+            ?: HashUtils.calculateTextHash(content.text)
+        if (profileHash.isEmpty()) return
+        val last = try {
+            prefs.syncClipboardLastUploadedHash
+        } catch (e: Throwable) {
+            Timber.tag(TAG).e(e, "Failed to read last uploaded hash")
+            ""
+        }
+        if (profileHash != last) {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    uploadContent(content)
+                } catch (e: Throwable) {
+                    Timber.tag(TAG).e(e, "proactiveUploadIfChanged failed")
+                }
+            }
+        }
+    }
+
+    fun refreshServerConfig() {
+        synchronized(backendLock) {
+            BackendFactory.clearCache()
+            backend = null
+        }
+        signalRClient?.disconnect()
+        signalRClient = null
+        connectSignalR()
     }
 
     private fun readClipboardText(): String? {
@@ -206,477 +681,6 @@ class SyncClipboardManager(
             clipboard.setPrimaryClip(clip)
         } catch (e: Throwable) {
             Timber.tag(TAG).e(e, "Failed to write clipboard text")
-        } finally {
-            suppressNextChange = false
-        }
-    }
-
-    private fun uploadCurrentClipboardText() {
-        val url = buildUrl() ?: return
-        val authB64 = authHeaderB64() ?: return
-        val text = readClipboardText() ?: return
-        if (text.isEmpty()) return
-        try {
-            val newHash = sha256Hex(text)
-            val last = try {
-                prefs.syncClipboardLastUploadedHash
-            } catch (e: Throwable) {
-                Timber.tag(TAG).e(e, "Failed to read last uploaded hash")
-                ""
-            }
-            if (newHash == last) return
-        } catch (e: Throwable) {
-            Timber.tag(TAG).e(e, "Failed to compute hash for clipboard text")
-        }
-        uploadText(url, authB64, text)
-    }
-
-    private fun uploadText(url: String, auth: String, text: String): Boolean = try {
-        val payload = UploadClipboardPayload(text = text)
-        val bodyJson = json.encodeToString(payload)
-        val req = Request.Builder()
-            .url(url)
-            .header("Authorization", auth)
-            .put(bodyJson.toRequestBody("application/json; charset=utf-8".toMediaType()))
-            .build()
-        client.newCall(req).execute().use { resp ->
-            if (resp.isSuccessful) {
-                try {
-                    prefs.syncClipboardLastUploadedHash = sha256Hex(text)
-                } catch (e: Throwable) {
-                    Timber.tag(TAG).e(e, "Failed to save uploaded hash")
-                }
-                try {
-                    listener?.onUploadSuccess()
-                } catch (e: Throwable) {
-                    Timber.tag(TAG).e(e, "Failed to notify upload success listener")
-                }
-                true
-            } else {
-                Timber.tag(TAG).w("Upload failed with status: ${resp.code}")
-                try {
-                    listener?.onUploadFailed("HTTP ${resp.code}")
-                } catch (e: Throwable) {
-                    Timber.tag(TAG).e(e, "Failed to notify upload failed listener")
-                }
-                false
-            }
-        }
-    } catch (e: Throwable) {
-        Timber.tag(TAG).e(e, "Failed to upload clipboard text")
-        try {
-            listener?.onUploadFailed(e.message)
-        } catch (t: Throwable) {
-            Timber.tag(TAG).e(t, "Failed to notify upload failed listener (exception)")
-        }
-        false
-    }
-
-    fun uploadOnce(): Boolean {
-        val url = buildUrl() ?: return false
-        val authB64 = authHeaderB64() ?: return false
-        val text = readClipboardText() ?: return false
-        if (text.isEmpty()) return false
-        return try {
-            uploadText(url, authB64, text)
-        } catch (e: Throwable) {
-            Timber.tag(TAG).e(e, "uploadOnce failed")
-            false
-        }
-    }
-
-    private suspend fun <T> executeRequestWithAuth(
-        requestBuilder: (auth: String) -> Request,
-        responseHandler: suspend (okhttp3.Response) -> T?,
-    ): T? {
-        val authB64 = authHeaderB64() ?: return null
-        return try {
-            val req = requestBuilder(authB64)
-            client.newCall(req).execute().use { resp ->
-                if (resp.isSuccessful) {
-                    return responseHandler(resp)
-                }
-                Timber.tag(TAG).w("Auth failed with status: ${resp.code}")
-                null
-            }
-        } catch (e: Throwable) {
-            Timber.tag(TAG).e(e, "Auth request failed")
-            null
-        }
-    }
-
-    suspend fun pullNow(updateClipboard: Boolean): Pair<Boolean, String?> {
-        val url = buildUrl() ?: return false to null
-
-        val result = try {
-            executeRequestWithAuth(
-                requestBuilder = { auth ->
-                    Request.Builder()
-                        .url(url)
-                        .header("Authorization", auth)
-                        .get()
-                        .build()
-                },
-                responseHandler = { resp ->
-                    val body = resp.body.string().takeIf { it.isNotEmpty() }
-                    if (body == null) {
-                        Timber.tag(TAG).w("Pull response body is empty")
-                        return@executeRequestWithAuth null
-                    }
-
-                    val payload = try {
-                        json.decodeFromString<PullClipboardPayload>(body)
-                    } catch (e: Throwable) {
-                        Timber.tag(TAG).e(e, "Failed to parse clipboard payload")
-                        return@executeRequestWithAuth null
-                    }
-
-                    val payloadType = resolvePayloadType(payload)
-                    when (payloadType.lowercase()) {
-                        "text" -> {
-                            val textDataName = if (payload.hasData == true) {
-                                payload.dataName?.takeIf { it.isNotEmpty() }
-                                    ?: payload.legacyFile?.takeIf { it.isNotEmpty() }
-                            } else {
-                                null
-                            }
-                            val text = if (!textDataName.isNullOrBlank()) {
-                                downloadTextData(textDataName)
-                            } else {
-                                resolvePayloadText(payload)
-                            }
-                            val nonBlankText = text?.takeIf { it.isNotBlank() }
-                            if (nonBlankText == null) {
-                                Timber.tag(TAG).w("Clipboard text is blank")
-                                return@executeRequestWithAuth null
-                            }
-                            return@executeRequestWithAuth handleTextPayload(
-                                nonBlankText,
-                                updateClipboard,
-                            )
-                        }
-                        "image", "file" -> {
-                            val fileName = resolvePayloadFileName(payload)
-                            val nonBlankFileName = fileName?.takeIf { it.isNotBlank() }
-                            if (nonBlankFileName == null) {
-                                Timber.tag(TAG).w("File name is blank for type: $payloadType")
-                                return@executeRequestWithAuth null
-                            }
-                            val normalizedType = if (payloadType.equals(
-                                    "image",
-                                    ignoreCase = true,
-                                )
-                            ) {
-                                "Image"
-                            } else {
-                                "File"
-                            }
-                            return@executeRequestWithAuth handleFilePayload(
-                                normalizedType,
-                                nonBlankFileName,
-                            )
-                        }
-                        else -> {
-                            Timber.tag(TAG).w("Unsupported payload type: $payloadType")
-                            return@executeRequestWithAuth null
-                        }
-                    }
-                },
-            )
-        } catch (e: Throwable) {
-            Timber.tag(TAG).e(e, "pullNow failed")
-            null
-        }
-
-        return if (result != null) {
-            true to result
-        } else {
-            false to null
-        }
-    }
-
-    private fun resolvePayloadType(payload: PullClipboardPayload): String {
-        val explicitType = payload.type?.trim().takeUnless { it.isNullOrBlank() }
-            ?: payload.legacyType?.trim().takeUnless { it.isNullOrBlank() }
-        if (explicitType != null) return explicitType
-        if (payload.hasData == true &&
-            (!payload.dataName.isNullOrBlank() || !payload.legacyFile.isNullOrBlank())
-        ) {
-            return "File"
-        }
-        return "Text"
-    }
-
-    private fun resolvePayloadText(payload: PullClipboardPayload): String? = payload.text?.takeIf { it.isNotEmpty() }
-        ?: payload.legacyClipboard?.takeIf { it.isNotEmpty() }
-
-    private fun resolvePayloadFileName(payload: PullClipboardPayload): String? = payload.dataName?.takeIf { it.isNotEmpty() }
-        ?: payload.legacyFile?.takeIf { it.isNotEmpty() }
-        ?: payload.text?.takeIf { payload.hasData == true && it.isNotEmpty() }
-        ?: payload.legacyClipboard?.takeIf { payload.hasData == true && it.isNotEmpty() }
-
-    private suspend fun downloadTextData(dataName: String): String? {
-        val fileUrl = buildFileUrl(dataName) ?: run {
-            Timber.tag(TAG).w("Failed to build text data url for: $dataName")
-            return null
-        }
-        return executeRequestWithAuth(
-            requestBuilder = { auth ->
-                Request.Builder()
-                    .url(fileUrl)
-                    .header("Authorization", auth)
-                    .get()
-                    .build()
-            },
-            responseHandler = { resp ->
-                val text = resp.body.string()
-                if (text.isEmpty()) {
-                    Timber.tag(TAG).w("Downloaded text data is empty: $dataName")
-                    return@executeRequestWithAuth null
-                }
-                text
-            },
-        )
-    }
-
-    private suspend fun handleTextPayload(text: String, updateClipboard: Boolean): String {
-        try {
-            clipboardStore?.clearFileEntries()
-            prefs.syncClipboardLastFileName = ""
-        } catch (t: Throwable) {
-            Timber.tag(TAG).e(t, "Failed to clear file entries on text payload")
-        }
-
-        val newServerHash = try {
-            sha256Hex(text)
-        } catch (e: Throwable) {
-            Timber.tag(TAG).e(e, "Failed to compute hash for pulled text")
-            null
-        }
-        val prevServerHash = lastPulledServerHash
-        lastPulledServerHash = newServerHash
-
-        if (updateClipboard) {
-            if (newServerHash != null && newServerHash == prevServerHash) {
-                return text
-            }
-            val cur = readClipboardText()
-            if (text.isNotEmpty() && text != cur) {
-                writeClipboardText(text)
-                try {
-                    prefs.syncClipboardLastUploadedHash = sha256Hex(text)
-                } catch (e: Throwable) {
-                    Timber.tag(TAG).e(e, "Failed to save pulled hash")
-                }
-                try {
-                    listener?.onPulledNewContent(text)
-                } catch (e: Throwable) {
-                    Timber.tag(TAG).e(e, "Failed to notify pulled content listener")
-                }
-            }
-        }
-        return text
-    }
-
-    private suspend fun handleFilePayload(type: String, fileName: String): String {
-        try {
-            val prevName = try {
-                prefs.syncClipboardLastFileName
-            } catch (e: Throwable) {
-                Timber.tag(TAG).e(e, "Failed to read last file name")
-                ""
-            }
-            if (fileName.isNotEmpty() && fileName == prevName) {
-                Timber.tag(TAG).d("File payload unchanged, skip preview: $fileName")
-                return fileName
-            }
-
-            val entryType = when (type.lowercase()) {
-                "image" -> SyncEntryType.IMAGE
-                "file" -> SyncEntryType.FILE
-                else -> SyncEntryType.FILE
-            }
-
-            val localFile = fileManager.getFile(fileName)
-            val downloadStatus = if (localFile.exists()) {
-                DownloadStatus.COMPLETED
-            } else {
-                DownloadStatus.NONE
-            }
-
-            val localPath = if (localFile.exists()) localFile.absolutePath else null
-
-            clipboardStore?.addFileEntry(
-                type = entryType,
-                fileName = fileName,
-                serverFileName = fileName,
-                fileSize = if (localFile.exists()) localFile.length() else null,
-                localFilePath = localPath,
-                downloadStatus = downloadStatus,
-            )
-
-            try {
-                listener?.onFilePulled(entryType, fileName, fileName)
-            } catch (e: Throwable) {
-                Timber.tag(TAG).e(e, "Failed to notify file pulled listener")
-            }
-
-            try {
-                prefs.syncClipboardLastFileName = fileName
-            } catch (e: Throwable) {
-                Timber.tag(TAG).e(e, "Failed to save last file name")
-            }
-
-            Timber.tag(TAG).d("File payload handled: $fileName (type: $type, status: $downloadStatus)")
-            return fileName
-        } catch (e: Throwable) {
-            Timber.tag(TAG).e(e, "Failed to handle file payload: $fileName")
-            return fileName
-        }
-    }
-
-    suspend fun downloadFile(uuid: String, progressCallback: ((Long, Long) -> Unit)? = null): Boolean {
-        val store = clipboardStore ?: return false
-        val entry = store.getEntryByUuid(uuid) ?: return false
-        val serverFileName = entry.serverFileName ?: entry.fileName ?: return false
-
-        if (fileManager.fileExists(serverFileName, entry.fileSize)) {
-            Timber.tag(TAG).d("File already downloaded: $serverFileName")
-            store.updateFileEntry(
-                uuid,
-                fileManager.getFile(serverFileName).absolutePath,
-                DownloadStatus.COMPLETED,
-            )
-            return true
-        }
-
-        store.updateFileEntry(uuid, null, DownloadStatus.DOWNLOADING)
-
-        val (ok, localPath) = downloadFileDirectInternal(
-            serverFileName = serverFileName,
-            expectedSize = entry.fileSize,
-            progressCallback = progressCallback,
-        )
-
-        if (ok && localPath != null) {
-            store.updateFileEntry(uuid, localPath, DownloadStatus.COMPLETED)
-            return true
-        }
-
-        store.updateFileEntry(uuid, null, DownloadStatus.FAILED)
-        return false
-    }
-
-    suspend fun downloadFileDirect(
-        fileName: String,
-        progressCallback: ((Long, Long) -> Unit)? = null,
-    ): Pair<Boolean, String?> {
-        if (fileName.isBlank()) return false to null
-
-        if (fileManager.fileExists(fileName)) {
-            val local = fileManager.getFile(fileName)
-            Timber.tag(TAG).d("File already downloaded (direct): $fileName -> ${local.absolutePath}")
-            return true to local.absolutePath
-        }
-
-        return downloadFileDirectInternal(
-            serverFileName = fileName,
-            expectedSize = null,
-            progressCallback = progressCallback,
-        )
-    }
-
-    private fun downloadFileDirectInternal(
-        serverFileName: String,
-        expectedSize: Long?,
-        progressCallback: ((Long, Long) -> Unit)?,
-    ): Pair<Boolean, String?> {
-        val fileUrl = buildFileUrl(serverFileName) ?: run {
-            Timber.tag(TAG).w("Failed to build file url for: $serverFileName")
-            return false to null
-        }
-
-        val authB64 = authHeaderB64() ?: run {
-            Timber.tag(TAG).w("Missing auth header for file download")
-            return false to null
-        }
-
-        if (fileManager.fileExists(serverFileName, expectedSize)) {
-            val local = fileManager.getFile(serverFileName)
-            Timber.tag(TAG).d(
-                "File already exists with expected size: $serverFileName -> ${local.absolutePath}",
-            )
-            return true to local.absolutePath
-        }
-
-        return try {
-            val req = Request.Builder()
-                .url(fileUrl)
-                .header("Authorization", authB64)
-                .get()
-                .build()
-
-            client.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    Timber.tag(TAG).w("Download failed: ${resp.code}")
-                    return false to null
-                }
-
-                val body = resp.body
-
-                val totalBytes = body.contentLength()
-                val localPath = fileManager.saveFile(
-                    serverFileName,
-                    body.byteStream(),
-                    totalBytes,
-                    progressCallback,
-                )
-
-                if (localPath != null) {
-                    Timber.tag(TAG).d("File downloaded successfully: $serverFileName -> $localPath")
-                    true to localPath
-                } else {
-                    Timber.tag(TAG).w("Failed to save downloaded file: $serverFileName")
-                    false to null
-                }
-            }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Download error: $serverFileName")
-            false to null
-        }
-    }
-
-    private fun buildFileUrl(fileName: String): String? {
-        val raw = prefs.syncClipboardServerBase.trim()
-        if (raw.isBlank()) return null
-        val base = raw.trimEnd('/')
-        val encodedFileName = Uri.encode(fileName)
-        return "$base/file/$encodedFileName"
-    }
-
-    fun proactiveUploadIfChanged() {
-        val url = buildUrl() ?: return
-        val authB64 = authHeaderB64() ?: return
-        val text = readClipboardText() ?: return
-        if (text.isEmpty()) return
-        val newHash = try {
-            sha256Hex(text)
-        } catch (e: Throwable) {
-            Timber.tag(TAG).e(e, "Failed to compute hash for proactive upload")
-            return
-        }
-        val last = try {
-            prefs.syncClipboardLastUploadedHash
-        } catch (e: Throwable) {
-            Timber.tag(TAG).e(e, "Failed to read last uploaded hash")
-            ""
-        }
-        if (newHash != last) {
-            try {
-                uploadText(url, authB64, text)
-            } catch (e: Throwable) {
-                Timber.tag(TAG).e(e, "proactiveUploadIfChanged failed")
-            }
         }
     }
 }

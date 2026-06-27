@@ -77,6 +77,7 @@ data class GeneralStyle(
     val backgroundFolder: String,
     val enterLabelMode: Int,
     val enterLabel: EnterLabel,
+    val keyboardPaddingTop: Int,
     val t9SideTextFont: List<String>,
     val t9SideTextSize: Float,
     val t9SideRoundCorner: Float,
@@ -181,6 +182,7 @@ data class GeneralStyle(
             backgroundFolder = node["background_folder"]?.string ?: "backgrounds",
             enterLabelMode = node["enter_label_mode"]?.int ?: 0,
             enterLabel = EnterLabel.decode(node["enter_labels"]),
+            keyboardPaddingTop = node["keyboard_padding_top"]?.int ?: 0,
             t9SideTextFont = node["t9_side_text_font"]?.sequence
                 ?.mapNotNull(Node::string) ?: emptyList(),
             t9SideTextSize = node["t9_side_text_size"]?.float ?: -1f,

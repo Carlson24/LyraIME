@@ -129,6 +129,7 @@
     <string name="clear">清除畫面</string>
     <string name="developer">開發者</string>
     <string name="exception_logcat_created">Logcat 行程已建立</string>
+    <string name="floating_keyboard">懸浮鍵盤</string>
     <string name="about">關於</string>
     <string name="theme">鍵盤樣式</string>
     <string name="profile">配置</string>
@@ -157,6 +158,7 @@
     <string name="a_regular_expression_per_line">一行一條正則表示式</string>
     <string name="custom_sound_effect_enabled">使用自訂按鍵音</string>
     <string name="enable_landscape_mode">啟用橫屏模式</string>
+    <string name="auto_float_landscape">橫屏時自動適用懸浮模式</string>
     <string name="split_space_percent">自動分割鍵盤比例</string>
     <string name="setup__step_three">第 3 步</string>
     <string name="setup__request_permission_hint">靈韻輸入法當前須要存儲權限以訪問配置檔案、使得使用者容易修改。</string>
@@ -243,6 +245,15 @@
     <string name="sync_clipboard_auto_pull">自動拉取</string>
     <string name="sync_clipboard_auto_pull_summary">自動從伺服器拉取剪貼簿內容</string>
     <string name="sync_clipboard_pull_interval">拉取間隔</string>
+    <string name="sync_clipboard_webdav_remote_path">WebDAV 遠端路徑</string>
+    <string name="sync_clipboard_server_type">伺服器類型</string>
+    <string name="sync_clipboard_server_type_syncclipboard">SyncClipboard</string>
+    <string name="sync_clipboard_server_type_webdav">WebDAV</string>
+    <string name="sync_clipboard_server_type_s3">S3</string>
+    <string name="sync_clipboard_pulled_toast">已同步剪貼簿</string>
+    <string name="sync_clipboard_upload_success_toast">已上傳剪貼簿</string>
+    <string name="sync_clipboard_upload_failed_toast">上傳失敗: %s</string>
+    <string name="sync_clipboard_file_received_toast">收到檔案: %s</string>
     <string name="source_code">原始碼</string>
     <string name="git_repo">Git 儲存庫</string>
     <string name="light">亮色</string>
@@ -407,5 +418,5 @@
     <string name="webdav_pull">從伺服器下載</string>
     <string name="webdav_invalid_url">伺服器位址無效</string>
     <string name="webdav_connecting">正在連接 WebDAV 伺服器…</string>
-    <string name="webdav_remote_path">遠程文件夾名稱</string>
+    <string name="webdav_remote_path">WebDAV 遠程路徑</string>
 </resources>

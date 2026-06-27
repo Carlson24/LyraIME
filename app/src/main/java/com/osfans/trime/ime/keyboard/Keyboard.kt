@@ -51,6 +51,13 @@ class Keyboard(
             theme.generalStyle.verticalGap,
         ).firstOrNull { it > 0 }?.let { context.dp(it) } ?: 0
 
+    /** 鍵盤第一行上方留白  */
+    internal val keyboardPaddingTop: Int =
+        intArrayOf(
+            selfConfig?.keyboardPaddingTop ?: 0,
+            theme.generalStyle.keyboardPaddingTop,
+        ).firstOrNull { it > 0 }?.let { context.dp(it) } ?: 0
+
     /** 默認按鍵圓角半徑  */
     val roundCorner: Float =
         selfConfig?.roundCorner?.takeIf { it >= 0f } ?: theme.generalStyle.roundCorner

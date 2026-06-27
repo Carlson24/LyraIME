@@ -111,6 +111,7 @@
     <string name="app_crash_message">抱歉，但我们提供了日志以供调查。</string>
     <string name="virtual_keyboard">虚拟键盘</string>
     <string name="voice_input">语音输入</string>
+    <string name="floating_keyboard">悬浮键盘</string>
     <string name="about">关于</string>
     <string name="theme">键盘样式</string>
     <string name="profile">配置</string>
@@ -243,6 +244,15 @@
     <string name="sync_clipboard_auto_pull">自动拉取</string>
     <string name="sync_clipboard_auto_pull_summary">自动从服务器拉取剪贴板内容</string>
     <string name="sync_clipboard_pull_interval">拉取间隔</string>
+    <string name="sync_clipboard_webdav_remote_path">WebDAV 远程路径</string>
+    <string name="sync_clipboard_server_type">服务器类型</string>
+    <string name="sync_clipboard_server_type_syncclipboard">SyncClipboard</string>
+    <string name="sync_clipboard_server_type_webdav">WebDAV</string>
+    <string name="sync_clipboard_server_type_s3">S3</string>
+    <string name="sync_clipboard_pulled_toast">已同步剪贴板</string>
+    <string name="sync_clipboard_upload_success_toast">已上传剪贴板</string>
+    <string name="sync_clipboard_upload_failed_toast">上传失败: %s</string>
+    <string name="sync_clipboard_file_received_toast">收到文件: %s</string>
     <string name="source_code">源代码</string>
     <string name="git_repo">Git 仓库</string>
     <string name="light">亮色</string>
@@ -407,5 +417,5 @@
     <string name="webdav_pull">从服务器下载</string>
     <string name="webdav_invalid_url">服务器地址无效</string>
     <string name="webdav_connecting">正在连接 WebDAV 服务器…</string>
-    <string name="webdav_remote_path">远程文件夹名称</string>
+    <string name="webdav_remote_path">WebDAV 远程路径</string>
 </resources>

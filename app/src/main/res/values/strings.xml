@@ -245,6 +245,15 @@
     <string name="sync_clipboard_auto_pull">Auto pull</string>
     <string name="sync_clipboard_auto_pull_summary">Automatically pull clipboard content from server</string>
     <string name="sync_clipboard_pull_interval">Pull interval</string>
+    <string name="sync_clipboard_webdav_remote_path">WebDAV Remote path</string>
+    <string name="sync_clipboard_server_type">Server type</string>
+    <string name="sync_clipboard_server_type_syncclipboard">SyncClipboard</string>
+    <string name="sync_clipboard_server_type_webdav">WebDAV</string>
+    <string name="sync_clipboard_server_type_s3">S3</string>
+    <string name="sync_clipboard_pulled_toast">Clipboard synced</string>
+    <string name="sync_clipboard_upload_success_toast">Clipboard uploaded</string>
+    <string name="sync_clipboard_upload_failed_toast">Upload failed: %s</string>
+    <string name="sync_clipboard_file_received_toast">File received: %s</string>
     <string name="source_code">Source code</string>
     <string name="git_repo">Git repository</string>
     <string name="light">Light</string>
@@ -409,5 +418,5 @@
     <string name="webdav_pull">Download from server</string>
     <string name="webdav_invalid_url">Invalid server URL</string>
     <string name="webdav_connecting">Connecting to WebDAV server…</string>
-    <string name="webdav_remote_path">Remote folder name</string>
+    <string name="webdav_remote_path">WebDAV Remote path</string>
 </resources>

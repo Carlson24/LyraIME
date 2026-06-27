@@ -8,19 +8,26 @@ package com.osfans.trime
 import android.app.Application
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.os.Handler
+import android.os.Looper
 import android.os.Process
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import com.osfans.trime.data.clipboard.ClipboardHistoryStore
+import com.osfans.trime.data.clipboard.SyncClipboardManager
 import com.osfans.trime.data.db.ClipboardHelper
 import com.osfans.trime.data.db.CollectionHelper
+import com.osfans.trime.data.db.SyncEntryType
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.receiver.RimeIntentReceiver
 import com.osfans.trime.ui.main.LogActivity
 import com.osfans.trime.util.isNightMode
+import com.osfans.trime.util.toast
 import com.osfans.trime.worker.BackgroundSyncWork
 import com.osfans.trime.worker.WanxiangCheckWork
 import kotlinx.coroutines.CoroutineName
@@ -139,6 +146,7 @@ class TrimeApplication : Application() {
             }
             ClipboardHelper.init(applicationContext)
             CollectionHelper.init(applicationContext)
+            initSyncClipboardManager(sharedPreferences)
             registerBroadcastReceiver()
             startWorkManager()
         } catch (e: Exception) {
@@ -163,6 +171,77 @@ class TrimeApplication : Application() {
         }
     }
 
+    private fun initSyncClipboardManager(sharedPreferences: SharedPreferences) {
+        val appPrefs = AppPrefs.defaultInstance()
+        val clipboardPrefs = appPrefs.clipboard
+        val historyStore = ClipboardHistoryStore(ClipboardHelper.clipboardSyncDao)
+
+        val mainHandler = Handler(Looper.getMainLooper())
+
+        val manager = SyncClipboardManager(
+            context = applicationContext,
+            prefs = clipboardPrefs,
+            scope = coroutineScope,
+            listener = object : SyncClipboardManager.Listener {
+                override fun onPulledNewContent(text: String) {
+                    mainHandler.post {
+                        applicationContext.toast(R.string.sync_clipboard_pulled_toast)
+                    }
+                }
+
+                override fun onUploadSuccess() {}
+
+                override fun onUploadFailed(reason: String?) {
+                    mainHandler.post {
+                        val msg = resources.getString(
+                            R.string.sync_clipboard_upload_failed_toast,
+                            reason ?: "unknown",
+                        )
+                        applicationContext.toast(msg)
+                    }
+                }
+
+                override fun onFilePulled(type: SyncEntryType, fileName: String, serverFileName: String) {
+                    mainHandler.post {
+                        val msg = resources.getString(
+                            R.string.sync_clipboard_file_received_toast,
+                            fileName,
+                        )
+                        applicationContext.toast(msg)
+                    }
+                }
+            },
+            clipboardStore = historyStore,
+        )
+        syncClipboardManager = manager
+
+        if (clipboardPrefs.syncClipboardEnabled) {
+            manager.start()
+        }
+
+        sharedPreferences.registerOnSharedPreferenceChangeListener { _, key ->
+            if (key == null) return@registerOnSharedPreferenceChangeListener
+            if (key == AppPrefs.Clipboard.SYNC_CLIPBOARD_ENABLED ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_SERVER_BASE ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_USERNAME ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_PASSWORD ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_AUTO_PULL ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_PULL_INTERVAL_SEC ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_SERVER_TYPE ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_S3_REGION ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_S3_BUCKET ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_S3_OBJECT_PREFIX ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_S3_FORCE_PATH_STYLE ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_SIGNALR_ENABLED ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_AUTO_DOWNLOAD_MAX_SIZE ||
+                key == AppPrefs.Clipboard.SYNC_CLIPBOARD_WEBDAV_REMOTE_PATH
+            ) {
+                Timber.d("Sync clipboard pref changed: $key")
+                manager.onPrefsChanged()
+            }
+        }
+    }
+
     companion object {
         private var instance: TrimeApplication? = null
         private var lastPid: Int? = null
@@ -170,6 +249,10 @@ class TrimeApplication : Application() {
         fun getInstance() = instance ?: throw IllegalStateException("Trime application is not created!")
 
         fun getLastPid() = lastPid
+
+        private var syncClipboardManager: SyncClipboardManager? = null
+
+        fun getSyncClipboardManager() = syncClipboardManager
 
         private const val MAX_STACKTRACE_SIZE = 128000
 
