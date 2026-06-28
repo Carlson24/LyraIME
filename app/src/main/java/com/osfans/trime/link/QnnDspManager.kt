@@ -10,7 +10,7 @@ import android.os.Build
 import com.osfans.trime.data.ResourceUrls
 import com.osfans.trime.util.FileDownloader
 import com.osfans.trime.util.appContext
-import com.osfans.trime.util.extractTarGz
+import com.osfans.trime.util.extractTarBz2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -20,7 +20,7 @@ object QnnDspManager {
     private val dspDir: File
         get() = File(appContext.filesDir, "qnn-dsp").also { it.mkdirs() }
 
-    data class DspLibs(val stub: File, val skel: File)
+    data class DspLibs(val stub: File, val skel: File, val htp: File, val system: File)
 
     fun getHtpVariant(): String? {
         return when (Build.SOC_MODEL) {
@@ -38,7 +38,9 @@ object QnnDspManager {
         val variant = getHtpVariant() ?: return false
         val dir = dspDir
         return File(dir, "libQnnHtp${variant}Stub.so").exists() &&
-            File(dir, "libQnnHtp${variant}Skel.so").exists()
+            File(dir, "libQnnHtp${variant}Skel.so").exists() &&
+            File(dir, "libQnnHtp.so").exists() &&
+            File(dir, "libQnnSystem.so").exists()
     }
 
     fun getLibs(): DspLibs? {
@@ -46,8 +48,10 @@ object QnnDspManager {
         val dir = dspDir
         val stub = File(dir, "libQnnHtp${variant}Stub.so")
         val skel = File(dir, "libQnnHtp${variant}Skel.so")
-        if (!stub.exists() || !skel.exists()) return null
-        return DspLibs(stub, skel)
+        val htp = File(dir, "libQnnHtp.so")
+        val system = File(dir, "libQnnSystem.so")
+        if (!stub.exists() || !skel.exists() || !htp.exists() || !system.exists()) return null
+        return DspLibs(stub, skel, htp, system)
     }
 
     suspend fun ensureInstalled(context: Context): DspLibs? = withContext(Dispatchers.IO) {
@@ -55,39 +59,43 @@ object QnnDspManager {
         val dir = dspDir
         val stub = File(dir, "libQnnHtp${variant}Stub.so")
         val skel = File(dir, "libQnnHtp${variant}Skel.so")
+        val htp = File(dir, "libQnnHtp.so")
+        val system = File(dir, "libQnnSystem.so")
 
-        if (stub.exists() && skel.exists()) {
-            return@withContext DspLibs(stub, skel)
+        if (stub.exists() && skel.exists() && htp.exists() && system.exists()) {
+            return@withContext DspLibs(stub, skel, htp, system)
         }
 
         val entry = ResourceUrls.QNN_DSP_MAP[Build.SOC_MODEL]
             ?: ResourceUrls.QNN_DSP_MAP["SM8850"]!!
 
-        val tarGz = File(context.cacheDir, "qnnDsp-${variant}.tar.gz")
+        val tarBz2 = File(context.cacheDir, "qnnDsp-${variant}.tar.bz2")
         try {
-            FileDownloader.download(entry.url, tarGz, expectedSha256 = entry.sha256)
-            extractTarGz(tarGz, dir)
-            tarGz.delete()
+            FileDownloader.download(entry.url, tarBz2, expectedSha256 = entry.sha256)
+            extractTarBz2(tarBz2, dir)
+            tarBz2.delete()
 
-            if (!stub.exists() || !skel.exists()) {
+            if (!stub.exists() || !skel.exists() || !htp.exists() || !system.exists()) {
                 Timber.e("QnnDsp: extraction failed for $variant")
                 return@withContext null
             }
         } catch (e: FileDownloader.Error) {
             Timber.e(e, "QnnDsp: download failed for $variant")
-            tarGz.delete()
+            tarBz2.delete()
             return@withContext null
         } catch (e: Exception) {
             Timber.e(e, "QnnDsp: failed for $variant")
-            tarGz.deleteRecursively()
+            tarBz2.deleteRecursively()
             return@withContext null
         }
 
         Timber.i("QnnDsp: $variant installed successfully")
-        DspLibs(stub, skel)
+        DspLibs(stub, skel, htp, system)
     }
 
-    fun loadStub(path: String) {
-        System.load(path)
+    fun loadDsp(dsp: DspLibs) {
+        System.load(dsp.stub.absolutePath)
+        System.load(dsp.htp.absolutePath)
+        System.load(dsp.system.absolutePath)
     }
 }

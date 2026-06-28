@@ -100,7 +100,7 @@ object SherpaSpeechClient {
             if (!adspLibraryPathSet && Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a") {
                 val dsp = QnnDspManager.getLibs()
                 if (dsp != null) {
-                    QnnDspManager.loadStub(dsp.stub.absolutePath)
+                    QnnDspManager.loadDsp(dsp)
                     OnlineRecognizer.prependAdspLibraryPath(dsp.skel.parentFile!!.absolutePath)
                     adspLibraryPathSet = true
                 }
@@ -243,7 +243,7 @@ object SherpaSpeechClient {
                 ) {
                     val dsp = QnnDspManager.getLibs()
                     if (dsp != null) {
-                        QnnDspManager.loadStub(dsp.stub.absolutePath)
+                        QnnDspManager.loadDsp(dsp)
                         OnlineRecognizer.prependAdspLibraryPath(dsp.skel.parentFile!!.absolutePath)
                         adspLibraryPathSet = true
                     }

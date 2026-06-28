@@ -45,32 +45,32 @@ object ResourceUrls {
 
     val QNN_DSP_MAP: Map<String, QnnDspEntry> = mapOf(
         "SM8350" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV68S.tar.gz",
-            "66b5c438462207ac9ee2a9b44f241f84da50bad4e60d96ac4210eeb09ebcdaba",
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV68.tar.bz2",
+            "81a42dd36b8ef93b188e31c45776ff8fb12bd6287cef2d95815f66dd2f8f1180",
         ),
         "SM8450" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69S.tar.gz",
-            "1e44c873a03ad56e45c303d6992377df9c50ce07811e6aa2df62ab2e990769dc",
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69.tar.bz2",
+            "f42cfaed645d18da12e297f7a19cb43de220cbb38ab5eed157ed22a4e2d9a884",
         ),
         "SM8475" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69S.tar.gz",
-            "1e44c873a03ad56e45c303d6992377df9c50ce07811e6aa2df62ab2e990769dc",
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69.tar.bz2",
+            "f42cfaed645d18da12e297f7a19cb43de220cbb38ab5eed157ed22a4e2d9a884",
         ),
         "SM8550" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV73S.tar.gz",
-            "77d7f86ef12fda071759b04518b5de39574cb99b792fea2e4ca4f431b5d00d73",
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV73.tar.bz2",
+            "b85af9e35961761d77b0e013ee7081a8f3be06c01c2f0fc4863d028799e7e031",
         ),
         "SM8650" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV75S.tar.gz",
-            "790be5ce570db420784f3fabf1381fbe68b12bd7ba4a646702dc34f0fb1ac2f4",
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV75.tar.bz2",
+            "87582bae560aeab206fec4e9ec38bad30646a0f9ec4ea2af065872e26dfa2b4f",
         ),
         "SM8750" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV79S.tar.gz",
-            "38a54d8dab7ec6f7bfaf4d939c3c408541ec7f798eaf5c8d7b70ea66599ac2d1",
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV79.tar.bz2",
+            "50fea403cd247ca7a55f938d974dd879d33cb0268c6a36ddc52794be152c7a7e",
         ),
         "SM8850" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV81S.tar.gz",
-            "bae491e349b64e73e6f04e6fb4b03bf01f1e345eaf97eb901921c21822cbd5b4",
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV81.tar.bz2",
+            "8b353182612c6c560343d65ab3e403aafd0f2a616500c5ef4a469faf567c3091",
         ),
     )
 
