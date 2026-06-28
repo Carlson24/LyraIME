@@ -312,6 +312,17 @@
     <string name="voice_model_type_standard_name">标准</string>
     <string name="voice_model_type_int8_name">Int8</string>
     <string name="voice_model_type_qnn_name">QNN</string>
+    <string name="voice_qnn_dsp_initialize">初始化 QNN 加速库</string>
+    <string name="voice_qnn_dsp_reinitialize">重新下载 QNN 加速库</string>
+    <string name="voice_qnn_dsp_installed">QNN 加速库已就绪</string>
+    <string name="voice_qnn_dsp_not_installed">未安装 — 点击下载以启用 NPU 加速</string>
+    <string name="voice_qnn_dsp_downloading">正在下载 QNN 加速库…</string>
+    <string name="voice_qnn_dsp_download_failed">QNN 加速库下载失败</string>
+    <string name="voice_qnn_dsp_missing_toast">QNN 加速库未初始化，请前往语音设置中下载</string>
+    <string name="voice_qnn_dsp_require_qnn">切换为 QNN 模型类型后可用</string>
+    <string name="voice_model_download_action_reinstall">重新下载语音模型</string>
+    <string name="voice_model_status_installed">已安装: %1$s</string>
+    <string name="voice_model_status_not_installed">未安装</string>
     <string name="inline_suggestions">显示内嵌自动填充建议</string>
     <string name="update_config">更新配置</string>
     <string name="share">分享</string>

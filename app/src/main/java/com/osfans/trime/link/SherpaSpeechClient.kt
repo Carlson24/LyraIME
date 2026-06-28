@@ -98,13 +98,16 @@ object SherpaSpeechClient {
         if (!currentConfig.useQnn) return
         service.lifecycleScope.launch(Dispatchers.IO) {
             if (!adspLibraryPathSet && Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a") {
-                val nativeLibDir = service.applicationInfo.nativeLibraryDir
-                if (nativeLibDir.isNotEmpty()) {
-                    OnlineRecognizer.prependAdspLibraryPath(nativeLibDir)
+                val dsp = QnnDspManager.getLibs()
+                if (dsp != null) {
+                    QnnDspManager.loadStub(dsp.stub.absolutePath)
+                    OnlineRecognizer.prependAdspLibraryPath(dsp.skel.parentFile!!.absolutePath)
                     adspLibraryPathSet = true
                 }
             }
-            initEngineIfNeeded()
+            if (adspLibraryPathSet) {
+                initEngineIfNeeded()
+            }
         }
     }
 
@@ -214,6 +217,17 @@ object SherpaSpeechClient {
             return
         }
 
+        val cfg = readEngineConfig()
+        if (cfg.useQnn &&
+            Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a" &&
+            !QnnDspManager.isInstalled()
+        ) {
+            service.toast(service.getString(R.string.voice_qnn_dsp_missing_toast))
+            runCatching { VoiceOverlayUiBridge.onDone?.invoke() }
+            resetStateDirectly()
+            return
+        }
+
         service.lifecycleScope.launch {
             val initWasFirst = isFirstInit
             val currentConfig = readEngineConfig()
@@ -227,9 +241,10 @@ object SherpaSpeechClient {
                 if (!adspLibraryPathSet && currentConfig.useQnn &&
                     Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a"
                 ) {
-                    val nativeLibDir = service.applicationInfo.nativeLibraryDir
-                    if (nativeLibDir.isNotEmpty()) {
-                        OnlineRecognizer.prependAdspLibraryPath(nativeLibDir)
+                    val dsp = QnnDspManager.getLibs()
+                    if (dsp != null) {
+                        QnnDspManager.loadStub(dsp.stub.absolutePath)
+                        OnlineRecognizer.prependAdspLibraryPath(dsp.skel.parentFile!!.absolutePath)
                         adspLibraryPathSet = true
                     }
                 }

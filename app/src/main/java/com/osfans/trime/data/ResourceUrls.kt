@@ -39,6 +39,41 @@ object ResourceUrls {
     const val VOICE_MODEL_INT8_SHA256 =
         "7f19daf70818a9727cce21f27c577d89522aebab0e7025be5594ef93a46d41f3"
 
+    // ---- QNN DSP Libraries (per SoC) ----
+    // https://github.com/Carlson24/LyraIME/releases/tag/libQnnHtp
+    data class QnnDspEntry(val url: String, val sha256: String)
+
+    val QNN_DSP_MAP: Map<String, QnnDspEntry> = mapOf(
+        "SM8350" to QnnDspEntry(
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV68S.tar.gz",
+            "66b5c438462207ac9ee2a9b44f241f84da50bad4e60d96ac4210eeb09ebcdaba",
+        ),
+        "SM8450" to QnnDspEntry(
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69S.tar.gz",
+            "1e44c873a03ad56e45c303d6992377df9c50ce07811e6aa2df62ab2e990769dc",
+        ),
+        "SM8475" to QnnDspEntry(
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69S.tar.gz",
+            "1e44c873a03ad56e45c303d6992377df9c50ce07811e6aa2df62ab2e990769dc",
+        ),
+        "SM8550" to QnnDspEntry(
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV73S.tar.gz",
+            "77d7f86ef12fda071759b04518b5de39574cb99b792fea2e4ca4f431b5d00d73",
+        ),
+        "SM8650" to QnnDspEntry(
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV75S.tar.gz",
+            "790be5ce570db420784f3fabf1381fbe68b12bd7ba4a646702dc34f0fb1ac2f4",
+        ),
+        "SM8750" to QnnDspEntry(
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV79S.tar.gz",
+            "38a54d8dab7ec6f7bfaf4d939c3c408541ec7f798eaf5c8d7b70ea66599ac2d1",
+        ),
+        "SM8850" to QnnDspEntry(
+            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV81S.tar.gz",
+            "bae491e349b64e73e6f04e6fb4b03bf01f1e345eaf97eb901921c21822cbd5b4",
+        ),
+    )
+
     // ---- Voice Model QNN Binary (per SOC) ----
     // https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models-qnn-binary
     data class QnnModelEntry(val url: String, val sha256: String)

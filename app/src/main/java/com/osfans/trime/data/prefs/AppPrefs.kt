@@ -236,6 +236,7 @@ class AppPrefs(
             4,
             1,
             Runtime.getRuntime().availableProcessors().coerceAtLeast(4),
+            enableUiOn = { voiceModelType.getValue() != VoiceModelType.QNN },
         )
         val voiceSensitivity = int(
             R.string.voice_sensitivity,

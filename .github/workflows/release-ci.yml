@@ -81,16 +81,13 @@ jobs:
           keyPassword=${{ secrets.KEY_PASSWORD }}
           EOF
 
-      - name: Build Trime (all QNN DSP flavors)
-        run: make release-all-flavors
-        env:
-          ORG_GRADLE_PROJECT_buildQnnFlavor: ""
+      - name: Build LyraIME
+        run: make release
 
       - name: Add JNI cache
         if: ${{ !steps.jni-cache.outputs.cache-hit }}
         run: |
-          # Compiled .so are identical across flavors; pick v81 as representative
-          SRC=app/build/intermediates/merged_native_libs/v81Release/mergeV81ReleaseNativeLibs/out/lib
+          SRC=app/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib
           DST=app/prebuilt
           for abi in arm64-v8a x86_64; do
             mkdir -p "$DST/$abi"
@@ -102,15 +99,12 @@ jobs:
 
       - name: Rename APK
         run: |
-          cd app/build/outputs/apk
-          for dir in v*/; do
-            flavor=${dir%/}
-            for apk in "$flavor"/release/*.apk; do
-              [ -f "$apk" ] || continue
-              arch=$(echo "$apk" | grep -oE '(arm64-v8a|x86_64)')
-              ver=$(echo "$apk" | grep -oP 'v\d+\.\d+\.\d+\.\d+')
-              mv "$apk" "LyraIME-${arch}-${flavor}-${ver}.apk"
-            done
+          cd app/build/outputs/apk/release
+          for apk in *.apk; do
+            [ -f "$apk" ] || continue
+            arch=$(echo "$apk" | grep -oE '(arm64-v8a|x86_64)')
+            ver=$(echo "$apk" | grep -oP 'v\d+\.\d+\.\d+\.\d+')
+            mv "$apk" "LyraIME-${arch}-${ver}.apk"
           done
 
       - name: Create Stable release
@@ -121,16 +115,4 @@ jobs:
           artifacts: "app/build/outputs/apk/LyraIME*.apk"
           body: |
             Update Version: ${{ github.ref_name }}
-
-            **如果你没有使用高通设备，或者你的 CPU 不在以下列表中，直接使用 v81 版本即可**
-
-            **QNN DSP 版本 — SoC 对照**
-            | Flavor | SoC |
-            |--------|-----|
-            | v81 | SM8850 (Snapdragon 8 Gen 5) |
-            | v79 | SM8750 (Snapdragon 8 Gen 4) |
-            | v75 | SM8650 (Snapdragon 8 Gen 3) |
-            | v73 | SM8550 (Snapdragon 8 Gen 2) |
-            | v69 | SM8450 / SM8475 (Snapdragon 8 Gen 1 / 8+ Gen 1) |
-            | v68 | SM8350 (Snapdragon 888) |
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -314,6 +314,17 @@
     <string name="voice_model_type_standard_name">standard</string>
     <string name="voice_model_type_int8_name">int8</string>
     <string name="voice_model_type_qnn_name">qnn</string>
+    <string name="voice_qnn_dsp_initialize">Initialize QNN DSP</string>
+    <string name="voice_qnn_dsp_reinitialize">Re-download QNN DSP</string>
+    <string name="voice_qnn_dsp_installed">QNN acceleration library ready</string>
+    <string name="voice_qnn_dsp_not_installed">Not installed — tap to download for NPU acceleration</string>
+    <string name="voice_qnn_dsp_downloading">Downloading QNN acceleration library…</string>
+    <string name="voice_qnn_dsp_download_failed">QNN DSP download failed</string>
+    <string name="voice_qnn_dsp_missing_toast">QNN acceleration library not initialized. Go to Voice settings to download.</string>
+    <string name="voice_qnn_dsp_require_qnn">Switch to QNN model type to enable</string>
+    <string name="voice_model_download_action_reinstall">Re-download voice model</string>
+    <string name="voice_model_status_installed">Installed: %1$s</string>
+    <string name="voice_model_status_not_installed">Not installed</string>
     <string name="inline_suggestions">Show inline autofill suggestions</string>
     <string name="update_config">Update config</string>
     <string name="share">Share</string>

@@ -30,7 +30,7 @@ android {
         minSdk = 28
         targetSdk = 37
         versionCode = LocalDate.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
-        versionName = "3.4.3"
+        versionName = "3.5.0"
 
         multiDexEnabled = true
         buildConfigField("String", "BUILDER", "\"${project.builder}\"")
@@ -43,24 +43,6 @@ android {
     base {
         // https://www.norio.be/blog/archivesBaseName-removed-from-gradle9.html
         archivesName = "${android.defaultConfig.applicationId}-$buildVersionName"
-    }
-
-    flavorDimensions += "qnnDsp"
-
-    val buildQnnFlavor = project.findProperty("buildQnnFlavor") as? String
-    val enabledFlavors = if (!buildQnnFlavor.isNullOrEmpty()) {
-        listOf(buildQnnFlavor)
-    } else {
-        listOf("v68", "v69", "v73", "v75", "v79", "v81")
-    }
-
-    productFlavors {
-        for (dsp in enabledFlavors) {
-            register(dsp) {
-                dimension = "qnnDsp"
-                versionNameSuffix = "-$dsp"
-            }
-        }
     }
 
     buildTypes {
