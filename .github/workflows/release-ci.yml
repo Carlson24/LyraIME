@@ -112,7 +112,7 @@ jobs:
         with:
           allowUpdates: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
-          artifacts: "app/build/outputs/apk/LyraIME*.apk"
+          artifacts: "app/build/outputs/apk/release/*.apk"
           body: |
             Update Version: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
