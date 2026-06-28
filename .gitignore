@@ -483,6 +483,7 @@ app/src/main/assets/shared/dicts
 app/src/main/assets/shared/backgrounds
 app/src/main/assets/shared/jianchun.trime.yaml
 doc/voice-models/sherpa-onnx-*.tar.bz2
+doc/libQnnHtp/libQnnHtp*.tar.bz2
 
 # boost
 app/boost-*.tar.xz

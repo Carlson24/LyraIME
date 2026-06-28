@@ -46,20 +46,6 @@ jobs:
           unzip -q "v${QNN_SDK_VERSION}.zip"
           echo "QNN_SDK_ROOT=${{ runner.temp }}/qnn/qairt/${QNN_SDK_VERSION}" >> $GITHUB_ENV
 
-      - name: Copy QNN runtime libs
-        run: |
-          QNN_SDK=${{ runner.temp }}/qnn/qairt/${QNN_SDK_VERSION}
-          DST=app/src/main/jniLibs/arm64-v8a
-          mkdir -p "$DST"
-          cp -v "$QNN_SDK/lib/aarch64-android/libQnnHtp.so" "$DST/"
-          cp -v "$QNN_SDK/lib/aarch64-android/libQnnSystem.so" "$DST/"
-          for v in 68 69 73 75 79 81; do
-            FDST="app/src/v${v}/jniLibs/arm64-v8a"
-            mkdir -p "$FDST"
-            cp -v "$QNN_SDK/lib/aarch64-android/libQnnHtpV${v}Stub.so" "$FDST/"
-            cp -v "$QNN_SDK/lib/hexagon-v${v}/unsigned/libQnnHtpV${v}Skel.so" "$FDST/"
-          done
-
       - name: Calculate JNI cache hash
         id: cache-hash
         run: |
