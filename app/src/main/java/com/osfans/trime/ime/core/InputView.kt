@@ -647,6 +647,11 @@ class InputView(
         inputBar.updateVisibility()
     }
 
+    fun reloadColors() {
+        keyboardBackground.imageDrawable = ColorManager.getDrawable("keyboard_background")
+        keyboardWindow.invalidateAllCachedKeyColors()
+    }
+
     override fun handleRimeMessage(it: RimeMessage<*>) {
         when (it) {
             is RimeMessage.SchemaMessage -> {

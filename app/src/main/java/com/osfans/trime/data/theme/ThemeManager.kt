@@ -58,6 +58,8 @@ object ThemeManager {
         val theme: Theme,
     )
 
+    private val themeCache = mutableMapOf<String, Pair<Long, Theme>>()
+
     private fun loadThemeByIdOrNull(id: String): Theme? {
         if (!Rime.deployRimeConfigFile(id, "config_version")) {
             Timber.w("Failed to deploy theme config file '$id.yaml'")
@@ -67,6 +69,10 @@ object ThemeManager {
             Timber.w("Theme file not found for '$id'")
             return null
         }
+        val lastModified = file.lastModified()
+        themeCache[id]?.let { (cachedTime, cachedTheme) ->
+            if (cachedTime == lastModified) return cachedTheme
+        }
         return try {
             val node = Yaml.parseToYamlNode(file.readText())
             val mapping = node.mapping
@@ -74,7 +80,7 @@ object ThemeManager {
                 Timber.w("Failed to load theme '$id': YAML root is not a mapping")
                 null
             } else {
-                Theme.decode(mapping)
+                Theme.decode(mapping).also { themeCache[id] = file.lastModified() to it }
             }
         } catch (e: Exception) {
             Timber.w(e, "Failed to load theme '$id'")
@@ -111,7 +117,7 @@ object ThemeManager {
         }
         KeyActionManager.resetCache()
         FontManager.resetCache(newTheme)
-        ColorManager.switchTheme(newTheme)
+        ColorManager.switchTheme(newTheme, suppressFireChange = true)
         LiquidData.init(newTheme)
         return newTheme
     }
@@ -126,9 +132,10 @@ object ThemeManager {
         val theme = resolvedTheme.theme
         KeyActionManager.resetCache()
         FontManager.resetCache(theme)
-        ColorManager.switchTheme(theme)
+        ColorManager.switchTheme(theme, suppressFireChange = true)
         LiquidData.init(theme)
-        activeTheme = theme
+        _activeTheme = theme
+        fireChange()
         prefs.selectedTheme.setValue(resolvedTheme.configId)
     }
 }

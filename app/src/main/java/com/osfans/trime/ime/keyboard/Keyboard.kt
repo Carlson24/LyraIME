@@ -492,6 +492,19 @@ class Keyboard(
         }
     }
 
+    fun invalidateAllKeyColors() {
+        mKeys.forEach { it.invalidateColors() }
+    }
+
+    fun refreshKeyBehaviors(newConfig: TextKeyboard) {
+        val allNewKeys = newConfig.rows.flatMap { it.keys }.filter { !it.spacer }
+        var keyIndex = 0
+        for (newTextKey in allNewKeys) {
+            mKeys.getOrNull(keyIndex)?.refreshFromConfig(newTextKey)
+            keyIndex++
+        }
+    }
+
     val keys: List<Key>
         get() = mKeys
 

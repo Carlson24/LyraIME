@@ -24,6 +24,17 @@ data class KeyboardRow(
     val split: Boolean,
     val keys: List<TextKeyboard.TextKey>,
 ) : Parcelable {
+    fun isStructurallyIdenticalTo(other: KeyboardRow): Boolean {
+        if (keys.size != other.keys.size) return false
+        for (i in keys.indices) {
+            val k1 = keys[i]
+            val k2 = other.keys[i]
+            if (k1.width != k2.width) return false
+            if (k1.spacer != k2.spacer) return false
+        }
+        return true
+    }
+
     companion object {
         fun decode(node: Node.Mapping): KeyboardRow = KeyboardRow(
             height = node["height"]?.float ?: 0f,
@@ -74,6 +85,29 @@ data class TextKeyboard(
     val dynamicOriginal: String,
     val rows: List<KeyboardRow>,
 ) : Parcelable {
+    fun isStructurallyIdenticalTo(other: TextKeyboard): Boolean {
+        if (this === other) return true
+        if (keyboardHeight != other.keyboardHeight) return false
+        if (keyboardHeightLand != other.keyboardHeightLand) return false
+        if (horizontalGap != other.horizontalGap) return false
+        if (verticalGap != other.verticalGap) return false
+        if (keyboardPaddingTop != other.keyboardPaddingTop) return false
+        if (landscapeSplitPercent != other.landscapeSplitPercent) return false
+        if (roundCorner != other.roundCorner) return false
+        if (keyBorder != other.keyBorder) return false
+        if (t9Mode != other.t9Mode) return false
+        if (dynamicMode != other.dynamicMode) return false
+        if (rows.size != other.rows.size) return false
+        for (i in rows.indices) {
+            val r1 = rows[i]
+            val r2 = other.rows[i]
+            if (r1.height != r2.height) return false
+            if (r1.split != r2.split) return false
+            if (!r1.isStructurallyIdenticalTo(r2)) return false
+        }
+        return true
+    }
+
     enum class LabelTransform {
         NONE,
         UPPERCASE,

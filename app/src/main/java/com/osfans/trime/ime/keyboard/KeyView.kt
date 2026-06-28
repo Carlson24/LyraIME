@@ -19,7 +19,6 @@ import android.util.LruCache
 import android.view.KeyEvent
 import com.mikepenz.iconics.IconicsDrawable
 import com.mikepenz.iconics.utils.sizeDp
-import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
@@ -46,8 +45,6 @@ class KeyView(
 
     private val popup: PopupDelegate
         get() = keyboardView.popup
-
-    private val rime get() = RimeDaemon.getFirstSessionOrNull()!!
 
     private val hookShiftArrow: Boolean by lazy {
         AppPrefs.defaultInstance().keyboard.hookShiftArrow.getValue()
@@ -335,11 +332,8 @@ class KeyView(
     }
 
     private fun drawSymbol(canvas: Canvas, text: String, isTop: Boolean = true) {
-        val showSymbol = rime.run { !getRuntimeOption("_hide_key_symbol") }
-        val showHint = rime.run { !getRuntimeOption("_hide_key_hint") }
-
-        if (isTop && !showSymbol) return
-        if (!isTop && !showHint) return
+        if (isTop && !keyboardView.showKeySymbols) return
+        if (!isTop && !keyboardView.showKeyHints) return
 
         val textColor = key.getSymbolColor()
         val textSize = sp(
@@ -535,7 +529,7 @@ class KeyView(
 
         if (bg is GradientDrawable) {
             (k.roundCorner ?: keyboard.roundCorner).takeIf { it > 0f }?.let { bg.cornerRadius = dp(it) }
-            (k.keyBorder ?: keyboard.keyBorder).takeIf { it > 0 }?.let { bg.setStroke(dp(it), k.getKeyBorderColor()) }
+            (k.keyBorder ?: keyboard.keyBorder).takeIf { it > 0 }?.let { bg.setStroke(dp(it), k.keyBorderColorValue) }
         }
 
         bg.setBounds(

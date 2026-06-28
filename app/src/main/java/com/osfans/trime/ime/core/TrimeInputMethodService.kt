@@ -126,9 +126,20 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private val onColorChangeListener =
         ColorManager.OnColorChangeListener {
             ContextCompat.getMainExecutor(this).execute {
-                replaceInputViews(it)
+                invalidateInputViewColors(it)
             }
         }
+
+    private fun invalidateInputViewColors(theme: Theme) {
+        navBarManager.evaluate(window.window!!)
+        inputView?.reloadColors()
+        candidatesView?.invalidateAllColors()
+        inputView?.updateEnterKeyLabel(currentInputEditorInfo)
+    }
+
+    private fun CandidatesView.invalidateAllColors() {
+        invalidate()
+    }
 
     private fun postJob(
         scope: CoroutineScope,

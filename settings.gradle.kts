@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "trime"
+rootProject.name = "lyraime"
 include(":app")
 include(":codegen")

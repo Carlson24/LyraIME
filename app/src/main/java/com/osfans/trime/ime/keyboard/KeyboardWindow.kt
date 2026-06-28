@@ -34,7 +34,6 @@ import com.osfans.trime.util.isLandscape
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.runBlocking
 import org.kodein.di.instance
 import splitties.views.dsl.core.add
 import splitties.views.dsl.core.frameLayout
@@ -145,11 +144,21 @@ class KeyboardWindow :
         return config
     }
 
+    private fun getKeyboardConfig(name: String): TextKeyboard? {
+        val cached = resolvedConfigCache[name]
+        if (cached != null) return cached
+        val config = selectKeyboardConfig(name)
+        resolvedConfigCache[name] = config
+        return config
+    }
+
+    private val resolvedConfigCache = mutableMapOf<String, TextKeyboard?>()
+
     private fun attachKeyboard(target: String) {
         currentKeyboardId = target
         lastKeyboardId = target
 
-        val config = selectKeyboardConfig(target)
+        val config = getKeyboardConfig(target)
         val keyboard = currentKeyboard ?: Keyboard(context, theme, config)
 
         val newT9Controller =
@@ -206,7 +215,7 @@ class KeyboardWindow :
         }
 
         keyboard.also {
-            runBlocking { _currentKeyboardHeight.emit(it.keyboardHeight) }
+            _currentKeyboardHeight.tryEmit(it.keyboardHeight)
             if (it.isLock) lastLockKeyboardId = target
             dispatchCapsState(it::setShifted)
 
@@ -345,13 +354,27 @@ class KeyboardWindow :
                     }
                     return@execute
                 }
-                cachedKeyboards.remove(target)
             }
             // 保存上一个键盘ID，用于来源键盘回退（如果不是返回类操作且不是重新弹出则记录）
             if (to.isNotEmpty() && to !in setOf(".previous", ".last_lock")) {
                 keyboardSourceMap[target] = currentKeyboardId
                 persistKeyboardSourceMap()
             }
+            val currentConfig = getKeyboardConfig(currentKeyboardId)
+            val targetConfig = getKeyboardConfig(target)
+            if (currentConfig != null && targetConfig != null &&
+                currentConfig.isStructurallyIdenticalTo(targetConfig)
+            ) {
+                cachedKeyboards.remove(currentKeyboardId)?.let { kv ->
+                    cachedKeyboards[target] = kv
+                }
+                currentKeyboardId = target
+                lastKeyboardId = target
+                currentKeyboard?.refreshKeyBehaviors(targetConfig)
+                currentKeyboardView?.invalidateAllKeys()
+                return@execute
+            }
+            cachedKeyboards.remove(target)
             currentKeyboardView?.onDetach()
             currentKeyboard?.lastAsciiMode = rime.run { statusCached }.isAsciiMode
             attachKeyboard(target)
@@ -365,10 +388,18 @@ class KeyboardWindow :
         currentKeyboard?.lastAsciiMode = rime.run { statusCached }.isAsciiMode
         if (isAll) {
             cachedKeyboards.clear()
+            resolvedConfigCache.clear()
         } else {
             cachedKeyboards.remove(id)
         }
         attachKeyboard(id)
+    }
+
+    fun invalidateAllCachedKeyColors() {
+        cachedKeyboards.values.forEach { (kbd, view) ->
+            kbd.invalidateAllKeyColors()
+            view.invalidateAllKeys()
+        }
     }
 
     fun showAsrkbVoiceOverlay() {
@@ -483,6 +514,12 @@ class KeyboardWindow :
                         .listener
                         .onAction(KeyActionManager.getAction(what))
                 }
+            }
+            option == "_hide_key_symbol" -> {
+                currentKeyboardView?.showKeySymbols = !value.value
+            }
+            option == "_hide_key_hint" -> {
+                currentKeyboardView?.showKeyHints = !value.value
             }
         }
         currentKeyboardView?.invalidateAllKeys()

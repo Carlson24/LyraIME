@@ -98,6 +98,7 @@ object ColorManager {
 
     private var bitmapCache: LruCache<String, Bitmap>? = null
     private var gradientDrawableCache: LruCache<Int, GradientDrawable>? = null
+    private val colorCache = LruCache<String, Int>(128)
 
     fun interface OnColorChangeListener {
         fun onColorChange(theme: Theme)
@@ -138,6 +139,7 @@ object ColorManager {
 
     fun onSystemNightModeChange(isNight: Boolean) {
         isNightMode = isNight
+        colorCache.evictAll()
         activeColorScheme = evaluateActiveColorScheme()
     }
 
@@ -169,23 +171,32 @@ object ColorManager {
     } ?: colorScheme("default") ?: theme.colorSchemes.first()
 
     /** 每次切换主题后，都要调用此函数，初始化配色 */
-    fun switchTheme(theme: Theme) {
+    fun switchTheme(
+        theme: Theme,
+        suppressFireChange: Boolean = false,
+    ) {
         bitmapCache?.evictAll()
         gradientDrawableCache?.evictAll()
+        colorCache.evictAll()
         this.theme = theme
         val defaultScheme = colorScheme("default") ?: theme.colorSchemes.first()
         lightModeColorScheme = defaultScheme.colors["light_scheme"]?.let { colorScheme(it) }
         darkModeColorScheme = defaultScheme.colors["dark_scheme"]?.let { colorScheme(it) }
-        activeColorScheme = evaluateActiveColorScheme()
+        if (suppressFireChange) {
+            _activeColorScheme = evaluateActiveColorScheme()
+        } else {
+            activeColorScheme = evaluateActiveColorScheme()
+        }
     }
 
     fun setColorScheme(scheme: ColorScheme) {
+        colorCache.evictAll()
         activeColorScheme = scheme
         normalModeColor = scheme.id
     }
 
     @ColorInt
-    private fun resolveColor(key: String): Int {
+    private fun resolveColor(key: String): Int = colorCache.get(key) ?: run {
         val color =
             try {
                 resolveValue(key) { value ->
@@ -194,7 +205,8 @@ object ColorManager {
             } catch (_: IllegalArgumentException) {
                 ColorUtils.parseColor(key)
             }
-        return color
+        colorCache.put(key, color)
+        color
     }
 
     private fun resolveDrawable(key: String): Drawable? {

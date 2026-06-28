@@ -122,10 +122,12 @@ jobs:
           body: |
             Update Version: ${{ github.ref_name }}
 
-            QNN DSP 版本 — SoC 对照：
+            **如果你没有使用高通设备，或者你的 CPU 不在以下列表中，直接使用 v81 版本即可**
+
+            **QNN DSP 版本 — SoC 对照**
             | Flavor | SoC |
             |--------|-----|
-            | v81 | SM8850 (Snapdragon 8 Elite) |
+            | v81 | SM8850 (Snapdragon 8 Gen 5) |
             | v79 | SM8750 (Snapdragon 8 Gen 4) |
             | v75 | SM8650 (Snapdragon 8 Gen 3) |
             | v73 | SM8550 (Snapdragon 8 Gen 2) |

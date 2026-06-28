@@ -11,25 +11,28 @@ import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.model.TextKeyboard
+import com.osfans.trime.util.ResettableLazy
 import splitties.bitflags.hasFlag
 
 /** [鍵盤][Keyboard]中的各個按鍵，包含單擊、長按、滑動等多種[事件][KeyAction]  */
 class Key(
     private val parent: Keyboard,
-    private val selfConfig: TextKeyboard.TextKey? = null,
+    initialConfig: TextKeyboard.TextKey? = null,
 ) {
+    private var selfConfig: TextKeyboard.TextKey? = initialConfig
     private val rime get() = RimeDaemon.getFirstSessionOrNull()!!
 
     var index: Int = -1
 
-    val keyActions: Map<KeyBehavior, KeyAction> =
+    var keyActions: Map<KeyBehavior, KeyAction> =
         buildMap {
             selfConfig?.behaviors?.forEach {
                 put(it.key, KeyActionManager.getAction(it.value))
             }
         }
+        private set
     var edgeFlags = 0
-    private val sendBindings: Boolean
+    private var sendBindings: Boolean
 
     var isPressed = false
         private set
@@ -48,18 +51,27 @@ class Key(
     var extraWidthLeft = 0
     var extraWidthRight = 0
 
-    private val label = selfConfig?.label ?: ""
-    private val labelSymbol = selfConfig?.labelSymbol ?: ""
-    val hint: String = selfConfig?.hint ?: ""
-    val dynamicTarget: String? = selfConfig?.dynamic?.takeIf { it.isNotEmpty() }
-    val popup = selfConfig?.popup ?: emptyList()
+    private var label = selfConfig?.label ?: ""
+    private var labelSymbol = selfConfig?.labelSymbol ?: ""
+    var hint: String = selfConfig?.hint ?: ""
+        private set
+    var dynamicTarget: String? = selfConfig?.dynamic?.takeIf { it.isNotEmpty() }
+        private set
+    var popup = selfConfig?.popup ?: emptyList<String>()
+        private set
 
-    val keyTextSize: Float = selfConfig?.keyTextSize ?: 0f
-    val symbolTextSize: Float = selfConfig?.symbolTextSize ?: 0f
-    val hintTextSize: Float = selfConfig?.hintTextSize ?: 0f
-    val roundCorner: Float? = selfConfig?.roundCorner?.takeIf { it >= 0 }
-    val keyBorder: Int? = selfConfig?.keyBorder?.takeIf { it >= 0 }
-    val keyBorderColor: String? = selfConfig?.keyBorderColor?.takeIf { it.isNotEmpty() }
+    var keyTextSize: Float = selfConfig?.keyTextSize ?: 0f
+        private set
+    var symbolTextSize: Float = selfConfig?.symbolTextSize ?: 0f
+        private set
+    var hintTextSize: Float = selfConfig?.hintTextSize ?: 0f
+        private set
+    var roundCorner: Float? = selfConfig?.roundCorner?.takeIf { it >= 0 }
+        private set
+    var keyBorder: Int? = selfConfig?.keyBorder?.takeIf { it >= 0 }
+        private set
+    var keyBorderColor: String? = selfConfig?.keyBorderColor?.takeIf { it.isNotEmpty() }
+        private set
     var keyTextOffsetX = 0f
         get() = field + keyOffsetX
     var keyTextOffsetY = 0f
@@ -96,31 +108,105 @@ class Key(
         if (src(it).isEmpty()) null else ColorManager.getDrawable(src(it))
     } ?: ColorManager.getDrawable(fallback)
 
-    private val keyBackground by lazy { getDrawable({ keyBackColor }, "key_back_color") }
-    private val offKeyBackground by lazy { ColorManager.getDrawable("off_key_back_color") }
-    private val onKeyBackground by lazy { ColorManager.getDrawable("on_key_back_color") }
+    private val keyBackgroundDelegate = ResettableLazy { getDrawable({ keyBackColor }, "key_back_color") }
+    private val keyBackground: Drawable? by keyBackgroundDelegate
+    private val offKeyBackgroundDelegate = ResettableLazy { ColorManager.getDrawable("off_key_back_color") }
+    private val offKeyBackground: Drawable? by offKeyBackgroundDelegate
+    private val onKeyBackgroundDelegate = ResettableLazy { ColorManager.getDrawable("on_key_back_color") }
+    private val onKeyBackground: Drawable? by onKeyBackgroundDelegate
 
-    private val keyTextColor by lazy { getColor({ keyTextColor }, "key_text_color") }
-    private val offKeyTextColor by lazy { getColor("off_key_text_color", keyTextColor) }
-    private val onKeyTextColor by lazy { getColor("on_key_text_color", keyTextColor) }
-    private val keySymbolColor by lazy { getColor({ keySymbolColor }, "key_symbol_color") }
-    private val offKeySymbolColor by lazy { getColor("off_key_symbol_color", keySymbolColor) }
-    private val onKeySymbolColor by lazy { getColor("on_key_symbol_color", keySymbolColor) }
-    private val hlKeyBackground by lazy { getDrawable({ hlKeyBackColor }, "hilited_key_back_color") }
-    private val hlOffKeyBackground by lazy { ColorManager.getDrawable("hilited_off_key_back_color") }
-    private val hlOnKeyBackground by lazy { ColorManager.getDrawable("hilited_on_key_back_color") }
-    private val hlKeyTextColor by lazy { getColor({ hlKeyTextColor }, "hilited_key_text_color") }
-    private val hlOffKeyTextColor by lazy { getColor("hilited_off_key_text_color", hlKeyTextColor) }
-    private val hlOnKeyTextColor by lazy { getColor("hilited_on_key_text_color", hlKeyTextColor) }
-    private val hlKeySymbolColor by lazy { getColor({ hlKeySymbolColor }, "hilited_key_symbol_color") }
-    private val hlOffKeySymbolColor by lazy { getColor("hilited_off_key_symbol_color", hlKeySymbolColor) }
-    private val hlOnKeySymbolColor by lazy { getColor("hilited_on_key_symbol_color", hlKeySymbolColor) }
+    private val keyTextColorDelegate = ResettableLazy { getColor({ keyTextColor }, "key_text_color") }
+    private val keyTextColor: Int by keyTextColorDelegate
+    private val offKeyTextColorDelegate = ResettableLazy { getColor("off_key_text_color", keyTextColor) }
+    private val offKeyTextColor: Int by offKeyTextColorDelegate
+    private val onKeyTextColorDelegate = ResettableLazy { getColor("on_key_text_color", keyTextColor) }
+    private val onKeyTextColor: Int by onKeyTextColorDelegate
+    private val keySymbolColorDelegate = ResettableLazy { getColor({ keySymbolColor }, "key_symbol_color") }
+    private val keySymbolColor: Int by keySymbolColorDelegate
+    private val offKeySymbolColorDelegate = ResettableLazy { getColor("off_key_symbol_color", keySymbolColor) }
+    private val offKeySymbolColor: Int by offKeySymbolColorDelegate
+    private val onKeySymbolColorDelegate = ResettableLazy { getColor("on_key_symbol_color", keySymbolColor) }
+    private val onKeySymbolColor: Int by onKeySymbolColorDelegate
+    private val hlKeyBackgroundDelegate = ResettableLazy { getDrawable({ hlKeyBackColor }, "hilited_key_back_color") }
+    private val hlKeyBackground: Drawable? by hlKeyBackgroundDelegate
+    private val hlOffKeyBackgroundDelegate = ResettableLazy { ColorManager.getDrawable("hilited_off_key_back_color") }
+    private val hlOffKeyBackground: Drawable? by hlOffKeyBackgroundDelegate
+    private val hlOnKeyBackgroundDelegate = ResettableLazy { ColorManager.getDrawable("hilited_on_key_back_color") }
+    private val hlOnKeyBackground: Drawable? by hlOnKeyBackgroundDelegate
+    private val hlKeyTextColorDelegate = ResettableLazy { getColor({ hlKeyTextColor }, "hilited_key_text_color") }
+    private val hlKeyTextColor: Int by hlKeyTextColorDelegate
+    private val hlOffKeyTextColorDelegate = ResettableLazy { getColor("hilited_off_key_text_color", hlKeyTextColor) }
+    private val hlOffKeyTextColor: Int by hlOffKeyTextColorDelegate
+    private val hlOnKeyTextColorDelegate = ResettableLazy { getColor("hilited_on_key_text_color", hlKeyTextColor) }
+    private val hlOnKeyTextColor: Int by hlOnKeyTextColorDelegate
+    private val hlKeySymbolColorDelegate = ResettableLazy { getColor({ hlKeySymbolColor }, "hilited_key_symbol_color") }
+    private val hlKeySymbolColor: Int by hlKeySymbolColorDelegate
+    private val hlOffKeySymbolColorDelegate = ResettableLazy { getColor("hilited_off_key_symbol_color", hlKeySymbolColor) }
+    private val hlOffKeySymbolColor: Int by hlOffKeySymbolColorDelegate
+    private val hlOnKeySymbolColorDelegate = ResettableLazy { getColor("hilited_on_key_symbol_color", hlKeySymbolColor) }
+    private val hlOnKeySymbolColor: Int by hlOnKeySymbolColorDelegate
+
+    private val keyBorderColorDelegate = ResettableLazy {
+        val perKey = keyBorderColor
+        if (perKey != null) {
+            runCatching { ColorManager.getColor(perKey) }.getOrDefault(ColorManager.getColor("key_border_color"))
+        } else {
+            ColorManager.getColor("key_border_color")
+        }
+    }
+    val keyBorderColorValue: Int by keyBorderColorDelegate
+
+    fun invalidateColors() {
+        keyBackgroundDelegate.invalidate()
+        offKeyBackgroundDelegate.invalidate()
+        onKeyBackgroundDelegate.invalidate()
+        keyTextColorDelegate.invalidate()
+        offKeyTextColorDelegate.invalidate()
+        onKeyTextColorDelegate.invalidate()
+        keySymbolColorDelegate.invalidate()
+        offKeySymbolColorDelegate.invalidate()
+        onKeySymbolColorDelegate.invalidate()
+        hlKeyBackgroundDelegate.invalidate()
+        hlOffKeyBackgroundDelegate.invalidate()
+        hlOnKeyBackgroundDelegate.invalidate()
+        hlKeyTextColorDelegate.invalidate()
+        hlOffKeyTextColorDelegate.invalidate()
+        hlOnKeyTextColorDelegate.invalidate()
+        hlKeySymbolColorDelegate.invalidate()
+        hlOffKeySymbolColorDelegate.invalidate()
+        hlOnKeySymbolColorDelegate.invalidate()
+        keyBorderColorDelegate.invalidate()
+    }
+
+    fun refreshFromConfig(newConfig: TextKeyboard.TextKey) {
+        selfConfig = newConfig
+        label = newConfig.label
+        labelSymbol = newConfig.labelSymbol
+        hint = newConfig.hint
+        dynamicTarget = newConfig.dynamic.takeIf { it.isNotEmpty() }
+        popup = newConfig.popup
+        keyTextSize = newConfig.keyTextSize
+        symbolTextSize = newConfig.symbolTextSize
+        hintTextSize = newConfig.hintTextSize
+        roundCorner = newConfig.roundCorner.takeIf { it >= 0f }
+        keyBorder = newConfig.keyBorder.takeIf { it >= 0 }
+        keyBorderColor = newConfig.keyBorderColor.takeIf { it.isNotEmpty() }
+        keyActions = buildMap {
+            newConfig.behaviors.forEach {
+                put(it.key, KeyActionManager.getAction(it.value))
+            }
+        }
+        val hasStateDependentBehavior = newConfig.behaviors.keys.any { it < KeyBehavior.COMBO }
+        sendBindings = newConfig.sendBindings || hasStateDependentBehavior
+        invalidateColors()
+    }
 
     init {
-        if (selfConfig != null) {
-            val hasStateDependentBehavior = selfConfig.behaviors.keys.any { it < KeyBehavior.COMBO }
+        val config = selfConfig
+        if (config != null) {
+            val hasStateDependentBehavior = config.behaviors.keys.any { it < KeyBehavior.COMBO }
             if (hasStateDependentBehavior) parent.appearanceStateKeys.add(this)
-            sendBindings = selfConfig.sendBindings || hasStateDependentBehavior
+            sendBindings = config.sendBindings || hasStateDependentBehavior
         } else {
             sendBindings = true
         }
@@ -286,15 +372,6 @@ class Key(
         2 -> if (isPressed) hlOnKeySymbolColor else onKeySymbolColor
         1 -> if (isPressed) hlOffKeySymbolColor else offKeySymbolColor
         else -> if (isPressed) hlKeySymbolColor else keySymbolColor
-    }
-
-    fun getKeyBorderColor(): Int {
-        val perKey = keyBorderColor
-        return if (perKey != null) {
-            runCatching { ColorManager.getColor(perKey) }.getOrDefault(ColorManager.getColor("key_border_color"))
-        } else {
-            ColorManager.getColor("key_border_color")
-        }
     }
 }
 

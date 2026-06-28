@@ -53,6 +53,9 @@ class KeyboardView(
     internal val hintTextSize = theme.generalStyle.hintTextSize.takeIf { it > 0 } ?: keyTextSize
     internal val popupOnKeyPress by AppPrefs.defaultInstance().keyboard.popupOnKeyPress
 
+    var showKeySymbols = true
+    var showKeyHints = true
+
     private var voiceOverlay: FrameLayout? = null
     private var voiceWave: WaveformView? = null
 
@@ -152,7 +155,11 @@ class KeyboardView(
 
         setPadding(
             keyboard.horizontalGap / 2 + key.extraWidthLeft,
-            if (key.edgeFlags and Keyboard.EDGE_TOP != 0) keyboard.keyboardPaddingTop else keyboard.verticalGap / 2,
+            if (key.edgeFlags and Keyboard.EDGE_TOP != 0) {
+                maxOf(keyboard.keyboardPaddingTop, keyboard.verticalGap / 2)
+            } else {
+                keyboard.verticalGap / 2
+            },
             keyboard.horizontalGap / 2 + key.extraWidthRight,
             if (key.edgeFlags and Keyboard.EDGE_BOTTOM == 0) keyboard.verticalGap / 2 else 0,
         )
@@ -171,6 +178,11 @@ class KeyboardView(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+    }
+
+    fun invalidateAllKeyColors() {
+        keyboard.invalidateAllKeyColors()
+        invalidateAllKeys()
     }
 
     fun invalidateAllKeys() {
