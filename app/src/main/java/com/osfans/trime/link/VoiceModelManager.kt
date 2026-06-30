@@ -39,10 +39,10 @@ object VoiceModelManager {
     }
 
     fun getSelectedVariant(): ModelVariant {
-        val pref = AppPrefs.defaultInstance().localVoice.voiceModelType.getValue()
+        val pref = AppPrefs.defaultInstance().voiceInput.voiceModelType.getValue()
         return when (pref) {
-            AppPrefs.LocalVoice.VoiceModelType.INT8 -> ModelVariant.INT8
-            AppPrefs.LocalVoice.VoiceModelType.QNN -> ModelVariant.QNN
+            AppPrefs.VoiceInput.VoiceModelType.INT8 -> ModelVariant.INT8
+            AppPrefs.VoiceInput.VoiceModelType.QNN -> ModelVariant.QNN
             else -> ModelVariant.STANDARD
         }
     }

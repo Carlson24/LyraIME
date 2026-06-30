@@ -12,6 +12,7 @@ class DynamicController(
     private val onSwitchRequest: (String) -> Unit,
 ) {
     private val keyboardList = mutableListOf<String>()
+    private val charCounts = mutableListOf<Int>()
     private var cursorPosition: Int = 0
     var originalKeyboard: String = ".default"
 
@@ -43,21 +44,45 @@ class DynamicController(
         }
         Timber.d("dynamic onInput: target=$dynamicTarget, cursor=$cursorPosition, keyboard=$kb, list=$keyboardList")
         keyboardList.add(cursorPosition, kb)
+        charCounts.add(cursorPosition, 1)
         cursorPosition++
         switchToKeyboardAt(cursorPosition)
     }
 
-    fun onDelete(): Boolean {
-        if (cursorPosition <= 0) return false
-        keyboardList.removeAt(cursorPosition - 1)
-        cursorPosition--
-        Timber.d("dynamic onDelete: cursor=$cursorPosition, list=$keyboardList")
+    fun recordCharCount(count: Int) {
+        if (cursorPosition > 0 && charCounts.size >= cursorPosition) {
+            charCounts[cursorPosition - 1] = count.coerceAtLeast(1)
+        }
+    }
+
+    fun keyIndexFromCaret(caretPos: Int): Int {
+        if (caretPos <= 0) return 0
+        var remaining = caretPos
+        for (i in charCounts.indices) {
+            remaining -= charCounts[i]
+            if (remaining <= 0) return i + 1
+        }
+        return charCounts.size
+    }
+
+    fun onDelete(count: Int = 1): Boolean {
+        if (count <= 0 || cursorPosition <= 0) return false
+        val actualCount = count.coerceAtMost(cursorPosition)
+        cursorPosition -= actualCount
+        repeat(actualCount) {
+            keyboardList.removeAt(cursorPosition)
+            charCounts.removeAt(cursorPosition)
+        }
+        Timber.d("dynamic onDelete: removed=$actualCount, cursor=$cursorPosition, list=$keyboardList")
         switchToKeyboardAt(cursorPosition)
         return true
     }
 
     fun onCursorMoved(position: Int) {
-        cursorPosition = position.coerceIn(0, keyboardList.size)
+        if (isKeyProcessing) return
+        val newPos = position.coerceIn(0, keyboardList.size)
+        if (newPos == cursorPosition) return
+        cursorPosition = newPos
         Timber.d("dynamic onCursorMoved: cursor=$cursorPosition")
         switchToKeyboardAt(cursorPosition)
     }
@@ -65,6 +90,7 @@ class DynamicController(
     fun clear() {
         Timber.d("dynamic clear: list was $keyboardList, switching to original=$originalKeyboard")
         keyboardList.clear()
+        charCounts.clear()
         cursorPosition = 0
         onSwitchRequest(originalKeyboard)
     }
@@ -72,6 +98,7 @@ class DynamicController(
     fun reset() {
         Timber.d("dynamic reset: list was $keyboardList")
         keyboardList.clear()
+        charCounts.clear()
         cursorPosition = 0
     }
 
@@ -79,7 +106,10 @@ class DynamicController(
         if (committed <= 0 || keyboardList.isEmpty()) return
         val toRemove = committed.coerceAtMost(keyboardList.size)
         Timber.d("dynamic trimCommitted: removing $toRemove from list=$keyboardList")
-        repeat(toRemove) { keyboardList.removeAt(0) }
+        repeat(toRemove) {
+            keyboardList.removeAt(0)
+            charCounts.removeAt(0)
+        }
         cursorPosition = (cursorPosition - toRemove).coerceAtLeast(0)
         onSwitchRequest(originalKeyboard)
     }

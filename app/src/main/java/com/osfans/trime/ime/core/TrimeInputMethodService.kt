@@ -93,6 +93,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private var lastCommittedText: String = ""
 
     private var composingText: String = ""
+    private var cursorComposingText: String = ""
 
     private var cursorUpdateIndex = 0
 
@@ -126,7 +127,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private val onColorChangeListener =
         ColorManager.OnColorChangeListener {
             ContextCompat.getMainExecutor(this).execute {
-                invalidateInputViewColors(it)
+                replaceInputViews(it)
             }
         }
 
@@ -221,7 +222,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
                 }
             }
             is RimeMessage.InlinePreeditMessage -> {
-                updateComposingText(it.data)
+                updateComposingText(it.data, it.cursorPos)
             }
             is RimeMessage.KeyMessage ->
                 it.data.let msg@{
@@ -460,6 +461,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             candidatesStart,
             candidatesEnd,
         )
+        Timber.d("onUpdateSelection: old=($oldSelStart,$oldSelEnd) new=($newSelStart,$newSelEnd) candidates=($candidatesStart,$candidatesEnd) composing='$composingText'")
         cursorUpdateIndex += 1
         handleCursorUpdate(newSelStart, newSelEnd, candidatesStart, candidatesEnd, cursorUpdateIndex)
         inputView?.updateSelection(newSelStart, newSelEnd)
@@ -476,6 +478,10 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         if (candidatesStart == candidatesEnd) return
         if (newSelStart in candidatesStart..candidatesEnd) {
             val position = newSelStart - candidatesStart
+            if (composingText == cursorComposingText) {
+                KeyboardWindow.dynamicController?.onCursorMoved(position)
+            }
+            cursorComposingText = composingText
             if (position != composingText.length) {
                 postRimeJob {
                     if (updateIndex != cursorUpdateIndex) return@postRimeJob
@@ -485,6 +491,8 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             }
         } else {
             Timber.d("handleCursorUpdate: clear composition")
+            cursorComposingText = ""
+            KeyboardWindow.dynamicController?.clear()
             postRimeJob {
                 clearComposition()
             }
@@ -558,6 +566,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         restarting: Boolean,
     ) {
         composingText = ""
+        cursorComposingText = ""
         Timber.d("onStartInput: restarting=$restarting")
         val isNullType = attribute.inputType and InputType.TYPE_MASK_CLASS == InputType.TYPE_NULL
         postRimeJob {
@@ -617,9 +626,11 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             monitorCursorAnchor(false)
         }
         composingText = ""
+        cursorComposingText = ""
         postRimeJob {
             clearComposition()
         }
+        inputView?.stopVoiceRecognition()
         InputFeedbackManager.finishInput()
     }
 
@@ -634,6 +645,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         }
         lastCommittedText = text
         composingText = ""
+        cursorComposingText = ""
         InputFeedbackManager.textCommitSpeak(text)
     }
 
@@ -961,14 +973,14 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         }
     }
 
-    internal fun updateComposingText(text: String) {
+    internal fun updateComposingText(text: String, cursorPos: Int = 1) {
         val ic = currentInputConnection ?: return
         ic.beginBatchEdit()
         if (composingText.isNotEmpty() || text.isNotEmpty()) {
             if (!ic.getSelectedText(0).isNullOrEmpty()) {
                 ic.deleteSurroundingText(1, 0)
             }
-            ic.setComposingText(text, 1)
+            ic.setComposingText(text, if (text.isEmpty()) 0 else text.length - cursorPos + 1)
             if (text.isEmpty()) {
                 ic.finishComposingText()
             }

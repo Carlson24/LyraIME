@@ -6,7 +6,6 @@
 package com.osfans.trime.ime.bar.ui
 
 import android.content.Context
-import android.view.View
 import android.widget.ViewAnimator
 import androidx.annotation.DrawableRes
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -68,11 +67,7 @@ class AlwaysUi(
     val inlineSuggestionsUi = InlineSuggestionsUi(ctx)
 
     val hideKeyboardButton = ToolButton(ctx, R.drawable.ic_baseline_arrow_drop_down_24)
-    val asrkbVoiceButton =
-        ToolButton(ctx, R.drawable.ic_baseline_mic_24).apply {
-            visibility = View.GONE
-        }
-    private val rightButtonAnimator =
+    private val rightMostButton =
         ViewAnimator(ctx).apply {
             add(hideKeyboardButton, lParams(matchParent, matchParent))
             buttonsUi.firstButton?.let { add(it, lParams(matchParent, matchParent)) }
@@ -102,16 +97,9 @@ class AlwaysUi(
             },
         )
         add(
-            rightButtonAnimator,
+            rightMostButton,
             lParams(rightWidth, rightHeight) {
                 endOfParent()
-                centerVertically()
-            },
-        )
-        add(
-            asrkbVoiceButton,
-            lParams(rightWidth, rightHeight) {
-                before(rightButtonAnimator)
                 centerVertically()
             },
         )
@@ -119,7 +107,8 @@ class AlwaysUi(
             animator,
             lParams(matchConstraints, matchParent) {
                 after(leftMostButton)
-                before(asrkbVoiceButton)
+                before(rightMostButton)
+                endOfParent()
                 centerVertically()
             },
         )
@@ -144,7 +133,7 @@ class AlwaysUi(
     private fun updateRightMostButton(state: State) {
         val hasFirstButton = buttonsUi.firstButton != null
         val showFirst = hasFirstButton && (theme.toolBar.buttons.isNotEmpty() || state != State.Toolbar)
-        rightButtonAnimator.displayedChild = if (showFirst) 1 else 0
+        rightMostButton.displayedChild = if (showFirst) 1 else 0
     }
 
     private fun updateLeftMostButton(state: State) {

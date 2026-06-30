@@ -149,6 +149,8 @@ class Rime :
         emitResponse()
     }
 
+    override suspend fun getCaretPos(): Int = withRimeContext { getRimeCaretPos() }
+
     override suspend fun availableSchemata(): Array<SchemaItem> = withRimeContext { getAvailableRimeSchemaList() }
 
     override suspend fun enabledSchemata(): Array<SchemaItem> = withRimeContext { getSelectedRimeSchemaList() }
@@ -276,7 +278,7 @@ class Rime :
         } else {
             composition
         }
-        handleRimeMessage(5, arrayOf(inlinePreedit))
+        handleRimeMessage(5, arrayOf(inlinePreedit, composition.cursorPos))
         handleRimeMessage(6, arrayOf(composition))
     }
 

@@ -498,10 +498,8 @@ class Keyboard(
 
     fun refreshKeyBehaviors(newConfig: TextKeyboard) {
         val allNewKeys = newConfig.rows.flatMap { it.keys }.filter { !it.spacer }
-        var keyIndex = 0
-        for (newTextKey in allNewKeys) {
-            mKeys.getOrNull(keyIndex)?.refreshFromConfig(newTextKey)
-            keyIndex++
+        for ((keyIndex, newTextKey) in allNewKeys.withIndex()) {
+            mKeys.getOrNull(keyIndex)?.refreshFromConfig(newTextKey, newConfig, theme.generalStyle)
         }
     }
 

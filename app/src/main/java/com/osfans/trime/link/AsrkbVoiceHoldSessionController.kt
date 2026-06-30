@@ -65,10 +65,13 @@ internal class AsrkbVoiceHoldSessionController(
     }
 
     fun stop() {
+        val wasStarted = startedByController
         startedByController = false
         hideOverlay()
         VoiceOverlayUiBridge.clear()
-        onSessionFinished?.invoke()
+        if (wasStarted) {
+            onSessionFinished?.invoke()
+        }
         if (useAidl()) {
             if (AsrkbSpeechClient.isHolding()) {
                 AsrkbSpeechClient.stopHoldSession()

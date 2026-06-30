@@ -72,6 +72,8 @@ interface RimeApi {
 
     suspend fun clearComposition()
 
+    suspend fun getCaretPos(): Int
+
     suspend fun getRawInput(): String
 
     suspend fun setRawInput(input: String): Boolean

@@ -547,5 +547,6 @@ class KeyboardWindow :
         inputBarDelegate.navBar.detach()
         dynamicController?.reset()
         currentKeyboardView?.onDetach()
+        inputBarDelegate.stopAsrkbVoiceFromToolbar()
     }
 }

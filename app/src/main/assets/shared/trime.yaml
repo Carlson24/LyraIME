@@ -939,6 +939,7 @@ preset_keys:
   Candidate_switch: {toggle: _hide_candidate, send: Mode_switch, states: [有候選, 無候選]}
   Comment_switch: {toggle: _hide_comment, send: Mode_switch, states: [有註釋, 無註釋]}
   Hint_switch: {toggle: _hide_key_hint, send: Mode_switch, states: [有助記, 無助記]}
+  Voice_switch: {toggle: _voice_assist, send: Mode_switch, states: [開始識別, 停止識別]}
   # trime命令
   Date: {label: 日期, command: date, option: "yyyy-MM-dd"}
   ChineseDate: {label: 農曆, command: date, option: "zh_CN@calendar=chinese"} #農曆等日期(>=Android 7.0)：date 語言@calendar=曆法 格式。具體參見https://developer.android.com/reference/android/icu/util/Calendar.html

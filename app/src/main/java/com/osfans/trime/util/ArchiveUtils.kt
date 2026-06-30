@@ -17,7 +17,7 @@ fun extractTarBz2(
 ): File {
     targetDir.mkdirs()
     execTar(listOf("xjf"), tarBz2File, targetDir)
-    return singleSubDirOrSelf(targetDir)
+    return targetDir
 }
 
 fun extractTarGz(
@@ -26,7 +26,7 @@ fun extractTarGz(
 ): File {
     targetDir.mkdirs()
     execTar(listOf("xzf"), tarGzFile, targetDir)
-    return singleSubDirOrSelf(targetDir)
+    return targetDir
 }
 
 fun extractTarZst(
@@ -35,7 +35,7 @@ fun extractTarZst(
 ): File {
     targetDir.mkdirs()
     execTar(listOf("--zstd", "-xf"), tarZstFile, targetDir)
-    return singleSubDirOrSelf(targetDir)
+    return targetDir
 }
 
 fun extractTarGzToDir(
@@ -81,14 +81,32 @@ fun extractTarZstToDir(
 }
 
 private fun execTar(flags: List<String>, file: File, targetDir: File) {
-    val cmd = mutableListOf("tar")
-    cmd.addAll(flags)
-    cmd.addAll(listOf(file.absolutePath, "-C", targetDir.absolutePath, "--strip-components=1"))
-    val process = ProcessBuilder(cmd).redirectErrorStream(true).start()
-    val exitCode = process.waitFor()
-    if (exitCode != 0) {
-        val stderr = process.inputStream.bufferedReader().use { it.readText() }
-        throw RuntimeException("tar extraction failed (exit $exitCode): $stderr")
+    val tmpDir = File(targetDir.parentFile, ".tmp_tar_${System.nanoTime()}")
+    tmpDir.mkdirs()
+    try {
+        val cmd = mutableListOf("tar")
+        cmd.addAll(flags)
+        cmd.addAll(listOf(file.absolutePath, "-C", tmpDir.absolutePath))
+        val process = ProcessBuilder(cmd).redirectErrorStream(true).start()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val stderr = process.inputStream.bufferedReader().use { it.readText() }
+            throw RuntimeException("tar extraction failed (exit $exitCode): $stderr")
+        }
+
+        val content = singleSubDirOrSelf(tmpDir)
+        content.listFiles()?.forEach { child ->
+            val dest = File(targetDir, child.name)
+            if (child.isDirectory) {
+                child.copyRecursively(dest, overwrite = true)
+                child.deleteRecursively()
+            } else {
+                if (dest.exists()) dest.delete()
+                child.renameTo(dest)
+            }
+        }
+    } finally {
+        tmpDir.deleteRecursively()
     }
 }
 

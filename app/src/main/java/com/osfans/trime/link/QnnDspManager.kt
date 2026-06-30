@@ -22,16 +22,14 @@ object QnnDspManager {
 
     data class DspLibs(val stub: File, val skel: File, val htp: File, val system: File)
 
-    fun getHtpVariant(): String? {
-        return when (Build.SOC_MODEL) {
-            "SM8350" -> "V68"
-            "SM8450", "SM8475" -> "V69"
-            "SM8550" -> "V73"
-            "SM8650" -> "V75"
-            "SM8750" -> "V79"
-            "SM8850" -> "V81"
-            else -> null
-        }
+    fun getHtpVariant(): String? = when (Build.SOC_MODEL) {
+        "SM8350" -> "V68"
+        "SM8450", "SM8475" -> "V69"
+        "SM8550" -> "V73"
+        "SM8650" -> "V75"
+        "SM8750" -> "V79"
+        "SM8850" -> "V81"
+        else -> null
     }
 
     fun isInstalled(): Boolean {
@@ -69,7 +67,7 @@ object QnnDspManager {
         val entry = ResourceUrls.QNN_DSP_MAP[Build.SOC_MODEL]
             ?: ResourceUrls.QNN_DSP_MAP["SM8850"]!!
 
-        val tarBz2 = File(context.cacheDir, "qnnDsp-${variant}.tar.bz2")
+        val tarBz2 = File(context.cacheDir, "qnnDsp-$variant.tar.bz2")
         try {
             FileDownloader.download(entry.url, tarBz2, expectedSha256 = entry.sha256)
             extractTarBz2(tarBz2, dir)

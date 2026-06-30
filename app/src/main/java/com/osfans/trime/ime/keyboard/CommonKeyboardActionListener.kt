@@ -137,7 +137,7 @@ class CommonKeyboardActionListener {
                 }
             }
 
-            override fun onAction(action: KeyAction, key: Key?) {
+            override fun onAction(action: KeyAction, key: Key?, behavior: KeyBehavior) {
                 val shouldHandle = when {
                     action.commit.isNotEmpty() -> {
                         service.commitText(action.commit)
@@ -173,6 +173,10 @@ class CommonKeyboardActionListener {
 
                 val sc = KeyboardWindow.dynamicController
                 if (sc != null) {
+                    val isSwipe = behavior == KeyBehavior.SWIPE_UP ||
+                        behavior == KeyBehavior.SWIPE_DOWN ||
+                        behavior == KeyBehavior.SWIPE_LEFT ||
+                        behavior == KeyBehavior.SWIPE_RIGHT
                     val skip = action.code in setOf(
                         KeyEvent.KEYCODE_SWITCH_CHARSET,
                         KeyEvent.KEYCODE_EISU,
@@ -184,7 +188,13 @@ class CommonKeyboardActionListener {
                         KeyEvent.KEYCODE_VOICE_ASSIST,
                     ) || action.code == KeyEvent.KEYCODE_DEL ||
                         action.code == KeyEvent.KEYCODE_SPACE ||
-                        action.code == KeyEvent.KEYCODE_ENTER
+                        action.code == KeyEvent.KEYCODE_ENTER ||
+                        action.code == KeyEvent.KEYCODE_TAB ||
+                        action.code == KeyEvent.KEYCODE_DPAD_LEFT ||
+                        action.code == KeyEvent.KEYCODE_DPAD_RIGHT ||
+                        action.code == KeyEvent.KEYCODE_MOVE_HOME ||
+                        action.code == KeyEvent.KEYCODE_MOVE_END ||
+                        isSwipe
                     if (!skip) {
                         sc.onInput(key?.dynamicTarget)
                     }
@@ -451,6 +461,13 @@ class CommonKeyboardActionListener {
                     }
 
                     val isDel = keyEventCode == KeyEvent.KEYCODE_DEL
+                    val isNavKey = keyEventCode in setOf(
+                        KeyEvent.KEYCODE_TAB,
+                        KeyEvent.KEYCODE_DPAD_LEFT,
+                        KeyEvent.KEYCODE_DPAD_RIGHT,
+                        KeyEvent.KEYCODE_MOVE_HOME,
+                        KeyEvent.KEYCODE_MOVE_END,
+                    )
                     val lenBefore = getRawInput().length
                     dc?.isKeyProcessing = true
 
@@ -462,13 +479,23 @@ class CommonKeyboardActionListener {
                     if (dc != null) {
                         if (isDel) {
                             if (lenAfter < lenBefore) {
-                                ContextCompat.getMainExecutor(service).execute { dc.onDelete() }
+                                val deleted = lenBefore - lenAfter
+                                ContextCompat.getMainExecutor(service).execute { dc.onDelete(deleted) }
                             }
                         } else if (lenAfter < lenBefore) {
                             val committed = lenBefore - lenAfter
                             ContextCompat.getMainExecutor(service).execute { dc.trimCommitted(committed) }
+                        } else if (isNavKey) {
+                            val caretPos = compositionCached.cursorPos
+                            val keyIdx = dc.keyIndexFromCaret(caretPos)
+                            Timber.d("handleKey: nav key, cursorPos=$caretPos -> keyIdx=$keyIdx")
+                            ContextCompat.getMainExecutor(service).execute { dc.onCursorMoved(keyIdx) }
+                        } else if (lenAfter > lenBefore) {
+                            val charDiff = lenAfter - lenBefore
+                            ContextCompat.getMainExecutor(service).execute { dc.recordCharCount(charDiff) }
                         }
                     }
+                    Timber.d("handleKey: lenBefore=$lenBefore, lenAfter=$lenAfter, isDel=$isDel")
 
                     if (handled) {
                         shouldReleaseKey = true

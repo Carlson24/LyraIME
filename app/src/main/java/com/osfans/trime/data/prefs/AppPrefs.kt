@@ -88,7 +88,6 @@ class AppPrefs(
     val internal = Internal(shared)
     val general = General(shared).register()
     val voiceInput = VoiceInput(shared).register()
-    val localVoice = LocalVoice(shared).register()
     val profile = Profile(shared).register()
     val keyboard = Keyboard(shared).register()
     val candidates = Candidates(shared).register()
@@ -173,9 +172,11 @@ class AppPrefs(
     ) : PreferenceDelegateOwner(shared, R.string.voice_input) {
         companion object {
             const val ASRKB_AIDL_VOICE_INPUT = "asrkb_aidl_voice_input"
-            const val ASRKB_AIDL_VOICE_TOOLBAR_BUTTON = "asrkb_aidl_voice_toolbar_button"
             const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
             const val VOICE_ANIMATION_STYLE = "voice_animation_style"
+            const val VOICE_MODEL_TYPE = "voice_model_type"
+            const val VOICE_NUM_THREADS = "voice_num_threads"
+            const val VOICE_SENSITIVITY = "voice_sensitivity"
         }
 
         enum class VoiceAnimationStyle(override val stringRes: Int) : PreferenceDelegateEnum {
@@ -183,17 +184,17 @@ class AppPrefs(
             SPHERE(R.string.voice_animation_sphere),
         }
 
+        enum class VoiceModelType(override val stringRes: Int) : PreferenceDelegateEnum {
+            STANDARD(R.string.voice_model_type_standard),
+            INT8(R.string.voice_model_type_int8),
+            QNN(R.string.voice_model_type_qnn),
+        }
+
         val asrkbAidlVoiceInputEnabled = switch(
             R.string.asrkb_aidl_voice_input,
             ASRKB_AIDL_VOICE_INPUT,
             false,
             R.string.asrkb_aidl_voice_input_summary,
-        )
-        val asrkbAidlVoiceToolbarButtonEnabled = switch(
-            R.string.asrkb_aidl_voice_toolbar_button,
-            ASRKB_AIDL_VOICE_TOOLBAR_BUTTON,
-            true,
-            R.string.asrkb_aidl_voice_toolbar_button_summary,
         )
 
         val voiceAnimationStyle = enum(R.string.voice_animation_style, VOICE_ANIMATION_STYLE, VoiceAnimationStyle.PARTICLE)
@@ -208,27 +209,12 @@ class AppPrefs(
             },
             enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
-    }
-
-    class LocalVoice(
-        shared: SharedPreferences,
-    ) : PreferenceDelegateOwner(shared, R.string.local_voice_settings) {
-        companion object {
-            const val VOICE_MODEL_TYPE = "voice_model_type"
-            const val VOICE_NUM_THREADS = "voice_num_threads"
-            const val VOICE_SENSITIVITY = "voice_sensitivity"
-        }
-
-        enum class VoiceModelType(override val stringRes: Int) : PreferenceDelegateEnum {
-            STANDARD(R.string.voice_model_type_standard),
-            INT8(R.string.voice_model_type_int8),
-            QNN(R.string.voice_model_type_qnn),
-        }
 
         val voiceModelType = enum(
             R.string.voice_model_type,
             VOICE_MODEL_TYPE,
             VoiceModelType.STANDARD,
+            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
         val voiceNumThreads = int(
             R.string.voice_num_threads,
@@ -236,7 +222,7 @@ class AppPrefs(
             4,
             1,
             Runtime.getRuntime().availableProcessors().coerceAtLeast(4),
-            enableUiOn = { voiceModelType.getValue() != VoiceModelType.QNN },
+            enableUiOn = { voiceModelType.getValue() != VoiceModelType.QNN && !asrkbAidlVoiceInputEnabled.getValue() },
         )
         val voiceSensitivity = int(
             R.string.voice_sensitivity,
@@ -244,6 +230,7 @@ class AppPrefs(
             5,
             1,
             10,
+            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
     }
 

@@ -75,6 +75,7 @@ sealed class RimeMessage<T>(
 
     data class InlinePreeditMessage(
         override val data: String,
+        val cursorPos: Int = 0,
     ) : RimeMessage<String>(data) {
         override val messageType = MessageType.InlinePreedit
     }
@@ -184,7 +185,7 @@ sealed class RimeMessage<T>(
             MessageType.Commit ->
                 CommitTextMessage(params[0] as CommitProto)
             MessageType.InlinePreedit ->
-                InlinePreeditMessage(params[0] as String)
+                InlinePreeditMessage(params[0] as String, params[1] as? Int ?: 0)
             MessageType.Composition ->
                 CompositionMessage(params[0] as CompositionProto)
             MessageType.Menu ->

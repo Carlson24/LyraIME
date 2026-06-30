@@ -719,12 +719,17 @@ class InputView(
     @RequiresApi(Build.VERSION_CODES.R)
     fun handleInlineSuggestions(response: InlineSuggestionsResponse): Boolean = inputBar.handleInlineSuggestions(response)
 
+    fun stopVoiceRecognition() {
+        inputBar.stopAsrkbVoiceFromToolbar()
+    }
+
     override fun onDetachedFromWindow() {
         ViewCompat.setOnApplyWindowInsetsListener(this, null)
         // cancel the notification job and clear all broadcast receivers,
         // implies that InputView should not be attached again after detached.
         updateWindowViewHeightJob.cancel()
         popup.root.removeAllViews()
+        inputBar.stopAsrkbVoiceFromToolbar()
         inputDepMgr.stop()
         super.onDetachedFromWindow()
     }

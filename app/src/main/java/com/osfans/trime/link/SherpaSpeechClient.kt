@@ -52,11 +52,11 @@ object SherpaSpeechClient {
     private val currentStreamRef = AtomicReference<OnlineStream?>(null)
 
     private data class EngineConfig(
-        val modelType: AppPrefs.LocalVoice.VoiceModelType,
+        val modelType: AppPrefs.VoiceInput.VoiceModelType,
         val numThreads: Int,
         val sensitivity: Int,
     ) {
-        val useQnn: Boolean get() = modelType == AppPrefs.LocalVoice.VoiceModelType.QNN
+        val useQnn: Boolean get() = modelType == AppPrefs.VoiceInput.VoiceModelType.QNN
     }
 
     @Volatile
@@ -502,7 +502,7 @@ object SherpaSpeechClient {
     fun isHolding(): Boolean = isHolding.get()
 
     private fun readEngineConfig(): EngineConfig {
-        val prefs = AppPrefs.defaultInstance().localVoice
+        val prefs = AppPrefs.defaultInstance().voiceInput
         return EngineConfig(
             modelType = prefs.voiceModelType.getValue(),
             numThreads = prefs.voiceNumThreads.getValue()

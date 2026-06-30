@@ -10,6 +10,7 @@ import androidx.annotation.ColorInt
 import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.KeyActionManager
+import com.osfans.trime.data.theme.model.GeneralStyle
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.util.ResettableLazy
 import splitties.bitflags.hasFlag
@@ -57,7 +58,7 @@ class Key(
         private set
     var dynamicTarget: String? = selfConfig?.dynamic?.takeIf { it.isNotEmpty() }
         private set
-    var popup = selfConfig?.popup ?: emptyList<String>()
+    var popup = selfConfig?.popup ?: emptyList()
         private set
 
     var keyTextSize: Float = selfConfig?.keyTextSize ?: 0f
@@ -178,7 +179,19 @@ class Key(
         keyBorderColorDelegate.invalidate()
     }
 
-    fun refreshFromConfig(newConfig: TextKeyboard.TextKey) {
+    fun firstNonZero(a: Float, b: Float, c: Float): Float = if (a != 0f) {
+        a
+    } else if (b != 0f) {
+        b
+    } else {
+        c
+    }
+
+    fun refreshFromConfig(
+        newConfig: TextKeyboard.TextKey,
+        keyboardConfig: TextKeyboard,
+        themeGeneralStyle: GeneralStyle,
+    ) {
         selfConfig = newConfig
         label = newConfig.label
         labelSymbol = newConfig.labelSymbol
@@ -198,6 +211,16 @@ class Key(
         }
         val hasStateDependentBehavior = newConfig.behaviors.keys.any { it < KeyBehavior.COMBO }
         sendBindings = newConfig.sendBindings || hasStateDependentBehavior
+
+        keyTextOffsetX = firstNonZero(newConfig.keyTextOffsetX, keyboardConfig.keyTextOffsetX, themeGeneralStyle.keyTextOffsetX)
+        keyTextOffsetY = firstNonZero(newConfig.keyTextOffsetY, keyboardConfig.keyTextOffsetY, themeGeneralStyle.keyTextOffsetY)
+        keySymbolOffsetX = firstNonZero(newConfig.keySymbolOffsetX, keyboardConfig.keySymbolOffsetX, themeGeneralStyle.keySymbolOffsetX)
+        keySymbolOffsetY = firstNonZero(newConfig.keySymbolOffsetY, keyboardConfig.keySymbolOffsetY, themeGeneralStyle.keySymbolOffsetY)
+        keyHintOffsetX = firstNonZero(newConfig.keyHintOffsetX, keyboardConfig.keyHintOffsetX, themeGeneralStyle.keyHintOffsetX)
+        keyHintOffsetY = firstNonZero(newConfig.keyHintOffsetY, keyboardConfig.keyHintOffsetY, themeGeneralStyle.keyHintOffsetY)
+        keyPressOffsetX = firstNonZero(newConfig.keyPressOffsetX, keyboardConfig.keyPressOffsetX, themeGeneralStyle.keyPressOffsetX)
+        keyPressOffsetY = firstNonZero(newConfig.keyPressOffsetY, keyboardConfig.keyPressOffsetY, themeGeneralStyle.keyPressOffsetY)
+
         invalidateColors()
     }
 

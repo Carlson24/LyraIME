@@ -245,7 +245,7 @@ class KeyView(
             return
         }
 
-        keyboardActionListener.onAction(action, key)
+        keyboardActionListener.onAction(action, key, behavior)
 
         val hookArrow = if (hookShiftArrow) {
             when (action.code) {
