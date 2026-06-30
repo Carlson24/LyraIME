@@ -67,7 +67,6 @@ import splitties.views.dsl.core.add
 import splitties.views.dsl.core.imageView
 import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.view
-import splitties.views.dsl.core.withTheme
 import splitties.views.dsl.core.wrapContent
 import splitties.views.imageDrawable
 
@@ -106,7 +105,6 @@ class InputView(
 
     private val updateWindowViewHeightJob: Job
 
-    private val themedContext = context.withTheme(android.R.style.Theme_DeviceDefault_Settings)
     private val inputDepMgr = InputDependencyManager.initialize(this, themedContext, theme, service, rime)
     private val di = inputDepMgr.di
     private val broadcaster: InputBroadcaster by di.instance()
@@ -121,6 +119,7 @@ class InputView(
     private val inlinePreeditMode by AppPrefs.defaultInstance().general.inlinePreeditMode
     private val appPrefs = AppPrefs.defaultInstance()
     private val effectiveWindowMode get() = service.inputDeviceManager.effectiveWindowMode
+    private val candidatesMode by AppPrefs.defaultInstance().candidates.mode
 
     private val keyboardSidePadding = theme.generalStyle.keyboardPadding
     private val keyboardSidePaddingLandscape = theme.generalStyle.keyboardPaddingLand

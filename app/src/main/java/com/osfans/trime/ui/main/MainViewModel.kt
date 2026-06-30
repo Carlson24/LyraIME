@@ -10,8 +10,6 @@ import androidx.lifecycle.viewModelScope
 import com.osfans.trime.R
 import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.daemon.RimeSession
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
     val toolbarTitle = MutableLiveData<String>()
