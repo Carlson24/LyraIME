@@ -25,7 +25,7 @@ class ButtonsBarUi(
 ) : Ui {
     override val root = view(::FlexboxLayout) {
         alignItems = AlignItems.CENTER
-        justifyContent = JustifyContent.FLEX_START
+        justifyContent = JustifyContent.SPACE_EVENLY
         flexDirection = FlexDirection.ROW_REVERSE
     }
 
@@ -60,9 +60,7 @@ class ButtonsBarUi(
         buttons.drop(1).forEach { config ->
             val button = toolButton(config)
             val size = getButtonSize(config)
-            val lParams = FlexboxLayout.LayoutParams(size.first, size.second).apply {
-                marginEnd = ctx.dp(theme.toolBar.buttonSpacing)
-            }
+            val lParams = FlexboxLayout.LayoutParams(size.first, size.second)
             root.addView(button, lParams)
         }
     }

@@ -15,6 +15,7 @@ import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
 import com.osfans.trime.R
 import com.osfans.trime.data.db.CollectionHelper
 import com.osfans.trime.data.theme.Theme
@@ -113,17 +114,14 @@ class SegmentsWindow(private val source: String) : BoardWindow.BarBoardWindow() 
     }
 
     private val toolbarButtons by lazy {
-        val buttonSpacing = theme.toolBar.buttonSpacing
         FlexboxLayout(context).apply {
             flexDirection = FlexDirection.ROW_REVERSE
             alignItems = AlignItems.CENTER
+            justifyContent = JustifyContent.SPACE_EVENLY
             val buttons = listOf(ui.selectButton, ui.copyButton, ui.starButton, ui.searchButton, ui.shareButton)
             val size = theme.generalStyle.run { candidateViewHeight + commentHeight }
-            buttons.forEachIndexed { index, button ->
+            buttons.forEach { button ->
                 val lParams = FlexboxLayout.LayoutParams(dp(size), dp(size))
-                if (index > 0) {
-                    lParams.marginEnd = dp(buttonSpacing)
-                }
                 addView(button, lParams)
             }
         }

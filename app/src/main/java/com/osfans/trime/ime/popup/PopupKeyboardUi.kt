@@ -20,7 +20,9 @@ import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.core.AutoScaleTextView
 import com.osfans.trime.ime.keyboard.KeyboardWindow
+import com.osfans.trime.ime.keyboard.LabelSegment
 import com.osfans.trime.ime.keyboard.isIconFont
+import com.osfans.trime.ime.keyboard.parseLabelSegments
 import com.osfans.trime.ime.keyboard.toIconName
 import com.osfans.trime.util.UnicodeVariantUtils
 import splitties.dimensions.dp
@@ -70,6 +72,10 @@ class PopupKeyboardUi(
 
     class PopupKeyUi(override val ctx: Context, val theme: Theme, val text: String) : Ui {
 
+        private val segments = text.parseLabelSegments()
+        private val textViews = mutableListOf<AutoScaleTextView>()
+        private val imageViews = mutableListOf<AppCompatImageView>()
+
         val textView = view(::AutoScaleTextView) {
             scaleMode = AutoScaleTextView.Mode.Proportional
             textSize = theme.generalStyle.popupTextSize
@@ -80,36 +86,90 @@ class PopupKeyboardUi(
 
         val imageView = view(::AppCompatImageView) {}
 
-        override val root = frameLayout {
-            add(
-                textView,
-                lParams {
-                    gravity = gravityCenter
-                },
-            )
-            add(
-                imageView,
-                lParams {
-                    gravity = gravityCenter
-                },
-            )
+        override val root = if (segments.size == 1) {
+            frameLayout {
+                add(
+                    textView,
+                    lParams {
+                        gravity = gravityCenter
+                    },
+                )
+                add(
+                    imageView,
+                    lParams {
+                        gravity = gravityCenter
+                    },
+                )
+            }
+        } else {
+            horizontalLayout {
+                gravity = gravityCenter
+                segments.forEach { seg ->
+                    when (seg) {
+                        is LabelSegment.Icon -> {
+                            val iv = view(::AppCompatImageView)
+                            iv.setImageDrawable(
+                                IconicsDrawable(ctx, seg.cmdName).apply {
+                                    sizeDp = theme.generalStyle.popupTextSize.toInt()
+                                    colorFilter = PorterDuffColorFilter(ColorManager.getColor("popup_text_color"), PorterDuff.Mode.SRC_IN)
+                                },
+                            )
+                            imageViews.add(iv)
+                            add(iv, lParams { gravity = gravityCenter })
+                        }
+                        is LabelSegment.Text -> {
+                            val tv = view(::AutoScaleTextView) {
+                                scaleMode = AutoScaleTextView.Mode.Proportional
+                                textSize = theme.generalStyle.popupTextSize
+                                setTextColor(ColorManager.getColor("popup_text_color"))
+                                typeface = FontManager.getTypeface("POPUP_FONT")
+                                fontFeatureSettings = FontManager.fontFeatureSettings
+                                text = seg.content
+                            }
+                            textViews.add(tv)
+                            add(tv, lParams { gravity = gravityCenter })
+                        }
+                    }
+                }
+            }
         }
 
         init {
-            if (text.isIconFont) {
-                imageView.setImageDrawable(
-                    IconicsDrawable(ctx, text.toIconName()).apply {
-                        sizeDp = theme.generalStyle.popupTextSize.toInt()
-                        colorFilter = PorterDuffColorFilter(ColorManager.getColor("popup_text_color"), PorterDuff.Mode.SRC_IN)
-                    },
-                )
-                imageView.isVisible = true
-                textView.isVisible = false
-            } else {
-                textView.text = text
-                textView.isVisible = true
-                imageView.isVisible = false
+            if (segments.size == 1) {
+                when (val seg = segments.first()) {
+                    is LabelSegment.Icon -> {
+                        imageView.setImageDrawable(
+                            IconicsDrawable(ctx, seg.cmdName).apply {
+                                sizeDp = theme.generalStyle.popupTextSize.toInt()
+                                colorFilter = PorterDuffColorFilter(ColorManager.getColor("popup_text_color"), PorterDuff.Mode.SRC_IN)
+                            },
+                        )
+                        imageView.isVisible = true
+                        textView.isVisible = false
+                        imageViews.add(imageView)
+                    }
+                    is LabelSegment.Text -> {
+                        textView.text = seg.content
+                        textView.isVisible = true
+                        imageView.isVisible = false
+                        textViews.add(textView)
+                    }
+                }
             }
+        }
+
+        fun applyTextColor(color: Int) {
+            textViews.forEach { it.setTextColor(color) }
+        }
+
+        fun applyIconTint(color: Int) {
+            imageViews.forEach {
+                it.drawable?.colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
+            }
+        }
+
+        fun applyBackground(bg: android.graphics.drawable.Drawable?) {
+            root.background = bg
         }
     }
 
@@ -241,19 +301,19 @@ class PopupKeyboardUi(
 
     private fun markFocus(index: Int) {
         keyUis.getOrNull(index)?.apply {
-            root.background = focusBackground
+            applyBackground(focusBackground)
             val color = ColorManager.getColor("hilited_popup_text_color")
-            textView.setTextColor(color)
-            imageView.drawable?.colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
+            applyTextColor(color)
+            applyIconTint(color)
         }
     }
 
     private fun markInactive(index: Int) {
         keyUis.getOrNull(index)?.apply {
-            root.background = null
+            applyBackground(null)
             val color = ColorManager.getColor("popup_text_color")
-            textView.setTextColor(color)
-            imageView.drawable?.colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
+            applyTextColor(color)
+            applyIconTint(color)
         }
     }
 

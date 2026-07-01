@@ -18,7 +18,6 @@ import kotlinx.parcelize.Parcelize
 data class ToolBar(
     val primaryButton: Button? = null,
     val buttons: List<Button> = emptyList(),
-    val buttonSpacing: Int = 18,
     val buttonFont: List<String> = emptyList(),
     val backStyle: String = "ic@arrow-left",
 ) : Parcelable {
@@ -94,7 +93,6 @@ data class ToolBar(
         fun decode(node: Node.Mapping?): ToolBar = ToolBar(
             primaryButton = node?.get("primary_button")?.mapping?.let { Button.decode(it) },
             buttons = node?.get("buttons")?.sequence?.map { Button.decode(it.mapping!!) } ?: emptyList(),
-            buttonSpacing = node?.get("button_spacing")?.int ?: 18,
             buttonFont = node?.get("button_font")?.sequence
                 ?.mapNotNull(Node::string) ?: emptyList(),
             backStyle = node?.get("back_style")?.string ?: "ic@arrow-left",

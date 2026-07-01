@@ -457,7 +457,8 @@
         },
         "button_spacing": {
           "type": "integer",
-          "default": 18
+          "default": 18,
+          "description": "已弃用(deprecated)。按钮自动均分可用宽度，不再使用此参数。"
         },
         "button_font": {
           "type": "array",

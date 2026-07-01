@@ -240,10 +240,6 @@ class SyncClipboardManager(
     private fun ensurePullLoop() {
         pullJob?.cancel()
         if (!prefs.syncClipboardAutoPullEnabled) return
-        val serverType = ServerType.fromString(prefs.syncClipboardServerType)
-        if (serverType == ServerType.SYNC_CLIPBOARD && prefs.syncClipboardSignalREnabled) {
-            return
-        }
         val intervalSec = prefs.syncClipboardPullIntervalSec.coerceIn(1, 600)
         pullJob = scope.launch(Dispatchers.IO) {
             while (isActive && prefs.syncClipboardEnabled && prefs.syncClipboardAutoPullEnabled) {

@@ -7,12 +7,15 @@ package com.osfans.trime.ime.bar.ui
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.StateListDrawable
 import android.graphics.drawable.shapes.OvalShape
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import com.mikepenz.iconics.IconicsDrawable
@@ -24,6 +27,10 @@ import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.model.ToolBar
 import com.osfans.trime.ime.keyboard.GestureFrame
 import com.osfans.trime.ime.keyboard.KeyboardWindow
+import com.osfans.trime.ime.keyboard.LabelSegment
+import com.osfans.trime.ime.keyboard.isIconFont
+import com.osfans.trime.ime.keyboard.parseLabelSegments
+import com.osfans.trime.ime.keyboard.toIconName
 import splitties.dimensions.dp
 import splitties.views.dsl.core.add
 import splitties.views.dsl.core.imageView
@@ -139,6 +146,75 @@ class ToolButton : GestureFrame {
         applyColors()
     }
 
+    private fun setupMultiIconContent(segments: List<LabelSegment>) {
+        val foreground = config.foreground
+        contentType = ContentType.ICON
+        removeAllViews()
+
+        val hLayout = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = gravityCenter
+        }
+        segments.forEach { seg ->
+            when (seg) {
+                is LabelSegment.Icon -> {
+                    val iv = ImageView(context).apply {
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                        adjustViewBounds = true
+                        isClickable = false
+                        isFocusable = false
+                        imageDrawable = IconicsDrawable(context, seg.cmdName).apply {
+                            sizeDp = foreground.fontSize.toInt()
+                        }
+                        padding = dp(foreground.padding)
+                    }
+                    hLayout.addView(
+                        iv,
+                        LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT),
+                    )
+                }
+                is LabelSegment.Text -> {
+                    val tv = textView {
+                        text = seg.content
+                        textSize = foreground.fontSize
+                        padding = dp(foreground.padding)
+                        typeface = FontManager.getTypeface("toolbar_font")
+                        fontFeatureSettings = FontManager.fontFeatureSettings
+                    }
+                    hLayout.addView(
+                        tv,
+                        LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT),
+                    )
+                }
+            }
+        }
+        add(hLayout, lParams(wrapContent, wrapContent, gravityCenter))
+
+        applyMultiIconColors()
+    }
+
+    private fun applyMultiIconColors() {
+        val foreground = config.foreground
+        val normalColor = foreground.normal.takeIf { it.isNotEmpty() }
+            ?.let(ColorManager::getColor) ?: ColorManager.getColor("candidate_text_color")
+
+        val highlightColor = foreground.highlight.takeIf { it.isNotEmpty() }
+            ?.let(ColorManager::getColor) ?: ColorManager.getColor("hilited_candidate_text_color")
+        val colorStateList = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_pressed), intArrayOf()),
+            intArrayOf(highlightColor, normalColor),
+        )
+
+        val container = getChildAt(0) as? LinearLayout ?: return
+        for (i in 0 until container.childCount) {
+            val child = container.getChildAt(i)
+            when (child) {
+                is ImageView -> child.imageTintList = colorStateList
+                is android.widget.TextView -> child.setTextColor(colorStateList)
+            }
+        }
+    }
+
     private fun applyColors() {
         val foreground = config.foreground
         val normalColor = foreground.normal.takeIf { it.isNotEmpty() }
@@ -191,9 +267,16 @@ class ToolButton : GestureFrame {
                     ?: setupFallbackContent(config)
             }
             style.isNotEmpty() -> {
-                val type = if (style.startsWith("ic@")) ContentType.ICON else ContentType.TEXT
-                val text = if (style.startsWith("ic@")) style.replace("ic@", "cmd_") else style
-                setupContent(type, text = text)
+                if (style.isIconFont) {
+                    val segments = style.parseLabelSegments()
+                    if (segments.size == 1 && segments.first() is LabelSegment.Icon) {
+                        setupContent(ContentType.ICON, text = (segments.first() as LabelSegment.Icon).cmdName)
+                    } else {
+                        setupMultiIconContent(segments)
+                    }
+                } else {
+                    setupContent(ContentType.TEXT, text = style)
+                }
             }
             else -> setupFallbackContent(config)
         }
@@ -234,7 +317,7 @@ class ToolButton : GestureFrame {
         fun getContentType(style: String): ContentType = when {
             style.isEmpty() -> ContentType.TEXT
             style.matches(IMAGE_PATTERN) -> ContentType.LOCAL_IMAGE
-            style.startsWith("ic@") -> ContentType.ICON
+            style.isIconFont -> ContentType.ICON
             else -> ContentType.TEXT
         }
     }

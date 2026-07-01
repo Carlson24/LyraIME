@@ -400,7 +400,37 @@ class Key(
 
 private const val ICON_PREFIX = "ic@"
 
+sealed class LabelSegment {
+    data class Icon(val cmdName: String) : LabelSegment()
+    data class Text(val content: String) : LabelSegment()
+}
+
 val String.isIconFont: Boolean
-    get() = startsWith(ICON_PREFIX)
+    get() = startsWith(ICON_PREFIX) || contains("'$ICON_PREFIX")
 
 fun String.toIconName(): String = replace(ICON_PREFIX, "cmd_")
+
+fun String.parseLabelSegments(): List<LabelSegment> {
+    val pattern = Regex("'ic@([^']+)'")
+    val matches = pattern.findAll(this).toList()
+    if (matches.isEmpty()) {
+        return if (startsWith(ICON_PREFIX)) {
+            listOf(LabelSegment.Icon(toIconName()))
+        } else {
+            listOf(LabelSegment.Text(this))
+        }
+    }
+    val segments = mutableListOf<LabelSegment>()
+    var lastEnd = 0
+    for (m in matches) {
+        if (m.range.first > lastEnd) {
+            segments.add(LabelSegment.Text(substring(lastEnd, m.range.first)))
+        }
+        segments.add(LabelSegment.Icon("cmd_${m.groupValues[1]}"))
+        lastEnd = m.range.last + 1
+    }
+    if (lastEnd < length) {
+        segments.add(LabelSegment.Text(substring(lastEnd)))
+    }
+    return segments
+}
