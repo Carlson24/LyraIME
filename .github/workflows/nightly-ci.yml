@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-name: Release
+name: Nightly
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
+  schedule:
+    - cron: '0 16 * * *' # UTC 16:00 / GMT+8 0:00, daily
+
 env:
-  CI_NAME: Release CI
+  CI_NAME: Nightly CI
   QNN_SDK_VERSION: "2.47.0.260601"
 jobs:
   build:
@@ -93,12 +93,12 @@ jobs:
             mv "$apk" "LyraIME-${arch}-${ver}.apk"
           done
 
-      - name: Create Stable release
-        uses: ncipollo/release-action@v1
+      - name: Create Nightly release
+        uses: 'marvinpinto/action-automatic-releases@latest'
         with:
-          allowUpdates: true
-          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
-          artifacts: "app/build/outputs/apk/release/*.apk"
-          body: |
-            Update Version: ${{ github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: nightly
+          prerelease: true
+          title: "Nightly Build"
+          files: |
+            app/build/outputs/apk/release/*.apk
