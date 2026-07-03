@@ -117,6 +117,26 @@ SPDX-License-Identifier: GPL-3.0-or-later
             android:name=".link.VoiceModelDownloadActivity"
             android:exported="false" />
 
+        <!-- Text Editor -->
+        <activity
+            android:name="com.osfans.trime.ui.texteditor.FileBrowserActivity"
+            android:exported="true"
+            android:theme="@style/Theme.TrimeAppTheme"
+            android:parentActivityName=".ui.main.MainActivity" />
+
+        <activity
+            android:name="com.osfans.trime.ui.texteditor.TextFileEditActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TrimeAppTheme"
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName=".ui.main.MainActivity" />
+
+        <activity
+            android:name="com.osfans.trime.ui.texteditor.EditorOptionsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TrimeAppTheme"
+            android:parentActivityName=".ui.main.MainActivity" />
+
         <!-- Using an activity alias to disable/enable the app icon in the launcher -->
         <activity-alias
             android:name="${applicationId}.MainLauncherAlias"

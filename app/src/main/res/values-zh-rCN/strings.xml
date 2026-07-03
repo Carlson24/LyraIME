@@ -462,4 +462,62 @@
     <string name="webdav_invalid_url">服务器地址无效</string>
     <string name="webdav_connecting">正在连接 WebDAV 服务器…</string>
     <string name="webdav_remote_path">WebDAV 远程路径</string>
+
+    <!-- 单手键盘 -->
+    <string name="one_handed_keyboard">单手键盘</string>
+
+    <!-- 文本编辑器 -->
+    <string name="text_editor_title">文本编辑器</string>
+    <string name="text_editor_edit_user_files">编辑用户文件</string>
+    <string name="text_editor_parent_directory">..</string>
+    <string name="text_editor_empty_directory">（空目录）</string>
+    <string name="text_editor_binary_file_unsupported">不支持的二进制文件</string>
+    <string name="text_editor_file_too_large">文件过大：%1$s</string>
+    <string name="text_editor_error_open_file">无法打开：%1$s</string>
+    <string name="text_editor_error_save_file">保存失败：%1$s</string>
+    <string name="text_editor_saved">已保存</string>
+    <string name="text_editor_unsaved_changes">有未保存修改</string>
+    <string name="text_editor_confirm_discard_changes">放弃未保存的修改？</string>
+    <string name="text_editor_discard_changes">放弃</string>
+    <string name="text_editor_save">保存</string>
+    <string name="text_editor_undo">撤销</string>
+    <string name="text_editor_redo">重做</string>
+    <string name="text_editor_rename">重命名</string>
+    <string name="text_editor_renamed">已重命名</string>
+    <string name="text_editor_rename_failed">重命名失败：%1$s</string>
+    <string name="text_editor_delete">删除</string>
+    <string name="text_editor_deleted">已删除</string>
+    <string name="text_editor_delete_failed">删除失败：%1$s</string>
+    <string name="text_editor_confirm_delete">删除「%1$s」？</string>
+    <string name="text_editor_find_replace">查找/替换</string>
+    <string name="text_editor_find">查找</string>
+    <string name="text_editor_replace_with">替换为</string>
+    <string name="text_editor_replace_one">替换</string>
+    <string name="text_editor_replace_all_button">全部</string>
+    <string name="text_editor_find_prev">上一个匹配</string>
+    <string name="text_editor_find_next">下一个匹配</string>
+    <string name="text_editor_search_close">关闭搜索</string>
+    <string name="text_editor_no_matches">无匹配</string>
+    <string name="text_editor_word_wrap">自动换行</string>
+    <string name="text_editor_show_whitespace">显示空白字符</string>
+    <string name="text_editor_tab_inserts_spaces">Tab 键插入空格</string>
+    <string name="text_editor_plain_mode">纯文本模式</string>
+    <string name="text_editor_editor_options">选项</string>
+    <string name="text_editor_tab_width">Tab 宽度</string>
+    <string name="text_editor_tab_width_hint">Tab 字符占用的列数（1–16）。</string>
+    <string name="text_editor_font_fallback">字体回退</string>
+    <string name="text_editor_font_fallback_hint">拖动排序。第一项为主字体，缺失的字形会依次向下回退。</string>
+    <string name="text_editor_font_fallback_empty">尚未导入字体。导入的字体保存在应用的私有数据目录中。</string>
+    <string name="text_editor_import_font">导入字体…</string>
+    <string name="text_editor_remove_font">删除</string>
+    <string name="text_editor_confirm_remove_font">删除「%1$s」？</string>
+    <string name="text_editor_invalid_font_file">不是合法的字体文件</string>
+    <string name="text_editor_font_imported">已导入 %1$s</string>
+    <string name="text_editor_font_in_use">在回退链中</string>
+    <string name="text_editor_grant_access_message">在系统文件选择器中选中一个目录，然后点「使用此文件夹」授权编辑该目录下的文件。</string>
+    <string name="text_editor_grant_access_denied">未授权，无法启动编辑器。</string>
+    <string name="text_editor_change_root_folder">切换根目录</string>
+    <string name="text_editor_open_single_file">打开单个文件…</string>
+    <string name="text_editor_low_memory_features_disabled">内存不足：已关闭部分功能。</string>
+    <string name="text_editor_runtime_recovered">编辑器发生异常，已自动降级部分功能以保持可用。</string>
 </resources>

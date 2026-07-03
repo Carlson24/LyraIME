@@ -185,6 +185,15 @@ dependencies {
         artifact { type = "aar" }
     }
     implementation("com.caverock:androidsvg-aar:1.4")
+    implementation(libs.sora.editor)
+    implementation(libs.gson)
+    implementation(libs.jcodings)
+    implementation(libs.joni)
+    implementation(libs.snakeyaml.engine)
+    implementation(libs.eclipse.jdt.annotation)
+    implementation(libs.documentfile)
+    implementation(libs.splitties.resources)
+    implementation(libs.coordinatorlayout)
 
     // Testing
     testImplementation(libs.kotest.runner.junit5)

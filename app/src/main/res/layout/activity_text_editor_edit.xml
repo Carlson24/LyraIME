@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <include
+        android:id="@+id/editorToolbar"
+        layout="@layout/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/searchBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/colorBackground"
+        android:elevation="2dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/editorToolbar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp">
+
+            <EditText
+                android:id="@+id/findInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/text_editor_find"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:singleLine="true"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/matchInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="6dp"
+                android:minWidth="40dp"
+                android:gravity="center"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp"
+                tools:text="1/3" />
+
+            <ImageView
+                android:id="@+id/findPrev"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/text_editor_find_prev"
+                android:focusable="true"
+                android:padding="8dp"
+                android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+                android:tint="?android:attr/textColorPrimary" />
+
+            <ImageView
+                android:id="@+id/findNext"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/text_editor_find_next"
+                android:focusable="true"
+                android:padding="8dp"
+                android:src="@drawable/ic_baseline_keyboard_arrow_down_24"
+                android:tint="?android:attr/textColorPrimary" />
+
+            <ImageView
+                android:id="@+id/searchClose"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/text_editor_search_close"
+                android:focusable="true"
+                android:padding="8dp"
+                android:src="@drawable/ic_outline_cancel_24"
+                android:tint="?android:attr/textColorPrimary" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:paddingBottom="4dp">
+
+            <EditText
+                android:id="@+id/replaceInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/text_editor_replace_with"
+                android:imeOptions="actionDone"
+                android:inputType="text"
+                android:singleLine="true"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/replaceOne"
+                style="?attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:paddingHorizontal="12dp"
+                android:text="@string/text_editor_replace_one"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/replaceAll"
+                style="?attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:paddingHorizontal="12dp"
+                android:text="@string/text_editor_replace_all_button"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:background="?android:attr/dividerHorizontal" />
+
+    </LinearLayout>
+
+    <com.osfans.trime.ui.texteditor.ArrowTabCodeEditor
+        android:id="@+id/editor"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/keyBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchBar" />
+
+    <LinearLayout
+        android:id="@+id/keyBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/colorBackground"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:background="?android:attr/dividerHorizontal" />
+
+        <HorizontalScrollView
+            android:id="@+id/keysScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/keysContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/keySave"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="@string/text_editor_save"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_save_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/keyUndo"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="@string/text_editor_undo"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_undo_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/keyRedo"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="@string/text_editor_redo"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_redo_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/keyTab"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="Tab"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_keyboard_tab_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/keyHome"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="Home"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_first_page_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/keyEnd"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="End"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_last_page_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/keyLeft"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="Left"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_arrow_left_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/keyUp"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="Up"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/keyDown"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="Down"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_keyboard_arrow_down_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+                <ImageView
+                    android:id="@+id/keyRight"
+                    style="@style/EditorKeyStyle"
+                    android:contentDescription="Right"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_arrow_right_24"
+                    android:tint="?android:attr/textColorPrimary" />
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -154,13 +154,13 @@ class KeyboardView(
         translationY = key.y.toFloat()
 
         setPadding(
-            keyboard.horizontalGap / 2 + key.extraWidthLeft,
+            (keyboard.horizontalGap * keyboard.horizontalGapScale / 2f).toInt() + key.extraWidthLeft,
             if (key.edgeFlags and Keyboard.EDGE_TOP != 0) {
                 maxOf(keyboard.keyboardPaddingTop, keyboard.verticalGap / 2)
             } else {
                 keyboard.verticalGap / 2
             },
-            keyboard.horizontalGap / 2 + key.extraWidthRight,
+            (keyboard.horizontalGap * keyboard.horizontalGapScale / 2f).toInt() + key.extraWidthRight,
             if (key.edgeFlags and Keyboard.EDGE_BOTTOM == 0) keyboard.verticalGap / 2 else 0,
         )
     }

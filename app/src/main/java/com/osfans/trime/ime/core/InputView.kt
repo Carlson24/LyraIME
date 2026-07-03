@@ -14,8 +14,10 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.LayerDrawable
 import android.os.Build
+import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowInsets
@@ -69,6 +71,7 @@ import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.view
 import splitties.views.dsl.core.wrapContent
 import splitties.views.imageDrawable
+import kotlin.math.abs
 
 /**
  * Successor of the old InputRoot
@@ -162,7 +165,23 @@ class InputView(
     private val isEffectiveFloating: Boolean
         get() = isFloating
 
+    var isOneHanded = false
+        private set
+
+    private var oneHandOnRight = true
+
+    private var oneHandResizeStartWidth = 0
+    private var lastOneHandTouchX = 0f
+    private var oneHandDragging = false
+    private var lastOneHandGapRefreshAt = 0L
+    private val oneHandGapRefreshIntervalMs = 80L
+    private val oneHandTouchSlop by lazy { ViewConfiguration.get(context).scaledTouchSlop }
+
     private val internalPrefs = appPrefs.internal
+
+    private var oneHandOnRightPortrait by internalPrefs.oneHandOnRightPortrait
+    private var oneHandOnRightLandscape by internalPrefs.oneHandOnRightLandscape
+    private var oneHandWidthPx by internalPrefs.oneHandWidthPx
 
     private var floatingWidthPx by internalPrefs.floatingKeyboardWidth
     private var floatingHeightPx by internalPrefs.floatingKeyboardHeight
@@ -255,13 +274,18 @@ class InputView(
 
     val keyboardView: ConstraintLayout
 
-    private fun createHandleDrawable(radius: Float? = null): GradientDrawable {
+    private fun handleColor(): Int {
+        val base = ContextCompat.getColor(context, R.color.lavender)
+        return (base and 0x00FFFFFF) or (0x40 shl 24)
+    }
+
+    private fun createHandleDrawable(radius: Float? = null, color: Int = handleColor()): GradientDrawable {
         val r = radius ?: dp(3).toFloat()
         return GradientDrawable().apply {
             shape = GradientDrawable.OVAL
             setSize(dp(6), dp(6))
             cornerRadius = r
-            setColor(0x80FFFFFF.toInt())
+            setColor(color)
         }
     }
 
@@ -374,9 +398,185 @@ class InputView(
             }
         }
 
+    private val oneHandHandle =
+        view(::View) {
+            visibility = View.GONE
+            setOnClickListener {
+                if (!isDockedOneHandMode) return@setOnClickListener
+                switchOneHandSide()
+            }
+            setOnTouchListener { v, event ->
+                if (!isDockedOneHandMode) return@setOnTouchListener false
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        oneHandResizeStartWidth = resolveOneHandWidth()
+                        lastOneHandTouchX = event.rawX
+                        oneHandDragging = false
+                        lastOneHandGapRefreshAt = 0L
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                        v.isPressed = true
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val delta = event.rawX - lastOneHandTouchX
+                        if (!oneHandDragging && abs(delta) > oneHandTouchSlop) {
+                            oneHandDragging = true
+                        }
+                        if (oneHandDragging) {
+                            val target = if (oneHandOnRight) {
+                                oneHandResizeStartWidth - delta.toInt()
+                            } else {
+                                oneHandResizeStartWidth + delta.toInt()
+                            }
+                            oneHandWidthPx = target.coerceIn(minOneHandWidthPx, maxOneHandWidthPx)
+                            applyOneHandWidth()
+                            updateOneHandGapScale()
+                        }
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                        v.isPressed = false
+                        if (!oneHandDragging && event.actionMasked == MotionEvent.ACTION_UP) {
+                            v.performClick()
+                        } else if (oneHandDragging) {
+                            updateOneHandGapScale(force = true)
+                        }
+                        oneHandDragging = false
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }
+
+    private val isDockedOneHandMode: Boolean
+        get() = isOneHanded && !isFloating
+
+    private val minOneHandWidthPx: Int
+        get() = dp(180).coerceAtMost(resources.displayMetrics.widthPixels)
+
+    private val maxOneHandWidthPx: Int
+        get() = resources.displayMetrics.widthPixels.coerceAtLeast(minOneHandWidthPx)
+
+    private fun resolveOneHandWidth(): Int {
+        val stored = oneHandWidthPx.takeIf { it > 0 } ?: run {
+            val default = (resources.displayMetrics.widthPixels * 0.8f).toInt()
+            oneHandWidthPx = default.coerceIn(minOneHandWidthPx, maxOneHandWidthPx)
+            oneHandWidthPx
+        }
+        oneHandWidthPx = stored.coerceIn(minOneHandWidthPx, maxOneHandWidthPx)
+        return oneHandWidthPx
+    }
+
+    private fun getStoredOneHandSide(): Boolean = if (isLandscapeOrientation) {
+        oneHandOnRightLandscape
+    } else {
+        oneHandOnRightPortrait
+    }
+
+    private fun saveOneHandSide(onRight: Boolean) {
+        if (isLandscapeOrientation) {
+            oneHandOnRightLandscape = onRight
+        } else {
+            oneHandOnRightPortrait = onRight
+        }
+    }
+
+    private fun switchOneHandSide() {
+        oneHandOnRight = !oneHandOnRight
+        saveOneHandSide(oneHandOnRight)
+        if (!isDockedOneHandMode) return
+        updateKeyboardSize()
+        syncOneHandHandleUi(bringToFront = true)
+        requestLayout()
+    }
+
+    private fun applyOneHandWidth() {
+        if (!isDockedOneHandMode) return
+        updateKeyboardSize()
+        updateOneHandHandlePosition()
+        requestLayout()
+    }
+
+    private fun updateOneHandGapScale(force: Boolean = false) {
+        val now = SystemClock.uptimeMillis()
+        if (!force && now - lastOneHandGapRefreshAt < oneHandGapRefreshIntervalMs) {
+            return
+        }
+        lastOneHandGapRefreshAt = now
+        if (!isDockedOneHandMode) {
+            keyboardWindow.setHorizontalGapScale(1f)
+            return
+        }
+        val containerWidth = keyboardView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val scale = resolveOneHandWidth().toFloat() / containerWidth.toFloat()
+        keyboardWindow.setHorizontalGapScale(scale)
+    }
+
+    private fun updateOneHandHandleAppearance() {
+        val color = handleColor()
+        val background = createHandleDrawable(dp(10).toFloat(), color)
+        val iconRes = if (oneHandOnRight) {
+            R.drawable.ic_baseline_keyboard_arrow_left_24
+        } else {
+            R.drawable.ic_baseline_keyboard_arrow_right_24
+        }
+        val icon = ContextCompat.getDrawable(context, iconRes)?.mutate()
+        if (icon == null) {
+            oneHandHandle.background = background
+            return
+        }
+        icon.setTint(color)
+        val inset = dp(4)
+        val drawable = LayerDrawable(arrayOf(background, icon)).apply {
+            setLayerInset(1, inset, inset, inset, inset)
+        }
+        oneHandHandle.background = drawable
+    }
+
+    private fun updateOneHandHandlePosition() {
+        val safeGap = dp(6)
+        oneHandHandle.updateLayoutParams<LayoutParams> {
+            topToTop = windowManager.view.id
+            bottomToBottom = windowManager.view.id
+            if (oneHandOnRight) {
+                startToStart = ConstraintLayout.LayoutParams.UNSET
+                endToEnd = ConstraintLayout.LayoutParams.UNSET
+                startToEnd = ConstraintLayout.LayoutParams.UNSET
+                endToStartOf(windowManager.view)
+                marginStart = 0
+                marginEnd = safeGap
+            } else {
+                startToStart = ConstraintLayout.LayoutParams.UNSET
+                endToEnd = ConstraintLayout.LayoutParams.UNSET
+                endToStart = ConstraintLayout.LayoutParams.UNSET
+                startToEndOf(windowManager.view)
+                marginStart = safeGap
+                marginEnd = 0
+            }
+        }
+    }
+
+    private fun updateOneHandHandleVisibility() {
+        oneHandHandle.visibility = if (isOneHanded && !isFloating) View.VISIBLE else View.GONE
+    }
+
+    private fun syncOneHandHandleUi(bringToFront: Boolean = false) {
+        updateOneHandHandleAppearance()
+        updateOneHandHandlePosition()
+        updateOneHandHandleVisibility()
+        if (bringToFront) {
+            oneHandHandle.bringToFront()
+        }
+    }
+
     init {
         // MUST call before any operation
         inputDepMgr.start()
+
+        isOneHanded = rime.run { getRuntimeOption("_one_hand_mode") }
+        oneHandOnRight = getStoredOneHandSide()
 
         isFloating = rime.run { getRuntimeOption("_floating_keyboard") }
 
@@ -436,6 +636,14 @@ class InputView(
                         startToEndOf(leftPaddingSpace)
                         endToStartOf(rightPaddingSpace)
                         bottomOfParent()
+                    },
+                )
+                add(
+                    oneHandHandle,
+                    lParams(dp(16), dp(44)) {
+                        topToTop = windowManager.view.id
+                        bottomToBottom = windowManager.view.id
+                        startToEndOf(windowManager.view)
                     },
                 )
             }
@@ -576,28 +784,54 @@ class InputView(
             height = keyboardBottomPaddingPx
         }
 
-        val isOneHandMode = rime.run { getRuntimeOption("_one_hand_mode") }
-        val isPortrait = !context.resources.configuration.isLandscape()
+        if (isDockedOneHandMode) {
+            val containerWidth = keyboardView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+            val oneHandWidth = resolveOneHandWidth().coerceAtMost(containerWidth)
+            val remaining = (containerWidth - oneHandWidth).coerceAtLeast(0)
 
-        val leftSidePadding = if (isOneHandMode && isPortrait) {
-            theme.generalStyle.keyboardPaddingLeft.takeIf { it > 0 }?.let { dp(it) } ?: keyboardSidePaddingPx
-        } else {
-            keyboardSidePaddingPx
-        }
-        val rightSidePadding = if (isOneHandMode && isPortrait) {
-            theme.generalStyle.keyboardPaddingRight.takeIf { it > 0 }?.let { dp(it) } ?: keyboardSidePaddingPx
-        } else {
-            keyboardSidePaddingPx
+            leftPaddingSpace.visibility = View.VISIBLE
+            rightPaddingSpace.visibility = View.VISIBLE
+            if (oneHandOnRight) {
+                leftPaddingSpace.updateLayoutParams {
+                    width = remaining
+                }
+                rightPaddingSpace.updateLayoutParams {
+                    width = 0
+                }
+            } else {
+                leftPaddingSpace.updateLayoutParams {
+                    width = 0
+                }
+                rightPaddingSpace.updateLayoutParams {
+                    width = remaining
+                }
+            }
+
+            windowManager.view.updateLayoutParams<LayoutParams> {
+                startToStart = ConstraintLayout.LayoutParams.UNSET
+                endToEnd = ConstraintLayout.LayoutParams.UNSET
+                startToEndOf(leftPaddingSpace)
+                endToStartOf(rightPaddingSpace)
+            }
+            inputBar.view.setPadding(
+                if (oneHandOnRight) remaining else 0,
+                0,
+                if (oneHandOnRight) 0 else remaining,
+                0,
+            )
+            syncOneHandHandleUi()
+            updateHandlePosition()
+            updateOneHandGapScale()
+            return
         }
 
-        val unset = LayoutParams.UNSET
-        if (leftSidePadding == 0 && rightSidePadding == 0) {
-            // hide side padding space views when unnecessary
+        val sidePadding = keyboardSidePaddingPx
+        if (sidePadding == 0) {
             leftPaddingSpace.visibility = View.GONE
             rightPaddingSpace.visibility = View.GONE
             windowManager.view.updateLayoutParams<LayoutParams> {
-                startToEnd = unset
-                endToStart = unset
+                startToEnd = ConstraintLayout.LayoutParams.UNSET
+                endToStart = ConstraintLayout.LayoutParams.UNSET
                 startOfParent()
                 endOfParent()
             }
@@ -605,19 +839,19 @@ class InputView(
             leftPaddingSpace.visibility = View.VISIBLE
             rightPaddingSpace.visibility = View.VISIBLE
             leftPaddingSpace.updateLayoutParams {
-                width = leftSidePadding
+                width = sidePadding
             }
             rightPaddingSpace.updateLayoutParams {
-                width = rightSidePadding
+                width = sidePadding
             }
             windowManager.view.updateLayoutParams<LayoutParams> {
-                startToStart = unset
-                endToEnd = unset
+                startToStart = ConstraintLayout.LayoutParams.UNSET
+                endToEnd = ConstraintLayout.LayoutParams.UNSET
                 startToEndOf(leftPaddingSpace)
                 endToStartOf(rightPaddingSpace)
             }
         }
-        inputBar.view.setPadding(leftSidePadding, 0, rightSidePadding, 0)
+        inputBar.view.setPadding(sidePadding, 0, sidePadding, 0)
     }
 
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
@@ -670,14 +904,16 @@ class InputView(
                 }
 
                 if (it.data.option == "_one_hand_mode") {
-                    updateKeyboardSize()
-                    keyboardWindow.refreshKeyboards(true)
+                    toggleOneHandMode()
                 }
 
                 if (it.data.option == "_floating_keyboard") {
                     val floating = rime.run { getRuntimeOption("_floating_keyboard") }
                     if (floating != isFloating) {
                         isFloating = floating
+                        if (floating && isOneHanded) {
+                            isOneHanded = false
+                        }
                         popup.dismissAll()
                         applyFloatingLayout()
                     }
@@ -720,6 +956,27 @@ class InputView(
 
     fun stopVoiceRecognition() {
         inputBar.stopAsrkbVoiceFromToolbar()
+    }
+
+    fun toggleOneHandMode() {
+        popup.dismissAll()
+        if (isFloating) {
+            saveFloatingPosition(
+                keyboardView.translationX.toInt(),
+                keyboardView.translationY.toInt(),
+            )
+            isFloating = false
+            applyDockedLayout()
+        }
+        isOneHanded = !isOneHanded
+        if (isOneHanded) {
+            resolveOneHandWidth()
+        }
+        updateFloatingHandlesVisibility()
+        updateOneHandHandleVisibility()
+        updateKeyboardSize()
+        updateOneHandGapScale(force = true)
+        requestLayout()
     }
 
     override fun onDetachedFromWindow() {
@@ -786,6 +1043,7 @@ class InputView(
         }
         updateHandlePosition()
         updateFloatingHandlesVisibility()
+        updateOneHandHandleVisibility()
         keyboardView.invalidateOutline()
         requestLayout()
     }
@@ -924,7 +1182,7 @@ class InputView(
         val moveBgDrawable = createHandleDrawable(moveHandleSize / 2f)
         val moveIconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_move_handle_cross)?.mutate()
         val finalDrawable = if (moveIconDrawable != null) {
-            moveIconDrawable.setTint(0x80FFFFFF.toInt())
+            moveIconDrawable.setTint(handleColor())
             val inset = dp(4)
             val ld = LayerDrawable(arrayOf(moveBgDrawable, moveIconDrawable))
             ld.setLayerInset(1, inset, inset, inset, inset)

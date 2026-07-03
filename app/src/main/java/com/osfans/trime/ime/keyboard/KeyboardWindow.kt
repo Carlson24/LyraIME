@@ -549,4 +549,13 @@ class KeyboardWindow :
         currentKeyboardView?.onDetach()
         inputBarDelegate.stopAsrkbVoiceFromToolbar()
     }
+
+    fun setHorizontalGapScale(scale: Float) {
+        val target = scale.coerceIn(0.5f, 1f)
+        currentKeyboard?.let {
+            if (kotlin.math.abs(it.horizontalGapScale - target) < 0.01f) return
+            it.horizontalGapScale = target
+        }
+        refreshKeyboards()
+    }
 }

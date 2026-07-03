@@ -21,4 +21,15 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <item name="android:colorAccent">@color/blue</item>
         <item name="android:textColorPrimary">@color/text</item>
     </style>
+
+    <style name="EditorKeyStyle" parent="">
+        <item name="android:layout_width">44dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+    </style>
 </resources>

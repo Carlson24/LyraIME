@@ -22,6 +22,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceGroup
 import com.osfans.trime.R
 import com.osfans.trime.ui.common.PaddingPreferenceFragment
+import com.osfans.trime.ui.texteditor.FileBrowserActivity
 import com.osfans.trime.util.addCategory
 import com.osfans.trime.util.addPreference
 import com.osfans.trime.util.navigateWithAnim
@@ -156,6 +157,12 @@ class MainFragment : PaddingPreferenceFragment() {
             }
             addCategory("") {
                 isIconSpaceReserved = false
+                addPreference(
+                    title = R.string.text_editor_title,
+                    icon = R.drawable.ic_baseline_file_document_edit_outline_24,
+                ) {
+                    requireContext().startActivity(android.content.Intent(requireContext(), FileBrowserActivity::class.java))
+                }
                 addPreference(
                     title = R.string.wanxiang_updater,
                     icon = R.drawable.ic_baseline_download_24,

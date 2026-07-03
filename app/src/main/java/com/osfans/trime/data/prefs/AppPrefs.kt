@@ -138,6 +138,9 @@ class AppPrefs(
             const val FLOATING_KEYBOARD_Y_PORTRAIT = "floating_keyboard_y_portrait"
             const val FLOATING_KEYBOARD_X_LANDSCAPE = "floating_keyboard_x_landscape"
             const val FLOATING_KEYBOARD_Y_LANDSCAPE = "floating_keyboard_y_landscape"
+            const val ONE_HAND_ON_RIGHT_PORTRAIT = "one_hand_on_right_portrait"
+            const val ONE_HAND_ON_RIGHT_LANDSCAPE = "one_hand_on_right_landscape"
+            const val ONE_HAND_WIDTH_PX = "one_hand_width_px"
         }
 
         val pid = int(PID, 0)
@@ -149,6 +152,9 @@ class AppPrefs(
         val floatingKeyboardYPortrait = int(FLOATING_KEYBOARD_Y_PORTRAIT, -1)
         val floatingKeyboardXLandscape = int(FLOATING_KEYBOARD_X_LANDSCAPE, -1)
         val floatingKeyboardYLandscape = int(FLOATING_KEYBOARD_Y_LANDSCAPE, -1)
+        val oneHandOnRightPortrait = bool(ONE_HAND_ON_RIGHT_PORTRAIT, true)
+        val oneHandOnRightLandscape = bool(ONE_HAND_ON_RIGHT_LANDSCAPE, true)
+        val oneHandWidthPx = int(ONE_HAND_WIDTH_PX, 0)
     }
 
     class General(

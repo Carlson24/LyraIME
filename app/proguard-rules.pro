@@ -30,3 +30,14 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Suppress R8 warnings for joni (Oniguruma regex engine used by TextMate)
+-dontwarn org.joni.**
+-keep class org.joni.** { *; }
+
+# Suppress type-check warnings for eclpse TM4E
+-dontwarn org.eclipse.tm4e.**
+-keep class org.eclipse.tm4e.** { *; }
+
+-dontwarn io.github.rosemoe.sora.langs.textmate.**
+-keep class io.github.rosemoe.sora.langs.textmate.** { *; }
