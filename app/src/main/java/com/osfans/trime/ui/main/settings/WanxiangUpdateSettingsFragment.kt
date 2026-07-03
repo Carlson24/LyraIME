@@ -494,7 +494,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
         val taskContainer = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(16.dp(), 8.dp(), 16.dp(), 8.dp())
+            setPadding(24.dp(), 8.dp(), 24.dp(), 8.dp())
         }
         val scrollView = ScrollView(ctx).apply {
             addView(
@@ -530,6 +530,10 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             progressViews.add(tv)
 
             val bar = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                )
                 max = 100
             }
             taskContainer.addView(bar)

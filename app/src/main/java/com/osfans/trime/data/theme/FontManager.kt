@@ -21,6 +21,8 @@ object FontManager {
         HANB_FONT,
         LATIN_FONT,
         CANDIDATE_FONT,
+        CLIPBOARD_FONT,
+        CLIPBOARD_CATEGORY_FONT,
         COMMENT_FONT,
         KEY_FONT,
         LABEL_FONT,
@@ -30,7 +32,7 @@ object FontManager {
         TEXT_FONT,
         LONG_TEXT_FONT,
         TOOLBAR_FONT,
-        T9_SIDE_TEXT_FONT,
+        T9_SIDE_FONT,
     }
 
     private val fontDir get() = File(DataManager.userDataDir, "themes/fonts")
@@ -123,6 +125,8 @@ object FontManager {
             FontKey.HANB_FONT -> style.hanbFont
             FontKey.LATIN_FONT -> style.latinFont
             FontKey.CANDIDATE_FONT -> style.candidateFont
+            FontKey.CLIPBOARD_FONT -> style.clipboardFont.ifEmpty { style.keyFont }
+            FontKey.CLIPBOARD_CATEGORY_FONT -> style.clipboardCategoryFont.ifEmpty { style.keyFont }
             FontKey.COMMENT_FONT -> style.commentFont
             FontKey.KEY_FONT -> style.keyFont
             FontKey.LABEL_FONT -> style.labelFont
@@ -131,7 +135,7 @@ object FontManager {
             FontKey.HINT_FONT -> style.hintFont
             FontKey.TEXT_FONT -> style.textFont
             FontKey.TOOLBAR_FONT -> theme.toolBar.buttonFont
-            FontKey.T9_SIDE_TEXT_FONT -> style.t9SideTextFont
+            FontKey.T9_SIDE_FONT -> style.t9SideFont
             else -> null
         }
     }

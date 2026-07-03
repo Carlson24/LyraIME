@@ -71,7 +71,7 @@ class T9SidebarView(
     private val preferredHeight: Int get() = keyboard.getT9SidebarHeight()
 
     private val sideTextSizeSp: Float get() = sp(keyboard.t9SideTextSize)
-    private val sideTypeface by lazy { FontManager.getTypeface("t9_side_text_font") }
+    private val sideTypeface by lazy { FontManager.getTypeface("t9_side_font") }
 
     private val sidebarBg: GradientDrawable by lazy {
         GradientDrawable().apply {

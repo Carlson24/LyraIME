@@ -73,16 +73,14 @@ object BackupManager {
     suspend fun createBackup(
         includePreferences: Boolean = true,
         includeClipboard: Boolean = true,
-        includeCollection: Boolean = true,
         includeWanxiang: Boolean = true,
         includeCustomTasks: Boolean = true,
     ): BackupData = backupMutex.withLock {
         withContext(Dispatchers.IO) {
-            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, collection=$includeCollection, wanxiang=$includeWanxiang, customTasks=$includeCustomTasks")
+            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, wanxiang=$includeWanxiang, customTasks=$includeCustomTasks")
             BackupData(
                 preferences = if (includePreferences) exportPreferences() else null,
                 clipboard = if (includeClipboard) exportClipboard() else null,
-                collection = if (includeCollection) exportCollection() else null,
                 wanxiangPrefs = if (includeWanxiang) exportWanxiangPrefs() else null,
                 customTasks = if (includeCustomTasks) exportCustomTasks() else null,
             ).also {
@@ -95,13 +93,12 @@ object BackupManager {
         backupData: BackupData,
         restorePreferences: Boolean = true,
         restoreClipboard: Boolean = true,
-        restoreCollection: Boolean = true,
         restoreWanxiang: Boolean = true,
         restoreCustomTasks: Boolean = true,
     ): Result<Unit> = restoreMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                Timber.d("Restoring backup: preferences=$restorePreferences, clipboard=$restoreClipboard, collection=$restoreCollection, wanxiang=$restoreWanxiang, customTasks=$restoreCustomTasks")
+                Timber.d("Restoring backup: preferences=$restorePreferences, clipboard=$restoreClipboard, wanxiang=$restoreWanxiang, customTasks=$restoreCustomTasks")
                 val migratedData = migrateBackup(backupData)
 
                 // Temporarily disable clipboard listener to avoid conflicts during restore
@@ -125,9 +122,6 @@ object BackupManager {
                     }
                     if (restoreClipboard && migratedData.clipboard != null) {
                         importClipboard(migratedData.clipboard)
-                    }
-                    if (restoreCollection && migratedData.collection != null) {
-                        importCollection(migratedData.collection)
                     }
                     if (restoreWanxiang && migratedData.wanxiangPrefs != null) {
                         importWanxiangPrefs(migratedData.wanxiangPrefs)
@@ -349,10 +343,10 @@ object BackupManager {
         while (retryCount < maxRetries) {
             try {
                 val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
-                    .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
+                    .fallbackToDestructiveMigration(true)
                     .build()
                 val dao = db.databaseDao()
-                val pagingSource = dao.allBeans()
+                val pagingSource = dao.allEntries()
                 val beans = mutableListOf<DatabaseBean>()
                 val params = PagingSource.LoadParams.Refresh<Int>(null, Int.MAX_VALUE, false)
                 val result = pagingSource.load(params) as PagingSource.LoadResult.Page
@@ -362,8 +356,7 @@ object BackupManager {
                 return beans.map { bean ->
                     BackupBean(
                         text = bean.text,
-                        html = bean.html,
-                        type = bean.type.name,
+                        type = bean.type,
                         time = bean.time,
                         pinned = bean.pinned,
                     )
@@ -390,7 +383,7 @@ object BackupManager {
         while (retryCount < maxRetries) {
             try {
                 val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
-                    .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
+                    .fallbackToDestructiveMigration(true)
                     .build()
                 val dao = db.databaseDao()
 
@@ -400,9 +393,8 @@ object BackupManager {
                     beans.forEach { backupBean ->
                         val bean =
                             DatabaseBean(
-                                text = backupBean.text,
-                                html = backupBean.html,
-                                type = DatabaseBean.BeanType.valueOf(backupBean.type),
+                                text = backupBean.text ?: "",
+                                type = backupBean.type,
                                 time = backupBean.time,
                                 pinned = backupBean.pinned,
                             )
@@ -425,92 +417,6 @@ object BackupManager {
         }
 
         throw lastException ?: Exception("Failed to import clipboard data after $maxRetries attempts")
-    }
-
-    private suspend fun exportCollection(): List<BackupBean> {
-        var retryCount = 0
-        val maxRetries = 3
-        var lastException: Exception? = null
-
-        while (retryCount < maxRetries) {
-            try {
-                val db = Room.databaseBuilder(appContext, Database::class.java, "collection.db")
-                    .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
-                    .build()
-                val dao = db.databaseDao()
-                val pagingSource = dao.allBeans()
-                val beans = mutableListOf<DatabaseBean>()
-                val params = PagingSource.LoadParams.Refresh<Int>(null, Int.MAX_VALUE, false)
-                val result = pagingSource.load(params) as PagingSource.LoadResult.Page
-                beans.addAll(result.data)
-                db.close()
-                Timber.d("Successfully exported collection data with ${beans.size} items")
-                return beans.map { bean ->
-                    BackupBean(
-                        text = bean.text,
-                        html = bean.html,
-                        type = bean.type.name,
-                        time = bean.time,
-                        pinned = bean.pinned,
-                    )
-                }
-            } catch (e: Exception) {
-                lastException = e
-                retryCount++
-                Timber.w("Failed to export collection data, attempt $retryCount/$maxRetries: ${e.message}")
-
-                if (retryCount < maxRetries) {
-                    kotlinx.coroutines.delay(500L * retryCount)
-                }
-            }
-        }
-
-        throw lastException ?: Exception("Failed to export collection data after $maxRetries attempts")
-    }
-
-    private suspend fun importCollection(beans: List<BackupBean>) {
-        var retryCount = 0
-        val maxRetries = 3
-        var lastException: Exception? = null
-
-        while (retryCount < maxRetries) {
-            try {
-                val db = Room.databaseBuilder(appContext, Database::class.java, "collection.db")
-                    .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
-                    .build()
-                val dao = db.databaseDao()
-
-                db.withTransaction {
-                    dao.deleteAll()
-
-                    beans.forEach { backupBean ->
-                        val bean =
-                            DatabaseBean(
-                                text = backupBean.text,
-                                html = backupBean.html,
-                                type = DatabaseBean.BeanType.valueOf(backupBean.type),
-                                time = backupBean.time,
-                                pinned = backupBean.pinned,
-                            )
-                        dao.insert(bean)
-                    }
-                }
-
-                db.close()
-                Timber.d("Successfully imported collection data with ${beans.size} items")
-                return
-            } catch (e: Exception) {
-                lastException = e
-                retryCount++
-                Timber.w("Failed to import collection data, attempt $retryCount/$maxRetries: ${e.message}")
-
-                if (retryCount < maxRetries) {
-                    kotlinx.coroutines.delay(500L * retryCount)
-                }
-            }
-        }
-
-        throw lastException ?: Exception("Failed to import collection data after $maxRetries attempts")
     }
 
     private fun exportWanxiangPrefs(): Map<String, BackupPreference> {

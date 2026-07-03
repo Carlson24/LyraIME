@@ -25,11 +25,10 @@ object VoiceModelManager {
 
     enum class ModelVariant(
         val url: String,
-        val sha256: String,
     ) {
-        STANDARD(ResourceUrls.VOICE_MODEL_DOWNLOAD, ResourceUrls.VOICE_MODEL_SHA256),
-        INT8(ResourceUrls.VOICE_MODEL_INT8_DOWNLOAD, ResourceUrls.VOICE_MODEL_INT8_SHA256),
-        QNN("", ""),
+        STANDARD(ResourceUrls.VOICE_MODEL_DOWNLOAD),
+        INT8(ResourceUrls.VOICE_MODEL_INT8_DOWNLOAD),
+        QNN(""),
     }
 
     private fun resolveQnnModelEntry(): ResourceUrls.QnnModelEntry {
@@ -52,24 +51,35 @@ object VoiceModelManager {
         return getSelectedVariant().url
     }
 
-    fun getExpectedSha256(): String {
-        if (getSelectedVariant() == ModelVariant.QNN) return resolveQnnModelEntry().sha256
-        return getSelectedVariant().sha256
+    suspend fun getExpectedSha256(): String? {
+        if (getSelectedVariant() == ModelVariant.QNN) {
+            return ResourceUrls.GitHubAssetCache.getSha256(
+                resolveQnnModelEntry().url,
+                ResourceUrls.VOICE_MODEL_QNN_RELEASE_API,
+            )
+        }
+        return ResourceUrls.GitHubAssetCache.getSha256(
+            getSelectedVariant().url,
+            ResourceUrls.VOICE_MODEL_RELEASE_API,
+        )
     }
 
     fun verifySha256(
         file: File,
-        expectedHash: String = getExpectedSha256(),
+        expectedHash: String?,
     ): Boolean {
+        if (expectedHash == null) return false
         val hash = computeFileSha256(file) ?: return false
         return hash.equals(expectedHash, ignoreCase = true)
     }
 
-    fun verifySha256AnyVariant(file: File): Boolean {
+    suspend fun verifySha256AnyVariant(file: File): Boolean {
         val hash = computeFileSha256(file) ?: return false
-        if (ModelVariant.entries.any { hash.equals(it.sha256, ignoreCase = true) }) return true
-        if (ResourceUrls.VOICE_MODEL_QNN_MAP.values.any { hash.equals(it.sha256, ignoreCase = true) }) return true
-        return false
+        val knownSha256s = ResourceUrls.GitHubAssetCache.getAllKnownSha256s(
+            ResourceUrls.VOICE_MODEL_RELEASE_API,
+            ResourceUrls.VOICE_MODEL_QNN_RELEASE_API,
+        )
+        return knownSha256s.any { hash.equals(it, ignoreCase = true) }
     }
 
     data class ModelFiles(

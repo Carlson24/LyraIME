@@ -400,9 +400,12 @@ class Key(
 
 private const val ICON_PREFIX = "ic@"
 
+enum class HorizontalAlign { LEFT, CENTER, RIGHT }
+
 sealed class LabelSegment {
-    data class Icon(val cmdName: String) : LabelSegment()
-    data class Text(val content: String) : LabelSegment()
+    abstract val align: HorizontalAlign
+    data class Icon(val cmdName: String, override val align: HorizontalAlign = HorizontalAlign.CENTER) : LabelSegment()
+    data class Text(val content: String, override val align: HorizontalAlign = HorizontalAlign.CENTER) : LabelSegment()
 }
 
 val String.isIconFont: Boolean
@@ -411,26 +414,77 @@ val String.isIconFont: Boolean
 fun String.toIconName(): String = replace(ICON_PREFIX, "cmd_")
 
 fun String.parseLabelSegments(): List<LabelSegment> {
-    val pattern = Regex("'ic@([^']+)'")
-    val matches = pattern.findAll(this).toList()
-    if (matches.isEmpty()) {
+    val segments = mutableListOf<LabelSegment>()
+    val sb = StringBuilder()
+    var i = 0
+    var currentAlign = HorizontalAlign.CENTER
+
+    while (i < length) {
+        // 转义字符
+        if (this[i] == '\\' && i + 1 < length) {
+            when (this[i + 1]) {
+                '<', '>', '\\', '\'' -> {
+                    sb.append(this[i + 1])
+                    i += 2
+                    continue
+                }
+            }
+        }
+        // 新语法图标 'ic@...'
+        if (this[i] == '\'' && i + ICON_PREFIX.length + 1 < length &&
+            this.substring(i + 1).startsWith(ICON_PREFIX)
+        ) {
+            val closeIdx = this.indexOf('\'', i + 1)
+            if (closeIdx > i) {
+                if (sb.isNotEmpty()) {
+                    segments.add(LabelSegment.Text(sb.toString(), align = currentAlign))
+                    sb.clear()
+                }
+                val iconName = this.substring(i + 1 + ICON_PREFIX.length, closeIdx)
+                segments.add(LabelSegment.Icon("cmd_$iconName", align = currentAlign))
+                i = closeIdx + 1
+                continue
+            }
+        }
+        // 对齐标签 <l>/</l>/<r>/</r>
+        if (this[i] == '<') {
+            val closeIdx = this.indexOf('>', i)
+            if (closeIdx > i) {
+                val tag = this.substring(i + 1, closeIdx)
+                when (tag) {
+                    "l", "r", "/l", "/r" -> {
+                        if (sb.isNotEmpty()) {
+                            segments.add(LabelSegment.Text(sb.toString(), align = currentAlign))
+                            sb.clear()
+                        }
+                        currentAlign = when (tag) {
+                            "l" -> HorizontalAlign.LEFT
+                            "r" -> HorizontalAlign.RIGHT
+                            else -> HorizontalAlign.CENTER
+                        }
+                        i = closeIdx + 1
+                        continue
+                    }
+                }
+            }
+        }
+        sb.append(this[i])
+        i++
+    }
+    if (sb.isNotEmpty()) {
+        val text = sb.toString()
+        if (segments.isEmpty() && text.startsWith(ICON_PREFIX)) {
+            segments.add(LabelSegment.Icon(text.toIconName(), align = currentAlign))
+        } else {
+            segments.add(LabelSegment.Text(text, align = currentAlign))
+        }
+    }
+    if (segments.isEmpty()) {
         return if (startsWith(ICON_PREFIX)) {
             listOf(LabelSegment.Icon(toIconName()))
         } else {
             listOf(LabelSegment.Text(this))
         }
-    }
-    val segments = mutableListOf<LabelSegment>()
-    var lastEnd = 0
-    for (m in matches) {
-        if (m.range.first > lastEnd) {
-            segments.add(LabelSegment.Text(substring(lastEnd, m.range.first)))
-        }
-        segments.add(LabelSegment.Icon("cmd_${m.groupValues[1]}"))
-        lastEnd = m.range.last + 1
-    }
-    if (lastEnd < length) {
-        segments.add(LabelSegment.Text(substring(lastEnd)))
     }
     return segments
 }

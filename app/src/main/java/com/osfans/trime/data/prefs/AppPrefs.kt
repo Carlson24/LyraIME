@@ -528,6 +528,9 @@ class AppPrefs(
             const val CLIPBOARD_SUGGESTION = "clipboard_suggestion"
             const val CLIPBOARD_SUGGESTION_TIMEOUT = "clipboard_suggestion_timeout"
             const val CLIPBOARD_RETURN_AFTER_PASTE = "clipboard_return_after_paste"
+            const val CLIPBOARD_SCREENSHOT_WATCH = "clipboard_screenshot_watch"
+            const val CLIPBOARD_MASK_SENSITIVE = "clipboard_mask_sensitive"
+            const val CLIPBOARD_SENSITIVE_KEYWORDS = "clipboard_sensitive_keywords"
             const val SYNC_CLIPBOARD_ENABLED = "sync_clipboard_enabled"
             const val SYNC_CLIPBOARD_SERVER_BASE = "sync_clipboard_server_base"
             const val SYNC_CLIPBOARD_USERNAME = "sync_clipboard_username"
@@ -605,6 +608,28 @@ class AppPrefs(
             CLIPBOARD_RETURN_AFTER_PASTE,
             true,
         ) { clipboardListening.getValue() }
+        val clipboardScreenshotWatch = switch(
+            R.string.clipboard_screenshot_watch,
+            CLIPBOARD_SCREENSHOT_WATCH,
+            false,
+        ) { clipboardListening.getValue() }
+        val clipboardMaskSensitive = switch(
+            R.string.clipboard_mask_sensitive,
+            CLIPBOARD_MASK_SENSITIVE,
+            true,
+        ) { clipboardListening.getValue() }
+        val clipboardSensitiveKeywords = editText(
+            R.string.clipboard_sensitive_keywords,
+            CLIPBOARD_SENSITIVE_KEYWORDS,
+            "",
+            R.string.a_regular_expression_per_line,
+            onBindEditText = {
+                it.typeface = Typeface.MONOSPACE
+                it.textSize = 15f
+            },
+            enableUiOn = { clipboardMaskSensitive.getValue() },
+            summaryCountFormat = R.string.clipboard_rules_count,
+        )
 
         val syncEnabled = switch(
             R.string.sync_clipboard_enabled,

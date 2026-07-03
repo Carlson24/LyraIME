@@ -5,6 +5,8 @@
 
 package com.osfans.trime.data.db
 
+import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
@@ -47,6 +49,8 @@ object ClipboardHelper :
 
     private val onUpdateListeners = WeakHashSet<OnClipboardUpdateListener>()
 
+    var onSearchResultPaste: ((String) -> Unit)? = null
+
     fun addOnUpdateListener(listener: OnClipboardUpdateListener) {
         onUpdateListeners.add(listener)
     }
@@ -83,6 +87,17 @@ object ClipboardHelper :
             .toSet()
     }
 
+    private fun String.matchesSensitiveKeywords(): Boolean {
+        val rules by clipPref.clipboardSensitiveKeywords
+        return rules
+            .split('\n')
+            .mapNotNull { line ->
+                val trimmed = line.trim()
+                trimmed.takeIf { it.isNotEmpty() }?.let { Regex(it) }
+            }
+            .any { it.containsMatchIn(this) }
+    }
+
     private val outputRules: Set<Regex> by lazy {
         val rules by clipPref.clipboardOutputRules
         rules
@@ -103,7 +118,7 @@ object ClipboardHelper :
         clbDb =
             Room
                 .databaseBuilder(context, Database::class.java, "clipboard.db")
-                .addMigrations(Database.MIGRATION_3_4, Database.MIGRATION_4_5)
+                .fallbackToDestructiveMigration(true)
                 .build()
         clbDao = clbDb.databaseDao()
         enabledListener.onChange(enabledPref.key, enabledPref.getValue())
@@ -115,13 +130,106 @@ object ClipboardHelper :
 
     suspend fun get(id: Int) = clbDao.get(id)
 
-    suspend fun haveUnpinned() = clbDao.haveUnpinned()
+    suspend fun haveUnpinned(category: ClipboardCategory? = null): Boolean = when (category) {
+        ClipboardCategory.All -> clbDao.haveUnpinned()
+        ClipboardCategory.Favorites -> !clbDao.favoriteEntries().let { true }
+        ClipboardCategory.Local -> clbDao.haveUnpinnedTextEntriesBySource(DatabaseBean.SOURCE_LOCAL)
+        ClipboardCategory.Media -> clbDao.haveUnpinnedMediaEntries()
+        ClipboardCategory.Remote -> clbDao.haveUnpinnedEntriesBySource(DatabaseBean.SOURCE_REMOTE)
+        null -> clbDao.haveUnpinned()
+    }
 
-    fun allBeans() = clbDao.allBeans()
+    fun entriesPager(category: ClipboardCategory) = when (category) {
+        ClipboardCategory.All -> clbDao.allEntries()
+        ClipboardCategory.Favorites -> clbDao.favoriteEntries()
+        ClipboardCategory.Local -> clbDao.textEntriesBySource(DatabaseBean.SOURCE_LOCAL)
+        ClipboardCategory.Media -> clbDao.mediaEntries()
+        ClipboardCategory.Remote -> clbDao.entriesBySource(DatabaseBean.SOURCE_REMOTE)
+    }
+
+    fun allBeans() = clbDao.allEntries()
+
+    fun searchEntriesPager(query: String) = clbDao.searchEntries(query)
 
     suspend fun pin(id: Int) = clbDao.updatePinned(id, true)
 
     suspend fun unpin(id: Int) = clbDao.updatePinned(id, false)
+
+    suspend fun addNewBean(text: String) {
+        mutex.withLock {
+            val bean = DatabaseBean(text = text)
+            if (bean.text.isBlank()) return
+            try {
+                clbDao.find(text)?.let {
+                    updateLastBean(it.copy(time = bean.time))
+                    clbDao.updateTime(it.id, bean.time)
+                    return
+                }
+                val insertedBean = clbDb.withTransaction {
+                    val rowId = clbDao.insert(bean)
+                    clbDao.get(rowId) ?: bean
+                }
+                updateLastBean(insertedBean)
+                updateItemCount()
+            } catch (e: Exception) {
+                Timber.w("Failed to update clipboard database: $e")
+                updateLastBean(bean)
+            }
+        }
+    }
+
+    suspend fun importLocalEntry(
+        text: String,
+        type: String,
+        timestamp: Long = System.currentTimeMillis(),
+        notifyListeners: Boolean = true,
+    ) {
+        mutex.withLock {
+            val bean = DatabaseBean(text = text, type = type, time = timestamp)
+            if (bean.text.isBlank()) return
+            try {
+                clbDao.find(text)?.let {
+                    clbDao.updateTime(it.id, timestamp)
+                    return
+                }
+                clbDb.withTransaction {
+                    clbDao.insert(bean)
+                    removeOutdated()
+                    updateItemCount()
+                }
+            } catch (e: Exception) {
+                Timber.w("Failed to import local entry: $e")
+            }
+        }
+    }
+
+    suspend fun importRemoteEntry(
+        text: String,
+        type: String = "text/plain",
+        timestamp: Long = System.currentTimeMillis(),
+    ) {
+        mutex.withLock {
+            val bean = DatabaseBean(
+                text = text,
+                type = type,
+                time = timestamp,
+                source = DatabaseBean.SOURCE_REMOTE,
+            )
+            if (bean.text.isBlank()) return
+            try {
+                clbDao.findRemoteText(text)?.let {
+                    clbDao.updateTime(it.id, timestamp)
+                    return
+                }
+                clbDb.withTransaction {
+                    clbDao.insert(bean)
+                    updateItemCount()
+                }
+            } catch (e: Exception) {
+                Timber.w("Failed to import remote entry: $e")
+            }
+        }
+    }
 
     suspend fun updateText(
         id: Int,
@@ -134,30 +242,80 @@ object ClipboardHelper :
     }
 
     suspend fun delete(id: Int) {
-        clbDao.delete(id)
+        markAsDeleted(id)
         updateItemCount()
     }
 
-    suspend fun deleteAll(skipUnpinned: Boolean = true) {
-        if (skipUnpinned) {
-            clbDao.deleteAllUnpinned()
-        } else {
-            clbDao.deleteAll()
+    suspend fun deleteAll(
+        category: ClipboardCategory? = null,
+        skipPinned: Boolean = true,
+    ) {
+        when {
+            !skipPinned -> when (category) {
+                ClipboardCategory.All, null -> {
+                    val ids = clbDao.findAllIds()
+                    clbDao.markAsDeleted(*ids)
+                }
+                ClipboardCategory.Favorites -> {
+                    val ids = clbDao.findPinnedIds()
+                    clbDao.markAsDeleted(*ids)
+                }
+                ClipboardCategory.Local -> {
+                    val ids = clbDao.findAllTextEntryIdsBySource(DatabaseBean.SOURCE_LOCAL)
+                    clbDao.markAsDeleted(*ids)
+                }
+                ClipboardCategory.Media -> {
+                    val ids = clbDao.findAllMediaEntryIds()
+                    clbDao.markAsDeleted(*ids)
+                }
+                ClipboardCategory.Remote -> {
+                    val ids = clbDao.findAllEntryIdsBySource(DatabaseBean.SOURCE_REMOTE)
+                    clbDao.markAsDeleted(*ids)
+                }
+            }
+            category == ClipboardCategory.Favorites -> {
+                // already pinned-only
+                val ids = clbDao.findPinnedIds()
+                clbDao.markAsDeleted(*ids)
+            }
+            else -> when (category) {
+                ClipboardCategory.All, null -> {
+                    val ids = clbDao.findUnpinnedIds()
+                    clbDao.markAsDeleted(*ids)
+                }
+                ClipboardCategory.Local -> {
+                    val ids = clbDao.findUnpinnedTextEntryIdsBySource(DatabaseBean.SOURCE_LOCAL)
+                    clbDao.markAsDeleted(*ids)
+                }
+                ClipboardCategory.Media -> {
+                    val ids = clbDao.findUnpinnedMediaEntryIds()
+                    clbDao.markAsDeleted(*ids)
+                }
+                ClipboardCategory.Remote -> {
+                    val ids = clbDao.findUnpinnedEntryIdsBySource(DatabaseBean.SOURCE_REMOTE)
+                    clbDao.markAsDeleted(*ids)
+                }
+            }
         }
         updateItemCount()
+    }
+
+    suspend fun markAsDeleted(vararg ids: Int) {
+        clbDao.markAsDeleted(*ids)
+    }
+
+    suspend fun undoDelete(vararg ids: Int) {
+        clbDao.undoDelete(*ids)
+        updateItemCount()
+    }
+
+    suspend fun realDelete() {
+        clbDao.realDelete()
     }
 
     private var lastClipTimestamp = -1L
     private var lastClipHash = 0
 
-    /**
-     * 此方法设置监听剪贴板变化，如有新的剪贴内容，就启动选定的剪贴板管理器
-     *
-     * - [compareRules] 比较规则。每次通知剪贴板管理器，都会保存 ClipBoardCompare 处理过的 string。
-     * 如果两次处理过的内容不变，则不通知。
-     *
-     * - [outputRules] 输出规则。如果剪贴板内容与规则匹配，则不通知剪贴板管理器。
-     */
     override fun onPrimaryClipChanged() {
         val clip = clipboardManager.primaryClip ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -173,17 +331,25 @@ object ClipboardHelper :
         }
         launch {
             mutex.withLock {
-                val bean = DatabaseBean.fromClipData(clip) ?: return@withLock
-                if (bean.text.isNullOrBlank()) return@withLock
+                var bean = DatabaseBean.fromClipData(clip) ?: return@withLock
+                if (bean.text.isBlank()) return@withLock
                 if (bean.text.matchesAny(outputRules) ||
                     bean.text.removeRegexSet(compareRules).isEmpty()
                 ) {
                     return@withLock
                 }
+                val isSensitive = bean.sensitive ||
+                    (!bean.isUriEntry() && bean.text.matchesSensitiveKeywords())
+                if (isSensitive != bean.sensitive) {
+                    bean = bean.copy(sensitive = isSensitive)
+                }
                 try {
-                    clbDao.find(bean.text)?.let {
-                        updateLastBean(it.copy(time = bean.time))
-                        clbDao.updateTime(it.id, bean.time)
+                    clbDao.find(bean.text)?.let { existing ->
+                        updateLastBean(existing.copy(time = bean.time, sensitive = bean.sensitive))
+                        clbDao.updateTime(existing.id, bean.time)
+                        if (bean.sensitive != existing.sensitive) {
+                            clbDao.updateSensitive(existing.id, bean.sensitive)
+                        }
                         return@withLock
                     }
                     val insertedBean =
@@ -211,7 +377,7 @@ object ClipboardHelper :
                 unpinned
                     .sortedBy { it.id }
                     .getOrNull(unpinned.size - limit)
-            clbDao.deletedUnpinnedEarlierThan(outdated?.time ?: System.currentTimeMillis())
+            clbDao.markUnpinnedAsDeletedEarlierThan(outdated?.time ?: System.currentTimeMillis())
         }
     }
 }

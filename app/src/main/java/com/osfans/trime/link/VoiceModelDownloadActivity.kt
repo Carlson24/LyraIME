@@ -77,11 +77,12 @@ class VoiceModelDownloadActivity : ComponentActivity() {
             val destName = "voice_model_download$ext"
             try {
                 val destFile = File(cacheDir, destName)
+                val expectedSha256 = VoiceModelManager.getExpectedSha256()
                 withContext(Dispatchers.IO) {
                     FileDownloader.download(
                         url = downloadUrl,
                         destFile = destFile,
-                        expectedSha256 = VoiceModelManager.getExpectedSha256(),
+                        expectedSha256 = expectedSha256,
                         onProgress = { progress, downloaded, total ->
                             val pct = (progress * 100).toInt()
                             val status = if (progress >= 0f && total > 0) {

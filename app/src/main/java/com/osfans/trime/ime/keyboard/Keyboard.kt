@@ -177,8 +177,8 @@ class Keyboard(
     val t9SidebarShowItems: Int = selfConfig?.t9SidebarShowItems ?: 4
     val t9SidebarSymbols: List<String> = selfConfig?.t9SidebarSymbols ?: emptyList()
 
-    val t9SideTextFont: List<String>
-        get() = theme.generalStyle.t9SideTextFont.ifEmpty { theme.generalStyle.keyFont }
+    val t9SideFont: List<String>
+        get() = theme.generalStyle.t9SideFont.ifEmpty { theme.generalStyle.keyFont }
     val t9SideTextSize: Float
         get() {
             val v = theme.generalStyle.t9SideTextSize

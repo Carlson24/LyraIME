@@ -13,6 +13,7 @@ import android.content.res.Configuration
 import android.graphics.RectF
 import android.graphics.Region
 import android.inputmethodservice.InputMethodService
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -36,6 +37,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
+import com.osfans.trime.R
 import com.osfans.trime.core.KeyModifiers
 import com.osfans.trime.core.KeyValue
 import com.osfans.trime.core.RimeApi
@@ -59,6 +61,7 @@ import com.osfans.trime.util.findSectionFrom
 import com.osfans.trime.util.forceShowSelf
 import com.osfans.trime.util.monitorCursorAnchor
 import com.osfans.trime.util.styledFloat
+import com.osfans.trime.util.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -649,6 +652,26 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         InputFeedbackManager.textCommitSpeak(text)
     }
 
+    fun commitImage(
+        uri: Uri,
+        mimeType: String,
+    ) {
+        val ic = currentInputConnection
+        if (ic != null) {
+            val desc = android.content.ClipDescription("image", arrayOf(mimeType))
+            val inputContentInfo = android.view.inputmethod.InputContentInfo(
+                uri,
+                desc,
+                null,
+            )
+            if (ic.commitContent(inputContentInfo, 0, null)) return
+        }
+        clipboardManager.setPrimaryClip(
+            android.content.ClipData.newUri(contentResolver, "image", uri),
+        )
+        toast(R.string.image_copied_to_clipboard)
+    }
+
     /**
      * Constructs a meta state integer flag which can be used for setting the `metaState` field when sending a KeyEvent
      * to the input connection. If this method is called without a meta modifier set to true, the default value `0` is
@@ -781,10 +804,14 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         return false
     }
 
+    var onSearchKeyListener: ((KeyEvent) -> Boolean)? = null
+    var onSearchCommitListener: ((String) -> Boolean)? = null
+
     override fun onKeyDown(
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
+        if (onSearchKeyListener?.invoke(event) == true) return true
         if (inputDeviceManager.evaluateOnKeyDown(event, this)) {
             decorLocationUpdated = false
             forceShowSelf()
@@ -980,7 +1007,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             if (!ic.getSelectedText(0).isNullOrEmpty()) {
                 ic.deleteSurroundingText(1, 0)
             }
-            ic.setComposingText(text, if (text.isEmpty()) 0 else text.length - cursorPos + 1)
+            ic.setComposingText(text, 1)
             if (text.isEmpty()) {
                 ic.finishComposingText()
             }

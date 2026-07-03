@@ -22,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.data.db.ClipboardHelper
+import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.KeyActionManager
@@ -42,7 +43,6 @@ import com.osfans.trime.ime.switches.SwitchOptionWindow
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
 import com.osfans.trime.link.AsrkbVoiceHoldSessionController
-import com.osfans.trime.ui.main.ClipEditActivity
 import com.osfans.trime.util.AppUtils
 import com.osfans.trime.util.isLandscape
 import kotlinx.coroutines.Job
@@ -86,6 +86,7 @@ class InputBarDelegate : InputBroadcastReceiver {
         }
 
     private val clipboardSuggestion by prefs.clipboard.clipboardSuggestion
+    private val clipboardMaskSensitive by prefs.clipboard.clipboardMaskSensitive
 
     private val clipboardSuggestionTimeout by prefs.clipboard.clipboardSuggestionTimeout
 
@@ -117,7 +118,12 @@ class InputBarDelegate : InputBroadcastReceiver {
             if (it.text.isNullOrEmpty()) {
                 isClipboardFresh = false
             } else {
-                alwaysUi.clipboardUi.text.text = it.text.take(42)
+                val displayText = if (it.sensitive && clipboardMaskSensitive) {
+                    DatabaseBean.BULLET.repeat(it.text.length.coerceAtMost(42))
+                } else {
+                    it.text.take(42)
+                }
+                alwaysUi.clipboardUi.text.text = displayText
                 isClipboardFresh = true
                 launchClipboardTimeoutJob()
             }
@@ -174,7 +180,7 @@ class InputBarDelegate : InputBroadcastReceiver {
                 }
                 setOnLongClickListener {
                     ClipboardHelper.lastBean?.let {
-                        AppUtils.launchClipEdit(context, it.id, ClipEditActivity.FROM_CLIPBOARD)
+                        AppUtils.launchClipEdit(context, it.id)
                     }
                     true
                 }

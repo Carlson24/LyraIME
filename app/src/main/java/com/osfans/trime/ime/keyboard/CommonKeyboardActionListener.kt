@@ -292,8 +292,12 @@ class CommonKeyboardActionListener {
             }
 
             private fun handleClipboardWindow(arg: String) {
-                val tabIndex = arg.toIntOrNull()?.coerceIn(0, 1) ?: 0
-                windowManager.attachWindow(ClipboardWindow(tabIndex))
+                val category = when (arg.toIntOrNull()) {
+                    0 -> com.osfans.trime.data.db.ClipboardCategory.All
+                    1 -> com.osfans.trime.data.db.ClipboardCategory.Favorites
+                    else -> com.osfans.trime.data.db.ClipboardCategory.All
+                }
+                windowManager.attachWindow(ClipboardWindow(category))
             }
 
             private fun handleColorScheme(arg: String) {
@@ -486,9 +490,9 @@ class CommonKeyboardActionListener {
                             val committed = lenBefore - lenAfter
                             ContextCompat.getMainExecutor(service).execute { dc.trimCommitted(committed) }
                         } else if (isNavKey) {
-                            val caretPos = compositionCached.cursorPos
+                            val caretPos = getCaretPos()
                             val keyIdx = dc.keyIndexFromCaret(caretPos)
-                            Timber.d("handleKey: nav key, cursorPos=$caretPos -> keyIdx=$keyIdx")
+                            Timber.d("handleKey: nav key, caretPos=$caretPos -> keyIdx=$keyIdx")
                             ContextCompat.getMainExecutor(service).execute { dc.onCursorMoved(keyIdx) }
                         } else if (lenAfter > lenBefore) {
                             val charDiff = lenAfter - lenBefore

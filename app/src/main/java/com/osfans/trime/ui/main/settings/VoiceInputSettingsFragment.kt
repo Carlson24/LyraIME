@@ -46,8 +46,6 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     private var downloadJob: Job? = null
     private var dspJob: Job? = null
 
-    @Volatile private var downloadCancelled = false
-
     @Volatile private var dspDownloadCancelled = false
 
     private val importMimeTypes = arrayOf(
@@ -186,18 +184,24 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         dspDownloadCancelled = false
         val ctx = requireContext()
         val taskTitle = getString(R.string.voice_qnn_dsp_initialize)
+        val dp = ctx.resources.displayMetrics.density
+        fun Int.dp() = (this * dp).toInt()
 
         val taskText = TextView(ctx).apply {
             textSize = 14f
             text = taskTitle
         }
         val progressBar = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
             max = 100
             isIndeterminate = true
         }
         val taskContainer = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(32, 16, 32, 16)
+            setPadding(24.dp(), 16.dp(), 24.dp(), 16.dp())
             addView(taskText)
             addView(progressBar)
         }
@@ -305,24 +309,29 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     }
 
     private fun startDownload() {
-        downloadCancelled = false
         val ctx = requireContext()
         val downloadUrl = VoiceModelManager.getDownloadUrl()
         val ext = VoiceModelManager.archiveExtensionFromUrl(downloadUrl)
         val destName = "voice_model_download$ext"
         val taskTitle = getString(R.string.voice_model_download_action)
+        val dp = ctx.resources.displayMetrics.density
+        fun Int.dp() = (this * dp).toInt()
 
         val taskText = TextView(ctx).apply {
             textSize = 14f
             text = taskTitle
         }
         val progressBar = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
             max = 100
             isIndeterminate = true
         }
         val taskContainer = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(32, 16, 32, 16)
+            setPadding(24.dp(), 16.dp(), 24.dp(), 16.dp())
             addView(taskText)
             addView(progressBar)
         }
@@ -337,11 +346,12 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         downloadJob = lifecycleScope.launch {
             try {
                 val destFile = File(ctx.cacheDir, destName)
+                val expectedSha256 = VoiceModelManager.getExpectedSha256()
                 withContext(Dispatchers.IO) {
                     FileDownloader.download(
                         url = downloadUrl,
                         destFile = destFile,
-                        expectedSha256 = VoiceModelManager.getExpectedSha256(),
+                        expectedSha256 = expectedSha256,
                         onProgress = { progress, downloaded, total ->
                             launch(Dispatchers.Main) {
                                 val status = formatDownloadStatus(progress, downloaded, total)
@@ -358,7 +368,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                                 }
                             }
                         },
-                        isCancelled = { downloadCancelled },
+                        isCancelled = { downloadJob?.isActive != true },
                     )
                 }
 

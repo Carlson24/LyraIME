@@ -4,6 +4,14 @@
  */
 package com.osfans.trime.data
 
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
+import timber.log.Timber
+
 object ResourceUrls {
     const val USER_AGENT = "Mozilla/5.0"
 
@@ -32,75 +40,119 @@ object ResourceUrls {
     // ---- Voice Model ----
     const val VOICE_MODEL_DOWNLOAD =
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-x-asr-480ms-streaming-zipformer-transducer-zh-en-punct-2026-06-05.tar.bz2"
-    const val VOICE_MODEL_SHA256 =
-        "67ad368298674eac2aed66676632be2672c05807f95bae1d66f5d04813f34a99"
     const val VOICE_MODEL_INT8_DOWNLOAD =
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-x-asr-480ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05.tar.bz2"
-    const val VOICE_MODEL_INT8_SHA256 =
-        "7f19daf70818a9727cce21f27c577d89522aebab0e7025be5594ef93a46d41f3"
 
     // ---- QNN DSP Libraries (per SoC) ----
     // https://github.com/Carlson24/LyraIME/releases/tag/libQnnHtp
-    data class QnnDspEntry(val url: String, val sha256: String)
+    data class QnnDspEntry(val url: String)
 
     val QNN_DSP_MAP: Map<String, QnnDspEntry> = mapOf(
         "SM8350" to QnnDspEntry(
             "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV68.tar.bz2",
-            "81a42dd36b8ef93b188e31c45776ff8fb12bd6287cef2d95815f66dd2f8f1180",
         ),
         "SM8450" to QnnDspEntry(
             "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69.tar.bz2",
-            "f42cfaed645d18da12e297f7a19cb43de220cbb38ab5eed157ed22a4e2d9a884",
         ),
         "SM8475" to QnnDspEntry(
             "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69.tar.bz2",
-            "f42cfaed645d18da12e297f7a19cb43de220cbb38ab5eed157ed22a4e2d9a884",
         ),
         "SM8550" to QnnDspEntry(
             "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV73.tar.bz2",
-            "b85af9e35961761d77b0e013ee7081a8f3be06c01c2f0fc4863d028799e7e031",
         ),
         "SM8650" to QnnDspEntry(
             "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV75.tar.bz2",
-            "87582bae560aeab206fec4e9ec38bad30646a0f9ec4ea2af065872e26dfa2b4f",
         ),
         "SM8750" to QnnDspEntry(
             "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV79.tar.bz2",
-            "50fea403cd247ca7a55f938d974dd879d33cb0268c6a36ddc52794be152c7a7e",
         ),
         "SM8850" to QnnDspEntry(
             "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV81.tar.bz2",
-            "8b353182612c6c560343d65ab3e403aafd0f2a616500c5ef4a469faf567c3091",
         ),
     )
 
     // ---- Voice Model QNN Binary (per SOC) ----
     // https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models-qnn-binary
-    data class QnnModelEntry(val url: String, val sha256: String)
+    data class QnnModelEntry(val url: String)
     val VOICE_MODEL_QNN_MAP: Map<String, QnnModelEntry> = mapOf(
         "SM8450" to QnnModelEntry(
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8450-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-            "3b88994a66831801767b9889a1f0e4f45a86d87480f5517e0f005b1e2e5e12bc",
         ),
         "SM8475" to QnnModelEntry(
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8475-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-            "7fe97f63e3ffe3f6ba578f38f76bf8a0aa1848d00e9fad13bd3d21e76f50614e",
         ),
         "SM8550" to QnnModelEntry(
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8550-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-            "4165b1821b379ec175bb59b65de254faf56f4b27fd88bade50ed1e5bcb24c473",
         ),
         "SM8650" to QnnModelEntry(
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8650-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-            "722c165095b6fee042b4fc45afe7617a208e552d7f9d9c7c5e5242d8b339ae2f",
         ),
         "SM8750" to QnnModelEntry(
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8750-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-            "2b9817775dd92ea6b66afa058fd6f001d71065855f3a70c19d951b48dc80f1c2",
         ),
         "SM8850" to QnnModelEntry(
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8850-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-            "72627a9e8daf4a6bf60acadc054a436b0e6f90b71027366154ab17709c26cbcb",
         ),
     )
+
+    // ---- GitHub Release API URLs ----
+    private const val RELEASE_API_K2FSA_SHERPA_ONNX =
+        "https://api.github.com/repos/k2-fsa/sherpa-onnx/releases/tags"
+    private const val RELEASE_API_LYRAIME =
+        "https://api.github.com/repos/Carlson24/LyraIME/releases/tags"
+
+    const val VOICE_MODEL_RELEASE_API =
+        "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models"
+    const val VOICE_MODEL_QNN_RELEASE_API =
+        "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models-qnn-binary"
+    const val QNN_DSP_RELEASE_API =
+        "$RELEASE_API_LYRAIME/libQnnHtp"
+
+    // ---- SHA256 cache (fetched from GitHub release API) ----
+    object GitHubAssetCache {
+        private val cache = ConcurrentHashMap<String, String>()
+        private val client = OkHttpClient()
+
+        private suspend fun fetchReleaseAssets(releaseApiUrl: String) {
+            val request = Request.Builder()
+                .url(releaseApiUrl)
+                .header("User-Agent", USER_AGENT)
+                .get()
+                .build()
+            val content = withContext(Dispatchers.IO) {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        Timber.w("GitHubAssetCache: fetch failed ${response.code}")
+                        return@withContext null
+                    }
+                    response.body.string()
+                }
+            } ?: return
+            val json = JSONObject(content)
+            val assets = json.optJSONArray("assets") ?: return
+            for (i in 0 until assets.length()) {
+                val asset = assets.getJSONObject(i)
+                val url = asset.optString("browser_download_url", "")
+                val digest = asset.optString("digest", "")
+                if (url.isNotEmpty() && digest.startsWith("sha256:")) {
+                    cache[url] = digest.removePrefix("sha256:")
+                }
+            }
+        }
+
+        suspend fun getSha256(downloadUrl: String, releaseApiUrl: String): String? {
+            cache[downloadUrl]?.let { return it }
+            fetchReleaseAssets(releaseApiUrl)
+            return cache[downloadUrl]
+        }
+
+        suspend fun getAllKnownSha256s(vararg releaseApiUrls: String): List<String> {
+            for (apiUrl in releaseApiUrls) {
+                fetchReleaseAssets(apiUrl)
+            }
+            return cache.values.toList()
+        }
+
+        fun isCached(downloadUrl: String): Boolean = cache.containsKey(downloadUrl)
+    }
 }

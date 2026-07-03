@@ -10,6 +10,7 @@ import android.content.Intent
 import android.util.SparseArray
 import android.view.KeyEvent
 import com.osfans.trime.ui.main.ClipEditActivity
+import com.osfans.trime.ui.main.ClipSearchActivity
 import com.osfans.trime.ui.main.LogActivity
 import com.osfans.trime.ui.main.MainActivity
 import com.osfans.trime.ui.main.NavigationRoute
@@ -71,12 +72,16 @@ object AppUtils {
     fun launchClipEdit(
         context: Context,
         id: Int,
-        type: String,
     ) {
         context.startActivity<ClipEditActivity> {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra(ClipEditActivity.BEAN_ID, id)
-            putExtra(ClipEditActivity.CLIP_TYPE, type)
+        }
+    }
+
+    fun launchClipSearch(context: Context) {
+        context.startActivity<ClipSearchActivity> {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
     }
 }

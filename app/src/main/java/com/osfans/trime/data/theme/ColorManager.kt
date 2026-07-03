@@ -94,6 +94,11 @@ object ColorManager {
             "text_back_color" to "back_color",
             "long_text_color" to "key_text_color",
             "long_text_back_color" to "key_back_color",
+            "clipboard_category_back_color" to "key_back_color",
+            "clipboard_category_selected_back_color" to "hilited_candidate_back_color",
+            "clipboard_category_selected_text_color" to "hilited_candidate_text_color",
+            "clipboard_entry_back_color" to "key_back_color",
+            "clipboard_checkbox_color" to "key_text_color",
         )
 
     private var bitmapCache: LruCache<String, Bitmap>? = null

@@ -720,9 +720,6 @@ class KeyView(
                 is LabelSegment.Text -> paint.measureText(UnicodeVariantUtils.toDisplay(seg.content))
             }
         }
-        val totalWidth = widths.sum() + spacing * (segments.size - 1)
-
-        val startX = (width - paddingLeft - paddingRight) / 2f + paddingLeft + sp(offsetX) - totalWidth / 2f
 
         val visualCenterY = (height - paddingTop - paddingBottom) / 2f + paddingTop + sp(offsetY)
         val halfIcon = iconPx / 2f
@@ -745,21 +742,58 @@ class KeyView(
             }
         }
 
-        var cursorX = startX
+        // 按对齐方向分组
+        data class IndexedSegment(val index: Int, val seg: LabelSegment, val width: Float)
+
+        val leftGroup = mutableListOf<IndexedSegment>()
+        val centerGroup = mutableListOf<IndexedSegment>()
+        val rightGroup = mutableListOf<IndexedSegment>()
 
         for (i in segments.indices) {
-            val seg = segments[i]
-            val w = widths[i]
-            when (seg) {
-                is LabelSegment.Icon -> {
-                    drawIconAt(canvas, seg.cmdName, iconSize, textColor, cursorX + w / 2f, iconCenterY)
-                }
-                is LabelSegment.Text -> {
-                    canvas.drawText(UnicodeVariantUtils.toDisplay(seg.content), cursorX, textBaselineY, paint)
-                }
+            val item = IndexedSegment(i, segments[i], widths[i])
+            when (segments[i].align) {
+                HorizontalAlign.LEFT -> leftGroup.add(item)
+                HorizontalAlign.CENTER -> centerGroup.add(item)
+                HorizontalAlign.RIGHT -> rightGroup.add(item)
             }
-            cursorX += w + spacing
         }
+
+        fun measureGroup(group: List<IndexedSegment>): Float = group.sumOf { it.width.toDouble() }.toFloat() +
+            spacing * (group.size - 1).coerceAtLeast(0)
+
+        val leftTotal = measureGroup(leftGroup)
+        val centerTotal = measureGroup(centerGroup)
+        val rightTotal = measureGroup(rightGroup)
+
+        val paddedLeft = paddingLeft.toFloat() + sp(offsetX)
+        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX)
+
+        val leftStart = paddedLeft
+        val rightStart = paddedRight - rightTotal
+        val centerStart = if (rightGroup.isNotEmpty()) {
+            (leftStart + leftTotal + rightStart - centerTotal) / 2f
+        } else {
+            paddedLeft + leftTotal + (paddedRight - paddedLeft - leftTotal - centerTotal) / 2f
+        }
+
+        fun drawGroup(group: List<IndexedSegment>, startX: Float) {
+            var cursorX = startX
+            for (item in group) {
+                when (item.seg) {
+                    is LabelSegment.Icon -> {
+                        drawIconAt(canvas, item.seg.cmdName, iconSize, textColor, cursorX + item.width / 2f, iconCenterY)
+                    }
+                    is LabelSegment.Text -> {
+                        canvas.drawText(UnicodeVariantUtils.toDisplay(item.seg.content), cursorX, textBaselineY, paint)
+                    }
+                }
+                cursorX += item.width + spacing
+            }
+        }
+
+        drawGroup(leftGroup, leftStart)
+        drawGroup(centerGroup, centerStart)
+        drawGroup(rightGroup, rightStart)
 
         paint.textAlign = savedAlign
     }
@@ -935,5 +969,3 @@ private data class RichTextLine(
 )
 
 private enum class PositionMode { TOP, CENTER, BOTTOM }
-
-private enum class HorizontalAlign { LEFT, CENTER, RIGHT }

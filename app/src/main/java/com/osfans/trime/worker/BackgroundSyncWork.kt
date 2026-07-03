@@ -80,8 +80,7 @@ class BackgroundSyncWork(
                 val backupFile = File(syncDir, SETTINGS_BACKUP_FILENAME)
                 val backupData = BackupManager.createBackup(
                     includePreferences = true,
-                    includeClipboard = false,
-                    includeCollection = true,
+                    includeClipboard = true,
                     includeWanxiang = true,
                     includeCustomTasks = true,
                 )

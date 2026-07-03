@@ -20,10 +20,10 @@ import androidx.preference.PreferenceManager
 import com.osfans.trime.data.clipboard.ClipboardHistoryStore
 import com.osfans.trime.data.clipboard.SyncClipboardManager
 import com.osfans.trime.data.db.ClipboardHelper
-import com.osfans.trime.data.db.CollectionHelper
 import com.osfans.trime.data.db.SyncEntryType
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
+import com.osfans.trime.ime.clipboard.ScreenshotClipboardWatcher
 import com.osfans.trime.receiver.RimeIntentReceiver
 import com.osfans.trime.ui.main.LogActivity
 import com.osfans.trime.util.isNightMode
@@ -34,6 +34,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+import splitties.systemservices.clipboardManager
 import timber.log.Timber
 import kotlin.system.exitProcess
 
@@ -145,7 +146,7 @@ class TrimeApplication : Application() {
                 setValue(currentPid)
             }
             ClipboardHelper.init(applicationContext)
-            CollectionHelper.init(applicationContext)
+            initScreenshotWatcher(sharedPreferences)
             initSyncClipboardManager(sharedPreferences)
             registerBroadcastReceiver()
             startWorkManager()
@@ -186,6 +187,9 @@ class TrimeApplication : Application() {
                 override fun onPulledNewContent(text: String) {
                     mainHandler.post {
                         applicationContext.toast(R.string.sync_clipboard_pulled_toast)
+                        coroutineScope.launch {
+                            ClipboardHelper.importRemoteEntry(text)
+                        }
                     }
                 }
 
@@ -240,6 +244,42 @@ class TrimeApplication : Application() {
                 manager.onPrefsChanged()
             }
         }
+    }
+
+    private var screenshotWatcher: ScreenshotClipboardWatcher? = null
+
+    private fun initScreenshotWatcher(sharedPreferences: SharedPreferences) {
+        val appPrefs = AppPrefs.defaultInstance()
+        val screenshotWatchPref = appPrefs.clipboard.clipboardScreenshotWatch
+        Timber.d("Screenshot watcher init: preference value = ${screenshotWatchPref.getValue()}")
+        if (screenshotWatchPref.getValue()) {
+            startScreenshotWatcher()
+        }
+        sharedPreferences.registerOnSharedPreferenceChangeListener { _, key ->
+            if (key == AppPrefs.Clipboard.CLIPBOARD_SCREENSHOT_WATCH) {
+                Timber.d("Screenshot watch pref changed: ${screenshotWatchPref.getValue()}")
+                if (screenshotWatchPref.getValue()) {
+                    startScreenshotWatcher()
+                } else {
+                    stopScreenshotWatcher()
+                }
+            }
+        }
+    }
+
+    private fun startScreenshotWatcher() {
+        if (screenshotWatcher == null) {
+            screenshotWatcher = ScreenshotClipboardWatcher(
+                this,
+                clipboardManager,
+            )
+        }
+        screenshotWatcher?.start()
+    }
+
+    private fun stopScreenshotWatcher() {
+        screenshotWatcher?.stop()
+        screenshotWatcher = null
     }
 
     companion object {

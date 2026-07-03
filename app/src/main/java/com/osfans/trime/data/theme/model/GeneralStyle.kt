@@ -23,6 +23,10 @@ data class GeneralStyle(
     val candidateBorder: Int,
     val candidateBorderRound: Float,
     val candidateFont: List<String>,
+    val clipboardFont: List<String>,
+    val clipboardCategoryFont: List<String>,
+    val clipboardCategoryTextSize: Float,
+    val clipboardTextSize: Float,
     val candidatePadding: Int,
     val candidateSpacing: Float,
     val candidateTextSize: Float,
@@ -78,7 +82,7 @@ data class GeneralStyle(
     val enterLabelMode: Int,
     val enterLabel: EnterLabel,
     val keyboardPaddingTop: Int,
-    val t9SideTextFont: List<String>,
+    val t9SideFont: List<String>,
     val t9SideTextSize: Float,
     val t9SideRoundCorner: Float,
     val fontVariations: Map<String, Boolean>,
@@ -127,6 +131,12 @@ data class GeneralStyle(
             candidateCornerRadius = node["candidate_corner_radius"]?.float ?: 5f,
             commentFont = node["comment_font"]?.sequence
                 ?.mapNotNull(Node::string) ?: emptyList(),
+            clipboardFont = node["clipboard_font"]?.sequence
+                ?.mapNotNull(Node::string) ?: emptyList(),
+            clipboardCategoryFont = node["clipboard_category_font"]?.sequence
+                ?.mapNotNull(Node::string) ?: emptyList(),
+            clipboardCategoryTextSize = node["clipboard_category_text_size"]?.float ?: 13f,
+            clipboardTextSize = node["clipboard_text_size"]?.float ?: 14f,
             commentHeight = node["comment_height"]?.int ?: 12,
             commentPosition = node["comment_position"]?.enum<CommentPosition>() ?: CommentPosition.RIGHT,
             commentTextSize = node["comment_text_size"]?.float ?: 10f,
@@ -183,7 +193,7 @@ data class GeneralStyle(
             enterLabelMode = node["enter_label_mode"]?.int ?: 0,
             enterLabel = EnterLabel.decode(node["enter_labels"]),
             keyboardPaddingTop = node["keyboard_padding_top"]?.int ?: 0,
-            t9SideTextFont = node["t9_side_text_font"]?.sequence
+            t9SideFont = node["t9_side_font"]?.sequence
                 ?.mapNotNull(Node::string) ?: emptyList(),
             t9SideTextSize = node["t9_side_text_size"]?.float ?: -1f,
             t9SideRoundCorner = node["t9_side_round_corner"]?.float ?: -1f,

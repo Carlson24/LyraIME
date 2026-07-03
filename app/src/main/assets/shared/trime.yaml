@@ -124,6 +124,7 @@ fallback_colors:
 #  liquid_keyboard_background: keyboard_back_color # liquidKeyboard的背景图/色
 #  text_back_color: back_color #编码区背景，即悬浮窗背景
 #  long_text_back_color: key_back_color #长文本按键的背景(剪贴板）
+#  clipboard_checkbox_color: key_text_color #多选复选框颜色
 
 preset_color_schemes:
   default:

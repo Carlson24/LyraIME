@@ -273,13 +273,14 @@ class Rime :
             InlinePreeditMode.COMPOSING_TEXT -> composition.preedit ?: ""
             InlinePreeditMode.COMMIT_TEXT_PREVIEW -> composition.commitTextPreview ?: ""
         }
-        val composition = if (mode == InlinePreeditMode.COMPOSING_TEXT) {
+        val compositionCursorPos = composition.cursorPos
+        val compositionMsg = if (mode == InlinePreeditMode.COMPOSING_TEXT) {
             CompositionProto()
         } else {
             composition
         }
-        handleRimeMessage(5, arrayOf(inlinePreedit, composition.cursorPos))
-        handleRimeMessage(6, arrayOf(composition))
+        handleRimeMessage(5, arrayOf(inlinePreedit, compositionCursorPos))
+        handleRimeMessage(6, arrayOf(compositionMsg))
     }
 
     private fun handleRimeMessage(it: RimeMessage<*>) {

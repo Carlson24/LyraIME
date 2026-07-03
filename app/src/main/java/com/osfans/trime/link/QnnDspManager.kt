@@ -67,9 +67,14 @@ object QnnDspManager {
         val entry = ResourceUrls.QNN_DSP_MAP[Build.SOC_MODEL]
             ?: ResourceUrls.QNN_DSP_MAP["SM8850"]!!
 
+        val expectedSha256 = ResourceUrls.GitHubAssetCache.getSha256(
+            entry.url,
+            ResourceUrls.QNN_DSP_RELEASE_API,
+        )
+
         val tarBz2 = File(context.cacheDir, "qnnDsp-$variant.tar.bz2")
         try {
-            FileDownloader.download(entry.url, tarBz2, expectedSha256 = entry.sha256)
+            FileDownloader.download(entry.url, tarBz2, expectedSha256 = expectedSha256)
             extractTarBz2(tarBz2, dir)
             tarBz2.delete()
 

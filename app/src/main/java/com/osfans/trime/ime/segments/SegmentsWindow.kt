@@ -17,7 +17,7 @@ import com.google.android.flexbox.FlexboxLayout
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
 import com.osfans.trime.R
-import com.osfans.trime.data.db.CollectionHelper
+import com.osfans.trime.data.db.ClipboardHelper
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.keyboard.KeyboardWindow
@@ -97,7 +97,7 @@ class SegmentsWindow(private val source: String) : BoardWindow.BarBoardWindow() 
                 setOnClickListener {
                     val text = adapter.joinedSegments
                     service.lifecycleScope.launch {
-                        CollectionHelper.addNewBean(text)
+                        ClipboardHelper.addNewBean(text)
                     }
                     ctx.toast(R.string.star_success)
                 }

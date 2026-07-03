@@ -14,12 +14,11 @@ data class BackupData(
     val timestamp: Long = System.currentTimeMillis(),
     val preferences: Map<String, BackupPreference>? = null,
     val clipboard: List<BackupBean>? = null,
-    val collection: List<BackupBean>? = null,
     val wanxiangPrefs: Map<String, BackupPreference>? = null,
     val customTasks: String? = null,
 ) {
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2
     }
 }
 
@@ -43,7 +42,6 @@ enum class PreferenceType {
 @Serializable
 data class BackupBean(
     val text: String?,
-    val html: String?,
     val type: String,
     val time: Long,
     val pinned: Boolean,
