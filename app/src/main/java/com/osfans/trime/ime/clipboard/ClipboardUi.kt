@@ -49,20 +49,23 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
         ClipboardCategory.Favorites to createCategoryButton(R.string.clipboard_category_favorites),
         ClipboardCategory.Media to createCategoryButton(R.string.clipboard_category_media),
         ClipboardCategory.Local to createCategoryButton(R.string.clipboard_category_local),
-        ClipboardCategory.Remote to createCategoryButton(R.string.clipboard_category_remote)
+        ClipboardCategory.Remote to createCategoryButton(R.string.clipboard_category_remote),
     )
 
     override val root = verticalLayout {
-        add(horizontalLayout {
-            setPaddingDp(4, 8, 4, 4)
-            categoryButtons.forEach { (_, button) ->
-                add(
-                    button,
-                    LinearLayout.LayoutParams(0, dp(30), 1f)
-                        .apply { marginEnd = dp(4) }
-                )
-            }
-        }, lParams(matchParent, wrapContent))
+        add(
+            horizontalLayout {
+                setPaddingDp(4, 8, 4, 4)
+                categoryButtons.forEach { (_, button) ->
+                    add(
+                        button,
+                        LinearLayout.LayoutParams(0, dp(30), 1f)
+                            .apply { marginEnd = dp(4) },
+                    )
+                }
+            },
+            lParams(matchParent, wrapContent),
+        )
         add(viewAnimator, LinearLayout.LayoutParams(matchParent, 0, 1f))
     }
 
@@ -81,8 +84,11 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
     private fun categoryBackground(selected: Boolean) = GradientDrawable().apply {
         cornerRadius = ctx.dp(15).toFloat()
         setColor(
-            if (selected) ColorManager.getColor("clipboard_category_selected_back_color")
-            else ColorManager.getColor("clipboard_category_back_color")
+            if (selected) {
+                ColorManager.getColor("clipboard_category_selected_back_color")
+            } else {
+                ColorManager.getColor("clipboard_category_back_color")
+            },
         )
     }
 
@@ -100,8 +106,11 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
             val selected = buttonCategory == category
             button.background = categoryBackground(selected)
             button.setTextColor(
-                if (selected) ColorManager.getColor("clipboard_category_selected_text_color")
-                else ColorManager.getColor("key_text_color")
+                if (selected) {
+                    ColorManager.getColor("clipboard_category_selected_text_color")
+                } else {
+                    ColorManager.getColor("key_text_color")
+                },
             )
         }
     }

@@ -73,15 +73,19 @@ class OpenCCDataPlugin : Plugin<Project> {
                     "TWPhrases",
                     "TWPhrasesRev",
                     "TWVariants",
+                    "TWVariantsPhrases",
                     "TWVariantsRevPhrases",
+                    "HKPhrases",
+                    "HKPhrasesRev",
                     "HKVariants",
+                    "HKVariantsPhrases",
                     "HKVariantsRevPhrases",
-                    "JPVariants",
                     "JPShinjitaiCharacters",
                     "JPShinjitaiPhrases",
+                    "CJK_Compatibility_Ideographs",
                 )
 
-            private val DICTS_GENERATED = arrayOf("TWVariantsRev", "HKVariantsRev", "JPVariantsRev")
+            private val DICTS_GENERATED = arrayOf("TWVariantsRev", "HKVariantsRev", "JPShinjitaiCharacters")
         }
 
         @TaskAction

@@ -4,13 +4,13 @@
  */
 package com.osfans.trime.data
 
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 
 object ResourceUrls {
     const val USER_AGENT = "Mozilla/5.0"

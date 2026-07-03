@@ -7,12 +7,12 @@ package com.osfans.trime.ime.clipboard
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.core.net.toUri
 import com.osfans.trime.data.db.DatabaseBean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
-import androidx.core.net.toUri
 
 suspend fun DatabaseBean.loadThumbnailBitmap(context: Context): Bitmap? {
     if (!isUriEntry() || !type.startsWith("image/")) return null

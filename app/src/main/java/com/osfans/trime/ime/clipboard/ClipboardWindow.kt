@@ -17,6 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import android.widget.ViewAnimator
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -44,7 +45,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.kodein.di.instance
 import splitties.dimensions.dp
-import androidx.core.net.toUri
 import kotlin.time.Duration.Companion.milliseconds
 
 class ClipboardWindow(

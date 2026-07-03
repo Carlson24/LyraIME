@@ -96,9 +96,15 @@ class ClipSearchActivity : Activity() {
 
         pagingAdapter.registerAdapterDataObserver(
             object : RecyclerView.AdapterDataObserver() {
-                override fun onChanged() { updateEmptyState() }
-                override fun onItemRangeInserted(positionStart: Int, itemCount: Int) { updateEmptyState() }
-                override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) { updateEmptyState() }
+                override fun onChanged() {
+                    updateEmptyState()
+                }
+                override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                    updateEmptyState()
+                }
+                override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+                    updateEmptyState()
+                }
             },
         )
 
@@ -172,8 +178,7 @@ private class SearchAdapter(
 
     class ViewHolder(val entryUi: ClipboardEntryUi) : RecyclerView.ViewHolder(entryUi.root)
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
-        ViewHolder(ClipboardEntryUi(parent.context, theme))
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(ClipboardEntryUi(parent.context, theme))
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val entry = getItem(position) ?: return
