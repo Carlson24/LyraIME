@@ -8,7 +8,10 @@ package com.osfans.trime.core
 import com.osfans.trime.BuildConfig
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.opencc.OpenCCDictManager
+import com.osfans.trime.data.packaging.PackageStateManager
+import com.osfans.trime.data.packaging.SchemaPackageManager
 import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.ime.core.InlinePreeditMode
 import com.osfans.trime.util.appContext
 import com.osfans.trime.util.isStorageAvailable
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.File
 
 /**
  * Rime JNI and instance methods
@@ -88,6 +92,31 @@ class Rime :
     override suspend fun deploy() = withRimeContext {
         exitRime()
         startRime(true)
+    }
+
+    override suspend fun switchPackage(packageId: String): Boolean = withRimeContext {
+        val oldId = SchemaPackageManager.activePackageId
+        if (oldId == packageId) return@withRimeContext false
+
+        if (oldId.isNotEmpty()) {
+            PackageStateManager.saveState(
+                oldId,
+                PackageStateManager.PackageState(
+                    lastSchemaId = getCurrentRimeSchema(),
+                    lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
+                ),
+            )
+        }
+
+        SchemaPackageManager.setActivePackageId(packageId)
+        exitRime()
+        startRime()
+
+        val state = PackageStateManager.getState(packageId)
+        if (state.lastSchemaId.isNotEmpty()) {
+            selectRimeSchema(state.lastSchemaId)
+        }
+        true
     }
 
     override suspend fun updateConfig() = withRimeContext {
@@ -163,6 +192,41 @@ class Rime :
 
     override suspend fun selectSchema(schemaId: String) = withRimeContext { selectRimeSchema(schemaId) }
 
+    override suspend fun selectSchemaCrossPackage(schemaId: String): Boolean = withRimeContext {
+        val pkgId = SchemaPackageManager.findPackageForSchema(schemaId) ?: return@withRimeContext false
+        val currentPkg = SchemaPackageManager.activePackageId
+
+        if (pkgId == currentPkg) {
+            selectRimeSchema(schemaId)
+        } else {
+            if (currentPkg.isNotEmpty()) {
+                PackageStateManager.saveState(
+                    currentPkg,
+                    PackageStateManager.PackageState(
+                        lastSchemaId = getCurrentRimeSchema(),
+                        lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
+                    ),
+                )
+            }
+
+            SchemaPackageManager.setActivePackageId(pkgId)
+            exitRime()
+            startRime()
+
+            selectRimeSchema(schemaId)
+
+        }
+
+        PackageStateManager.saveState(
+            pkgId,
+            PackageStateManager.PackageState(
+                lastSchemaId = schemaId,
+                lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
+            ),
+        )
+        true
+    }
+
     override suspend fun currentSchema(): RimeSchema = withRimeContext {
         RimeSchema(getCurrentRimeSchema())
     }
@@ -202,7 +266,11 @@ class Rime :
         getRimeCandidates(startIndex, limit)
     }
 
-    private fun startRime(fullCheck: Boolean) {
+    private fun startRime(fullCheck: Boolean? = null) {
+        val needsDeploy = fullCheck ?: run {
+            val staging: File = DataManager.stagingDir
+            !staging.exists() || (staging.list()?.isEmpty() ?: true)
+        }
         DataManager.sync()
         val sharedDataDir = DataManager.sharedDataDir.absolutePath
         val userDataDir = DataManager.userDataDir.absolutePath
@@ -211,10 +279,10 @@ class Rime :
             Starting rime with:
             sharedDataDir: $sharedDataDir
             userDataDir: $userDataDir
-            fullCheck: $fullCheck
+            fullCheck: $needsDeploy
             """.trimIndent(),
         )
-        startupRime(sharedDataDir, userDataDir, BuildConfig.BUILD_VERSION_NAME, fullCheck)
+        startupRime(sharedDataDir, userDataDir, BuildConfig.BUILD_VERSION_NAME, needsDeploy)
     }
 
     private fun processKeyInner(value: Int, modifiers: Int, isVirtual: Boolean): Boolean {

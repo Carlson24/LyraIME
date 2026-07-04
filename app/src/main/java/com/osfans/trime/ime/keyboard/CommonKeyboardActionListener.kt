@@ -97,11 +97,7 @@ class CommonKeyboardActionListener {
 
     private fun showEnabledSchemaPicker() {
         showDialog { api ->
-            EnabledSchemaPickerDialog.build(api, service.lifecycleScope, context) {
-                setNegativeButton(R.string.enable_schemata) { _, _ ->
-                    AppUtils.launchMainToSchemaList(context)
-                }
-            }
+            EnabledSchemaPickerDialog.build(api, service.lifecycleScope, context)
         }
     }
 

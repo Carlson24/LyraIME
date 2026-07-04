@@ -185,7 +185,7 @@ class FileBrowserActivity : AppCompatActivity() {
             }
         }
         // Default to native user data directory
-        val userDir = DataManager.userDataDir
+        val userDir = DataManager.defaultDataDir
         browseRoot = BrowseRoot.Native(userDir)
         currentDir = userDir
         navigateToNative(userDir)
@@ -197,6 +197,24 @@ class FileBrowserActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menu.add(R.string.text_editor_new_file).apply {
+            icon = getDrawable(R.drawable.ic_baseline_file_document_plus_outline_24)
+            icon?.setTint(0xFFFFFFFF.toInt())
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            setOnMenuItemClickListener {
+                showNewFileDialog()
+                true
+            }
+        }
+        menu.add(R.string.text_editor_new_folder).apply {
+            icon = getDrawable(R.drawable.ic_baseline_folder_plus_24)
+            icon?.setTint(0xFFFFFFFF.toInt())
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            setOnMenuItemClickListener {
+                showNewFolderDialog()
+                true
+            }
+        }
         menu.add(R.string.text_editor_change_root_folder).apply {
             setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
             setOnMenuItemClickListener {
@@ -475,6 +493,140 @@ class FileBrowserActivity : AppCompatActivity() {
             .setPositiveButton(R.string.text_editor_delete) { _, _ -> onConfirm() }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun showNewFileDialog() {
+        val editText = EditText(this).apply {
+            hint = getString(R.string.text_editor_new_file_hint)
+        }
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val container = FrameLayout(this).apply {
+            setPadding(pad, pad / 2, pad, 0)
+            addView(editText)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.text_editor_new_file)
+            .setView(container)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = editText.text.toString().trim()
+                if (name.isEmpty()) return@setPositiveButton
+                if (isSafMode) {
+                    val dir = currentDocDir ?: return@setPositiveButton
+                    createSafFile(dir, name)
+                } else {
+                    val dir = currentDir ?: return@setPositiveButton
+                    createNativeFile(dir, name)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+            .show()
+        editText.requestFocus()
+    }
+
+    private fun createNativeFile(dir: File, name: String) {
+        val file = File(dir, name)
+        if (file.exists()) {
+            toast(getString(R.string.text_editor_file_exists, name))
+            return
+        }
+        val ok = try {
+            file.createNewFile()
+        } catch (_: Exception) {
+            false
+        }
+        if (ok) {
+            toast(getString(R.string.text_editor_file_created, name))
+            navigateToNative(dir, preserveScroll = true)
+        } else {
+            toast(getString(R.string.text_editor_error_save_file, name))
+        }
+    }
+
+    private fun createSafFile(dir: DocumentFile, name: String) {
+        val existing = dir.listFiles().find { it.name == name }
+        if (existing != null) {
+            toast(getString(R.string.text_editor_file_exists, name))
+            return
+        }
+        val doc = try {
+            dir.createFile("application/octet-stream", name)
+        } catch (_: Exception) {
+            null
+        }
+        if (doc != null) {
+            toast(getString(R.string.text_editor_file_created, name))
+            navigateToSaf(dir, preserveScroll = true)
+        } else {
+            toast(getString(R.string.text_editor_error_save_file, name))
+        }
+    }
+
+    private fun showNewFolderDialog() {
+        val editText = EditText(this).apply {
+            hint = getString(R.string.text_editor_new_folder_hint)
+        }
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val container = FrameLayout(this).apply {
+            setPadding(pad, pad / 2, pad, 0)
+            addView(editText)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.text_editor_new_folder)
+            .setView(container)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = editText.text.toString().trim()
+                if (name.isEmpty()) return@setPositiveButton
+                if (isSafMode) {
+                    val dir = currentDocDir ?: return@setPositiveButton
+                    createSafDir(dir, name)
+                } else {
+                    val dir = currentDir ?: return@setPositiveButton
+                    createNativeDir(dir, name)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+            .show()
+        editText.requestFocus()
+    }
+
+    private fun createNativeDir(dir: File, name: String) {
+        val file = File(dir, name)
+        if (file.exists()) {
+            toast(getString(R.string.text_editor_dir_exists, name))
+            return
+        }
+        val ok = try {
+            file.mkdir()
+        } catch (_: Exception) {
+            false
+        }
+        if (ok) {
+            toast(getString(R.string.text_editor_file_created, name))
+            navigateToNative(dir, preserveScroll = true)
+        } else {
+            toast(getString(R.string.text_editor_error_save_file, name))
+        }
+    }
+
+    private fun createSafDir(dir: DocumentFile, name: String) {
+        val existing = dir.listFiles().find { it.name == name }
+        if (existing != null) {
+            toast(getString(R.string.text_editor_dir_exists, name))
+            return
+        }
+        val doc = try {
+            dir.createDirectory(name)
+        } catch (_: Exception) {
+            null
+        }
+        if (doc != null) {
+            toast(getString(R.string.text_editor_file_created, name))
+            navigateToSaf(dir, preserveScroll = true)
+        } else {
+            toast(getString(R.string.text_editor_error_save_file, name))
+        }
     }
 
     private inner class FileAdapter : RecyclerView.Adapter<FileVH>() {

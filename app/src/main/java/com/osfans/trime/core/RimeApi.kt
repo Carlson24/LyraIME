@@ -26,6 +26,8 @@ interface RimeApi {
 
     suspend fun deploy()
 
+    suspend fun switchPackage(packageId: String): Boolean
+
     suspend fun updateConfig()
 
     suspend fun syncUserData(): Boolean
@@ -65,6 +67,8 @@ interface RimeApi {
     suspend fun selectedSchemaId(): String
 
     suspend fun selectSchema(schemaId: String): Boolean
+
+    suspend fun selectSchemaCrossPackage(schemaId: String): Boolean
 
     suspend fun currentSchema(): RimeSchema
 

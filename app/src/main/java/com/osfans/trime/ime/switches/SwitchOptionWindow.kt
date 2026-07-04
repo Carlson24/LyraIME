@@ -54,7 +54,7 @@ class SwitchOptionWindow :
             ),
             SwitchOptionEntry.Static(
                 context.getString(R.string.schemata),
-                R.drawable.ic_round_view_list_24,
+                R.drawable.ic_baseline_round_view_list_24,
                 SwitchOptionEntry.Static.Type.SchemaList,
             ),
             SwitchOptionEntry.Static(
@@ -113,11 +113,7 @@ class SwitchOptionWindow :
                 when (entry) {
                     is SwitchOptionEntry.Static -> when (entry.type) {
                         SwitchOptionEntry.Static.Type.SchemaList -> showDialog { r ->
-                            EnabledSchemaPickerDialog.build(r, service.lifecycleScope, context) {
-                                setNegativeButton(R.string.enable_schemata) { _, _ ->
-                                    AppUtils.launchMainToSchemaList(context)
-                                }
-                            }
+                            EnabledSchemaPickerDialog.build(r, service.lifecycleScope, context)
                         }
                         SwitchOptionEntry.Static.Type.UpdateConfig -> rime.launchOnReady { r ->
                             r.updateConfig()

@@ -18,7 +18,6 @@ import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
@@ -48,7 +47,6 @@ import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.popup.PopupDelegate
 import com.osfans.trime.ime.symbol.LiquidWindow
 import com.osfans.trime.ime.window.BoardWindowManager
-import com.osfans.trime.util.isLandscape
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.kodein.di.instance
@@ -1180,7 +1178,7 @@ class InputView(
         adjustableHandle.translationX = kX + (kWidth - moveHandleSize) / 2
         adjustableHandle.translationY = kY - moveHandleSize - dp(8)
         val moveBgDrawable = createHandleDrawable(moveHandleSize / 2f)
-        val moveIconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_move_handle_cross)?.mutate()
+        val moveIconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_move_handle_cross)?.mutate()
         val finalDrawable = if (moveIconDrawable != null) {
             moveIconDrawable.setTint(handleColor())
             val inset = dp(4)

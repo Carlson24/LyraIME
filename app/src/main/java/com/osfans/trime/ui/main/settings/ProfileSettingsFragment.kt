@@ -22,6 +22,7 @@ import com.osfans.trime.daemon.launchOnReady
 import com.osfans.trime.data.backup.BackupRestoreDialog
 import com.osfans.trime.data.backup.WebDavSync
 import com.osfans.trime.data.base.DataManager
+import com.osfans.trime.data.packaging.SchemaPackageManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegate
 import com.osfans.trime.ui.common.PaddingPreferenceFragment
@@ -420,7 +421,8 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
             addCategory(R.string.maintenance) {
                 isIconSpaceReserved = false
                 addPreference(R.string.reset, R.string.reset_hint) {
-                    val items = ctx.assets.list("shared") ?: return@addPreference
+                    val pkgId = SchemaPackageManager.activePackageId
+                    val items = ctx.assets.list(pkgId) ?: return@addPreference
                     val checked = BooleanArray(items.size) { false }
                     ctx.pickMultiple(
                         title = R.string.reset,
@@ -439,7 +441,7 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                                                 val destPath =
                                                     DataManager.sharedDataDir.resolve(asset).absolutePath
                                                 ResourceUtils
-                                                    .copyFile("shared/$asset", destPath)
+                                                    .copyFile("$pkgId/$asset", destPath)
                                                     .fold({ acc and true }, { acc and false })
                                             }
                                 }

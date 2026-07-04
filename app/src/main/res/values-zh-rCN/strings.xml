@@ -114,7 +114,7 @@
     <string name="floating_keyboard">悬浮键盘</string>
     <string name="about">关于</string>
     <string name="theme">键盘样式</string>
-    <string name="profile">配置</string>
+    <string name="profile_and_synchronization">配置与同步</string>
     <string name="storage">存储</string>
     <string name="maintenance">维护</string>
     <string name="loading">正在加载</string>
@@ -170,6 +170,8 @@
     <string name="select_current_schema">选择当前方案</string>
     <string name="enable_schemata">启用方案</string>
     <string name="no_schema_to_select">当前没有方案可选择。请前往启用方案。</string>
+    <string name="select_schemata">选择方案</string>
+    <string name="packages_title">方案包</string>
     <string name="no_schema_to_enable">没有方案可启用。请确保您已在用户文件夹中放入了前置文件和方案文件。</string>
     <string name="no_items">暂无可用选项。</string>
     <string name="schemata">方案</string>
@@ -260,7 +262,7 @@
     <string name="open_link">打开链接</string>
     <string name="split_words">分词</string>
     <string name="search">搜索</string>
-    <string name="clipboard_search_hint">搜索剪贴板...</string>
+    <string name="clipboard_search_hint">搜索剪贴板…</string>
     <string name="clipboard_search">搜索</string>
     <string name="clipboard_search_no_results">无匹配结果</string>
     <string name="clipboard_search_clear">清除搜索</string>
@@ -518,6 +520,21 @@
     <string name="text_editor_grant_access_denied">未授权，无法启动编辑器。</string>
     <string name="text_editor_change_root_folder">切换根目录</string>
     <string name="text_editor_open_single_file">打开单个文件…</string>
+    <string name="text_editor_new_file">新建文件</string>
+    <string name="text_editor_new_file_hint">文件名</string>
+    <string name="text_editor_new_folder">新建文件夹</string>
+    <string name="text_editor_new_folder_hint">文件夹名</string>
+    <string name="text_editor_file_exists">文件已存在：%1$s</string>
+    <string name="text_editor_dir_exists">目录已存在：%1$s</string>
+    <string name="text_editor_file_created">已创建 %1$s</string>
+    <string name="text_editor_regex">正则</string>
     <string name="text_editor_low_memory_features_disabled">内存不足：已关闭部分功能。</string>
     <string name="text_editor_runtime_recovered">编辑器发生异常，已自动降级部分功能以保持可用。</string>
+    <string name="text_editor_tab">Tab</string>
+    <string name="text_editor_home">Home</string>
+    <string name="text_editor_end">End</string>
+    <string name="text_editor_left">Left</string>
+    <string name="text_editor_up">Up</string>
+    <string name="text_editor_down">Down</string>
+    <string name="text_editor_right">Right</string>
 </resources>

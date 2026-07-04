@@ -8,8 +8,10 @@ import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.net.Uri
+import android.util.TypedValue
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
@@ -22,6 +24,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -61,6 +64,7 @@ import java.nio.channels.FileChannel
 import java.nio.charset.CharsetDecoder
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.util.regex.PatternSyntaxException
 
 class TextFileEditActivity : AppCompatActivity() {
 
@@ -70,6 +74,7 @@ class TextFileEditActivity : AppCompatActivity() {
     private val findPrev: View by lazy { findViewById(R.id.findPrev) }
     private val findNext: View by lazy { findViewById(R.id.findNext) }
     private val searchClose: View by lazy { findViewById(R.id.searchClose) }
+    private val regexToggle: ImageView by lazy { findViewById(R.id.regexToggle) }
     private val replaceInput: EditText by lazy { findViewById(R.id.replaceInput) }
     private val replaceOne: View by lazy { findViewById(R.id.replaceOne) }
     private val replaceAll: View by lazy { findViewById(R.id.replaceAll) }
@@ -297,7 +302,7 @@ class TextFileEditActivity : AppCompatActivity() {
             }
         }
         menu.add(R.string.real_time_logs).apply {
-            icon = getDrawable(R.drawable.ic_outline_bug_report_24)
+            icon = getDrawable(R.drawable.ic_baseline_outline_bug_report_24)
             setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             setOnMenuItemClickListener {
                 AppUtils.launchLogActivity(this@TextFileEditActivity)
@@ -409,14 +414,22 @@ class TextFileEditActivity : AppCompatActivity() {
                 if (query.isEmpty()) {
                     editor.searcher.stopSearch()
                 } else {
-                    editor.searcher.search(
-                        query,
-                        EditorSearcher.SearchOptions(false, false),
-                    )
+                    safeSearch(query)
                 }
                 updateMatchInfo()
             }
         })
+        regexToggle.setOnClickListener {
+            regexToggle.isSelected = !regexToggle.isSelected
+            val tint = if (regexToggle.isSelected) 0xFF4FC3F7.toInt() else resolvePrimaryTextColor()
+            regexToggle.imageTintList = android.content.res.ColorStateList.valueOf(tint)
+            editor.searcher.stopSearch()
+            val query = findInput.text?.toString().orEmpty()
+            if (query.isNotEmpty()) {
+                safeSearch(query)
+            }
+            updateMatchInfo()
+        }
         findPrev.setOnClickListener {
             if (editor.searcher.hasQuery()) editor.searcher.gotoPrevious()
         }
@@ -426,7 +439,7 @@ class TextFileEditActivity : AppCompatActivity() {
         searchClose.setOnClickListener { closeSearchBar() }
         replaceOne.setOnClickListener {
             if (!editor.searcher.hasQuery()) return@setOnClickListener
-            editor.searcher.replaceThis(replaceInput.text.toString())
+            editor.searcher.replaceCurrentMatch(replaceInput.text.toString())
         }
         replaceAll.setOnClickListener {
             if (!editor.searcher.hasQuery()) return@setOnClickListener
@@ -440,19 +453,42 @@ class TextFileEditActivity : AppCompatActivity() {
         findInput.requestFocus()
         val query = findInput.text?.toString().orEmpty()
         if (query.isNotEmpty()) {
-            editor.searcher.search(
-                query,
-                EditorSearcher.SearchOptions(false, false),
-            )
+            safeSearch(query)
         }
         updateMatchInfo()
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         imm?.showSoftInput(findInput, InputMethodManager.SHOW_IMPLICIT)
     }
 
+    private fun safeSearch(query: String) {
+        try {
+            editor.searcher.search(query, currentSearchOptions())
+        } catch (_: PatternSyntaxException) {
+            editor.searcher.stopSearch()
+            editor.invalidate()
+        }
+    }
+
+    private fun resolvePrimaryTextColor(): Int {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true)
+        return typedValue.data
+    }
+
+    private fun currentSearchOptions(): EditorSearcher.SearchOptions {
+        return if (regexToggle.isSelected) {
+            EditorSearcher.SearchOptions(EditorSearcher.SearchOptions.TYPE_REGULAR_EXPRESSION, false)
+        } else {
+            EditorSearcher.SearchOptions(false, false)
+        }
+    }
+
     private fun closeSearchBar() {
         editor.searcher.stopSearch()
         searchBar.visibility = View.GONE
+        regexToggle.isSelected = false
+        val tint = resolvePrimaryTextColor()
+        regexToggle.imageTintList = android.content.res.ColorStateList.valueOf(tint)
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         imm?.hideSoftInputFromWindow(findInput.windowToken, 0)
         editor.requestFocus()

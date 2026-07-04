@@ -37,7 +37,7 @@ class ClipboardSuggestionUi(
     private val icon =
         imageView {
             imageDrawable =
-                drawable(R.drawable.ic_clipboard_24)!!.apply {
+                drawable(R.drawable.ic_baseline_clipboard_24)!!.apply {
                     setTint(ColorManager.getColor("candidate_text_color"))
                 }
         }
@@ -53,7 +53,7 @@ class ClipboardSuggestionUi(
     val dismiss =
         imageView {
             isFocusable = false
-            imageDrawable = drawable(R.drawable.ic_outline_cancel_24)!!.apply {
+            imageDrawable = drawable(R.drawable.ic_baseline_outline_cancel_24)!!.apply {
                 setTint(ColorManager.getColor("candidate_text_color"))
             }
         }

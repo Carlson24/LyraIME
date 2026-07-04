@@ -129,7 +129,7 @@
     <string name="export">Export</string>
     <string name="scroll_to_bottom">Jump to Bottom</string>
     <string name="developer">Developer</string>
-    <string name="profile">Profile</string>
+    <string name="profile_and_synchronization">Profile and Synchronization</string>
     <string name="virtual_keyboard">Virtual Keyboard</string>
     <string name="voice_input">Voice Input</string>
     <string name="theme">Keyboard Style</string>
@@ -171,6 +171,8 @@
     <string name="select_current_schema">Select current schema</string>
     <string name="enable_schemata">Enable schemata</string>
     <string name="no_schema_to_select">Currently there is no schema to select. Please go to enable schemata from the available list.</string>
+    <string name="select_schemata">Select schemata</string>
+    <string name="packages_title">Packages</string>
     <string name="no_schema_to_enable">No schema to enable. Make sure you have prelude and schema files in the user directory.</string>
     <string name="no_items">No items available.</string>
     <string name="schemata">Schemata</string>
@@ -261,7 +263,7 @@
     <string name="open_link">Open link</string>
     <string name="split_words">Split words</string>
     <string name="search">Search</string>
-    <string name="clipboard_search_hint">Search clipboard...</string>
+    <string name="clipboard_search_hint">Search clipboard…</string>
     <string name="clipboard_search">Search</string>
     <string name="clipboard_search_no_results">No results found</string>
     <string name="clipboard_search_clear">Clear search</string>
@@ -519,6 +521,21 @@
     <string name="text_editor_grant_access_denied">Access not granted; the editor cannot start.</string>
     <string name="text_editor_change_root_folder">Change root folder</string>
     <string name="text_editor_open_single_file">Open single file…</string>
+    <string name="text_editor_new_file">New file</string>
+    <string name="text_editor_new_file_hint">File name</string>
+    <string name="text_editor_new_folder">New folder</string>
+    <string name="text_editor_new_folder_hint">Folder name</string>
+    <string name="text_editor_file_exists">File already exists: %1$s</string>
+    <string name="text_editor_dir_exists">Directory already exists: %1$s</string>
+    <string name="text_editor_file_created">Created %1$s</string>
+    <string name="text_editor_regex">Regex</string>
     <string name="text_editor_low_memory_features_disabled">Low memory: some features disabled.</string>
     <string name="text_editor_runtime_recovered">An editor error occurred. Some features were disabled to keep the app responsive.</string>
+    <string name="text_editor_tab">Tab</string>
+    <string name="text_editor_home">Home</string>
+    <string name="text_editor_end">End</string>
+    <string name="text_editor_left">Left</string>
+    <string name="text_editor_up">Up</string>
+    <string name="text_editor_down">Down</string>
+    <string name="text_editor_right">Right</string>
 </resources>

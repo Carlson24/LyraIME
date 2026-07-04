@@ -297,9 +297,9 @@ object ColorManager {
     }
 
     private fun resolveImageFilePath(value: String): String {
-        val default = DataManager.userDataDir.resolve("themes/backgrounds/$backgroundFolder/$value")
+        val default = DataManager.userDataBaseDir.resolve("themes/backgrounds/$backgroundFolder/$value")
         if (default.exists()) return default.absolutePath
-        val fallback = DataManager.userDataDir.resolve("themes/backgrounds/$value")
+        val fallback = DataManager.userDataBaseDir.resolve("themes/backgrounds/$value")
         return fallback.absolutePath
     }
 

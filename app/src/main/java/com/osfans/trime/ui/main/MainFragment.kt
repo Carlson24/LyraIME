@@ -103,9 +103,9 @@ class MainFragment : PaddingPreferenceFragment() {
     ) {
         preferenceScreen = preferenceManager.createPreferenceScreen(requireContext()).apply {
             addDestinationPreference(
-                R.string.schemata,
-                R.drawable.ic_round_view_list_24,
-                NavigationRoute.SchemaList,
+                R.string.packages_title,
+                R.drawable.ic_baseline_folder_24,
+                NavigationRoute.PackageList,
             )
             addDestinationPreference(
                 R.string.user_dictionary,
@@ -113,8 +113,8 @@ class MainFragment : PaddingPreferenceFragment() {
                 NavigationRoute.UserDict,
             )
             addDestinationPreference(
-                R.string.profile,
-                R.drawable.ic_baseline_snippet_folder_24,
+                R.string.profile_and_synchronization,
+                R.drawable.ic_baseline_folder_sync_24,
                 NavigationRoute.Profile,
             )
             addCategory("") {
@@ -146,7 +146,7 @@ class MainFragment : PaddingPreferenceFragment() {
                 )
                 addDestinationPreference(
                     R.string.clipboard,
-                    R.drawable.ic_clipboard_24,
+                    R.drawable.ic_baseline_clipboard_24,
                     NavigationRoute.Clipboard,
                 )
                 addDestinationPreference(

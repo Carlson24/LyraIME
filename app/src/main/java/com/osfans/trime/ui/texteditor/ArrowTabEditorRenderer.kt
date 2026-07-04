@@ -43,7 +43,7 @@ class ArrowTabEditorRenderer(private val codeEditor: CodeEditor) : EditorRendere
         val rowCenter =
             (codeEditor.getRowTop(row) + codeEditor.getRowBottom(row)) / 2f - codeEditor.offsetY
         var currentOffset = offset + measureText(lineBuf, line, rowStart, paintStart - rowStart)
-        val chars = lineBuf.value
+        val chars = lineBuf.backingCharArray
         var lastPos = paintStart
         var i = paintStart
         while (i < paintEnd) {

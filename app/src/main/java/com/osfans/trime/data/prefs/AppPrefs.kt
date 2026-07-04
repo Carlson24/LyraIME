@@ -489,6 +489,7 @@ class AppPrefs(
         shared: SharedPreferences,
     ) : PreferenceDelegateOwner(shared) {
         companion object {
+            const val ACTIVE_PACKAGE_ID = "profile_active_package_id"
             const val USER_DATA_DIR = "profile_user_data_dir"
             const val PERIODIC_BACKGROUND_SYNC = "periodic_background_sync"
             const val PERIODIC_BACKGROUND_SYNC_TIME = "periodic_background_sync_time"
@@ -503,6 +504,7 @@ class AppPrefs(
         }
 
         val userDataDir = string(USER_DATA_DIR, DataManager.defaultDataDir.path)
+        val activePackageId = string(ACTIVE_PACKAGE_ID, "luna_pinyin")
         val periodicBackgroundSync = bool(PERIODIC_BACKGROUND_SYNC, false)
         val periodicBackgroundSyncTime = string(PERIODIC_BACKGROUND_SYNC_TIME, "02:00")
         val lastBackgroundSyncStatus = bool(LAST_BACKGROUND_SYNC_STATUS, false)

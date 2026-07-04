@@ -35,8 +35,8 @@ object FontManager {
         T9_SIDE_FONT,
     }
 
-    private val fontDir get() = File(DataManager.userDataDir, "themes/fonts")
-    private val fontDirFallback get() = File(DataManager.userDataDir, "fonts")
+    private val fontDir get() = File(DataManager.userDataBaseDir, "themes/fonts")
+    private val fontDirFallback get() = File(DataManager.userDataBaseDir, "fonts")
     lateinit var hanBFont: Typeface
         private set
     lateinit var latinFont: Typeface

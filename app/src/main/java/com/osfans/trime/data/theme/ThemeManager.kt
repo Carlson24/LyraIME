@@ -22,15 +22,21 @@ object ThemeManager {
     }
 
     fun getAllThemes(): List<ThemeItem> {
-        val sharedThemes = ThemeFilesManager.listThemes(DataManager.sharedDataDir)
-        val userThemes = ThemeFilesManager.listThemes(DataManager.userDataDir)
-        return sharedThemes + userThemes
+        val bundledThemes = ThemeFilesManager.listThemes(DataManager.themesDir)
+        val userThemesDir = File(DataManager.userDataBaseDir, "themes")
+        val userThemes = if (userThemesDir.exists()) ThemeFilesManager.listThemes(userThemesDir) else mutableListOf()
+        return bundledThemes + userThemes
     }
 
     private lateinit var _activeTheme: Theme
 
     var activeTheme: Theme
-        get() = _activeTheme
+        get() {
+            if (!::_activeTheme.isInitialized) {
+                _activeTheme = evaluateActiveTheme()
+            }
+            return _activeTheme
+        }
         private set(value) {
             if (::_activeTheme.isInitialized && _activeTheme == value) return
             _activeTheme = value
@@ -61,26 +67,94 @@ object ThemeManager {
     private val themeCache = mutableMapOf<String, Pair<Long, Theme>>()
 
     private fun loadThemeByIdOrNull(id: String): Theme? {
-        if (!Rime.deployRimeConfigFile(id, "config_version")) {
-            Timber.w("Failed to deploy theme config file '$id.yaml'")
+        val bundledSource = DataManager.themesDir.resolve("$id.yaml")
+        val userSource = File(DataManager.userDataBaseDir, "themes/$id.yaml")
+        val sourceFile = if (userSource.exists()) userSource else bundledSource
+        val cacheFile = File(DataManager.themesBuildDir, "$id.yaml")
+
+        val sourceNewest =
+            sourceFile.parentFile
+                ?.listFiles()
+                ?.maxOfOrNull { it.lastModified() }
+                ?: 0L
+
+        val cacheValid =
+            cacheFile.exists() &&
+                sourceFile.exists() &&
+                cacheFile.lastModified() >= sourceNewest
+
+        if (!cacheValid) {
+            if (!sourceFile.exists()) {
+                Timber.w("Theme source file not found for '$id'")
+                return null
+            }
+
+            if (userSource.exists()) {
+                val userThemesDir = File(DataManager.userDataBaseDir, "themes")
+                val toDelete = mutableListOf<File>()
+                val toRestore = mutableMapOf<File, File>()
+                try {
+                    userThemesDir.listFiles()?.forEach { f ->
+                        if (f.name.endsWith(".yaml") || f.name.endsWith(".yml")) {
+                            val dest = File(DataManager.userDataDir, f.name)
+                            if (!dest.exists()) {
+                                f.copyTo(dest)
+                                toDelete.add(dest)
+                            } else {
+                                val backup = File(DataManager.userDataDir, "${f.name}.theme_backup")
+                                dest.copyTo(backup, overwrite = true)
+                                f.copyTo(dest, overwrite = true)
+                                toRestore[backup] = dest
+                            }
+                        }
+                    }
+                    Rime.deployRimeConfigFile(id, "config_version")
+                    val compiled = File(DataManager.resolveDeployedResourcePath(id))
+                    if (compiled.exists()) {
+                        compiled.copyTo(cacheFile, overwrite = true)
+                    }
+                } finally {
+                    toDelete.forEach { it.delete() }
+                    toRestore.forEach { (backup, original) ->
+                        backup.copyTo(original, overwrite = true)
+                        backup.delete()
+                    }
+                }
+            } else {
+                val tmp = File(DataManager.sharedDataDir, "$id.yaml")
+                try {
+                    sourceFile.copyTo(tmp, overwrite = true)
+                    if (!Rime.deployRimeConfigFile(id, "config_version")) {
+                        Timber.w("Failed to deploy theme config file '$id.yaml'")
+                        return null
+                    }
+                    val compiled = File(DataManager.resolveDeployedResourcePath(id))
+                    if (compiled.exists()) {
+                        compiled.copyTo(cacheFile, overwrite = true)
+                    }
+                } finally {
+                    tmp.delete()
+                }
+            }
         }
-        val file = File(DataManager.resolveDeployedResourcePath(id))
-        if (!file.exists()) {
-            Timber.w("Theme file not found for '$id'")
+
+        if (!cacheFile.exists()) {
+            Timber.w("Theme cache file not found for '$id'")
             return null
         }
-        val lastModified = file.lastModified()
+
+        val lastModified = cacheFile.lastModified()
         themeCache[id]?.let { (cachedTime, cachedTheme) ->
             if (cachedTime == lastModified) return cachedTheme
         }
         return try {
-            val node = Yaml.parseToYamlNode(file.readText())
+            val node = Yaml.parseToYamlNode(cacheFile.readText())
             val mapping = node.mapping
             if (mapping == null) {
                 Timber.w("Failed to load theme '$id': YAML root is not a mapping")
                 null
             } else {
-                Theme.decode(mapping).also { themeCache[id] = file.lastModified() to it }
+                Theme.decode(mapping).also { themeCache[id] = cacheFile.lastModified() to it }
             }
         } catch (e: Exception) {
             Timber.w(e, "Failed to load theme '$id'")

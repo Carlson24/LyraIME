@@ -19,6 +19,7 @@ import com.osfans.trime.ui.main.settings.KeyboardSettingsFragment
 import com.osfans.trime.ui.main.settings.ProfileSettingsFragment
 import com.osfans.trime.ui.main.settings.VoiceInputSettingsFragment
 import com.osfans.trime.ui.main.settings.WanxiangUpdateSettingsFragment
+import com.osfans.trime.ui.main.settings.PackageListFragment
 import com.osfans.trime.ui.main.settings.schema.SchemaListFragment
 import com.osfans.trime.ui.main.settings.theme.ThemeSettingsFragment
 import com.osfans.trime.ui.main.settings.userdict.UserDictionaryFragment
@@ -30,6 +31,9 @@ sealed class NavigationRoute : Parcelable {
 
     @Serializable
     data object Main : NavigationRoute()
+
+    @Serializable
+    data object PackageList : NavigationRoute()
 
     @Serializable
     data object SchemaList : NavigationRoute()
@@ -84,6 +88,10 @@ sealed class NavigationRoute : Parcelable {
                 label = ctx.getString(R.string.trime_app_name)
             }
 
+            fragment<PackageListFragment, PackageList> {
+                label = ctx.getString(R.string.packages_title)
+            }
+
             fragment<SchemaListFragment, SchemaList> {
                 label = ctx.getString(R.string.schemata)
             }
@@ -91,7 +99,7 @@ sealed class NavigationRoute : Parcelable {
                 label = ctx.getString(R.string.user_dictionary)
             }
             fragment<ProfileSettingsFragment, Profile> {
-                label = ctx.getString(R.string.profile)
+                label = ctx.getString(R.string.profile_and_synchronization)
             }
 
             fragment<GeneralSettingsFragment, General> {

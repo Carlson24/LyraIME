@@ -15,23 +15,17 @@ import java.io.File
 object ThemeFilesManager {
     fun listThemes(dir: File): MutableList<ThemeItem> {
         val files = dir.listFiles { _, name -> name.endsWith("trime.yaml") } ?: return mutableListOf()
-        val deployedMap = hashMapOf<String, String>()
-        DataManager.stagingDir.list()?.forEach {
-            deployedMap[it] = it
-        }
-        DataManager.prebuiltDataDir.list()?.forEach {
-            deployedMap[it] = it
-        }
+
         return files
             .sortedByDescending { it.lastModified() }
             .mapNotNull decode@{
                 val item =
                     runCatching {
                         val configId = it.nameWithoutExtension
+                        val cacheFile = File(DataManager.themesBuildDir, it.name)
                         val name =
-                            if (deployedMap[it.name] != null) {
-                                val file = File(DataManager.resolveDeployedResourcePath(configId))
-                                val node = Yaml.parseToYamlNode(file.readText()).mapping
+                            if (cacheFile.exists()) {
+                                val node = Yaml.parseToYamlNode(cacheFile.readText()).mapping
                                 node?.get("name")?.string ?: return@decode null
                             } else {
                                 configId.removeSuffix(".trime")

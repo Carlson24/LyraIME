@@ -8,12 +8,14 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.register
+import java.io.File
 
 class OpenCCDataPlugin : Plugin<Project> {
     companion object {
@@ -24,8 +26,10 @@ class OpenCCDataPlugin : Plugin<Project> {
     private val Project.dataBaseDir
         get() = file("src/main/jni/OpenCC/data")
 
-    private val Project.dataInstallDir
-        get() = assetsDir.resolve("shared/opencc")
+    private val Project.packageDirs: Array<File>
+        get() = assetsDir.listFiles()?.filter {
+            it.isDirectory && it.name !in setOf("themes", "textmate") && !it.name.startsWith(".") && it.resolve("default.yaml").exists()
+        }?.toTypedArray() ?: emptyArray()
 
     override fun apply(target: Project) {
         registerInstallTask(target)
@@ -33,19 +37,24 @@ class OpenCCDataPlugin : Plugin<Project> {
     }
 
     private fun registerInstallTask(project: Project) {
+        val packages = project.packageDirs
         val task =
             project.tasks.register<InstallOpenCCDataTask>(INSTALL_TASK) {
                 inputDir.set(project.dataBaseDir)
-                outputDir.set(project.dataInstallDir)
+                if (packages.isNotEmpty()) {
+                    outputDir.set(project.layout.projectDirectory.dir(packages.first().resolve("opencc").relativeTo(project.projectDir).path))
+                }
+                packageDirs = packages
             }
-        // make sure OpenCC data have been installed before generating data checksums
         project.tasks.getByName(DataChecksumsPlugin.TASK).dependsOn(task)
     }
 
     private fun registerCleanTask(project: Project) {
         project
             .tasks.register<Delete>(CLEAN_TASK) {
-                delete(project.dataInstallDir)
+                for (pkgDir in project.packageDirs) {
+                    delete(pkgDir.resolve("opencc"))
+                }
             }.also {
                 project.cleanTask.dependsOn(it)
             }
@@ -59,9 +68,10 @@ class OpenCCDataPlugin : Plugin<Project> {
         @get:OutputDirectory
         abstract val outputDir: DirectoryProperty
 
-        private val input by lazy { inputDir.get().asFile }
+        @get:Input
+        var packageDirs: Array<File> = emptyArray()
 
-        private val output by lazy { outputDir.get().asFile }
+        private val input by lazy { inputDir.get().asFile }
 
         companion object {
             private val DICTS_RAW =
@@ -88,35 +98,33 @@ class OpenCCDataPlugin : Plugin<Project> {
             private val DICTS_GENERATED = arrayOf("TWVariantsRev", "HKVariantsRev", "JPShinjitaiCharacters")
         }
 
+        private fun installOpenCC(dir: File) {
+            dir.mkdirs()
+            val configDir = input.resolve("config")
+            configDir.listFiles { f -> f.extension == "json" }
+                ?.forEach { f -> f.copyTo(File(dir, f.name), overwrite = true) }
+
+            val dictionary = input.resolve("dictionary")
+            for (raw in DICTS_RAW) {
+                val basename = "$raw.txt"
+                dictionary.resolve(basename).copyTo(File(dir, basename), overwrite = true)
+            }
+            val reverse = input.resolve("scripts/reverse.py").absolutePath
+            for (dict in DICTS_GENERATED) {
+                val inputName = dict.substringBefore("Rev")
+                val inputFile = dictionary.resolve("$inputName.txt")
+                val outputFile = File(dir, "$dict.txt")
+                project.providers.exec {
+                    workingDir = dir
+                    commandLine = listOf("python3", reverse, inputFile.absolutePath, outputFile.name)
+                }.result.get()
+            }
+        }
+
         @TaskAction
         fun execute() {
-            input.run {
-                resolve("config")
-                    .listFiles { f -> f.extension == "json" }
-                    ?.forEach { f -> f.copyTo(output.resolve(f.name), overwrite = true) }
-
-                val dictionary = resolve("dictionary")
-                for (raw in DICTS_RAW) {
-                    val basename = "$raw.txt"
-                    dictionary.resolve(basename).copyTo(output.resolve(basename), overwrite = true)
-                }
-                val reverse = resolve("scripts/reverse.py").absolutePath
-
-                fun reverse(
-                    source: String,
-                    outputFilePath: String,
-                ) {
-                    project.providers.exec {
-                        workingDir = output
-                        commandLine = listOf("python3", reverse, source, outputFilePath)
-                    }.result.get()
-                }
-                for (dict in DICTS_GENERATED) {
-                    val inputName = dict.substringBefore("Rev")
-                    val inputFile = dictionary.resolve("$inputName.txt")
-                    val outputFile = output.resolve("$dict.txt")
-                    reverse(inputFile.absolutePath, outputFile.name)
-                }
+            for (pkgDir in packageDirs) {
+                installOpenCC(pkgDir.resolve("opencc"))
             }
         }
     }

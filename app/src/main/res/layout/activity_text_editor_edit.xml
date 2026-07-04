@@ -39,6 +39,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:autofillHints=""
                 android:hint="@string/text_editor_find"
                 android:imeOptions="actionSearch"
                 android:inputType="text"
@@ -57,6 +58,18 @@
                 tools:text="1/3" />
 
             <ImageView
+                android:id="@+id/regexToggle"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/text_editor_regex"
+                android:focusable="true"
+                android:padding="8dp"
+                android:src="@drawable/ic_baseline_regex_24"
+                app:tint="?android:attr/textColorPrimary" />
+
+            <ImageView
                 android:id="@+id/findPrev"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
@@ -66,7 +79,7 @@
                 android:focusable="true"
                 android:padding="8dp"
                 android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
-                android:tint="?android:attr/textColorPrimary" />
+                app:tint="?android:attr/textColorPrimary" />
 
             <ImageView
                 android:id="@+id/findNext"
@@ -78,7 +91,7 @@
                 android:focusable="true"
                 android:padding="8dp"
                 android:src="@drawable/ic_baseline_keyboard_arrow_down_24"
-                android:tint="?android:attr/textColorPrimary" />
+                app:tint="?android:attr/textColorPrimary" />
 
             <ImageView
                 android:id="@+id/searchClose"
@@ -89,8 +102,8 @@
                 android:contentDescription="@string/text_editor_search_close"
                 android:focusable="true"
                 android:padding="8dp"
-                android:src="@drawable/ic_outline_cancel_24"
-                android:tint="?android:attr/textColorPrimary" />
+                android:src="@drawable/ic_baseline_outline_cancel_24"
+                app:tint="?android:attr/textColorPrimary" />
 
         </LinearLayout>
 
@@ -107,6 +120,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:autofillHints=""
                 android:hint="@string/text_editor_replace_with"
                 android:imeOptions="actionDone"
                 android:inputType="text"
@@ -185,7 +199,7 @@
                     android:contentDescription="@string/text_editor_save"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_save_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
                     android:id="@+id/keyUndo"
@@ -193,7 +207,7 @@
                     android:contentDescription="@string/text_editor_undo"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_undo_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
                     android:id="@+id/keyRedo"
@@ -201,63 +215,63 @@
                     android:contentDescription="@string/text_editor_redo"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_redo_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
                     android:id="@+id/keyTab"
                     style="@style/EditorKeyStyle"
-                    android:contentDescription="Tab"
+                    android:contentDescription="@string/text_editor_tab"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_keyboard_tab_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
                     android:id="@+id/keyHome"
                     style="@style/EditorKeyStyle"
-                    android:contentDescription="Home"
+                    android:contentDescription="@string/text_editor_home"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_first_page_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
                     android:id="@+id/keyEnd"
                     style="@style/EditorKeyStyle"
-                    android:contentDescription="End"
+                    android:contentDescription="@string/text_editor_end"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_last_page_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
                     android:id="@+id/keyLeft"
                     style="@style/EditorKeyStyle"
-                    android:contentDescription="Left"
+                    android:contentDescription="@string/text_editor_left"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_arrow_left_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
                     android:id="@+id/keyUp"
                     style="@style/EditorKeyStyle"
-                    android:contentDescription="Up"
+                    android:contentDescription="@string/text_editor_up"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
                     android:id="@+id/keyDown"
                     style="@style/EditorKeyStyle"
-                    android:contentDescription="Down"
+                    android:contentDescription="@string/text_editor_down"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_keyboard_arrow_down_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
                     android:id="@+id/keyRight"
                     style="@style/EditorKeyStyle"
-                    android:contentDescription="Right"
+                    android:contentDescription="@string/text_editor_right"
                     android:padding="10dp"
                     android:src="@drawable/ic_baseline_arrow_right_24"
-                    android:tint="?android:attr/textColorPrimary" />
+                    app:tint="?android:attr/textColorPrimary" />
 
             </LinearLayout>
         </HorizontalScrollView>

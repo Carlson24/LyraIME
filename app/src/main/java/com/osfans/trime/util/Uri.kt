@@ -109,8 +109,7 @@ fun Context.getFileFromUri(uri: Uri): File? {
                         }
                         val uuid = getUuid.invoke(storageVolumeElement) as? String
                         if (uuid != null && uuid == type) {
-                            val pathObj = getPath.invoke(storageVolumeElement)
-                            if (pathObj == null) continue
+                            val pathObj = getPath.invoke(storageVolumeElement) ?: continue
                             return File(pathObj.toString() + "/" + split[1])
                         }
                     }
@@ -243,6 +242,7 @@ private fun Context.getFileFromUri(
 fun Context.buildAppDataFolderIntent(): Intent {
     val storageManager = getSystemService(Context.STORAGE_SERVICE) as StorageManager
     val intent = storageManager.primaryStorageVolume.createOpenDocumentTreeIntent()
+
     @Suppress("DEPRECATION")
     val initialUri = intent.getParcelableExtra<Uri>(DocumentsContract.EXTRA_INITIAL_URI)!!
     val uri = Uri.Builder()

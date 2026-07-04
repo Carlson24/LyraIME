@@ -179,7 +179,7 @@ abstract class ClipboardAdapter(
             }
         }
         if (entry.pinned) {
-            menu.item(R.string.remove_from_favorites, R.drawable.ic_outline_push_pin_24, iconTint) {
+            menu.item(R.string.remove_from_favorites, R.drawable.ic_baseline_outline_push_pin_24, iconTint) {
                 onUnpin(entry.id)
             }
         } else {

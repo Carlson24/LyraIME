@@ -17,12 +17,12 @@ object SoundEffectManager {
 
     private val userDir: File
         get() {
-            val dest = File(DataManager.userDataDir, "themes/soundeffect")
-            val old = File(DataManager.userDataDir, "sound")
+            val dest = File(DataManager.userDataBaseDir, "themes/soundeffect")
+            val old = File(DataManager.userDataBaseDir, "sound")
             return FileUtils.rename(old, dest.name).getOrDefault(dest.also { it.mkdirs() })
         }
 
-    private val userDirFallback get() = File(DataManager.userDataDir, "soundeffect")
+    private val userDirFallback get() = File(DataManager.userDataBaseDir, "soundeffect")
 
     private fun listSounds(): MutableList<SoundEffect> {
         fun list(dir: File) = dir.listFiles { f -> f.name.endsWith("sound.yaml") }.orEmpty().toList()

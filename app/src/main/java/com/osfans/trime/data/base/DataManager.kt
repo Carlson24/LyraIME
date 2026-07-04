@@ -8,6 +8,7 @@ import android.content.res.AssetManager
 import android.os.Build
 import android.os.Environment
 import com.osfans.trime.BuildConfig
+import com.osfans.trime.data.packaging.SchemaPackageManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.util.FileUtils
 import com.osfans.trime.util.ResourceUtils
@@ -29,6 +30,8 @@ object DataManager {
           - schema: luna_pinyin
           - schema: luna_pinyin_simp
     """
+
+    private const val MIGRATION_MARKER = ".package_migration_done"
 
     private val lock = ReentrantLock()
 
@@ -55,14 +58,25 @@ object DataManager {
 
     val defaultDataDir = File(Environment.getExternalStorageDirectory(), "Documents/LyraIME${if (BuildConfig.DEBUG) "Debug" else ""}")
 
-    val sharedDataDir = File(appContext.getExternalFilesDir(null), "shared").also { it.mkdirs() }
+    internal val externalFilesDir: File
+        get() = appContext.getExternalFilesDir(null)!!
 
-    val voiceDataDir = File(appContext.getExternalFilesDir(null), "voice").also { it.mkdirs() }
+    val themesDir = File(externalFilesDir, "themes").also { it.mkdirs() }
 
-    val userDataDir
+    val themesBuildDir get() = File(userDataBaseDir, "themes/build").also { it.mkdirs() }
+
+    val sharedDataDir
+        get() = File(externalFilesDir, SchemaPackageManager.activePackageId).also { it.mkdirs() }
+
+    val voiceDataDir = File(externalFilesDir, "voice").also { it.mkdirs() }
+
+    val userDataBaseDir
         get() = File(prefs.profile.userDataDir.getValue()).also { it.mkdirs() }
 
-    val prebuiltDataDir = File(sharedDataDir, "build")
+    val userDataDir
+        get() = File(userDataBaseDir, SchemaPackageManager.activePackageId).also { it.mkdirs() }
+
+    val prebuiltDataDir get() = File(sharedDataDir, "build")
     val stagingDir get() = File(userDataDir, "build")
 
     /**
@@ -82,7 +96,56 @@ object DataManager {
         return defaultPath.absolutePath
     }
 
+    private fun runMigration() {
+        val marker = File(externalFilesDir, MIGRATION_MARKER)
+        if (marker.exists()) return
+
+        val oldSharedDir = File(externalFilesDir, "shared")
+        if (oldSharedDir.exists() && oldSharedDir.isDirectory) {
+            Timber.i("Migrating old data structure to package-based layout")
+
+            val defaultPkgDir = File(externalFilesDir, "luna_pinyin")
+            defaultPkgDir.mkdirs()
+
+            oldSharedDir.listFiles()?.forEach { file ->
+                val dest = File(defaultPkgDir, file.name)
+                if (!dest.exists()) {
+                    if (file.isDirectory && file.name == "opencc") {
+                        file.copyRecursively(dest, overwrite = false)
+                    } else if (!file.isDirectory) {
+                        file.copyTo(dest, overwrite = false)
+                    }
+                }
+            }
+
+            val themeFiles = listOf("trime.yaml", "tongwenfeng.trime.yaml")
+            for (themeFile in themeFiles) {
+                val src = File(defaultPkgDir, themeFile)
+                val dst = File(themesDir, themeFile)
+                if (src.exists() && !dst.exists()) {
+                    src.copyTo(dst, overwrite = false)
+                }
+                src.delete()
+            }
+
+            for (tf in themeFiles) {
+                val src = File(oldSharedDir, tf)
+                if (src.exists()) {
+                    src.delete()
+                }
+            }
+
+            marker.createNewFile()
+            Timber.i("Migration to package-based layout completed")
+        } else {
+            marker.createNewFile()
+        }
+    }
+
     fun sync() = lock.withLock {
+        Timber.d("DataManager.sync() called")
+        runMigration()
+
         val oldChecksumsFile = File(dataDir, DATA_CHECKSUMS_NAME)
         val oldChecksums =
             oldChecksumsFile
@@ -91,27 +154,38 @@ object DataManager {
 
         val newChecksums = appContext.assets.dataChecksums()
 
-        DataDiff.diff(oldChecksums, newChecksums).sortedByDescending { it.ordinal }.forEach {
-            Timber.d("Diff: $it")
+        val diffs = DataDiff.diff(oldChecksums, newChecksums).sortedByDescending { it.ordinal }
+        Timber.d("DataManager.sync: ${diffs.size} diffs to apply")
+        diffs.forEach {
+            Timber.d("DataManager.sync diff: $it")
             when (it) {
                 is DataDiff.CreateFile,
                 is DataDiff.UpdateFile,
                 -> {
-                    val destPath = sharedDataDir.resolveSibling(it.path).absolutePath
+                    val destPath = externalFilesDir.resolve(it.path).absolutePath
                     ResourceUtils.copyFile(it.path, destPath)
                 }
                 is DataDiff.DeleteDir,
                 is DataDiff.DeleteFile,
-                -> FileUtils.delete(sharedDataDir.resolve(it.path.substringAfterLast('/'))).getOrThrow()
+                -> FileUtils.delete(externalFilesDir.resolve(it.path)).getOrThrow()
             }
         }
 
         ResourceUtils.copyFile(DATA_CHECKSUMS_NAME, dataDir.resolve(DATA_CHECKSUMS_NAME).absolutePath)
 
-        val custom = userDataDir.resolve(DEFAULT_CUSTOM_FILE_NAME)
-        if (!custom.exists()) {
-            if (custom.createNewFile()) {
-                custom.writeText(SCHEMA_LIST_CUSTOM_PATCH.trimIndent())
+        Timber.d("DataManager.sync: sharedDataDir=$sharedDataDir, exists=${sharedDataDir.exists()}")
+        sharedDataDir.listFiles()?.forEach { f ->
+            Timber.d("DataManager.sync: sharedDataDir file: ${f.name} (dir=${f.isDirectory})")
+        }
+
+        SchemaPackageManager.discoverPackages().forEach { pkg ->
+            val userPkgDir = File(userDataBaseDir, pkg.id)
+            val custom = userPkgDir.resolve(DEFAULT_CUSTOM_FILE_NAME)
+            if (!custom.exists()) {
+                userPkgDir.mkdirs()
+                if (custom.createNewFile()) {
+                    custom.writeText(SCHEMA_LIST_CUSTOM_PATCH.trimIndent())
+                }
             }
         }
 

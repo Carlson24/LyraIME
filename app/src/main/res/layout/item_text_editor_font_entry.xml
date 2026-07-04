@@ -16,7 +16,7 @@
         android:layout_height="32dp"
         android:contentDescription="@null"
         android:padding="4dp"
-        android:src="@drawable/ic_text_editor_drag_handle"
+        android:src="@drawable/ic_baseline_text_editor_drag_handle_24"
         app:tint="?android:attr/textColorSecondary" />
 
     <CheckBox
