@@ -297,19 +297,10 @@ object ColorManager {
     }
 
     private fun resolveImageFilePath(value: String): String {
-        val shared = DataManager.sharedDataDir.resolve("backgrounds/$backgroundFolder/$value")
-        if (shared.exists()) return shared.absolutePath
-        val sharedFallback = DataManager.sharedDataDir.resolve("backgrounds/$value")
-        if (sharedFallback.exists()) return sharedFallback.absolutePath
         val default = DataManager.userDataDir.resolve("themes/backgrounds/$backgroundFolder/$value")
         if (default.exists()) return default.absolutePath
         val fallback = DataManager.userDataDir.resolve("themes/backgrounds/$value")
-        if (fallback.exists()) return fallback.absolutePath
-        val defaultNoThemes = DataManager.userDataDir.resolve("backgrounds/$backgroundFolder/$value")
-        if (defaultNoThemes.exists()) return defaultNoThemes.absolutePath
-        val fallbackNoThemes = DataManager.userDataDir.resolve("backgrounds/$value")
-        if (fallbackNoThemes.exists()) return fallbackNoThemes.absolutePath
-        return fallbackNoThemes.absolutePath
+        return fallback.absolutePath
     }
 
     private fun loadSvgBitmap(path: String): Bitmap? = try {

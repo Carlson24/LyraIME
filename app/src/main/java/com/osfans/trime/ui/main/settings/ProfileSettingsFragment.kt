@@ -32,6 +32,7 @@ import com.osfans.trime.ui.main.MainViewModel
 import com.osfans.trime.util.ResourceUtils
 import com.osfans.trime.util.addCategory
 import com.osfans.trime.util.addPreference
+import com.osfans.trime.util.buildAppDataFolderIntent
 import com.osfans.trime.util.customFormatTimeInDefault
 import com.osfans.trime.util.getFileFromUri
 import com.osfans.trime.util.getUriForFile
@@ -211,8 +212,7 @@ class ProfileSettingsFragment : PaddingPreferenceFragment() {
                     },
                 )
                 addPreference(R.string.app_data_folder, R.string.app_data_folder_summary) {
-                    val dir = requireContext().getExternalFilesDir(null) ?: return@addPreference
-                    browseLauncher.launch(requireContext().getUriForFile(dir))
+                    startActivity(requireContext().buildAppDataFolderIntent())
                 }
             }
             addCategory(R.string.synchronization) {

@@ -7,12 +7,14 @@ package com.osfans.trime.util
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import timber.log.Timber
@@ -235,4 +237,20 @@ private fun Context.getFileFromUri(
             null
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.Q)
+fun Context.buildAppDataFolderIntent(): Intent {
+    val storageManager = getSystemService(Context.STORAGE_SERVICE) as StorageManager
+    val intent = storageManager.primaryStorageVolume.createOpenDocumentTreeIntent()
+    @Suppress("DEPRECATION")
+    val initialUri = intent.getParcelableExtra<Uri>(DocumentsContract.EXTRA_INITIAL_URI)!!
+    val uri = Uri.Builder()
+        .scheme(initialUri.scheme)
+        .authority(initialUri.authority)
+        .encodedPath(
+            initialUri.path!!.replaceFirst("/root/", "/document/") +
+                Uri.encode(":Android/data/${applicationInfo.packageName}/files"),
+        ).build()
+    return Intent(Intent.ACTION_VIEW, uri)
 }

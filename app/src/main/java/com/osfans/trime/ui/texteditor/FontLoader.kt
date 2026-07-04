@@ -16,7 +16,20 @@ object FontLoader {
 
     private const val FONTS_DIR = "fonts"
 
-    fun fontsDir(context: Context): File = File(context.filesDir, FONTS_DIR).apply { mkdirs() }
+    fun fontsDir(context: Context): File {
+        val newDir = File(context.getExternalFilesDir(null) ?: context.filesDir, FONTS_DIR).apply { mkdirs() }
+        val oldDir = File(context.filesDir, FONTS_DIR)
+        if (newDir.canonicalPath != oldDir.canonicalPath && oldDir.isDirectory) {
+            oldDir.listFiles()?.forEach { file ->
+                if (file.isFile) {
+                    val target = File(newDir, file.name)
+                    if (!target.exists()) runCatching { file.copyTo(target) }
+                }
+            }
+            runCatching { oldDir.deleteRecursively() }
+        }
+        return newDir
+    }
 
     // Cache key is the in-order list of resolved absolute paths + their lastModified stamps, so
     // re-importing a same-named font (different bytes) still invalidates correctly.

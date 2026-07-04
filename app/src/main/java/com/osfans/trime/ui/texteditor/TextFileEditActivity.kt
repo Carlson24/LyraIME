@@ -35,6 +35,8 @@ import androidx.core.view.updateLayoutParams
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
+import com.osfans.trime.daemon.RimeDaemon
+import com.osfans.trime.util.AppUtils
 import io.github.rosemoe.sora.event.PublishSearchResultEvent
 import io.github.rosemoe.sora.event.ScrollEvent
 import io.github.rosemoe.sora.widget.CodeEditor
@@ -91,9 +93,6 @@ class TextFileEditActivity : AppCompatActivity() {
     private lateinit var prefs: SharedPreferences
     private var displayName: String = ""
     private var originalText: String = ""
-    private var saveItem: MenuItem? = null
-    private var undoItem: MenuItem? = null
-    private var redoItem: MenuItem? = null
     private var wordWrap: Boolean = true
     private var showWhitespace: Boolean = false
     private var useTab: Boolean = true
@@ -281,31 +280,27 @@ class TextFileEditActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        saveItem = menu.add(R.string.text_editor_save).apply {
+        menu.add(R.string.deploy).apply {
+            icon = getDrawable(R.drawable.ic_baseline_refresh_reversed_24)
             setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             setOnMenuItemClickListener {
-                saveFile()
-                true
-            }
-        }
-        undoItem = menu.add(R.string.text_editor_undo).apply {
-            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            setOnMenuItemClickListener {
-                if (editor.canUndo()) editor.undo()
-                true
-            }
-        }
-        redoItem = menu.add(R.string.text_editor_redo).apply {
-            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            setOnMenuItemClickListener {
-                if (editor.canRedo()) editor.redo()
+                RimeDaemon.restartRime(fullCheck = true)
                 true
             }
         }
         menu.add(R.string.text_editor_find_replace).apply {
-            setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+            icon = getDrawable(R.drawable.ic_baseline_search_24)
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             setOnMenuItemClickListener {
                 openSearchBar()
+                true
+            }
+        }
+        menu.add(R.string.real_time_logs).apply {
+            icon = getDrawable(R.drawable.ic_outline_bug_report_24)
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            setOnMenuItemClickListener {
+                AppUtils.launchLogActivity(this@TextFileEditActivity)
                 true
             }
         }
@@ -537,9 +532,6 @@ class TextFileEditActivity : AppCompatActivity() {
         val dirty = isDirty()
         val canUndo = editor.canUndo()
         val canRedo = editor.canRedo()
-        saveItem?.isEnabled = dirty
-        undoItem?.isEnabled = canUndo
-        redoItem?.isEnabled = canRedo
         keySave.isEnabled = dirty
         keySave.alpha = if (dirty) 1f else 0.4f
         keyUndo.isEnabled = canUndo
