@@ -840,12 +840,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
 
     fun switchToPrevIme() {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                switchToPreviousInputMethod()
-            } else {
-                @Suppress("DEPRECATION")
-                inputMethodManager.switchToLastInputMethod(window.window!!.attributes.token)
-            }
+            switchToPreviousInputMethod()
         } catch (e: Exception) {
             Timber.e(e, "Unable to switch to the previous IME.")
             inputMethodManager.showInputMethodPicker()
@@ -854,12 +849,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
 
     fun switchToNextIme() {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                switchToNextInputMethod(false)
-            } else {
-                @Suppress("DEPRECATION")
-                inputMethodManager.switchToNextInputMethod(window.window!!.attributes.token, false)
-            }
+            switchToNextInputMethod(false)
         } catch (e: Exception) {
             Timber.e(e, "Unable to switch to the next IME.")
             inputMethodManager.showInputMethodPicker()
@@ -867,13 +857,10 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     }
 
     fun shareText(): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val ic = currentInputConnection ?: return false
-            val cs = ic.getSelectedText(0)
-            if (cs == null) ic.performContextMenuAction(android.R.id.selectAll)
-            return ic.performContextMenuAction(android.R.id.shareText)
-        }
-        return false
+        val ic = currentInputConnection ?: return false
+        val cs = ic.getSelectedText(0)
+        if (cs == null) ic.performContextMenuAction(android.R.id.selectAll)
+        return ic.performContextMenuAction(android.R.id.shareText)
     }
 
     /** 編輯操作 */
@@ -887,12 +874,10 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             return false
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (prefs.keyboard.hookCtrlZY.getValue()) {
-                when (code) {
-                    KeyEvent.KEYCODE_Y -> return ic.performContextMenuAction(android.R.id.redo)
-                    KeyEvent.KEYCODE_Z -> return ic.performContextMenuAction(android.R.id.undo)
-                }
+        if (prefs.keyboard.hookCtrlZY.getValue()) {
+            when (code) {
+                KeyEvent.KEYCODE_Y -> return ic.performContextMenuAction(android.R.id.redo)
+                KeyEvent.KEYCODE_Z -> return ic.performContextMenuAction(android.R.id.undo)
             }
         }
 

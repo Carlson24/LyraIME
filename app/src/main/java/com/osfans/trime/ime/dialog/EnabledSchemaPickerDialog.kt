@@ -21,16 +21,20 @@ object EnabledSchemaPickerDialog {
         scope: LifecycleCoroutineScope,
         context: Context,
     ): AlertDialog {
+        val allEnabledIds = SchemaPackageManager.getAllEnabledSchemaIds()
         val allSchemas = SchemaPackageManager.getAllSchemas()
-        Timber.d("SchemaPicker: allSchemas size=${allSchemas.size}")
-        val names = allSchemas.map { (schema, pkg) ->
-            if (allSchemas.count { it.first.id == schema.id } > 1) {
+        val enabledSchemas = allSchemas.filter { (schema, pkg) ->
+            allEnabledIds[pkg.id]?.contains(schema.id) == true
+        }
+        Timber.d("SchemaPicker: enabledSchemas size=${enabledSchemas.size}")
+        val names = enabledSchemas.map { (schema, pkg) ->
+            if (enabledSchemas.count { it.first.id == schema.id } > 1) {
                 "${schema.name.ifEmpty { schema.id }} (${pkg.id})"
             } else {
                 schema.name.ifEmpty { schema.id }
             }
         }.toTypedArray()
-        val ids = allSchemas.map { (schema, _) -> schema.id }
+        val ids = enabledSchemas.map { (schema, _) -> schema.id }
         val selectedSchemaId = rime.selectedSchemaId()
         val currentIndex = ids.indexOf(selectedSchemaId).coerceAtLeast(0)
         var selectedIndex = currentIndex
