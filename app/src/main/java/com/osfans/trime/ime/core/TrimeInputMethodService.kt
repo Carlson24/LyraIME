@@ -72,6 +72,8 @@ import splitties.bitflags.hasFlag
 import splitties.systemservices.clipboardManager
 import splitties.systemservices.inputMethodManager
 import timber.log.Timber
+import android.content.ClipData
+import android.graphics.BitmapFactory
 
 /** [輸入法][InputMethodService]主程序  */
 
@@ -658,7 +660,31 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     ) {
         val ic = currentInputConnection ?: return
 
-        if (!ic.performContextMenuAction(android.R.id.paste)) {
+        try {
+            val contentResolver = contentResolver
+            val inputStream = contentResolver.openInputStream(uri)
+            if (inputStream != null) {
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                if (bitmap != null) {
+                    val clipData = ClipData.newUri(contentResolver, "Image", uri)
+                    val clipboard = clipboardManager
+                    clipboard.setPrimaryClip(clipData)
+                    if (!ic.performContextMenuAction(android.R.id.paste)) {
+                        toast(R.string.image_paste_failed)
+                    } else {
+                        lastCommittedText = uri.toString()
+                        composingText = ""
+                        cursorComposingText = ""
+                        InputFeedbackManager.textCommitSpeak(uri.toString())
+                    }
+                } else {
+                    toast(R.string.image_paste_failed)
+                }
+            } else {
+                toast(R.string.image_paste_failed)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to paste image from URI")
             toast(R.string.image_paste_failed)
         }
     }
