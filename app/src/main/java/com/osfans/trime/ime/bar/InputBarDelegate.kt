@@ -7,6 +7,7 @@ package com.osfans.trime.ime.bar
 
 import android.content.Context
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Build
 import android.util.Size
 import android.view.View
@@ -58,6 +59,8 @@ import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.milliseconds
+import androidx.core.net.toUri
 
 class InputBarDelegate : InputBroadcastReceiver {
     private val di = InputDependencyManager.getInstance().di
@@ -115,20 +118,15 @@ class InputBarDelegate : InputBroadcastReceiver {
     private val onClipboardUpdateListener = ClipboardHelper.OnClipboardUpdateListener {
         if (!clipboardSuggestion) return@OnClipboardUpdateListener
         service.lifecycleScope.launch {
-            if (it.text.isNullOrEmpty()) {
+            if (it.text.isEmpty()) {
                 isClipboardFresh = false
             } else {
-                val displayText = if (it.sensitive && clipboardMaskSensitive) {
-                    DatabaseBean.BULLET.repeat(it.text.length.coerceAtMost(42))
-                } else {
-                    it.text.take(42)
-                }
-                alwaysUi.clipboardUi.text.text = displayText
                 isClipboardFresh = true
                 launchClipboardTimeoutJob()
             }
             evalAlwaysUiState()
         }
+        alwaysUi.clipboardUi.updateClipboardContent(ClipboardHelper.lastBean)
     }
 
     private fun launchClipboardTimeoutJob() {
@@ -136,7 +134,7 @@ class InputBarDelegate : InputBroadcastReceiver {
         val timeout = clipboardSuggestionTimeout * 1000L
         if (timeout < 0L) return
         clipboardTimeoutJob = service.lifecycleScope.launch {
-            delay(timeout)
+            delay(timeout.milliseconds)
             isClipboardFresh = false
             clipboardTimeoutJob = null
             evalAlwaysUiState()
@@ -174,8 +172,16 @@ class InputBarDelegate : InputBroadcastReceiver {
             }
             clipboardUi.suggestionView.apply {
                 setOnClickListener {
-                    val content = ClipboardHelper.lastBean?.text
-                    content?.let { service.commitText(it) }
+                    val bean = ClipboardHelper.lastBean
+                    bean?.let {
+                        if (it.isUriEntry() && it.type.startsWith("image/")) {
+                            val uri = it.text.toUri()
+                            service.commitImage(uri, it.type)
+                        } else {
+                            val content = it.text
+                            content.let { text -> service.commitText(text) }
+                        }
+                    }
                     dismissClipboardSuggestion()
                 }
                 setOnLongClickListener {

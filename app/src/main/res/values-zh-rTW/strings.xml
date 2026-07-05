@@ -255,6 +255,7 @@
     <string name="num_items_deleted">已刪除 %d 項</string>
     <string name="delete_all_done">已清空剪貼簿</string>
     <string name="image_copied_to_clipboard">圖片已複製到剪貼簿</string>
+    <string name="image_paste_failed">圖片粘貼失敗！</string>
     <string name="delete_all_except_pinned">刪除所有未釘選項</string>
     <string name="delete_all_pinned_items">刪除所有項（含釘選項）</string>
     <string name="add_to_favorites">新增到收藏</string>

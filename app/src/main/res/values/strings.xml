@@ -255,6 +255,7 @@
     <string name="num_items_deleted">%d item(s) deleted</string>
     <string name="delete_all_done">All items deleted</string>
     <string name="image_copied_to_clipboard">Image copied to clipboard</string>
+    <string name="image_paste_failed">Image paste failed!</string>
     <string name="delete_all_except_pinned">Delete all items except pinned</string>
     <string name="delete_all_pinned_items">Delete all items including pinned</string>
     <string name="add_to_favorites">Add to favorites</string>

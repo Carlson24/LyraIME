@@ -656,20 +656,11 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         uri: Uri,
         mimeType: String,
     ) {
-        val ic = currentInputConnection
-        if (ic != null) {
-            val desc = android.content.ClipDescription("image", arrayOf(mimeType))
-            val inputContentInfo = android.view.inputmethod.InputContentInfo(
-                uri,
-                desc,
-                null,
-            )
-            if (ic.commitContent(inputContentInfo, 0, null)) return
+        val ic = currentInputConnection ?: return
+
+        if (!ic.performContextMenuAction(android.R.id.paste)) {
+            toast(R.string.image_paste_failed)
         }
-        clipboardManager.setPrimaryClip(
-            android.content.ClipData.newUri(contentResolver, "image", uri),
-        )
-        toast(R.string.image_copied_to_clipboard)
     }
 
     /**

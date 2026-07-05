@@ -10,6 +10,7 @@ import android.widget.ViewAnimator
 import androidx.annotation.DrawableRes
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.osfans.trime.R
+import com.osfans.trime.data.db.ClipboardHelper
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.ToolBar
 import splitties.views.dsl.constraintlayout.after
@@ -62,7 +63,9 @@ class AlwaysUi(
 
     val buttonsUi = ButtonsBarUi(ctx, theme, onButtonClick)
 
-    val clipboardUi = ClipboardSuggestionUi(ctx)
+    val clipboardUi: ClipboardSuggestionUi = ClipboardSuggestionUi(ctx).apply {
+            updateClipboardContent(ClipboardHelper.lastBean)
+        }
 
     val inlineSuggestionsUi = InlineSuggestionsUi(ctx)
 

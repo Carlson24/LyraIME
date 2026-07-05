@@ -5,11 +5,21 @@
 package com.osfans.trime.ime.bar.ui
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.text.TextUtils
+import android.view.View
+import androidx.core.net.toUri
 import com.osfans.trime.R
+import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.ime.keyboard.GestureFrame
+import com.osfans.trime.ime.clipboard.loadThumbnailBitmap
 import com.osfans.trime.util.rippleDrawable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.views.dsl.constraintlayout.after
@@ -42,6 +52,10 @@ class ClipboardSuggestionUi(
                 }
         }
 
+    private val imageView = imageView {
+        visibility = View.GONE
+    }
+
     val text =
         textView {
             isSingleLine = true
@@ -65,6 +79,13 @@ class ClipboardSuggestionUi(
                 icon,
                 lParams(dp(20), dp(20)) {
                     startOfParent(spacing)
+                    centerVertically()
+                },
+            )
+            add(
+                imageView,
+                lParams(dp(32), dp(32)) {
+                    after(icon, spacing)
                     before(text)
                     centerVertically()
                 },
@@ -72,7 +93,7 @@ class ClipboardSuggestionUi(
             add(
                 text,
                 lParams(wrapContent, wrapContent) {
-                    after(icon, spacing)
+                    after(imageView, spacing)
                     before(dismiss)
                     centerVertically()
                 },
@@ -102,4 +123,48 @@ class ClipboardSuggestionUi(
                 },
             )
         }
+
+    private var isImage: Boolean = false
+    private var thumbnailBitmap: Bitmap? = null
+    private val scope = CoroutineScope(Dispatchers.Main)
+
+    fun updateClipboardContent(bean: DatabaseBean?) {
+        if (bean == null) {
+            text.text = ""
+            isImage = false
+            thumbnailBitmap = null
+            updateDisplay()
+            return
+        }
+
+        isImage = bean.isUriEntry() && bean.type.startsWith("image/")
+        
+        if (isImage) {
+            loadThumbnail(bean)
+        } else {
+            text.text = bean.text.take(42)
+            thumbnailBitmap = null
+            updateDisplay()
+        }
+    }
+
+    private fun updateDisplay() {
+        if (isImage) {
+            imageView.setImageBitmap(thumbnailBitmap)
+            imageView.visibility = if (thumbnailBitmap != null) View.VISIBLE else View.GONE
+            text.visibility = View.GONE
+        } else {
+            text.visibility = View.VISIBLE
+            imageView.visibility = View.GONE
+        }
+    }
+
+    private fun loadThumbnail(bean: DatabaseBean) {
+        scope.launch {
+            thumbnailBitmap = withContext(Dispatchers.IO) {
+                bean.loadThumbnailBitmap(ctx)
+            }
+            updateDisplay()
+        }
+    }
 }

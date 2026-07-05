@@ -254,6 +254,7 @@
     <string name="num_items_deleted">已删除 %d 项</string>
     <string name="delete_all_done">已清空剪贴板</string>
     <string name="image_copied_to_clipboard">图片已复制到剪贴板</string>
+    <string name="image_paste_failed">图片粘贴失败！</string>
     <string name="delete_all_except_pinned">删除所有未固定项</string>
     <string name="delete_all_pinned_items">删除所有项（含固定项）</string>
     <string name="add_to_favorites">添加到收藏</string>
