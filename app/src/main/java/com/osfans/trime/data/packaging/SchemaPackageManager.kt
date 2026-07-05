@@ -122,10 +122,8 @@ object SchemaPackageManager {
         }
     }
 
-    fun getAllEnabledSchemaIds(): Map<String, Set<String>> {
-        return discoverPackages().associate { pkg ->
-            pkg.id to getEnabledSchemaIds(pkg.id)
-        }
+    fun getAllEnabledSchemaIds(): Map<String, Set<String>> = discoverPackages().associate { pkg ->
+        pkg.id to getEnabledSchemaIds(pkg.id)
     }
 
     fun getAllSchemas(): List<Pair<SchemaItem, SchemaPackage>> {

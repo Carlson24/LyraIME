@@ -214,7 +214,6 @@ class Rime :
             startRime()
 
             selectRimeSchema(schemaId)
-
         }
 
         PackageStateManager.saveState(

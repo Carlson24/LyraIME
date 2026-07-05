@@ -1,5 +1,7 @@
 [versions]
 androidGradlePlugin = "9.2.1"
+androidsvgAar = "1.4"
+desugar_jdk_libs = "2.1.5"
 kotlin = "2.4.0"
 ksp = "2.3.7"
 navigation = "2.9.8"
@@ -17,6 +19,8 @@ snakeyaml-engine = "3.0.1"
 
 [libraries]
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
+androidsvg-aar = { module = "com.caverock:androidsvg-aar", version.ref = "androidsvgAar" }
+desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version = "1.11.0" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.11.0" }

@@ -40,11 +40,6 @@ android {
         buildConfigField("String", "BUILD_VERSION_NAME", "\"${project.buildVersionName}\"")
     }
 
-    base {
-        // https://www.norio.be/blog/archivesBaseName-removed-from-gradle9.html
-        archivesName = "${android.defaultConfig.applicationId}-$buildVersionName"
-    }
-
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -86,13 +81,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlin {
-        compilerOptions {
-            // https://youtrack.jetbrains.com/issue/KT-55947
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
+        isCoreLibraryDesugaringEnabled = true
     }
 
     // hack workaround lint gradle 8.0.2
@@ -140,11 +129,24 @@ aboutLibraries {
     }
 }
 
+base {
+    // https://www.norio.be/blog/archivesBaseName-removed-from-gradle9.html
+    archivesName = "${android.defaultConfig.applicationId}-$buildVersionName"
+}
+
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+kotlin {
+    compilerOptions {
+        // https://youtrack.jetbrains.com/issue/KT-55947
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     ksp(project(":codegen"))
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotlinx.serialization.json)
@@ -184,7 +186,7 @@ dependencies {
     implementation(libs.community.material.typeface) {
         artifact { type = "aar" }
     }
-    implementation("com.caverock:androidsvg-aar:1.4")
+    implementation(libs.androidsvg.aar)
     implementation(libs.sora.editor)
     implementation(libs.gson)
     implementation(libs.jcodings)

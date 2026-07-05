@@ -11,12 +11,12 @@ import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.net.Uri
-import android.util.TypedValue
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
@@ -475,12 +475,10 @@ class TextFileEditActivity : AppCompatActivity() {
         return typedValue.data
     }
 
-    private fun currentSearchOptions(): EditorSearcher.SearchOptions {
-        return if (regexToggle.isSelected) {
-            EditorSearcher.SearchOptions(EditorSearcher.SearchOptions.TYPE_REGULAR_EXPRESSION, false)
-        } else {
-            EditorSearcher.SearchOptions(false, false)
-        }
+    private fun currentSearchOptions(): EditorSearcher.SearchOptions = if (regexToggle.isSelected) {
+        EditorSearcher.SearchOptions(EditorSearcher.SearchOptions.TYPE_REGULAR_EXPRESSION, false)
+    } else {
+        EditorSearcher.SearchOptions(false, false)
     }
 
     private fun closeSearchBar() {
