@@ -40,53 +40,6 @@ class MainFragment : PaddingPreferenceFragment() {
         viewModel.disableTopOptionsMenu()
         super.onStop()
     }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?,
-    ): View {
-        val preferenceView = super.onCreateView(inflater, container, savedInstanceState)
-        val context = requireContext()
-        val padding = context.dp(16)
-        return LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-            )
-            (preferenceView.parent as? ViewGroup)?.removeView(preferenceView)
-            addView(
-                preferenceView,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    0,
-                    1f,
-                ),
-            )
-            addView(
-                EditText(context).apply {
-                    hint = context.getString(R.string.main_input_test_hint)
-                    gravity = Gravity.TOP or Gravity.START
-                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
-                    minLines = 2
-                    maxLines = 4
-                    setPadding(padding, padding, padding, 0)
-                },
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                ),
-            )
-            ViewCompat.setOnApplyWindowInsetsListener(this) { _, windowInsets ->
-                val imeBottom = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-                val navBarBottom = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
-                setPadding(paddingLeft, paddingTop, paddingRight, maxOf(imeBottom, navBarBottom))
-                windowInsets
-            }
-        }
-    }
-
     private fun PreferenceGroup.addDestinationPreference(
         @StringRes title: Int,
         @DrawableRes icon: Int,

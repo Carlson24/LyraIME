@@ -371,7 +371,6 @@
     <string name="share">分享</string>
     <string name="word_segment">分词</string>
     <string name="star_success">收藏成功</string>
-    <string name="main_input_test_hint">点击此处测试输入</string>
     <string name="wanxiang_updater">万象更新</string>
     <string name="wanxiang_auto_check">自动检查更新</string>
     <string name="wanxiang_check_interval">检查间隔</string>

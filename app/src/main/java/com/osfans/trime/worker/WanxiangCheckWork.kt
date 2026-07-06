@@ -57,6 +57,8 @@ class WanxiangCheckWork(
                 sharedPref.edit().putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_MODEL, needsUpdate).apply()
                 if (needsUpdate) contentUpdate = true
             }
+        } else {
+            sharedPref.edit().putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_MODEL, false).apply()
         }
 
         val lastDictSha = sharedPref.getString(AppPrefs.Wanxiang.LAST_DICT_SHA256, "") ?: ""
@@ -67,6 +69,8 @@ class WanxiangCheckWork(
                 sharedPref.edit().putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_DICT, needsUpdate).apply()
                 if (needsUpdate) contentUpdate = true
             }
+        } else {
+            sharedPref.edit().putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_DICT, false).apply()
         }
 
         if (contentUpdate && !versionUpdate) {

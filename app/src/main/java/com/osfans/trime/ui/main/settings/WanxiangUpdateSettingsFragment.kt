@@ -7,7 +7,6 @@ package com.osfans.trime.ui.main.settings
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
@@ -49,7 +48,6 @@ import com.osfans.trime.ui.main.MainViewModel
 import com.osfans.trime.ui.main.NavigationRoute
 import com.osfans.trime.util.addCategory
 import com.osfans.trime.util.compareVersions
-import com.osfans.trime.util.computeFileSha256
 import com.osfans.trime.util.createNotificationChannel
 import com.osfans.trime.util.readLocalWanxiangVersion
 import com.osfans.trime.worker.WanxiangCheckWork
@@ -61,7 +59,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
-import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
@@ -196,6 +193,9 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                     isChecked = prefs.checkDict.getValue()
                     isIconSpaceReserved = false
                     isSingleLineTitle = false
+                    summaryProvider = Preference.SummaryProvider<SwitchPreferenceCompat> {
+                        buildHashSummary(prefs.lastDictSha256.getValue(), prefs.needsUpdateDict.getValue())
+                    }
                     setOnPreferenceChangeListener { _, newValue ->
                         prefs.checkDict.setValue(newValue as Boolean)
                         true
@@ -208,6 +208,9 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                     isChecked = prefs.checkModel.getValue()
                     isIconSpaceReserved = false
                     isSingleLineTitle = false
+                    summaryProvider = Preference.SummaryProvider<SwitchPreferenceCompat> {
+                        buildHashSummary(prefs.lastModelSha256.getValue(), prefs.needsUpdateModel.getValue())
+                    }
                     setOnPreferenceChangeListener { _, newValue ->
                         prefs.checkModel.setValue(newValue as Boolean)
                         true
@@ -219,7 +222,6 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
         refreshLocalVersion()
         fetchLatestVersionTag()
-        refreshHashSummaries()
     }
 
     private fun refreshLocalVersion() {
@@ -243,30 +245,20 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         versionDisplayPref.summary = "$channelLabel ($variant) ($currentLocalVersion → $latestStableTag)"
     }
 
-    private fun refreshHashSummaries() {
+    private fun buildHashSummary(sha: String, needsUpdate: Boolean): CharSequence {
         val noHash = getString(R.string.wanxiang_no_hash)
+        if (sha.isEmpty()) return noHash
         val hashFmt = getString(R.string.wanxiang_current_hash)
-        val schemaSha = prefs.lastSchemaSha256.getValue()
-        val dictSha = prefs.lastDictSha256.getValue()
-        val modelSha = prefs.lastModelSha256.getValue()
+        val text = String.format(hashFmt, sha.take(12))
         val green = requireContext().getColor(com.osfans.trime.R.color.green)
         val red = requireContext().getColor(com.osfans.trime.R.color.red)
-        fun coloredSummary(text: String, color: Int): SpannableString {
-            val spannable = SpannableString(text)
-            spannable.setSpan(ForegroundColorSpan(color), 0, text.length, 0)
-            return spannable
+        return SpannableString(text).apply {
+            setSpan(ForegroundColorSpan(if (needsUpdate) red else green), 0, length, 0)
         }
-        fun setSummary(pref: SwitchPreferenceCompat, sha: String, needsUpdate: Boolean) {
-            if (sha.isNotEmpty()) {
-                val text = String.format(hashFmt, sha.take(12))
-                pref.summary = coloredSummary(text, if (needsUpdate) red else green)
-            } else {
-                pref.summary = noHash
-            }
-        }
-        setSummary(schemaSwitchPref, schemaSha, prefs.needsUpdateSchema.getValue())
-        setSummary(dictSwitchPref, dictSha, prefs.needsUpdateDict.getValue())
-        setSummary(modelSwitchPref, modelSha, prefs.needsUpdateModel.getValue())
+    }
+
+    private fun notifySummariesChanged() {
+        listView?.adapter?.notifyDataSetChanged()
     }
 
     private fun fetchLatestVersionTag(notifyOnNew: Boolean = false) {
@@ -360,26 +352,50 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
         val root = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(16.dp(), 16.dp(), 16.dp(), 0)
+            setPadding(24.dp(), 8.dp(), 24.dp(), 0)
         }
+
+        val messageText = TextView(ctx).apply {
+            text = getString(R.string.wanxiang_will_update, updateName)
+            textSize = 14f
+            setPadding(0, 0, 0, 12.dp())
+        }
+        root.addView(messageText)
+
         deployTargetsContainer = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
         }
-        root.addView(deployTargetsContainer)
+        val scrollView = ScrollView(ctx).apply {
+            addView(deployTargetsContainer, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
+        root.addView(scrollView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+
+        val buttonBar = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END
+            setPadding(0, 12.dp(), 0, 0)
+        }
 
         val dialog = ctx.buildDialog(R.string.wanxiang_deploy_targets_title)
-            .setMessage(getString(R.string.wanxiang_will_update, updateName))
             .setView(root)
-            .setNegativeButton(R.string.wanxiang_deploy_add, null)
-            .setPositiveButton(R.string.wanxiang_deploy_confirm, null)
             .setCancelable(true)
             .create()
 
-        dialog.setOnShowListener {
-            dialog.getButton(DialogInterface.BUTTON_NEGATIVE)?.setOnClickListener {
-                dirPickerLauncher.launch(null)
-            }
-            dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setOnClickListener {
+        val cancelBtn = android.widget.Button(ctx, null, android.R.attr.buttonBarButtonStyle).apply {
+            text = getString(android.R.string.cancel)
+            setOnClickListener { dialog.dismiss() }
+        }
+        buttonBar.addView(cancelBtn)
+
+        val addBtn = android.widget.Button(ctx, null, android.R.attr.buttonBarButtonStyle).apply {
+            text = getString(R.string.wanxiang_deploy_add)
+            setOnClickListener { dirPickerLauncher.launch(null) }
+        }
+        buttonBar.addView(addBtn)
+
+        val confirmBtn = android.widget.Button(ctx, null, android.R.attr.buttonBarButtonStyle).apply {
+            text = getString(R.string.wanxiang_deploy_confirm)
+            setOnClickListener {
                 val enabledPaths = currentDeployTargets
                     .filter { it.enabled }
                     .map { it.path }
@@ -396,6 +412,9 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 lifecycleScope.launch { doExecuteSelected(enabledPaths) }
             }
         }
+        buttonBar.addView(confirmBtn)
+
+        root.addView(buttonBar)
 
         dialog.setOnDismissListener {
             deployTargetsContainer = null
@@ -440,6 +459,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             val label = TextView(ctx).apply {
                 text = uriToDisplayPath(target.path)
                 textSize = 13f
+                setTextColor(ctx.getColor(com.osfans.trime.R.color.text))
                 setPadding(8.dp(), 0, 8.dp(), 0)
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             }
@@ -479,6 +499,13 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         prefs.deployTargets.setValue(saveDeployTargets(currentDeployTargets))
     }
 
+    private class DoExecuteCheck(
+        val expectedShas: MutableMap<String, String>,
+        val dictUpToDate: Boolean,
+        val modelUpToDate: Boolean,
+        val modelFetchFailed: Boolean,
+    )
+
     private suspend fun doExecuteSelected(targetPaths: List<String>) {
         val isPro = prefs.isPro.getValue()
         val auxScheme = prefs.auxScheme.getValue()
@@ -515,46 +542,75 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         if (prefs.checkSchema.getValue()) {
             urls.add("$baseUrl/$activeTag/rime-wanxiang-$schemeStr${if (isPro == "pro") "-fuzhu" else ""}.zip")
         }
-        if (prefs.checkDict.getValue()) {
+        val dictUrl = if (prefs.checkDict.getValue()) {
             val dictPrefix = when (isPro) {
                 "pro" -> "pro-$schemeStr-fuzhu"
                 "pure" -> "pure"
                 else -> "base"
             }
-            urls.add("$dictBaseUrl/$dictPrefix-dicts.zip")
+            "$dictBaseUrl/$dictPrefix-dicts.zip"
+        } else {
+            null
         }
-        var modelSha256: String? = null
-        if (prefs.checkModel.getValue()) {
-            val result = withContext(Dispatchers.IO) { checkModelUpdate() }
-            when (result) {
-                is ModelCheckResult.FetchFailed -> {
-                    val proceed = suspendCancellableCoroutine { cont ->
-                        requireContext().buildDialog()
-                            .setMessage(R.string.wanxiang_model_check_failed)
-                            .setPositiveButton(R.string.wanxiang_continue_anyway) { _, _ -> cont.resume(true) }
-                            .setNegativeButton(android.R.string.cancel) { _, _ -> cont.resume(false) }
-                            .setOnCancelListener { cont.resume(false) }
-                            .show()
-                    }
-                    if (proceed) {
-                        urls.add(modelUrl)
-                    } else {
-                        return
-                    }
+        val checkModel = prefs.checkModel.getValue()
+
+        val check = withContext(Dispatchers.IO) {
+            val shas = buildExpectedShaMap(schemeStr, isPro, updateChannel).toMutableMap()
+
+            var dictUpToDate = false
+            if (dictUrl != null) {
+                val dictFile = dictUrl.substringAfterLast("/")
+                val dictSha = shas[dictFile]
+                val dictStored = prefs.lastDictSha256.getValue()
+                dictUpToDate = dictSha != null && dictStored.isNotEmpty() && dictStored == dictSha
+            }
+
+            var modelUpToDate = false
+            var modelFetchFailed = false
+            if (checkModel) {
+                val modelSha = fetchRemoteModelSha256()
+                if (modelSha != null) {
+                    modelUpToDate = prefs.lastModelSha256.getValue() == modelSha
+                    shas["wanxiang-lts-zh-hans.gram"] = modelSha
+                } else {
+                    modelFetchFailed = true
                 }
-                is ModelCheckResult.UpToDate -> {
-                    withContext(Dispatchers.Main) {
-                        android.widget.Toast.makeText(
-                            requireContext(),
-                            R.string.wanxiang_model_up_to_date,
-                            android.widget.Toast.LENGTH_SHORT,
-                        ).show()
-                    }
+            }
+
+            DoExecuteCheck(shas, dictUpToDate, modelUpToDate, modelFetchFailed)
+        }
+
+        val expectedShas = check.expectedShas
+
+        if (dictUrl != null && !check.dictUpToDate) {
+            urls.add(dictUrl)
+        }
+
+        if (checkModel) {
+            if (check.modelFetchFailed) {
+                val proceed = suspendCancellableCoroutine { cont ->
+                    requireContext().buildDialog()
+                        .setMessage(R.string.wanxiang_model_check_failed)
+                        .setPositiveButton(R.string.wanxiang_continue_anyway) { _, _ -> cont.resume(true) }
+                        .setNegativeButton(android.R.string.cancel) { _, _ -> cont.resume(false) }
+                        .setOnCancelListener { cont.resume(false) }
+                        .show()
                 }
-                is ModelCheckResult.NeedsUpdate -> {
+                if (proceed) {
                     urls.add(modelUrl)
-                    modelSha256 = result.remoteSha256
+                } else {
+                    return
                 }
+            } else if (check.modelUpToDate) {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        R.string.wanxiang_model_up_to_date,
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            } else {
+                urls.add(modelUrl)
             }
         }
 
@@ -565,23 +621,8 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             prefs.ghToken.getValue()
         }
         val rules = prefs.excludeRules.getValue().lines().filter { it.isNotBlank() }
-
-        val expectedShas = if (downloadSource == "GitHub") {
-            buildExpectedShaMap(schemeStr, isPro, updateChannel)
-        } else {
-            emptyMap()
-        }.toMutableMap()
-        if (modelSha256 != null) {
-            expectedShas["wanxiang-lts-zh-hans.gram"] = modelSha256
-        }
-
-        startDownload(urls, rules, githubToken, expectedShas, targetPaths)
-    }
-
-    private sealed class ModelCheckResult {
-        data object FetchFailed : ModelCheckResult()
-        data object UpToDate : ModelCheckResult()
-        data class NeedsUpdate(val remoteSha256: String) : ModelCheckResult()
+        val verifyShas = if (downloadSource == "GitHub") expectedShas else emptyMap<String, String>()
+        startDownload(urls, rules, githubToken, verifyShas, targetPaths)
     }
 
     private fun buildExpectedShaMap(
@@ -605,14 +646,6 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         val dictAssets = fetchReleaseAssetsSha256("dict-nightly")
         dictAssets[dictFile]?.let { result[dictFile] = it }
         return result
-    }
-
-    private fun checkModelUpdate(): ModelCheckResult {
-        val remoteSha = fetchRemoteModelSha256() ?: return ModelCheckResult.FetchFailed
-        val localFile = File(DataManager.userDataDir, "wanxiang-lts-zh-hans.gram")
-        if (!localFile.exists()) return ModelCheckResult.NeedsUpdate(remoteSha)
-        val localSha = computeFileSha256(localFile) ?: return ModelCheckResult.NeedsUpdate(remoteSha)
-        return if (localSha == remoteSha) ModelCheckResult.UpToDate else ModelCheckResult.NeedsUpdate(remoteSha)
     }
 
     private fun fetchRemoteModelSha256(): String? {
@@ -802,16 +835,12 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                                 prefs.lastModelSha256.setValue(sha)
                                 prefs.needsUpdateModel.setValue(false)
                             }
-                            else -> {
-                                prefs.lastSchemaSha256.setValue(sha)
-                                prefs.needsUpdateSchema.setValue(false)
-                            }
                         }
                     }
                 }
                 completed = true
                 withContext(Dispatchers.Main) {
-                    if (allSucceeded) refreshHashSummaries()
+                    if (allSucceeded) notifySummariesChanged()
                     val button = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
                     if (button != null) {
                         button.text = getString(android.R.string.ok)

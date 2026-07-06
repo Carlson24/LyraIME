@@ -786,10 +786,8 @@ class AppPrefs(
             const val CHECK_SCHEMA = "wanxiang_check_schema"
             const val CHECK_DICT = "wanxiang_check_dict"
             const val CHECK_MODEL = "wanxiang_check_model"
-            const val LAST_SCHEMA_SHA256 = "wanxiang_last_schema_sha256"
             const val LAST_DICT_SHA256 = "wanxiang_last_dict_sha256"
             const val LAST_MODEL_SHA256 = "wanxiang_last_model_sha256"
-            const val NEEDS_UPDATE_SCHEMA = "wanxiang_needs_update_schema"
             const val NEEDS_UPDATE_DICT = "wanxiang_needs_update_dict"
             const val NEEDS_UPDATE_MODEL = "wanxiang_needs_update_model"
             const val DEPLOY_TARGETS = "wanxiang_deploy_targets"
@@ -872,10 +870,8 @@ class AppPrefs(
         val checkSchema = bool(CHECK_SCHEMA, true)
         val checkDict = bool(CHECK_DICT, true)
         val checkModel = bool(CHECK_MODEL, false)
-        val lastSchemaSha256 = string(LAST_SCHEMA_SHA256, "")
         val lastDictSha256 = string(LAST_DICT_SHA256, "")
         val lastModelSha256 = string(LAST_MODEL_SHA256, "")
-        val needsUpdateSchema = bool(NEEDS_UPDATE_SCHEMA, false)
         val needsUpdateDict = bool(NEEDS_UPDATE_DICT, false)
         val needsUpdateModel = bool(NEEDS_UPDATE_MODEL, false)
         val deployTargets = string(DEPLOY_TARGETS, "")
