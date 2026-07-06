@@ -362,18 +362,17 @@ class CustomTasksFragment : Fragment() {
 
         return card
     }
-    private fun makeIconBtn(ctx: Context, iconRes: Int, size: Int): AppCompatImageButton =
-        AppCompatImageButton(ctx).apply {
-            val drawable = DrawableCompat.wrap(ContextCompat.getDrawable(ctx, iconRes)!!.mutate())
-            DrawableCompat.setTint(drawable, color(R.color.text))
-            setImageDrawable(drawable)
-            val bg = android.util.TypedValue()
-            ctx.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, bg, true)
-            setBackgroundResource(bg.resourceId)
-            val pad = (ctx.resources.displayMetrics.density * 4).toInt()
-            setPadding(pad, pad, pad, pad)
-            layoutParams = LinearLayout.LayoutParams(size, size)
-        }
+    private fun makeIconBtn(ctx: Context, iconRes: Int, size: Int): AppCompatImageButton = AppCompatImageButton(ctx).apply {
+        val drawable = DrawableCompat.wrap(ContextCompat.getDrawable(ctx, iconRes)!!.mutate())
+        DrawableCompat.setTint(drawable, color(R.color.text))
+        setImageDrawable(drawable)
+        val bg = android.util.TypedValue()
+        ctx.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, bg, true)
+        setBackgroundResource(bg.resourceId)
+        val pad = (ctx.resources.displayMetrics.density * 4).toInt()
+        setPadding(pad, pad, pad, pad)
+        layoutParams = LinearLayout.LayoutParams(size, size)
+    }
 
     private fun createExpandedContent(index: Int, task: CustomTask): View {
         val ctx = requireContext()
@@ -412,9 +411,9 @@ class CustomTasksFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
         }
 
-            fun rebuildPaths() {
-                pathsContainer.removeAllViews()
-                for ((i, path) in customTasks[index].boundPaths.withIndex()) {
+        fun rebuildPaths() {
+            pathsContainer.removeAllViews()
+            for ((i, path) in customTasks[index].boundPaths.withIndex()) {
                 val row = LinearLayout(ctx).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL

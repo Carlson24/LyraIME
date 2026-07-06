@@ -26,8 +26,6 @@ import com.osfans.trime.util.compareVersions
 import com.osfans.trime.util.createNotificationChannel
 import com.osfans.trime.util.readLocalWanxiangVersion
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 class WanxiangCheckWork(
@@ -38,10 +36,18 @@ class WanxiangCheckWork(
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         if (!sharedPref.getBoolean(AppPrefs.Wanxiang.AUTO_CHECK, false)) return Result.success()
 
+        val downloadSource = sharedPref.getString(AppPrefs.Wanxiang.DOWNLOAD_SOURCE, "CNB") ?: "CNB"
+        val token = if (downloadSource == "CNB") {
+            sharedPref.getString(AppPrefs.Wanxiang.CNB_TOKEN, "") ?: ""
+        } else {
+            sharedPref.getString(AppPrefs.Wanxiang.GH_TOKEN, "") ?: ""
+        }
+        if (downloadSource == "CNB" && token.isEmpty()) return Result.success()
+
         val localVersion = readLocalWanxiangVersion()
         if (localVersion == "v0.0.0") return Result.success()
 
-        val remoteVersion = fetchRemoteVersion() ?: return Result.retry()
+        val remoteVersion = fetchRemoteVersion(downloadSource, token) ?: return Result.retry()
         var versionUpdate = false
         if (compareVersions(remoteVersion, localVersion) > 0) {
             showVersionNotification(remoteVersion, localVersion)
@@ -51,11 +57,14 @@ class WanxiangCheckWork(
         var contentUpdate = false
         val lastModelSha = sharedPref.getString(AppPrefs.Wanxiang.LAST_MODEL_SHA256, "") ?: ""
         if (lastModelSha.isNotEmpty()) {
-            val remoteModelSha = fetchRemoteModelSha256()
-            if (remoteModelSha != null) {
-                val needsUpdate = remoteModelSha != lastModelSha
-                sharedPref.edit().putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_MODEL, needsUpdate).apply()
-                if (needsUpdate) contentUpdate = true
+            val result = fetchRemoteModelSha256(downloadSource, token)
+            if (result != null) {
+                val (modelSha, updatedAt) = result
+                sharedPref.edit()
+                    .putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_MODEL, modelSha != lastModelSha)
+                    .putString(AppPrefs.Wanxiang.LAST_MODEL_UPDATED_AT, updatedAt)
+                    .apply()
+                if (modelSha != lastModelSha) contentUpdate = true
             }
         } else {
             sharedPref.edit().putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_MODEL, false).apply()
@@ -63,11 +72,14 @@ class WanxiangCheckWork(
 
         val lastDictSha = sharedPref.getString(AppPrefs.Wanxiang.LAST_DICT_SHA256, "") ?: ""
         if (lastDictSha.isNotEmpty()) {
-            val remoteDictSha = fetchRemoteDictSha256(sharedPref)
-            if (remoteDictSha != null) {
-                val needsUpdate = remoteDictSha != lastDictSha
-                sharedPref.edit().putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_DICT, needsUpdate).apply()
-                if (needsUpdate) contentUpdate = true
+            val result = fetchRemoteDictSha256(sharedPref, downloadSource, token)
+            if (result != null) {
+                val (dictSha, updatedAt) = result
+                sharedPref.edit()
+                    .putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_DICT, dictSha != lastDictSha)
+                    .putString(AppPrefs.Wanxiang.LAST_DICT_UPDATED_AT, updatedAt)
+                    .apply()
+                if (dictSha != lastDictSha) contentUpdate = true
             }
         } else {
             sharedPref.edit().putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_DICT, false).apply()
@@ -87,49 +99,26 @@ class WanxiangCheckWork(
             .build()
     }
 
-    private fun fetchRemoteVersion(): String? = try {
-        val request = Request.Builder()
-            .url(ResourceUrls.WANXIANG_API_LATEST_RELEASE)
-            .header("User-Agent", ResourceUrls.USER_AGENT)
-            .get()
-            .build()
-        client.newCall(request).execute().use { response ->
-            if (response.isSuccessful) {
-                val content = response.body.string()
-                JSONObject(content).optString("tag_name", "").ifEmpty { null }
-            } else {
-                null
-            }
-        }
-    } catch (_: Exception) {
-        null
+    private suspend fun fetchRemoteVersion(source: String, token: String): String? {
+        val json = ResourceUrls.fetchReleaseJson(ResourceUrls.schemaApi(source), token, client)
+        return json?.optString("tag_name", "")?.ifEmpty { null }
     }
 
-    private fun fetchRemoteModelSha256(): String? = try {
-        val request = Request.Builder()
-            .url(ResourceUrls.WANXIANG_API_RIME_LMDG_TAGS_LTS)
-            .header("User-Agent", ResourceUrls.USER_AGENT)
-            .get()
-            .build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return null
-            val content = response.body.string()
-            val json = JSONObject(content)
-            val assets = json.getJSONArray("assets")
-            for (i in 0 until assets.length()) {
-                val asset = assets.getJSONObject(i)
-                if (asset.getString("name") == "wanxiang-lts-zh-hans.gram") {
-                    val digest = asset.optString("digest", "")
-                    return digest.removePrefix("sha256:")
-                }
-            }
-            null
-        }
-    } catch (_: Exception) {
-        null
+    private suspend fun fetchRemoteModelSha256(
+        source: String,
+        token: String,
+    ): Pair<String, String>? {
+        val json = ResourceUrls.fetchReleaseJson(ResourceUrls.modelApi(source), token, client) ?: return null
+        val asset = ResourceUrls.findAssetByName(json, "wanxiang-lts-zh-hans.gram", source) ?: return null
+        if (asset.sha256.isEmpty()) return null
+        return Pair(asset.sha256, asset.releaseUpdatedAt)
     }
 
-    private fun fetchRemoteDictSha256(sharedPref: android.content.SharedPreferences): String? {
+    private suspend fun fetchRemoteDictSha256(
+        sharedPref: android.content.SharedPreferences,
+        source: String,
+        token: String,
+    ): Pair<String, String>? {
         val isPro = sharedPref.getString(AppPrefs.Wanxiang.IS_PRO, "pro") ?: "pro"
         val auxScheme = sharedPref.getString(AppPrefs.Wanxiang.AUX_SCHEME, "zrm") ?: "zrm"
         val dictFile = when (isPro) {
@@ -137,30 +126,10 @@ class WanxiangCheckWork(
             "pure" -> "pure-dicts.zip"
             else -> "base-dicts.zip"
         }
-        return try {
-            val request = Request.Builder()
-                .url("https://api.github.com/repos/amzxyz/rime-wanxiang/releases/tags/dict-nightly")
-                .header("User-Agent", ResourceUrls.USER_AGENT)
-                .get()
-                .build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return null
-                val content = response.body.string()
-                val json = JSONObject(content)
-                val assets = json.getJSONArray("assets")
-                for (i in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(i)
-                    val name = asset.optString("name", "") ?: ""
-                    if (name == dictFile) {
-                        val digest = asset.optString("digest", "")
-                        return digest.removePrefix("sha256:")
-                    }
-                }
-                null
-            }
-        } catch (_: Exception) {
-            null
-        }
+        val json = ResourceUrls.fetchReleaseJson(ResourceUrls.dictApi(source), token, client) ?: return null
+        val asset = ResourceUrls.findAssetByName(json, dictFile, source) ?: return null
+        if (asset.sha256.isEmpty()) return null
+        return Pair(asset.sha256, asset.releaseUpdatedAt)
     }
 
     private fun showVersionNotification(remoteVersion: String, localVersion: String) {

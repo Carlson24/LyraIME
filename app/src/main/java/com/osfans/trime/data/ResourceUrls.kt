@@ -15,27 +15,102 @@ import java.util.concurrent.ConcurrentHashMap
 object ResourceUrls {
     const val USER_AGENT = "Mozilla/5.0"
 
-    // ---- Wanxiang API ----
-    const val WANXIANG_API_LATEST_RELEASE =
+    // ---- Wanxiang GitHub API ----
+    const val WANXIANG_GH_API_SCHEMA =
         "https://api.github.com/repos/amzxyz/rime-wanxiang/releases/latest"
-    const val WANXIANG_API_RIME_LMDG_TAGS_LTS =
+    const val WANXIANG_GH_API_DICT =
+        "https://api.github.com/repos/amzxyz/rime-wanxiang/releases/tags/dict-nightly"
+    const val WANXIANG_GH_API_MODEL =
         "https://api.github.com/repos/amzxyz/RIME-LMDG/releases/tags/LTS"
 
-    // ---- Wanxiang CNB downloads ----
-    const val WANXIANG_CNB_RELEASES_BASE =
-        "https://cnb.cool/amzxyz/rime-wanxiang/-/releases/download"
-    const val WANXIANG_CNB_DICTS_BASE =
-        "https://cnb.cool/amzxyz/rime-wanxiang/-/releases/download/v1.0.0"
-    const val WANXIANG_CNB_MODEL =
-        "https://cnb.cool/amzxyz/rime-wanxiang/-/releases/download/model/wanxiang-lts-zh-hans.gram"
+    // ---- Wanxiang CNB API ----
+    const val WANXIANG_CNB_API_SCHEMA =
+        "https://api.cnb.cool/amzxyz/rime-wanxiang/-/releases/latest"
+    const val WANXIANG_CNB_API_DICT =
+        "https://api.cnb.cool/amzxyz/rime-wanxiang/-/releases/tags/refs/tags/v1.0.0"
+    const val WANXIANG_CNB_API_MODEL =
+        "https://api.cnb.cool/amzxyz/rime-wanxiang/-/releases/tags/refs/tags/model"
 
-    // ---- Wanxiang GitHub downloads ----
-    const val WANXIANG_GITHUB_RELEASES_BASE =
-        "https://github.com/amzxyz/rime-wanxiang/releases/download"
-    const val WANXIANG_GITHUB_DICTS_BASE =
-        "https://github.com/amzxyz/rime-wanxiang/releases/download/dict-nightly"
-    const val WANXIANG_GITHUB_MODEL =
-        "https://github.com/amzxyz/RIME-LMDG/releases/download/LTS/wanxiang-lts-zh-hans.gram"
+    data class ReleaseAssetInfo(
+        val name: String,
+        val downloadUrl: String,
+        val sha256: String,
+        val releaseUpdatedAt: String,
+    )
+
+    fun schemaApi(source: String) = if (source == "CNB") WANXIANG_CNB_API_SCHEMA else WANXIANG_GH_API_SCHEMA
+    fun dictApi(source: String) = if (source == "CNB") WANXIANG_CNB_API_DICT else WANXIANG_GH_API_DICT
+    fun modelApi(source: String) = if (source == "CNB") WANXIANG_CNB_API_MODEL else WANXIANG_GH_API_MODEL
+
+    suspend fun fetchReleaseJson(
+        apiUrl: String,
+        token: String,
+        client: OkHttpClient,
+    ): JSONObject? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val req = Request.Builder()
+                    .url(apiUrl)
+                    .header("Accept", "application/json")
+                    .header("User-Agent", USER_AGENT)
+                    .apply { if (token.isNotEmpty()) header("Authorization", "Bearer $token") }
+                    .get()
+                    .build()
+                client.newCall(req).execute().use { response ->
+                    if (!response.isSuccessful) return@withContext null
+                    JSONObject(response.body.string())
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
+    fun findAssetByName(
+        json: JSONObject,
+        namePattern: String,
+        source: String,
+    ): ReleaseAssetInfo? {
+        val assets = json.optJSONArray("assets") ?: return null
+        val updatedAt = json.optString("updated_at", "")
+        for (i in 0 until assets.length()) {
+            val asset = assets.getJSONObject(i)
+            val name = asset.optString("name", "")
+            if (name == namePattern) {
+                val downloadUrl = asset.optString("browser_download_url", "")
+                if (downloadUrl.isEmpty()) continue
+                val sha256 = if (source == "CNB") {
+                    asset.optString("hash_value", "")
+                } else {
+                    asset.optString("digest", "").removePrefix("sha256:")
+                }
+                return ReleaseAssetInfo(name, downloadUrl, sha256, updatedAt)
+            }
+        }
+        return null
+    }
+
+    fun parseAllAssetsSha256(
+        json: JSONObject,
+        source: String,
+    ): Map<String, String> {
+        val assets = json.optJSONArray("assets") ?: return emptyMap()
+        val result = mutableMapOf<String, String>()
+        for (i in 0 until assets.length()) {
+            val asset = assets.getJSONObject(i)
+            val name = asset.optString("name", "")
+            if (name.isEmpty()) continue
+            val sha256 = if (source == "CNB") {
+                val hv = asset.optString("hash_value", "")
+                if (hv.isNotEmpty()) hv else continue
+            } else {
+                val digest = asset.optString("digest", "")
+                if (digest.isNotEmpty()) digest.removePrefix("sha256:") else continue
+            }
+            result[name] = sha256
+        }
+        return result
+    }
 
     // ---- Voice Model ----
     const val VOICE_MODEL_RELEASE_BASE =

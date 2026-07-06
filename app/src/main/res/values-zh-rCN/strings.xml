@@ -408,7 +408,8 @@
     <string name="wanxiang_reset_rules">恢复默认规则</string>
     <string name="wanxiang_download_source">下载源配置</string>
     <string name="wanxiang_github_token">GitHub Token（可选）</string>
-    <string name="wanxiang_cnb_token">CNB Token（可选）</string>
+    <string name="wanxiang_cnb_token">CNB Token（必需）</string>
+    <string name="wanxiang_cnb_token_required">CNB 下载源需要配置 Token，请先在设置中填入 CNB Token。</string>
     <string name="wanxiang_task_progress">任务进度</string>
     <string name="wanxiang_content_update_title">万象内容更新</string>
     <string name="wanxiang_content_update_text">词库或模型有更新可用</string>
@@ -422,7 +423,8 @@
     <string name="wanxiang_schema_only">方案</string>
     <string name="wanxiang_dict_only">词库</string>
     <string name="wanxiang_model_only">模型</string>
-    <string name="wanxiang_current_hash">当前资源哈希：%s</string>
+    <string name="wanxiang_last_updated_at">最后更新于：%s</string>
+    <string name="wanxiang_current_hash">资源哈希：%s</string>
     <string name="wanxiang_no_hash">(未更新)</string>
     <string name="wanxiang_custom_title">自定义更新</string>
     <string name="wanxiang_custom_desc">打勾并点击批量执行，或单独展开配置。本地文件与网络直链均支持。</string>
@@ -444,6 +446,7 @@
     <string name="wanxiang_rate_limit">GitHub API 速率限制，请稍后再试</string>
     <string name="wanxiang_model_check_failed">无法确认模型是否存在更新，是否继续？</string>
     <string name="wanxiang_model_up_to_date">模型无需更新</string>
+    <string name="wanxiang_dict_up_to_date">词库无需更新</string>
     <string name="wanxiang_continue_anyway">继续更新</string>
     <string name="wanxiang_default_name">未命名任务</string>
     <string name="wanxiang_default_short">未命名</string>

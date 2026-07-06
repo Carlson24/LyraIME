@@ -57,8 +57,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
@@ -194,7 +192,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                     isIconSpaceReserved = false
                     isSingleLineTitle = false
                     summaryProvider = Preference.SummaryProvider<SwitchPreferenceCompat> {
-                        buildHashSummary(prefs.lastDictSha256.getValue(), prefs.needsUpdateDict.getValue())
+                        buildHashSummary(prefs.lastDictSha256.getValue(), prefs.lastDictUpdatedAt.getValue(), prefs.needsUpdateDict.getValue())
                     }
                     setOnPreferenceChangeListener { _, newValue ->
                         prefs.checkDict.setValue(newValue as Boolean)
@@ -209,7 +207,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                     isIconSpaceReserved = false
                     isSingleLineTitle = false
                     summaryProvider = Preference.SummaryProvider<SwitchPreferenceCompat> {
-                        buildHashSummary(prefs.lastModelSha256.getValue(), prefs.needsUpdateModel.getValue())
+                        buildHashSummary(prefs.lastModelSha256.getValue(), prefs.lastModelUpdatedAt.getValue(), prefs.needsUpdateModel.getValue())
                     }
                     setOnPreferenceChangeListener { _, newValue ->
                         prefs.checkModel.setValue(newValue as Boolean)
@@ -245,15 +243,23 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         versionDisplayPref.summary = "$channelLabel ($variant) ($currentLocalVersion → $latestStableTag)"
     }
 
-    private fun buildHashSummary(sha: String, needsUpdate: Boolean): CharSequence {
-        val noHash = getString(R.string.wanxiang_no_hash)
-        if (sha.isEmpty()) return noHash
-        val hashFmt = getString(R.string.wanxiang_current_hash)
-        val text = String.format(hashFmt, sha.take(12))
-        val green = requireContext().getColor(com.osfans.trime.R.color.green)
-        val red = requireContext().getColor(com.osfans.trime.R.color.red)
+    private fun buildHashSummary(sha: String, updatedAt: String, needsUpdate: Boolean): CharSequence {
+        if (sha.isEmpty() && updatedAt.isEmpty()) return getString(R.string.wanxiang_no_hash)
+        val sb = StringBuilder()
+        if (updatedAt.isNotEmpty()) {
+            sb.append(getString(R.string.wanxiang_last_updated_at, updatedAt))
+            if (sha.isNotEmpty()) sb.append('\n')
+        }
+        if (sha.isNotEmpty()) {
+            sb.append(getString(R.string.wanxiang_current_hash, sha.take(12)))
+        }
+        val text = sb.toString()
+        if (text.isEmpty()) return getString(R.string.wanxiang_no_hash)
+        val color = requireContext().getColor(
+            if (needsUpdate) com.osfans.trime.R.color.red else com.osfans.trime.R.color.green,
+        )
         return SpannableString(text).apply {
-            setSpan(ForegroundColorSpan(if (needsUpdate) red else green), 0, length, 0)
+            setSpan(ForegroundColorSpan(color), 0, text.length, 0)
         }
     }
 
@@ -263,41 +269,16 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
     private fun fetchLatestVersionTag(notifyOnNew: Boolean = false) {
         lifecycleScope.launch {
-            var rateLimited = false
-            withContext(Dispatchers.IO) {
-                try {
-                    val request = Request.Builder()
-                        .url(ResourceUrls.WANXIANG_API_LATEST_RELEASE)
-                        .header("User-Agent", ResourceUrls.USER_AGENT)
-                        .get()
-                        .build()
-                    client.newCall(request).execute().use { response ->
-                        if (response.isSuccessful) {
-                            val content = response.body.string()
-                            val tag = JSONObject(content).optString("tag_name", "")
-                            if (tag.isNotEmpty()) latestStableTag = tag
-                        } else if (response.code in setOf(403, 429)) {
-                            val body = response.body.string()
-                            if (body.contains("rate limit", ignoreCase = true) || body.contains("API rate limit", ignoreCase = true)) {
-                                rateLimited = true
-                            }
-                        }
-                    }
-                } catch (_: Exception) {
-                }
-            }
+            val source = prefs.downloadSource.getValue()
+            val token = if (source == "CNB") prefs.cnbToken.getValue() else prefs.ghToken.getValue()
+            val json = ResourceUrls.fetchReleaseJson(ResourceUrls.schemaApi(source), token, client)
+            val tag = json?.optString("tag_name", "") ?: ""
+            if (tag.isNotEmpty()) latestStableTag = tag
             withContext(Dispatchers.Main) {
                 updateVersionDisplay()
                 val isNewer = compareVersions(latestStableTag, currentLocalVersion) > 0
                 if (notifyOnNew && isNewer) {
                     showUpdateNotification()
-                }
-                if (rateLimited) {
-                    android.widget.Toast.makeText(
-                        requireContext(),
-                        getString(R.string.wanxiang_rate_limit),
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
                 }
             }
         }
@@ -499,13 +480,6 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         prefs.deployTargets.setValue(saveDeployTargets(currentDeployTargets))
     }
 
-    private class DoExecuteCheck(
-        val expectedShas: MutableMap<String, String>,
-        val dictUpToDate: Boolean,
-        val modelUpToDate: Boolean,
-        val modelFetchFailed: Boolean,
-    )
-
     private suspend fun doExecuteSelected(targetPaths: List<String>) {
         val isPro = prefs.isPro.getValue()
         val auxScheme = prefs.auxScheme.getValue()
@@ -517,77 +491,107 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             "pure" -> "pure"
             else -> "base"
         }
-        val activeTag = if (downloadSource == "CNB") {
-            if (updateChannel == "Stable") latestStableTag else "v1.0.0"
+
+        val token = if (downloadSource == "CNB") {
+            prefs.cnbToken.getValue()
         } else {
-            if (updateChannel == "Stable") latestStableTag else "dict-nightly"
-        }
-        val baseUrl = if (downloadSource == "CNB") {
-            ResourceUrls.WANXIANG_CNB_RELEASES_BASE
-        } else {
-            ResourceUrls.WANXIANG_GITHUB_RELEASES_BASE
-        }
-        val dictBaseUrl = if (downloadSource == "CNB") {
-            ResourceUrls.WANXIANG_CNB_DICTS_BASE
-        } else {
-            ResourceUrls.WANXIANG_GITHUB_DICTS_BASE
-        }
-        val modelUrl = if (downloadSource == "CNB") {
-            ResourceUrls.WANXIANG_CNB_MODEL
-        } else {
-            ResourceUrls.WANXIANG_GITHUB_MODEL
+            prefs.ghToken.getValue()
         }
 
-        val urls = mutableListOf<String>()
-        if (prefs.checkSchema.getValue()) {
-            urls.add("$baseUrl/$activeTag/rime-wanxiang-$schemeStr${if (isPro == "pro") "-fuzhu" else ""}.zip")
-        }
-        val dictUrl = if (prefs.checkDict.getValue()) {
-            val dictPrefix = when (isPro) {
-                "pro" -> "pro-$schemeStr-fuzhu"
-                "pure" -> "pure"
-                else -> "base"
+        if (downloadSource == "CNB" && token.isEmpty()) {
+            withContext(Dispatchers.Main) {
+                requireContext().buildDialog()
+                    .setMessage(R.string.wanxiang_cnb_token_required)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
             }
-            "$dictBaseUrl/$dictPrefix-dicts.zip"
-        } else {
-            null
+            return
         }
+
+        val schemaApiUrl = if (updateChannel == "Stable") ResourceUrls.schemaApi(downloadSource) else ResourceUrls.dictApi(downloadSource)
+        val dictApiUrl = ResourceUrls.dictApi(downloadSource)
+        val modelApiUrl = ResourceUrls.modelApi(downloadSource)
+
+        val schemaAssetName = when (isPro) {
+            "pro" -> "rime-wanxiang-$schemeStr-fuzhu.zip"
+            else -> "rime-wanxiang-$schemeStr.zip"
+        }
+
+        val dictAssetName = when (isPro) {
+            "pro" -> "pro-$schemeStr-fuzhu-dicts.zip"
+            "pure" -> "pure-dicts.zip"
+            else -> "base-dicts.zip"
+        }
+
+        val modelAssetName = "wanxiang-lts-zh-hans.gram"
+
+        val checkSchema = prefs.checkSchema.getValue()
+        val checkDict = prefs.checkDict.getValue()
         val checkModel = prefs.checkModel.getValue()
 
-        val check = withContext(Dispatchers.IO) {
-            val shas = buildExpectedShaMap(schemeStr, isPro, updateChannel).toMutableMap()
+        val urls = mutableListOf<String>()
+        val expectedShas = mutableMapOf<String, String>()
+        var modelFetchFailed = false
+        var modelUpToDate = false
+        var dictUpToDate = false
 
-            var dictUpToDate = false
-            if (dictUrl != null) {
-                val dictFile = dictUrl.substringAfterLast("/")
-                val dictSha = shas[dictFile]
-                val dictStored = prefs.lastDictSha256.getValue()
-                dictUpToDate = dictSha != null && dictStored.isNotEmpty() && dictStored == dictSha
+        withContext(Dispatchers.IO) {
+            if (checkSchema) {
+                val schemaJson = ResourceUrls.fetchReleaseJson(schemaApiUrl, token, client)
+                val asset = schemaJson?.let { ResourceUrls.findAssetByName(it, schemaAssetName, downloadSource) }
+                if (asset != null && asset.downloadUrl.isNotEmpty()) {
+                    urls.add(asset.downloadUrl)
+                    expectedShas[asset.name] = asset.sha256
+                }
             }
 
-            var modelUpToDate = false
-            var modelFetchFailed = false
-            if (checkModel) {
-                val modelSha = fetchRemoteModelSha256()
-                if (modelSha != null) {
-                    modelUpToDate = prefs.lastModelSha256.getValue() == modelSha
-                    shas["wanxiang-lts-zh-hans.gram"] = modelSha
+            if (checkDict) {
+                val dictJson = ResourceUrls.fetchReleaseJson(dictApiUrl, token, client)
+                val asset = dictJson?.let { ResourceUrls.findAssetByName(it, dictAssetName, downloadSource) }
+                if (asset != null) {
+                    prefs.lastDictUpdatedAt.setValue(asset.releaseUpdatedAt)
+                    if (asset.downloadUrl.isNotEmpty()) {
+                        val storedSha = prefs.lastDictSha256.getValue()
+                        if (storedSha.isNotEmpty() && storedSha == asset.sha256) {
+                            dictUpToDate = true
+                        } else {
+                            urls.add(asset.downloadUrl)
+                        }
+                        expectedShas[asset.name] = asset.sha256
+                    }
+                }
+            }
+
+        if (checkDict && dictUpToDate) {
+            withContext(Dispatchers.Main) {
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    R.string.wanxiang_dict_up_to_date,
+                    android.widget.Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+
+        if (checkModel) {
+                val modelJson = ResourceUrls.fetchReleaseJson(modelApiUrl, token, client)
+                val asset = modelJson?.let { ResourceUrls.findAssetByName(it, modelAssetName, downloadSource) }
+                if (asset != null) {
+                    prefs.lastModelUpdatedAt.setValue(asset.releaseUpdatedAt)
+                    val storedSha = prefs.lastModelSha256.getValue()
+                    if (storedSha.isNotEmpty() && storedSha == asset.sha256) {
+                        modelUpToDate = true
+                    } else if (asset.downloadUrl.isNotEmpty()) {
+                        urls.add(asset.downloadUrl)
+                    }
+                    expectedShas[asset.name] = asset.sha256
                 } else {
                     modelFetchFailed = true
                 }
             }
-
-            DoExecuteCheck(shas, dictUpToDate, modelUpToDate, modelFetchFailed)
-        }
-
-        val expectedShas = check.expectedShas
-
-        if (dictUrl != null && !check.dictUpToDate) {
-            urls.add(dictUrl)
         }
 
         if (checkModel) {
-            if (check.modelFetchFailed) {
+            if (modelFetchFailed) {
                 val proceed = suspendCancellableCoroutine { cont ->
                     requireContext().buildDialog()
                         .setMessage(R.string.wanxiang_model_check_failed)
@@ -596,12 +600,8 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                         .setOnCancelListener { cont.resume(false) }
                         .show()
                 }
-                if (proceed) {
-                    urls.add(modelUrl)
-                } else {
-                    return
-                }
-            } else if (check.modelUpToDate) {
+                if (!proceed) return
+            } else if (modelUpToDate) {
                 withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(
                         requireContext(),
@@ -609,97 +609,12 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                         android.widget.Toast.LENGTH_SHORT,
                     ).show()
                 }
-            } else {
-                urls.add(modelUrl)
             }
         }
 
         if (urls.isEmpty()) return
-        val githubToken = if (downloadSource == "CNB") {
-            prefs.cnbToken.getValue()
-        } else {
-            prefs.ghToken.getValue()
-        }
         val rules = prefs.excludeRules.getValue().lines().filter { it.isNotBlank() }
-        val verifyShas = if (downloadSource == "GitHub") expectedShas else emptyMap<String, String>()
-        startDownload(urls, rules, githubToken, verifyShas, targetPaths)
-    }
-
-    private fun buildExpectedShaMap(
-        schemeStr: String,
-        isPro: String,
-        updateChannel: String,
-    ): Map<String, String> {
-        val result = mutableMapOf<String, String>()
-        val schemaTag = if (updateChannel == "Stable") latestStableTag else "dict-nightly"
-        val schemaFile = when (isPro) {
-            "pro" -> "rime-wanxiang-$schemeStr-fuzhu.zip"
-            else -> "rime-wanxiang-$schemeStr.zip"
-        }
-        val schemaAssets = fetchReleaseAssetsSha256(schemaTag)
-        schemaAssets[schemaFile]?.let { result[schemaFile] = it }
-        val dictFile = when (isPro) {
-            "pro" -> "pro-$schemeStr-fuzhu-dicts.zip"
-            "pure" -> "pure-dicts.zip"
-            else -> "base-dicts.zip"
-        }
-        val dictAssets = fetchReleaseAssetsSha256("dict-nightly")
-        dictAssets[dictFile]?.let { result[dictFile] = it }
-        return result
-    }
-
-    private fun fetchRemoteModelSha256(): String? {
-        return try {
-            val request = Request.Builder()
-                .url(ResourceUrls.WANXIANG_API_RIME_LMDG_TAGS_LTS)
-                .header("User-Agent", ResourceUrls.USER_AGENT)
-                .get()
-                .build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return null
-                val content = response.body.string()
-                val json = JSONObject(content)
-                val assets = json.getJSONArray("assets")
-                for (i in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(i)
-                    if (asset.getString("name") == "wanxiang-lts-zh-hans.gram") {
-                        val digest = asset.optString("digest", "")
-                        return digest.removePrefix("sha256:")
-                    }
-                }
-                null
-            }
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    private fun fetchReleaseAssetsSha256(tag: String): Map<String, String> {
-        return try {
-            val request = Request.Builder()
-                .url("https://api.github.com/repos/amzxyz/rime-wanxiang/releases/tags/$tag")
-                .header("User-Agent", ResourceUrls.USER_AGENT)
-                .get()
-                .build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return emptyMap()
-                val content = response.body.string()
-                val json = JSONObject(content)
-                val assets = json.getJSONArray("assets")
-                val result = mutableMapOf<String, String>()
-                for (i in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(i)
-                    val name = asset.optString("name", "") ?: ""
-                    val digest = asset.optString("digest", "")
-                    if (name.isNotEmpty() && digest.isNotEmpty()) {
-                        result[name] = digest.removePrefix("sha256:")
-                    }
-                }
-                result
-            }
-        } catch (_: Exception) {
-            emptyMap()
-        }
+        startDownload(urls, rules, token, expectedShas, targetPaths)
     }
 
     private fun startDownload(

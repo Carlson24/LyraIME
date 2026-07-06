@@ -410,7 +410,8 @@
     <string name="wanxiang_reset_rules">Restore Defaults</string>
     <string name="wanxiang_download_source">Download Source</string>
     <string name="wanxiang_github_token">GitHub Token (optional)</string>
-    <string name="wanxiang_cnb_token">CNB Token (optional)</string>
+    <string name="wanxiang_cnb_token">CNB Token (required)</string>
+    <string name="wanxiang_cnb_token_required">CNB source requires a token. Please configure a CNB token in settings.</string>
     <string name="wanxiang_task_progress">Task Progress</string>
     <string name="wanxiang_content_update_title">Wanxiang Content Update</string>
     <string name="wanxiang_content_update_text">Dict or model updates are available</string>
@@ -424,6 +425,7 @@
     <string name="wanxiang_schema_only">Schema</string>
     <string name="wanxiang_dict_only">Dict</string>
     <string name="wanxiang_model_only">Model</string>
+    <string name="wanxiang_last_updated_at">Last updated at: %s</string>
     <string name="wanxiang_current_hash">Resource hash: %s</string>
     <string name="wanxiang_no_hash">(not yet updated)</string>
     <string name="wanxiang_custom_title">Custom Update</string>
@@ -446,6 +448,7 @@
     <string name="wanxiang_rate_limit">GitHub API rate limit exceeded. Please try again later.</string>
     <string name="wanxiang_model_check_failed">Unable to verify model update. Continue anyway?</string>
     <string name="wanxiang_model_up_to_date">Model is up to date</string>
+    <string name="wanxiang_dict_up_to_date">Dict is up to date</string>
     <string name="wanxiang_continue_anyway">Continue</string>
     <string name="wanxiang_default_name">Unnamed Task</string>
     <string name="wanxiang_default_short">Unnamed</string>
