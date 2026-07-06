@@ -34,4 +34,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <color name="base">#1e1e2e</color>
     <color name="mantle">#181825</color>
     <color name="crust">#11111b</color>
+
+    <color name="testInputBackground">@color/base</color>
+    <color name="testInputStroke">@color/surface2</color>
+    <color name="testInputStrokeFocused">@color/blue</color>
 </resources>
