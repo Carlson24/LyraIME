@@ -82,3 +82,37 @@ val DefaultExcludeRules = listOf(
     """^installation\.yaml$""",
     """^sync/.*""",
 ).joinToString("\n")
+
+data class DeployTarget(
+    val path: String,
+    val enabled: Boolean = true,
+)
+
+fun loadDeployTargets(jsonStr: String): MutableList<DeployTarget> {
+    val list = mutableListOf<DeployTarget>()
+    try {
+        val array = JSONArray(jsonStr)
+        for (i in 0 until array.length()) {
+            val obj = array.getJSONObject(i)
+            list.add(
+                DeployTarget(
+                    path = obj.optString("path", ""),
+                    enabled = obj.optBoolean("enabled", true),
+                ),
+            )
+        }
+    } catch (_: Exception) {
+    }
+    return list
+}
+
+fun saveDeployTargets(targets: List<DeployTarget>): String {
+    val array = JSONArray()
+    targets.forEach {
+        val obj = JSONObject()
+        obj.put("path", it.path)
+        obj.put("enabled", it.enabled)
+        array.put(obj)
+    }
+    return array.toString()
+}

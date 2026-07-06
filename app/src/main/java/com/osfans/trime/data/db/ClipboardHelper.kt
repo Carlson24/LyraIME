@@ -106,6 +106,7 @@ object ClipboardHelper :
             .toSet()
     }
 
+    @Volatile
     var lastBean: DatabaseBean? = null
 
     private fun updateLastBean(bean: DatabaseBean) {

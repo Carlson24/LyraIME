@@ -296,6 +296,15 @@ class ClipboardWindow(
         setOnClickListener { showDeleteAllConfirm() }
     }
 
+    private val barUsageText = TextView(context).apply {
+        gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+        textSize = theme.generalStyle.clipboardCategoryTextSize
+        setPadding(dp(8), dp(4), dp(8), dp(4))
+        setTextColor(ColorManager.getColor("key_text_color"))
+        typeface = FontManager.getTypeface("clipboard_category_font")
+        fontFeatureSettings = FontManager.fontFeatureSettings
+    }
+
     private val barSelectButton = ImageButton(context).apply {
         setImageResource(R.drawable.ic_baseline_check_circle_24)
         imageTintList = android.content.res.ColorStateList.valueOf(ColorManager.getColor("key_text_color"))
@@ -430,9 +439,22 @@ class ClipboardWindow(
             if (pendingDeleteIds.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
+    private fun updateUsageText() {
+        val used = ClipboardHelper.itemCount
+        val limit = prefs.clipboardLimit.getValue()
+        barUsageText.text = "($used/$limit)"
+    }
+
+    private val usageCountListener = ClipboardHelper.OnClipboardUpdateListener {
+        barUsageText.post {
+            updateUsageText()
+        }
+    }
+
     private lateinit var stateMachine: ClipboardStateMachine
 
     override fun onAttached() {
+        updateUsageText()
         val isEmpty = ClipboardHelper.itemCount == 0
         val isListening = clipboardEnabledPref.getValue()
         val initialState = when {
@@ -458,9 +480,11 @@ class ClipboardWindow(
                 }
             }
         }
+        ClipboardHelper.addOnUpdateListener(usageCountListener)
     }
 
     override fun onDetached() {
+        ClipboardHelper.removeOnUpdateListener(usageCountListener)
         clipboardEnabledPref.unregisterOnChangeListener(clipboardEnabledListener)
         adapter.onDetached()
         adapterSubmitJob?.cancel()
@@ -481,8 +505,10 @@ class ClipboardWindow(
     override fun onCreateBarView(): View {
         val normalBar = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
         }
+        normalBar.addView(barUsageText)
+        normalBar.addView(View(context), LinearLayout.LayoutParams(0, 0, 1f))
         normalBar.addView(barUndoButton)
         normalBar.addView(barSelectButton)
         normalBar.addView(barSearchButton)

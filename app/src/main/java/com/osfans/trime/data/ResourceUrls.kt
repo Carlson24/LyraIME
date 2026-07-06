@@ -38,10 +38,39 @@ object ResourceUrls {
         "https://github.com/amzxyz/RIME-LMDG/releases/download/LTS/wanxiang-lts-zh-hans.gram"
 
     // ---- Voice Model ----
-    const val VOICE_MODEL_DOWNLOAD =
-        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-x-asr-480ms-streaming-zipformer-transducer-zh-en-punct-2026-06-05.tar.bz2"
-    const val VOICE_MODEL_INT8_DOWNLOAD =
-        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-x-asr-480ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05.tar.bz2"
+    const val VOICE_MODEL_RELEASE_BASE =
+        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models"
+    const val VOICE_MODEL_QNN_RELEASE_BASE =
+        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary"
+
+    fun buildVoiceModelUrl(
+        chunkMs: Int,
+        punct: Boolean,
+        variant: VoiceModelVariant,
+    ): String {
+        val punctSegment = if (punct) "-punct" else ""
+        return when (variant) {
+            VoiceModelVariant.INT8 ->
+                "$VOICE_MODEL_RELEASE_BASE/sherpa-onnx-x-asr-${chunkMs}ms-streaming-zipformer-transducer-zh-en$punctSegment-int8-2026-06-05.tar.bz2"
+            else ->
+                "$VOICE_MODEL_RELEASE_BASE/sherpa-onnx-x-asr-${chunkMs}ms-streaming-zipformer-transducer-zh-en$punctSegment-2026-06-05.tar.bz2"
+        }
+    }
+
+    fun buildQnnVoiceModelUrl(
+        soc: String,
+        chunkMs: Int,
+        punct: Boolean,
+    ): String {
+        val punctSegment = if (punct) "-punct" else ""
+        return "$VOICE_MODEL_QNN_RELEASE_BASE/sherpa-onnx-qnn-$soc-binary-x-asr-streaming-zipformer-transducer-zh-en$punctSegment-2026-06-05-chunk-size-${chunkMs}ms.tar.bz2"
+    }
+
+    enum class VoiceModelVariant {
+        STANDARD,
+        INT8,
+        QNN,
+    }
 
     // ---- QNN DSP Libraries (per SoC) ----
     // https://github.com/Carlson24/LyraIME/releases/tag/libQnnHtp
@@ -73,27 +102,19 @@ object ResourceUrls {
 
     // ---- Voice Model QNN Binary (per SOC) ----
     // https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models-qnn-binary
-    data class QnnModelEntry(val url: String)
-    val VOICE_MODEL_QNN_MAP: Map<String, QnnModelEntry> = mapOf(
-        "SM8450" to QnnModelEntry(
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8450-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-        ),
-        "SM8475" to QnnModelEntry(
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8475-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-        ),
-        "SM8550" to QnnModelEntry(
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8550-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-        ),
-        "SM8650" to QnnModelEntry(
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8650-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-        ),
-        "SM8750" to QnnModelEntry(
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8750-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-        ),
-        "SM8850" to QnnModelEntry(
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary/sherpa-onnx-qnn-SM8850-binary-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-480ms.tar.bz2",
-        ),
+    val QNN_SOC_SET: Set<String> = setOf(
+        "SM8450",
+        "SM8475",
+        "SM8550",
+        "SM8650",
+        "SM8750",
+        "SM8850",
     )
+
+    fun resolveQnnSoc(): String {
+        val soc = android.os.Build.SOC_MODEL
+        return if (soc in QNN_SOC_SET) soc else "SM8850"
+    }
 
     // ---- GitHub Release API URLs ----
     private const val RELEASE_API_K2FSA_SHERPA_ONNX =

@@ -129,7 +129,10 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     }
 
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == AppPrefs.VoiceInput.VOICE_MODEL_TYPE) {
+        if (key == AppPrefs.VoiceInput.VOICE_MODEL_TYPE ||
+            key == AppPrefs.VoiceInput.VOICE_CHUNK_SIZE ||
+            key == AppPrefs.VoiceInput.VOICE_PUNCT_MODEL
+        ) {
             refreshModelUi()
             refreshDspUi(
                 voiceInputPrefs.preferredVoiceInput.getValue() == InputMethodUtils.BUILTIN_VOICE_INPUT &&
@@ -285,14 +288,19 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     }
 
     private fun maybeConfirmThenDownload() {
+        val fileName = VoiceModelManager.getDownloadFileName()
         if (VoiceModelManager.checkModelFiles()) {
             requireContext().confirmDialog(
                 title = R.string.voice_model_exists_title,
-                message = R.string.voice_model_exists_re_download,
+                message = getString(R.string.voice_model_exists_re_download) + "\n\n" + fileName,
                 onConfirm = { startDownload() },
             )
         } else {
-            startDownload()
+            requireContext().confirmDialog(
+                title = R.string.voice_model_download_action,
+                message = fileName,
+                onConfirm = { startDownload() },
+            )
         }
     }
 

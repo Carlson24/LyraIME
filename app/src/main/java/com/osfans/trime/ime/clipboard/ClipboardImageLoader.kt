@@ -12,7 +12,6 @@ import com.osfans.trime.data.db.DatabaseBean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import kotlin.time.Duration.Companion.milliseconds
 
 suspend fun DatabaseBean.loadThumbnailBitmap(context: Context): Bitmap? {
     if (!isUriEntry() || !type.startsWith("image/")) return null
@@ -22,36 +21,31 @@ suspend fun DatabaseBean.loadThumbnailBitmap(context: Context): Bitmap? {
     }
 
     return withContext(Dispatchers.IO) {
-        repeat(3) { attempt ->
-            val bitmap = runCatching {
-                val resolver = context.contentResolver
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                resolver.openInputStream(originalUri)?.use { stream ->
-                    BitmapFactory.decodeStream(stream, null, bounds)
-                }
-                if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
-                    Timber.w("loadThumbnailBitmap: bounds invalid (${bounds.outWidth}x${bounds.outHeight})")
-                    return@runCatching null
-                }
-                val sampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, 192, 192)
-                val options = BitmapFactory.Options().apply {
-                    inSampleSize = sampleSize
-                    inPreferredConfig = Bitmap.Config.RGB_565
-                }
-                resolver.openInputStream(originalUri)?.use { stream ->
-                    BitmapFactory.decodeStream(stream, null, options)
-                }
-            }.getOrNull()
-            if (bitmap != null) {
-                return@withContext bitmap
+        runCatching {
+            val resolver = context.contentResolver
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            resolver.openInputStream(originalUri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, bounds)
             }
-            Timber.w("loadThumbnailBitmap: attempt ${attempt + 1} failed, retrying...")
-            if (attempt < 2) {
-                kotlinx.coroutines.delay((100L shl attempt).milliseconds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+                Timber.w("loadThumbnailBitmap: bounds invalid (${bounds.outWidth}x${bounds.outHeight})")
+                return@runCatching null
             }
-        }
-        Timber.e("loadThumbnailBitmap: all 3 attempts failed for URI: $originalUri")
-        null
+            val sampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, 192, 192)
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+                inPreferredConfig = Bitmap.Config.RGB_565
+            }
+            resolver.openInputStream(originalUri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, options)
+            }
+        }.onFailure { e ->
+            if (e is SecurityException) {
+                Timber.d("loadThumbnailBitmap: permission denied for URI: $originalUri")
+            } else {
+                Timber.w(e, "loadThumbnailBitmap: failed for URI: $originalUri")
+            }
+        }.getOrNull()
     }
 }
 

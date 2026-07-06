@@ -78,9 +78,6 @@ object SherpaSpeechClient {
 
     private const val SAMPLE_RATE = 16000
     private const val NOISE_THRESHOLD = 0.02f
-    private const val CHUNK_MS = 480
-    private const val CHUNK_SAMPLES = SAMPLE_RATE * CHUNK_MS / 1000
-    private const val CHUNK_BYTES = CHUNK_SAMPLES * 2
     private const val PARTIAL_EMIT_MIN_INTERVAL_MS = 120L
 
     @Volatile
@@ -320,7 +317,11 @@ object SherpaSpeechClient {
                     val fmt = AudioFormat.ENCODING_PCM_16BIT
                     val minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, ch, fmt)
 
-                    val bufSize = minBuf.coerceAtLeast(CHUNK_BYTES * 2)
+                    val chunkMs = AppPrefs.defaultInstance().voiceInput.voiceChunkSize.getValue().ms
+                    val chunkSamples = SAMPLE_RATE * chunkMs / 1000
+                    val chunkBytes = chunkSamples * 2
+
+                    val bufSize = minBuf.coerceAtLeast(chunkBytes * 2)
 
                     rec =
                         listOf(
@@ -339,7 +340,7 @@ object SherpaSpeechClient {
                     audioRecord = rec
                     rec.startRecording()
 
-                    val chunk = ByteArray(CHUNK_BYTES)
+                    val chunk = ByteArray(chunkBytes)
                     var notifiedRecordingStarted = false
 
                     var loopCounter = 0L
@@ -435,7 +436,7 @@ object SherpaSpeechClient {
 
                         if (engine != null && stream != null) {
                             try {
-                                val tailSamples = ((SAMPLE_RATE * 480 / 1000)).coerceAtLeast(1)
+                                val tailSamples = ((SAMPLE_RATE * chunkMs / 1000)).coerceAtLeast(1)
                                 val tail = FloatArray(tailSamples)
                                 stream.acceptWaveform(tail, SAMPLE_RATE)
                                 stream.inputFinished()

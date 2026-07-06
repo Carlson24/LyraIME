@@ -7,13 +7,14 @@ package com.osfans.trime.ime.bar.ui
 import android.content.Context
 import android.graphics.Bitmap
 import android.text.TextUtils
+import android.view.Gravity
 import android.view.View
 import androidx.core.net.toUri
 import com.osfans.trime.R
 import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.theme.ColorManager
-import com.osfans.trime.ime.keyboard.GestureFrame
 import com.osfans.trime.ime.clipboard.loadThumbnailBitmap
+import com.osfans.trime.ime.keyboard.GestureFrame
 import com.osfans.trime.util.rippleDrawable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,17 +23,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import splitties.dimensions.dp
 import splitties.resources.drawable
-import splitties.views.dsl.constraintlayout.after
-import splitties.views.dsl.constraintlayout.before
 import splitties.views.dsl.constraintlayout.centerInParent
-import splitties.views.dsl.constraintlayout.centerVertically
 import splitties.views.dsl.constraintlayout.constraintLayout
-import splitties.views.dsl.constraintlayout.endOfParent
 import splitties.views.dsl.constraintlayout.lParams
 import splitties.views.dsl.constraintlayout.matchConstraints
-import splitties.views.dsl.constraintlayout.startOfParent
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.add
+import splitties.views.dsl.core.horizontalLayout
 import splitties.views.dsl.core.imageView
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
@@ -73,38 +70,30 @@ class ClipboardSuggestionUi(
         }
 
     private val layout =
-        constraintLayout {
+        horizontalLayout {
             val spacing = dp(4)
+            gravity = Gravity.CENTER_VERTICAL
             add(
                 icon,
                 lParams(dp(20), dp(20)) {
-                    startOfParent(spacing)
-                    centerVertically()
+                    rightMargin = spacing
                 },
             )
             add(
                 imageView,
                 lParams(dp(32), dp(32)) {
-                    after(icon, spacing)
-                    before(text)
-                    centerVertically()
+                    rightMargin = spacing
                 },
             )
             add(
                 text,
                 lParams(wrapContent, wrapContent) {
-                    after(imageView, spacing)
-                    before(dismiss)
-                    centerVertically()
+                    rightMargin = spacing
                 },
             )
             add(
                 dismiss,
-                lParams(dp(20), dp(20)) {
-                    after(text, spacing)
-                    endOfParent(spacing)
-                    centerVertically()
-                },
+                lParams(dp(20), dp(20)),
             )
         }
 
@@ -128,7 +117,11 @@ class ClipboardSuggestionUi(
     private var thumbnailBitmap: Bitmap? = null
     private val scope = CoroutineScope(Dispatchers.Main)
 
+    var currentBean: DatabaseBean? = null
+        private set
+
     fun updateClipboardContent(bean: DatabaseBean?) {
+        currentBean = bean
         if (bean == null) {
             text.text = ""
             isImage = false
@@ -138,7 +131,7 @@ class ClipboardSuggestionUi(
         }
 
         isImage = bean.isUriEntry() && bean.type.startsWith("image/")
-        
+
         if (isImage) {
             loadThumbnail(bean)
         } else {

@@ -15,26 +15,23 @@ import java.io.File
 object VoiceModelManager {
     val voiceDir: File
         get() {
-            val sub = when (getSelectedVariant()) {
+            val prefs = AppPrefs.defaultInstance().voiceInput
+            val chunkMs = prefs.voiceChunkSize.getValue().ms
+            val punct = prefs.voicePunctModel.getValue()
+            val base = when (getSelectedVariant()) {
                 ModelVariant.INT8 -> "xasr-int8"
                 ModelVariant.QNN -> "xasr-qnn"
                 else -> "xasr"
             }
-            return File(DataManager.voiceDataDir, sub).also { it.mkdirs() }
+            val chunk = "${chunkMs}ms"
+            val sub = if (punct) "$chunk-punct" else chunk
+            return File(DataManager.voiceDataDir, base).let { File(it, sub).also { it.mkdirs() } }
         }
 
-    enum class ModelVariant(
-        val url: String,
-    ) {
-        STANDARD(ResourceUrls.VOICE_MODEL_DOWNLOAD),
-        INT8(ResourceUrls.VOICE_MODEL_INT8_DOWNLOAD),
-        QNN(""),
-    }
-
-    private fun resolveQnnModelEntry(): ResourceUrls.QnnModelEntry {
-        val soc = android.os.Build.SOC_MODEL
-        return ResourceUrls.VOICE_MODEL_QNN_MAP[soc]
-            ?: ResourceUrls.VOICE_MODEL_QNN_MAP["SM8850"]!!
+    enum class ModelVariant {
+        STANDARD,
+        INT8,
+        QNN,
     }
 
     fun getSelectedVariant(): ModelVariant {
@@ -46,22 +43,32 @@ object VoiceModelManager {
         }
     }
 
+    private fun voiceModelVariant(): ResourceUrls.VoiceModelVariant = when (getSelectedVariant()) {
+        ModelVariant.INT8 -> ResourceUrls.VoiceModelVariant.INT8
+        ModelVariant.QNN -> ResourceUrls.VoiceModelVariant.QNN
+        else -> ResourceUrls.VoiceModelVariant.STANDARD
+    }
+
+    fun getDownloadFileName(): String = getDownloadUrl().substringAfterLast('/')
+
     fun getDownloadUrl(): String {
-        if (getSelectedVariant() == ModelVariant.QNN) return resolveQnnModelEntry().url
-        return getSelectedVariant().url
+        val prefs = AppPrefs.defaultInstance().voiceInput
+        val chunkMs = prefs.voiceChunkSize.getValue().ms
+        val punct = prefs.voicePunctModel.getValue()
+        if (getSelectedVariant() == ModelVariant.QNN) {
+            return ResourceUrls.buildQnnVoiceModelUrl(ResourceUrls.resolveQnnSoc(), chunkMs, punct)
+        }
+        return ResourceUrls.buildVoiceModelUrl(chunkMs, punct, voiceModelVariant())
     }
 
     suspend fun getExpectedSha256(): String? {
-        if (getSelectedVariant() == ModelVariant.QNN) {
-            return ResourceUrls.GitHubAssetCache.getSha256(
-                resolveQnnModelEntry().url,
-                ResourceUrls.VOICE_MODEL_QNN_RELEASE_API,
-            )
+        val url = getDownloadUrl()
+        val api = if (getSelectedVariant() == ModelVariant.QNN) {
+            ResourceUrls.VOICE_MODEL_QNN_RELEASE_API
+        } else {
+            ResourceUrls.VOICE_MODEL_RELEASE_API
         }
-        return ResourceUrls.GitHubAssetCache.getSha256(
-            getSelectedVariant().url,
-            ResourceUrls.VOICE_MODEL_RELEASE_API,
-        )
+        return ResourceUrls.GitHubAssetCache.getSha256(url, api)
     }
 
     fun verifySha256(
@@ -91,7 +98,54 @@ object VoiceModelManager {
         val isQnn: Boolean = false,
     )
 
+    @Volatile
+    private var migrationDone = false
+
+    private fun ensureMigrated() {
+        if (migrationDone) return
+        synchronized(this) {
+            if (migrationDone) return
+            val voiceRoot = DataManager.voiceDataDir
+            val variants = listOf("xasr", "xasr-int8", "xasr-qnn")
+            for (variant in variants) {
+                val oldDir = File(voiceRoot, variant)
+                if (!oldDir.isDirectory) continue
+                val files = oldDir.listFiles { f ->
+                    f.isFile &&
+                        (
+                            f.nameWithoutExtension.startsWith("encoder") ||
+                                f.nameWithoutExtension.startsWith("decoder") ||
+                                f.nameWithoutExtension.startsWith("joiner") ||
+                                f.name == "tokens.txt" ||
+                                f.name == "bpe.model"
+                            )
+                } ?: continue
+                if (files.isEmpty()) continue
+                // Check whether already has chunk subdirectories
+                val subDirs = oldDir.listFiles { f ->
+                    f.isDirectory &&
+                        (f.name.endsWith("ms") || f.name.endsWith("ms-punct"))
+                }
+                if (subDirs != null && subDirs.isNotEmpty()) continue
+                val targetDir = File(oldDir, "480ms-punct")
+                targetDir.mkdirs()
+                for (f in files) {
+                    val dest = File(targetDir, f.name)
+                    if (f.renameTo(dest)) {
+                        Timber.i("Voice model migrated: $f -> $dest")
+                    } else {
+                        Timber.w("Voice model migrate failed: $f")
+                    }
+                }
+                // Clean up leftover non-directory files in oldDir
+                oldDir.listFiles { f -> f.isFile }?.forEach { it.delete() }
+            }
+            migrationDone = true
+        }
+    }
+
     fun resolveModelFiles(): ModelFiles? {
+        ensureMigrated()
         val dir = voiceDir
         if (!dir.isDirectory) return null
 

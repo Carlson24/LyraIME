@@ -19,6 +19,7 @@ import android.widget.ViewAnimator
 import android.widget.inline.InlineContentView
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.core.RimeMessage
@@ -60,7 +61,6 @@ import splitties.views.dsl.core.matchParent
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.milliseconds
-import androidx.core.net.toUri
 
 class InputBarDelegate : InputBroadcastReceiver {
     private val di = InputDependencyManager.getInstance().di
@@ -117,7 +117,13 @@ class InputBarDelegate : InputBroadcastReceiver {
     @Keep
     private val onClipboardUpdateListener = ClipboardHelper.OnClipboardUpdateListener {
         if (!clipboardSuggestion) return@OnClipboardUpdateListener
+        val dismissedUri = service.lastDismissedUri
+        if (dismissedUri != null && it.text == dismissedUri) {
+            service.lastDismissedUri = null
+            return@OnClipboardUpdateListener
+        }
         service.lifecycleScope.launch {
+            alwaysUi.clipboardUi.updateClipboardContent(it)
             if (it.text.isEmpty()) {
                 isClipboardFresh = false
             } else {
@@ -126,7 +132,6 @@ class InputBarDelegate : InputBroadcastReceiver {
             }
             evalAlwaysUiState()
         }
-        alwaysUi.clipboardUi.updateClipboardContent(ClipboardHelper.lastBean)
     }
 
     private fun launchClipboardTimeoutJob() {
@@ -172,11 +177,11 @@ class InputBarDelegate : InputBroadcastReceiver {
             }
             clipboardUi.suggestionView.apply {
                 setOnClickListener {
-                    val bean = ClipboardHelper.lastBean
+                    val bean = clipboardUi.currentBean
                     bean?.let {
                         if (it.isUriEntry() && it.type.startsWith("image/")) {
                             val uri = it.text.toUri()
-                            service.commitImage(uri, it.type)
+                            service.commitImage(uri, it.type, updateClipboard = false)
                         } else {
                             val content = it.text
                             content.let { text -> service.commitText(text) }
@@ -198,6 +203,7 @@ class InputBarDelegate : InputBroadcastReceiver {
     }
 
     private fun dismissClipboardSuggestion() {
+        service.lastDismissedUri = ClipboardHelper.lastBean?.text
         clipboardTimeoutJob?.cancel()
         clipboardTimeoutJob = null
         isClipboardFresh = false

@@ -41,8 +41,10 @@ class VoiceModelDownloadActivity : ComponentActivity() {
             return
         }
 
+        val message = getString(R.string.voice_model_missing_message) +
+            "\n\n" + VoiceModelManager.getDownloadFileName()
         buildDialog(R.string.voice_model_missing_title)
-            .setMessage(R.string.voice_model_missing_message)
+            .setMessage(message)
             .setPositiveButton(R.string.voice_model_download) { _, _ ->
                 startDownload()
             }

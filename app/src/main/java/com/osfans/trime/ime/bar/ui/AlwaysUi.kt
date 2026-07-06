@@ -64,8 +64,8 @@ class AlwaysUi(
     val buttonsUi = ButtonsBarUi(ctx, theme, onButtonClick)
 
     val clipboardUi: ClipboardSuggestionUi = ClipboardSuggestionUi(ctx).apply {
-            updateClipboardContent(ClipboardHelper.lastBean)
-        }
+        updateClipboardContent(ClipboardHelper.lastBean)
+    }
 
     val inlineSuggestionsUi = InlineSuggestionsUi(ctx)
 

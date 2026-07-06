@@ -36,6 +36,7 @@ object BackupManager {
         AppPrefs.Profile.WEBDAV_PASSWORD,
         AppPrefs.Clipboard.SYNC_CLIPBOARD_PASSWORD,
         AppPrefs.Wanxiang.GH_TOKEN,
+        AppPrefs.Wanxiang.CNB_TOKEN,
     )
 
     fun computeSettingsFingerprint(): String {

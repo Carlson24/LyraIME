@@ -7,6 +7,8 @@ package com.osfans.trime.ime.core
 
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.content.ClipData
+import android.content.ClipDescription
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -30,6 +32,8 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.InlineSuggestionsRequest
 import android.view.inputmethod.InlineSuggestionsResponse
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputContentInfo
 import android.widget.FrameLayout
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
@@ -64,16 +68,16 @@ import com.osfans.trime.util.styledFloat
 import com.osfans.trime.util.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import splitties.bitflags.hasFlag
 import splitties.systemservices.clipboardManager
 import splitties.systemservices.inputMethodManager
 import timber.log.Timber
-import android.content.ClipData
-import android.graphics.BitmapFactory
 
 /** [輸入法][InputMethodService]主程序  */
 
@@ -96,6 +100,9 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private val rimeIntentReceiver = RimeIntentReceiver()
 
     private var lastCommittedText: String = ""
+
+    @Volatile
+    var lastDismissedUri: String? = null
 
     private var composingText: String = ""
     private var cursorComposingText: String = ""
@@ -657,35 +664,44 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     fun commitImage(
         uri: Uri,
         mimeType: String,
+        updateClipboard: Boolean = true,
     ) {
         val ic = currentInputConnection ?: return
 
-        try {
-            val contentResolver = contentResolver
-            val inputStream = contentResolver.openInputStream(uri)
-            if (inputStream != null) {
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                if (bitmap != null) {
-                    val clipData = ClipData.newUri(contentResolver, "Image", uri)
-                    val clipboard = clipboardManager
-                    clipboard.setPrimaryClip(clipData)
-                    if (!ic.performContextMenuAction(android.R.id.paste)) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                var success = false
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+                    val desc = ClipDescription("Image", arrayOf(mimeType))
+                    val info = InputContentInfo(uri, desc)
+                    success = ic.commitContent(info, InputConnection.INPUT_CONTENT_GRANT_READ_URI_PERMISSION, null)
+                }
+                if (!success) {
+                    if (updateClipboard) {
+                        lastDismissedUri = uri.toString()
+                        val clipData = ClipData.newRawUri("Image", uri)
+                        clipboardManager.setPrimaryClip(clipData)
+                    }
+                    success = ic.performContextMenuAction(android.R.id.paste)
+                }
+                if (!success) {
+                    withContext(Dispatchers.Main) {
                         toast(R.string.image_paste_failed)
-                    } else {
-                        lastCommittedText = uri.toString()
-                        composingText = ""
-                        cursorComposingText = ""
-                        InputFeedbackManager.textCommitSpeak(uri.toString())
                     }
                 } else {
+                    lastCommittedText = uri.toString()
+                    composingText = ""
+                    cursorComposingText = ""
+                    withContext(Dispatchers.Main) {
+                        InputFeedbackManager.textCommitSpeak(uri.toString())
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to paste image from URI")
+                withContext(Dispatchers.Main) {
                     toast(R.string.image_paste_failed)
                 }
-            } else {
-                toast(R.string.image_paste_failed)
             }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to paste image from URI")
-            toast(R.string.image_paste_failed)
         }
     }
 

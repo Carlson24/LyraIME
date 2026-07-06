@@ -183,6 +183,8 @@ class AppPrefs(
             const val VOICE_MODEL_TYPE = "voice_model_type"
             const val VOICE_NUM_THREADS = "voice_num_threads"
             const val VOICE_SENSITIVITY = "voice_sensitivity"
+            const val VOICE_CHUNK_SIZE = "voice_chunk_size"
+            const val VOICE_PUNCT_MODEL = "voice_punct_model"
         }
 
         enum class VoiceAnimationStyle(override val stringRes: Int) : PreferenceDelegateEnum {
@@ -194,6 +196,13 @@ class AppPrefs(
             STANDARD(R.string.voice_model_type_standard),
             INT8(R.string.voice_model_type_int8),
             QNN(R.string.voice_model_type_qnn),
+        }
+
+        enum class VoiceChunkSize(override val stringRes: Int, val ms: Int) : PreferenceDelegateEnum {
+            CHUNK_160(R.string.voice_chunk_size_160, 160),
+            CHUNK_480(R.string.voice_chunk_size_480, 480),
+            CHUNK_960(R.string.voice_chunk_size_960, 960),
+            CHUNK_1920(R.string.voice_chunk_size_1920, 1920),
         }
 
         val asrkbAidlVoiceInputEnabled = switch(
@@ -236,6 +245,19 @@ class AppPrefs(
             5,
             1,
             10,
+            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
+        )
+        val voiceChunkSize = enum(
+            R.string.voice_chunk_size,
+            VOICE_CHUNK_SIZE,
+            VoiceChunkSize.CHUNK_480,
+            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
+        )
+        val voicePunctModel = switch(
+            R.string.voice_punct_model,
+            VOICE_PUNCT_MODEL,
+            true,
+            R.string.voice_punct_model_summary,
             enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
     }
@@ -757,9 +779,20 @@ class AppPrefs(
             const val AUX_SCHEME = "wanxiang_aux_scheme"
             const val DOWNLOAD_SOURCE = "wanxiang_download_source"
             const val GH_TOKEN = "wanxiang_gh_token"
+            const val CNB_TOKEN = "wanxiang_cnb_token"
             const val EXCLUDE_RULES = "wanxiang_exclude_rules"
             const val AUTO_CHECK = "wanxiang_auto_check"
             const val CHECK_INTERVAL = "wanxiang_check_interval"
+            const val CHECK_SCHEMA = "wanxiang_check_schema"
+            const val CHECK_DICT = "wanxiang_check_dict"
+            const val CHECK_MODEL = "wanxiang_check_model"
+            const val LAST_SCHEMA_SHA256 = "wanxiang_last_schema_sha256"
+            const val LAST_DICT_SHA256 = "wanxiang_last_dict_sha256"
+            const val LAST_MODEL_SHA256 = "wanxiang_last_model_sha256"
+            const val NEEDS_UPDATE_SCHEMA = "wanxiang_needs_update_schema"
+            const val NEEDS_UPDATE_DICT = "wanxiang_needs_update_dict"
+            const val NEEDS_UPDATE_MODEL = "wanxiang_needs_update_model"
+            const val DEPLOY_TARGETS = "wanxiang_deploy_targets"
         }
 
         val updateChannel = list(
@@ -806,7 +839,15 @@ class AppPrefs(
             R.string.wanxiang_github_token,
             GH_TOKEN,
             "",
+            password = true,
             enableUiOn = { downloadSource.getValue() == "GitHub" },
+        )
+        val cnbToken = editText(
+            R.string.wanxiang_cnb_token,
+            CNB_TOKEN,
+            "",
+            password = true,
+            enableUiOn = { downloadSource.getValue() == "CNB" },
         )
         val autoCheck = switch(R.string.wanxiang_auto_check, AUTO_CHECK, false)
         val checkInterval = int(
@@ -828,5 +869,15 @@ class AppPrefs(
             },
             summaryCountFormat = R.string.wanxiang_exclude_rules_count,
         )
+        val checkSchema = bool(CHECK_SCHEMA, true)
+        val checkDict = bool(CHECK_DICT, true)
+        val checkModel = bool(CHECK_MODEL, false)
+        val lastSchemaSha256 = string(LAST_SCHEMA_SHA256, "")
+        val lastDictSha256 = string(LAST_DICT_SHA256, "")
+        val lastModelSha256 = string(LAST_MODEL_SHA256, "")
+        val needsUpdateSchema = bool(NEEDS_UPDATE_SCHEMA, false)
+        val needsUpdateDict = bool(NEEDS_UPDATE_DICT, false)
+        val needsUpdateModel = bool(NEEDS_UPDATE_MODEL, false)
+        val deployTargets = string(DEPLOY_TARGETS, "")
     }
 }
