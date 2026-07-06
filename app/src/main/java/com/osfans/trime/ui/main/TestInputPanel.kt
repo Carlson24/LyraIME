@@ -46,8 +46,8 @@ constructor(
 
     private data class InputTypeOption(
         val pill: TextView,
-        @StringRes val hintRes: Int,
-        @DrawableRes val iconRes: Int,
+        @field:StringRes val hintRes: Int,
+        @field:DrawableRes val iconRes: Int,
         val inputType: Int,
     )
 
@@ -227,7 +227,7 @@ constructor(
 
         if (showIme) {
             binding.testInput.requestFocus()
-            inputMethodManager.showSoftInput(binding.testInput, InputMethodManager.SHOW_IMPLICIT)
+            inputMethodManager.showSoftInput(binding.testInput, 0)
         }
     }
 

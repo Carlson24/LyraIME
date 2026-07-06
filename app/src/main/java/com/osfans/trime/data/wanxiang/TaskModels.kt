@@ -27,7 +27,7 @@ data class CustomTask(
     val id: String,
     val name: String = "",
     val url: String = "",
-    val boundPath: String = "DEFAULT",
+    val boundPaths: List<String> = emptyList(),
     val isSelected: Boolean = false,
     val isExpanded: Boolean = true,
     val needsDecompress: Boolean = true,
@@ -44,7 +44,14 @@ fun loadCustomTasks(jsonStr: String): MutableList<CustomTask> {
                     id = obj.optString("id", UUID.randomUUID().toString()),
                     name = obj.optString("name", ""),
                     url = obj.optString("url", ""),
-                    boundPath = obj.optString("boundPath", "DEFAULT"),
+                    boundPaths = run {
+                        val arr = obj.optJSONArray("boundPaths")
+                        if (arr != null) {
+                            (0 until arr.length()).map { arr.getString(it) }
+                        } else {
+                            emptyList()
+                        }
+                    },
                     isSelected = obj.optBoolean("isSelected", false),
                     isExpanded = obj.optBoolean("isExpanded", true),
                     needsDecompress = obj.optBoolean("needsDecompress", true),
@@ -63,7 +70,9 @@ fun saveCustomTasks(tasks: List<CustomTask>, sharedPref: SharedPreferences) {
         obj.put("id", it.id)
         obj.put("name", it.name)
         obj.put("url", it.url)
-        obj.put("boundPath", it.boundPath)
+        val pathsArr = JSONArray()
+        it.boundPaths.forEach { pathsArr.put(it) }
+        obj.put("boundPaths", pathsArr)
         obj.put("isSelected", it.isSelected)
         obj.put("isExpanded", it.isExpanded)
         obj.put("needsDecompress", it.needsDecompress)

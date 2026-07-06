@@ -165,12 +165,8 @@ class MainActivity : AppCompatActivity() {
                 isVisible = it
             }
             viewModel.toolbarEditButtonIcon.observe(this@MainActivity) { icon ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    setIcon(icon)
-                    iconTintList = null
-                } else {
-                    setIcon(ContextCompat.getDrawable(this@MainActivity, icon))
-                }
+                setIcon(icon)
+                iconTintList = null
             }
         }
         menu.item(R.string.delete, R.drawable.ic_baseline_delete_24, showAsAction = true) {
@@ -180,12 +176,8 @@ class MainActivity : AppCompatActivity() {
                 isVisible = it != null
             }
             viewModel.toolbarDeleteButtonIcon.observe(this@MainActivity) { icon ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    setIcon(icon)
-                    iconTintList = null
-                } else {
-                    setIcon(ContextCompat.getDrawable(this@MainActivity, icon))
-                }
+                setIcon(icon)
+                iconTintList = null
             }
         }
         menu.forEach { item ->
@@ -196,7 +188,7 @@ class MainActivity : AppCompatActivity() {
             menu.item(
                 R.string.show_test_input,
                 R.drawable.ic_baseline_keyboard_24,
-                iconTint = ContextCompat.getColor(this, R.color.toolbarForegroundColor),
+                iconTint = ContextCompat.getColor(this, R.color.base),
                 showAsAction = true,
             ) {
                 activityBinding.testInputPanel.showExpanded()

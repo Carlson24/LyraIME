@@ -98,6 +98,7 @@ object ColorManager {
             "clipboard_category_selected_back_color" to "hilited_candidate_back_color",
             "clipboard_category_selected_text_color" to "hilited_candidate_text_color",
             "clipboard_entry_back_color" to "key_back_color",
+            "hilited_clipboard_entry_back_color" to "hilited_candidate_back_color",
             "clipboard_checkbox_color" to "key_text_color",
         )
 

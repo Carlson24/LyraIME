@@ -438,6 +438,8 @@
     <string name="wanxiang_target_path">Target Path</string>
     <string name="wanxiang_must_decompress">Decompress</string>
     <string name="wanxiang_delete_task">Delete Task</string>
+    <string name="wanxiang_delete_task_confirm">Delete this task?</string>
+    <string name="wanxiang_delete_path_confirm">Remove this path?</string>
     <string name="wanxiang_execute_task">Execute</string>
     <string name="wanxiang_batch_delete">Batch Delete</string>
     <string name="wanxiang_batch_delete_confirm">Confirm deletion of %d selected task(s)?</string>

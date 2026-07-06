@@ -6,11 +6,9 @@
 package com.osfans.trime.ime.clipboard
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.RippleDrawable
+import android.graphics.drawable.StateListDrawable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextUtils
@@ -134,20 +132,26 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme) : Ui
     override val root = GestureFrame(ctx).apply {
         isClickable = true
         minimumHeight = dp(30)
-        foreground = RippleDrawable(
-            ColorStateList.valueOf(ColorManager.getColor("key_text_color")),
-            null,
-            GradientDrawable().apply {
-                cornerRadius = theme.generalStyle.roundCorner
-                setColor(Color.WHITE)
-            },
-        )
-        background = ColorManager.getDecorDrawable(
-            "clipboard_entry_back_color",
-            "key_border_color",
-            dp(theme.generalStyle.keyBorder),
-            dp(theme.generalStyle.roundCorner),
-        )
+        background = StateListDrawable().apply {
+            addState(
+                intArrayOf(android.R.attr.state_pressed),
+                ColorManager.getDecorDrawable(
+                    "hilited_clipboard_entry_back_color",
+                    "key_border_color",
+                    dp(theme.generalStyle.keyBorder),
+                    dp(theme.generalStyle.roundCorner),
+                ),
+            )
+            addState(
+                intArrayOf(),
+                ColorManager.getDecorDrawable(
+                    "clipboard_entry_back_color",
+                    "key_border_color",
+                    dp(theme.generalStyle.keyBorder),
+                    dp(theme.generalStyle.roundCorner),
+                ),
+            )
+        }
         add(layout, lParams(matchParent, matchParent))
         add(
             checkbox,

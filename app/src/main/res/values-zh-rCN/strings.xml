@@ -436,6 +436,8 @@
     <string name="wanxiang_target_path">目标路径</string>
     <string name="wanxiang_must_decompress">需要解压</string>
     <string name="wanxiang_delete_task">删除任务</string>
+    <string name="wanxiang_delete_task_confirm">确认删除此任务？</string>
+    <string name="wanxiang_delete_path_confirm">确认移除此路径？</string>
     <string name="wanxiang_execute_task">执行此任务</string>
     <string name="wanxiang_batch_delete">批量删除</string>
     <string name="wanxiang_batch_delete_confirm">确认删除 %d 个已选任务？</string>

@@ -12,6 +12,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.text.InputType
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -24,12 +25,14 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.ColorRes
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
-import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.wanxiang.CustomTask
 import com.osfans.trime.data.wanxiang.DownloadManager
 import com.osfans.trime.data.wanxiang.TaskState
@@ -60,7 +63,9 @@ class CustomTasksFragment : Fragment() {
             pendingPathTaskId?.let { taskId ->
                 val idx = customTasks.indexOfFirst { it.id == taskId }
                 if (idx >= 0) {
-                    customTasks[idx] = customTasks[idx].copy(boundPath = pathStr)
+                    customTasks[idx] = customTasks[idx].copy(
+                        boundPaths = customTasks[idx].boundPaths + pathStr,
+                    )
                     saveAndRefresh()
                 }
             }
@@ -281,11 +286,11 @@ class CustomTasksFragment : Fragment() {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply { bottomMargin = 12.dp() }
             orientation = LinearLayout.VERTICAL
-            setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
+            setPadding(16.dp(), 12.dp(), 12.dp(), 12.dp())
             val borderColor = if (task.isSelected) color(R.color.blue) else color(R.color.surface0)
             background = GradientDrawable().apply {
                 setStroke(1.dp(), borderColor)
-                cornerRadius = 4.dp().toFloat()
+                cornerRadius = 8.dp().toFloat()
             }
         }
 
@@ -298,48 +303,56 @@ class CustomTasksFragment : Fragment() {
             )
         }
 
-        val checkBox = TextView(ctx).apply {
-            textSize = 12f
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(20.dp(), 20.dp()).apply { marginEnd = 12.dp() }
-            val accent = accentColor(ctx)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = (4 * ctx.resources.displayMetrics.density)
-                if (task.isSelected) {
-                    setColor(accent)
-                } else {
-                    setColor(Color.argb(0x18, Color.red(accent), Color.green(accent), Color.blue(accent)))
-                    setStroke(2.dp(), accent)
-                }
-            }
-            text = if (task.isSelected) "✓" else ""
-            setTextColor(if (task.isSelected) color(android.R.color.white) else accent)
+        val selectRes = if (task.isSelected) R.drawable.ic_baseline_check_circle_24 else R.drawable.ic_baseline_deselect_24
+        val selectBtn = makeIconBtn(ctx, selectRes, 24.dp()).apply {
             setOnClickListener {
                 customTasks[index] = customTasks[index].copy(isSelected = !customTasks[index].isSelected)
                 saveAndRefresh()
             }
         }
-        header.addView(checkBox)
+        header.addView(selectBtn)
 
         val titleView = TextView(ctx).apply {
             text = task.name.ifBlank { getString(R.string.wanxiang_default_name) }
             textSize = 14f
-            setTextColor(if (task.isSelected) color(R.color.text) else color(R.color.subtext0))
-            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-        }
-        val toggleView = TextView(ctx).apply {
-            text = if (task.isExpanded) "▲" else "▼"
-            textSize = 12f
-            setTextColor(color(R.color.surface2))
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(color(R.color.text))
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = 8.dp()
+            }
         }
         header.addView(titleView)
-        header.addView(toggleView)
 
         header.setOnClickListener {
             customTasks[index] = customTasks[index].copy(isExpanded = !customTasks[index].isExpanded)
             saveAndRefresh()
         }
+
+        val expandRes = if (task.isExpanded) R.drawable.ic_baseline_expand_less_24 else R.drawable.ic_baseline_expand_more_24
+        header.addView(
+            makeIconBtn(ctx, expandRes, 20.dp()).apply {
+                layoutParams = (layoutParams as LinearLayout.LayoutParams).apply { marginStart = 4.dp() }
+                setOnClickListener {
+                    customTasks[index] = customTasks[index].copy(isExpanded = !customTasks[index].isExpanded)
+                    saveAndRefresh()
+                }
+            },
+        )
+
+        val deleteBtn = makeIconBtn(ctx, R.drawable.ic_baseline_outline_cancel_24, 20.dp()).apply {
+            layoutParams = (layoutParams as LinearLayout.LayoutParams).apply { marginStart = 4.dp() }
+            setOnClickListener {
+                AlertDialog.Builder(ctx)
+                    .setMessage(R.string.wanxiang_delete_task_confirm)
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        customTasks.removeAt(index)
+                        saveAndRefresh()
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            }
+        }
+        header.addView(deleteBtn)
 
         card.addView(header)
 
@@ -349,6 +362,18 @@ class CustomTasksFragment : Fragment() {
 
         return card
     }
+    private fun makeIconBtn(ctx: Context, iconRes: Int, size: Int): AppCompatImageButton =
+        AppCompatImageButton(ctx).apply {
+            val drawable = DrawableCompat.wrap(ContextCompat.getDrawable(ctx, iconRes)!!.mutate())
+            DrawableCompat.setTint(drawable, color(R.color.text))
+            setImageDrawable(drawable)
+            val bg = android.util.TypedValue()
+            ctx.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, bg, true)
+            setBackgroundResource(bg.resourceId)
+            val pad = (ctx.resources.displayMetrics.density * 4).toInt()
+            setPadding(pad, pad, pad, pad)
+            layoutParams = LinearLayout.LayoutParams(size, size)
+        }
 
     private fun createExpandedContent(index: Int, task: CustomTask): View {
         val ctx = requireContext()
@@ -382,50 +407,84 @@ class CustomTasksFragment : Fragment() {
         content.addView(urlInput)
 
         content.addView(makeLabel(ctx, getString(R.string.wanxiang_target_path)))
-        val pathLabel = if (task.boundPath == "DEFAULT") {
-            DataManager.userDataDir.absolutePath + " (Default)"
-        } else {
-            getString(R.string.wanxiang_auth_prefix) + Uri.decode(task.boundPath).substringAfterLast(":")
+
+        val pathsContainer = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
         }
-        val pathRow = LinearLayout(ctx).apply {
+
+            fun rebuildPaths() {
+                pathsContainer.removeAllViews()
+                for ((i, path) in customTasks[index].boundPaths.withIndex()) {
+                val row = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ).apply { bottomMargin = 4.dp() }
+                    background = GradientDrawable().apply {
+                        setStroke(1.dp(), listDividerColor(ctx))
+                        cornerRadius = 4.dp().toFloat()
+                    }
+                    setPadding(8.dp(), 4.dp(), 4.dp(), 4.dp())
+                }
+                val pathView = TextView(ctx).apply {
+                    text = uriToDisplayPath(path)
+                    textSize = 12f
+                    setTextColor(color(R.color.text))
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                }
+                row.addView(pathView)
+                row.addView(
+                    makeIconBtn(ctx, R.drawable.ic_baseline_outline_cancel_24, 18.dp()).apply {
+                        layoutParams = (layoutParams as LinearLayout.LayoutParams).apply { marginStart = 4.dp() }
+                        setOnClickListener {
+                            AlertDialog.Builder(ctx)
+                                .setMessage(R.string.wanxiang_delete_path_confirm)
+                                .setPositiveButton(android.R.string.ok) { _, _ ->
+                                    val paths = task.boundPaths.toMutableList()
+                                    paths.removeAt(i)
+                                    customTasks[index] = customTasks[index].copy(boundPaths = paths)
+                                    saveCustomTasks(customTasks, sharedPref)
+                                    rebuildPaths()
+                                }
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .show()
+                        }
+                    },
+                )
+                pathsContainer.addView(row)
+            }
+        }
+        rebuildPaths()
+        content.addView(pathsContainer)
+
+        val addPathRow = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            )
+                38.dp(),
+            ).apply { topMargin = 4.dp() }
         }
-        val pathView = EditText(ctx).apply {
-            setText(pathLabel)
-            isEnabled = false
+        val addBtn = Button(ctx).apply {
+            text = getString(R.string.wanxiang_deploy_add)
             textSize = 12f
-            layoutParams = LinearLayout.LayoutParams(0, 38.dp(), 1f)
             background = GradientDrawable().apply {
-                setStroke(1.dp(), listDividerColor(ctx))
-                cornerRadius = 4.dp().toFloat()
+                setColor(colorPrimaryColor(ctx))
+                cornerRadius = 6.dp().toFloat()
             }
-            setPadding(10.dp(), 0, 10.dp(), 0)
-        }
-        pathRow.addView(pathView)
-
-        val configBtn = Button(ctx).apply {
-            text = getString(R.string.wanxiang_configure_path)
-            textSize = 12f
-            setBackgroundColor(colorPrimaryColor(ctx))
             setTextColor(color(android.R.color.white))
             gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                38.dp(),
-            ).apply { marginStart = 8.dp() }
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
             setOnClickListener {
                 pendingPathTaskId = task.id
                 dirPickerLauncher.launch(null)
             }
         }
-        pathRow.addView(configBtn)
-        content.addView(pathRow)
+        addPathRow.addView(addBtn)
+        content.addView(addPathRow)
 
-        val decompressRow = LinearLayout(ctx).apply {
+        val actionRow = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -433,17 +492,10 @@ class CustomTasksFragment : Fragment() {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply { topMargin = 10.dp() }
         }
-        val decompressLabel = TextView(ctx).apply {
-            text = getString(R.string.wanxiang_must_decompress)
-            textSize = 13f
-            setTextColor(color(R.color.text))
-            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-        }
-        decompressRow.addView(decompressLabel)
         val decompressCheck = TextView(ctx).apply {
             textSize = 13f
             gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(24.dp(), 24.dp()).apply { marginStart = 8.dp() }
+            layoutParams = LinearLayout.LayoutParams(24.dp(), 24.dp())
             val accent = accentColor(ctx)
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
@@ -462,29 +514,14 @@ class CustomTasksFragment : Fragment() {
                 saveAndRefresh()
             }
         }
-        decompressRow.addView(decompressCheck)
-        content.addView(decompressRow)
-
-        val actionRow = LinearLayout(ctx).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = 16.dp() }
+        actionRow.addView(decompressCheck)
+        val decompressLabel = TextView(ctx).apply {
+            text = getString(R.string.wanxiang_must_decompress)
+            textSize = 13f
+            setTextColor(color(R.color.text))
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginStart = 8.dp() }
         }
-
-        val deleteBtn = TextView(ctx).apply {
-            text = getString(R.string.wanxiang_delete_task)
-            textSize = 12f
-            setTextColor(color(R.color.red))
-            setPadding(8.dp(), 12.dp(), 8.dp(), 12.dp())
-            setOnClickListener {
-                customTasks.removeAt(index)
-                saveAndRefresh()
-            }
-        }
-        actionRow.addView(deleteBtn)
+        actionRow.addView(decompressLabel)
 
         val spacer = View(ctx).apply {
             layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
@@ -498,7 +535,10 @@ class CustomTasksFragment : Fragment() {
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 34.dp())
             gravity = Gravity.CENTER
             setPadding(12.dp(), 0, 12.dp(), 0)
-            setBackgroundColor(accentColor(ctx))
+            background = GradientDrawable().apply {
+                setColor(accentColor(ctx))
+                cornerRadius = 6.dp().toFloat()
+            }
             setTextColor(color(android.R.color.white))
             setOnClickListener {
                 val current = customTasks[index]
@@ -543,7 +583,7 @@ class CustomTasksFragment : Fragment() {
                     token = "",
                     context = requireContext(),
                     rules = emptyList(),
-                    targetPaths = listOf(tData.boundPath),
+                    targetPaths = tData.boundPaths,
                     onProgress = { t ->
                         lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red) }
                     },
@@ -587,7 +627,7 @@ class CustomTasksFragment : Fragment() {
                 token = "",
                 context = requireContext(),
                 rules = emptyList(),
-                targetPaths = listOf(task.boundPath),
+                targetPaths = task.boundPaths,
                 onProgress = { t ->
                     lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red) }
                 },
@@ -644,6 +684,14 @@ class CustomTasksFragment : Fragment() {
         }
         box.addView(edit)
         return box
+    }
+
+    private fun uriToDisplayPath(uriString: String): String = try {
+        val uri = Uri.parse(uriString)
+        val docId = DocumentsContract.getTreeDocumentId(uri)
+        docId.substringAfter(":").ifEmpty { docId }
+    } catch (_: Exception) {
+        uriString
     }
 
     // ---- Utility ----

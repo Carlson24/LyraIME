@@ -437,6 +437,8 @@
     <string name="wanxiang_target_path">目標路徑</string>
     <string name="wanxiang_must_decompress">需要解壓</string>
     <string name="wanxiang_delete_task">刪除任務</string>
+    <string name="wanxiang_delete_task_confirm">確認刪除此任務？</string>
+    <string name="wanxiang_delete_path_confirm">確認移除此路徑？</string>
     <string name="wanxiang_execute_task">執行此任務</string>
     <string name="wanxiang_batch_delete">批量刪除</string>
     <string name="wanxiang_batch_delete_confirm">確認刪除 %d 個已選任務？</string>

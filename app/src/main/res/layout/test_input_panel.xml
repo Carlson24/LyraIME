@@ -52,7 +52,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/hide_test_input"
             android:padding="6dp"
-            android:src="@drawable/ic_outline_cancel_24"
+            android:src="@drawable/ic_baseline_outline_cancel_24"
             app:tint="?attr/colorControlNormal" />
     </LinearLayout>
 
@@ -154,7 +154,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/clear"
                 android:padding="8dp"
-                android:src="@drawable/ic_outline_cancel_24"
+                android:src="@drawable/ic_baseline_outline_cancel_24"
                 android:visibility="gone"
                 app:tint="?attr/colorControlNormal" />
         </FrameLayout>
