@@ -267,6 +267,7 @@
     <string name="clipboard_entry_file_named">%s</string>
     <string name="clipboard_screenshot_watch">截屏监听</string>
     <string name="clipboard_screenshot_watch_summary">截屏后自动将截图复制到剪贴板</string>
+    <string name="clipboard_screenshot_permission_denied">未授权媒体访问权限，无法启用截屏监听</string>
     <string name="clipboard_mask_sensitive">遮蔽敏感文字</string>
     <string name="clipboard_sensitive_keywords">敏感内容关键词</string>
     <string name="num_items_deleted">已删除 %d 项</string>
@@ -444,6 +445,7 @@
     <string name="wanxiang_batch_delete">批量删除</string>
     <string name="wanxiang_batch_delete_confirm">确认删除 %d 个已选任务？</string>
     <string name="wanxiang_rate_limit">GitHub API 速率限制，请稍后再试</string>
+    <string name="wanxiang_force_update">强制更新（跳过哈希检查）</string>
     <string name="wanxiang_model_check_failed">无法确认模型是否存在更新，是否继续？</string>
     <string name="wanxiang_model_up_to_date">模型无需更新</string>
     <string name="wanxiang_dict_up_to_date">词库无需更新</string>

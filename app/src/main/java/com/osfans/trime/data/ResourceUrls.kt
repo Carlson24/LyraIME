@@ -72,7 +72,6 @@ object ResourceUrls {
         source: String,
     ): ReleaseAssetInfo? {
         val assets = json.optJSONArray("assets") ?: return null
-        val updatedAt = json.optString("updated_at", "")
         for (i in 0 until assets.length()) {
             val asset = assets.getJSONObject(i)
             val name = asset.optString("name", "")
@@ -84,6 +83,7 @@ object ResourceUrls {
                 } else {
                     asset.optString("digest", "").removePrefix("sha256:")
                 }
+                val updatedAt = asset.optString("updated_at", "")
                 return ReleaseAssetInfo(name, downloadUrl, sha256, updatedAt)
             }
         }

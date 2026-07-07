@@ -351,6 +351,18 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         }
         root.addView(scrollView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
+        val forceUpdateCheckBox = CheckBox(ctx).apply {
+            text = getString(R.string.wanxiang_force_update)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = 12.dp()
+                bottomMargin = 8.dp()
+            }
+        }
+        root.addView(forceUpdateCheckBox)
+
         val buttonBar = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.END
@@ -390,7 +402,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 }
                 saveTargetsToPrefs()
                 dialog.dismiss()
-                lifecycleScope.launch { doExecuteSelected(enabledPaths) }
+                lifecycleScope.launch { doExecuteSelected(enabledPaths, forceUpdateCheckBox.isChecked) }
             }
         }
         buttonBar.addView(confirmBtn)
@@ -480,7 +492,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         prefs.deployTargets.setValue(saveDeployTargets(currentDeployTargets))
     }
 
-    private suspend fun doExecuteSelected(targetPaths: List<String>) {
+    private suspend fun doExecuteSelected(targetPaths: List<String>, forceUpdate: Boolean = false) {
         val isPro = prefs.isPro.getValue()
         val auxScheme = prefs.auxScheme.getValue()
         val downloadSource = prefs.downloadSource.getValue()
@@ -551,42 +563,48 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 if (asset != null) {
                     prefs.lastDictUpdatedAt.setValue(asset.releaseUpdatedAt)
                     if (asset.downloadUrl.isNotEmpty()) {
-                        val storedSha = prefs.lastDictSha256.getValue()
-                        if (storedSha.isNotEmpty() && storedSha == asset.sha256) {
-                            dictUpToDate = true
-                        } else {
+                        if (forceUpdate) {
                             urls.add(asset.downloadUrl)
+                        } else {
+                            val storedSha = prefs.lastDictSha256.getValue()
+                            if (storedSha.isNotEmpty() && storedSha == asset.sha256) {
+                                dictUpToDate = true
+                            } else {
+                                urls.add(asset.downloadUrl)
+                            }
                         }
                         expectedShas[asset.name] = asset.sha256
                     }
                 }
             }
 
-        if (checkDict && dictUpToDate) {
+            if (checkModel) {
+                val modelJson = ResourceUrls.fetchReleaseJson(modelApiUrl, token, client)
+                val asset = modelJson?.let { ResourceUrls.findAssetByName(it, modelAssetName, downloadSource) }
+                if (asset != null) {
+                    prefs.lastModelUpdatedAt.setValue(asset.releaseUpdatedAt)
+                    if (asset.downloadUrl.isNotEmpty()) {
+                        val storedSha = prefs.lastModelSha256.getValue()
+                        if (!forceUpdate && storedSha.isNotEmpty() && storedSha == asset.sha256) {
+                            modelUpToDate = true
+                        } else {
+                            urls.add(asset.downloadUrl)
+                        }
+                    }
+                    expectedShas[asset.name] = asset.sha256
+                } else {
+                    modelFetchFailed = true
+                }
+            }
+        }
+
+        if (checkDict && !forceUpdate && dictUpToDate) {
             withContext(Dispatchers.Main) {
                 android.widget.Toast.makeText(
                     requireContext(),
                     R.string.wanxiang_dict_up_to_date,
                     android.widget.Toast.LENGTH_SHORT,
                 ).show()
-            }
-        }
-
-        if (checkModel) {
-                val modelJson = ResourceUrls.fetchReleaseJson(modelApiUrl, token, client)
-                val asset = modelJson?.let { ResourceUrls.findAssetByName(it, modelAssetName, downloadSource) }
-                if (asset != null) {
-                    prefs.lastModelUpdatedAt.setValue(asset.releaseUpdatedAt)
-                    val storedSha = prefs.lastModelSha256.getValue()
-                    if (storedSha.isNotEmpty() && storedSha == asset.sha256) {
-                        modelUpToDate = true
-                    } else if (asset.downloadUrl.isNotEmpty()) {
-                        urls.add(asset.downloadUrl)
-                    }
-                    expectedShas[asset.name] = asset.sha256
-                } else {
-                    modelFetchFailed = true
-                }
             }
         }
 
@@ -601,7 +619,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                         .show()
                 }
                 if (!proceed) return
-            } else if (modelUpToDate) {
+            } else if (!forceUpdate && modelUpToDate) {
                 withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(
                         requireContext(),
