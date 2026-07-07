@@ -446,7 +446,7 @@
     <string name="wanxiang_batch_delete">批量刪除</string>
     <string name="wanxiang_batch_delete_confirm">確認刪除 %d 個已選任務？</string>
     <string name="wanxiang_rate_limit">GitHub API 速率限制，請稍後再試</string>
-    <string name="wanxiang_force_update">強制更新（跳過哈希檢查）</string>
+    <string name="wanxiang_force_update">強制更新（跳過更新檢查）</string>
     <string name="wanxiang_model_check_failed">無法確認模型是否存在更新，是否繼續？</string>
     <string name="wanxiang_model_up_to_date">模型無需更新</string>
     <string name="wanxiang_dict_up_to_date">詞庫無需更新</string>

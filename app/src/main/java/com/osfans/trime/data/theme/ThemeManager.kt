@@ -23,8 +23,7 @@ object ThemeManager {
 
     fun getAllThemes(): List<ThemeItem> {
         val bundledThemes = ThemeFilesManager.listThemes(DataManager.themesDir)
-        val userThemesDir = File(DataManager.userDataBaseDir, "themes")
-        val userThemes = if (userThemesDir.exists()) ThemeFilesManager.listThemes(userThemesDir) else mutableListOf()
+        val userThemes = ThemeFilesManager.listThemes(DataManager.userThemesDir)
         return bundledThemes + userThemes
     }
 
@@ -68,9 +67,9 @@ object ThemeManager {
 
     private fun loadThemeByIdOrNull(id: String): Theme? {
         val bundledSource = DataManager.themesDir.resolve("$id.yaml")
-        val userSource = File(DataManager.userDataBaseDir, "themes/$id.yaml")
+        val userSource = DataManager.userThemesDir.resolve("$id.yaml")
         val sourceFile = if (userSource.exists()) userSource else bundledSource
-        val cacheFile = File(DataManager.themesBuildDir, "$id.yaml")
+        val cacheFile = DataManager.themesBuildDir.resolve("$id.yaml")
 
         val sourceNewest =
             sourceFile.parentFile
@@ -89,52 +88,13 @@ object ThemeManager {
                 return null
             }
 
-            if (userSource.exists()) {
-                val userThemesDir = File(DataManager.userDataBaseDir, "themes")
-                val toDelete = mutableListOf<File>()
-                val toRestore = mutableMapOf<File, File>()
-                try {
-                    userThemesDir.listFiles()?.forEach { f ->
-                        if (f.name.endsWith(".yaml") || f.name.endsWith(".yml")) {
-                            val dest = File(DataManager.userDataDir, f.name)
-                            if (!dest.exists()) {
-                                f.copyTo(dest)
-                                toDelete.add(dest)
-                            } else {
-                                val backup = File(DataManager.userDataDir, "${f.name}.theme_backup")
-                                dest.copyTo(backup, overwrite = true)
-                                f.copyTo(dest, overwrite = true)
-                                toRestore[backup] = dest
-                            }
-                        }
-                    }
-                    Rime.deployRimeConfigFile(id, "config_version")
-                    val compiled = File(DataManager.resolveDeployedResourcePath(id))
-                    if (compiled.exists()) {
-                        compiled.copyTo(cacheFile, overwrite = true)
-                    }
-                } finally {
-                    toDelete.forEach { it.delete() }
-                    toRestore.forEach { (backup, original) ->
-                        backup.copyTo(original, overwrite = true)
-                        backup.delete()
-                    }
-                }
-            } else {
-                val tmp = File(DataManager.sharedDataDir, "$id.yaml")
-                try {
-                    sourceFile.copyTo(tmp, overwrite = true)
-                    if (!Rime.deployRimeConfigFile(id, "config_version")) {
-                        Timber.w("Failed to deploy theme config file '$id.yaml'")
-                        return null
-                    }
-                    val compiled = File(DataManager.resolveDeployedResourcePath(id))
-                    if (compiled.exists()) {
-                        compiled.copyTo(cacheFile, overwrite = true)
-                    }
-                } finally {
-                    tmp.delete()
-                }
+            if (!Rime.deployRimeConfigFile(id, "config_version")) {
+                Timber.w("Failed to deploy theme config file '$id.yaml'")
+                return null
+            }
+            val compiled = File(DataManager.resolveDeployedResourcePath(id))
+            if (compiled.exists()) {
+                compiled.copyTo(cacheFile, overwrite = true)
             }
         }
 

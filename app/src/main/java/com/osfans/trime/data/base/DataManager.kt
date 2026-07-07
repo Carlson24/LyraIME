@@ -31,8 +31,6 @@ object DataManager {
           - schema: luna_pinyin_simp
     """
 
-    private const val MIGRATION_MARKER = ".package_migration_done"
-
     private val lock = ReentrantLock()
 
     private val json by lazy { Json }
@@ -62,6 +60,8 @@ object DataManager {
         get() = appContext.getExternalFilesDir(null)!!
 
     val themesDir = File(externalFilesDir, "themes").also { it.mkdirs() }
+
+    val userThemesDir get() = File(userDataBaseDir, "themes").also { it.mkdirs() }
 
     val themesBuildDir get() = File(userDataBaseDir, "themes/build").also { it.mkdirs() }
 
@@ -96,55 +96,8 @@ object DataManager {
         return defaultPath.absolutePath
     }
 
-    private fun runMigration() {
-        val marker = File(externalFilesDir, MIGRATION_MARKER)
-        if (marker.exists()) return
-
-        val oldSharedDir = File(externalFilesDir, "shared")
-        if (oldSharedDir.exists() && oldSharedDir.isDirectory) {
-            Timber.i("Migrating old data structure to package-based layout")
-
-            val defaultPkgDir = File(externalFilesDir, "luna_pinyin")
-            defaultPkgDir.mkdirs()
-
-            oldSharedDir.listFiles()?.forEach { file ->
-                val dest = File(defaultPkgDir, file.name)
-                if (!dest.exists()) {
-                    if (file.isDirectory && file.name == "opencc") {
-                        file.copyRecursively(dest, overwrite = false)
-                    } else if (!file.isDirectory) {
-                        file.copyTo(dest, overwrite = false)
-                    }
-                }
-            }
-
-            val themeFiles = listOf("trime.yaml", "tongwenfeng.trime.yaml")
-            for (themeFile in themeFiles) {
-                val src = File(defaultPkgDir, themeFile)
-                val dst = File(themesDir, themeFile)
-                if (src.exists() && !dst.exists()) {
-                    src.copyTo(dst, overwrite = false)
-                }
-                src.delete()
-            }
-
-            for (tf in themeFiles) {
-                val src = File(oldSharedDir, tf)
-                if (src.exists()) {
-                    src.delete()
-                }
-            }
-
-            marker.createNewFile()
-            Timber.i("Migration to package-based layout completed")
-        } else {
-            marker.createNewFile()
-        }
-    }
-
     fun sync() = lock.withLock {
         Timber.d("DataManager.sync() called")
-        runMigration()
 
         val oldChecksumsFile = File(dataDir, DATA_CHECKSUMS_NAME)
         val oldChecksums =

@@ -88,9 +88,9 @@ class T9SidebarView(
         val vGap = verticalGap
         val hGap = horizontalGap
         setPadding(
-            if (isRight) hGap / 2 else 0,
+            hGap / 2,
             vGap,
-            if (isRight) 0 else hGap / 2,
+            hGap / 2,
             vGap / 2,
         )
 
@@ -106,9 +106,9 @@ class T9SidebarView(
 
         addView(
             scrollView,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT,
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT,
             ).apply {
                 gravity = Gravity.TOP
             },

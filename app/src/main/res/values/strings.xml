@@ -447,7 +447,7 @@
     <string name="wanxiang_batch_delete">Batch Delete</string>
     <string name="wanxiang_batch_delete_confirm">Confirm deletion of %d selected task(s)?</string>
     <string name="wanxiang_rate_limit">GitHub API rate limit exceeded. Please try again later.</string>
-    <string name="wanxiang_force_update">Force update (skip SHA check)</string>
+    <string name="wanxiang_force_update">Force update (skip update check)</string>
     <string name="wanxiang_model_check_failed">Unable to verify model update. Continue anyway?</string>
     <string name="wanxiang_model_up_to_date">Model is up to date</string>
     <string name="wanxiang_dict_up_to_date">Dict is up to date</string>

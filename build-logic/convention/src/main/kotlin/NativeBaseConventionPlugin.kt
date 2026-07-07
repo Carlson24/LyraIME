@@ -59,10 +59,11 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
         val jniDir = "app/src/main/jni"
         val macrosHeader = project.file("src/main/jni/sherpa-onnx/sherpa-onnx/csrc/macros.h")
         val luaLiolib = project.file("src/main/jni/librime-lua-deps/lua5.4/liolib.c")
+        val resourceH = project.file("src/main/jni/librime/src/rime/resource.h")
         val applyPatches =
             project.tasks.register("applyNativePatches") {
                 group = "native"
-                description = "Apply patches required for native build (lua + sherpa-onnx-qnn)"
+                description = "Apply patches required for native build (lua + sherpa-onnx-qnn + librime-config-search-path)"
                 doLast {
                     ProcessBuilder(
                         "git",
@@ -76,10 +77,17 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                         "--directory=$jniDir/sherpa-onnx",
                         "patches/sherpa-onnx-qnn.patch",
                     ).directory(rootDir).inheritIO().start().waitFor()
+                    ProcessBuilder(
+                        "git",
+                        "apply",
+                        "--directory=$jniDir/librime",
+                        "patches/librime-config-search-path.patch",
+                    ).directory(rootDir).inheritIO().start().waitFor()
                 }
                 outputs.upToDateWhen {
                     (macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")) &&
-                        (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)"))
+                        (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)")) &&
+                        (resourceH.exists() && resourceH.readText().contains("extra_fallback_paths_"))
                 }
             }
 

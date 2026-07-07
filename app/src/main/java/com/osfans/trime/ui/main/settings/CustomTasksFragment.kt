@@ -10,7 +10,6 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.text.InputType
@@ -29,6 +28,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.net.toUri
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -425,7 +425,7 @@ class CustomTasksFragment : Fragment() {
                         setStroke(1.dp(), listDividerColor(ctx))
                         cornerRadius = 4.dp().toFloat()
                     }
-                    setPadding(8.dp(), 4.dp(), 4.dp(), 4.dp())
+                    setPadding(8.dp(), 4.dp(), 8.dp(), 4.dp())
                 }
                 val pathView = TextView(ctx).apply {
                     text = uriToDisplayPath(path)
@@ -435,7 +435,7 @@ class CustomTasksFragment : Fragment() {
                 }
                 row.addView(pathView)
                 row.addView(
-                    makeIconBtn(ctx, R.drawable.ic_baseline_outline_cancel_24, 18.dp()).apply {
+                    makeIconBtn(ctx, R.drawable.ic_baseline_outline_cancel_24, 20.dp()).apply {
                         layoutParams = (layoutParams as LinearLayout.LayoutParams).apply { marginStart = 4.dp() }
                         setOnClickListener {
                             AlertDialog.Builder(ctx)
@@ -494,7 +494,7 @@ class CustomTasksFragment : Fragment() {
         val decompressCheck = TextView(ctx).apply {
             textSize = 13f
             gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(24.dp(), 24.dp())
+            layoutParams = LinearLayout.LayoutParams(20.dp(), 20.dp())
             val accent = accentColor(ctx)
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
@@ -639,8 +639,8 @@ class CustomTasksFragment : Fragment() {
 
     private fun makeLabel(ctx: Context, text: String): TextView = TextView(ctx).apply {
         this.text = text
-        textSize = 11f
-        setTextColor(color(R.color.overlay0))
+        textSize = 12f
+        setTextColor(color(R.color.text))
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -686,7 +686,7 @@ class CustomTasksFragment : Fragment() {
     }
 
     private fun uriToDisplayPath(uriString: String): String = try {
-        val uri = Uri.parse(uriString)
+        val uri = uriString.toUri()
         val docId = DocumentsContract.getTreeDocumentId(uri)
         docId.substringAfter(":").ifEmpty { docId }
     } catch (_: Exception) {

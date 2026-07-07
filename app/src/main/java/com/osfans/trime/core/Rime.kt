@@ -271,6 +271,8 @@ class Rime :
             !staging.exists() || (staging.list()?.isEmpty() ?: true)
         }
         DataManager.sync()
+        addExtraConfigSearchPath(DataManager.themesDir.absolutePath)
+        addExtraConfigSearchPath(DataManager.userThemesDir.absolutePath)
         val sharedDataDir = DataManager.sharedDataDir.absolutePath
         val userDataDir = DataManager.userDataDir.absolutePath
         Timber.d(
@@ -476,6 +478,9 @@ class Rime :
 
         @JvmStatic
         external fun exitRime()
+
+        @JvmStatic
+        external fun addExtraConfigSearchPath(path: String)
 
         @JvmStatic
         external fun deployRimeSchemaFile(schemaFile: String): Boolean

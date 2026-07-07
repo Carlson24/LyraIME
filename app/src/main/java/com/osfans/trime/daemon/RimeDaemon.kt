@@ -193,7 +193,7 @@ object RimeDaemon {
                         Intent(appContext, LogActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             val log =
-                                subprocess("logcat", "-v", "brief", "-s", "rime.trime:W", "-d")
+                                subprocess("logcat", "-v", "brief", "-s", "rime.lyraime:W", "-d")
                                     .readText()
                             putExtra(LogActivity.FROM_DEPLOY, true)
                             putExtra(LogActivity.DEPLOY_FAILURE_TRACE, log)
