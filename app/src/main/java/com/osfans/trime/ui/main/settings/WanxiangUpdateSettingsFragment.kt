@@ -33,7 +33,6 @@ import com.osfans.trime.R
 import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.daemon.launchOnReady
 import com.osfans.trime.data.ResourceUrls
-import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegateFragment
 import com.osfans.trime.data.prefs.PreferenceDelegateProvider
@@ -49,17 +48,16 @@ import com.osfans.trime.ui.main.NavigationRoute
 import com.osfans.trime.util.addCategory
 import com.osfans.trime.util.compareVersions
 import com.osfans.trime.util.createNotificationChannel
+import com.osfans.trime.util.formatUpdatedAt
 import com.osfans.trime.util.readLocalWanxiangVersion
 import com.osfans.trime.worker.WanxiangCheckWork
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.coroutines.resume
 
 class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultInstance().wanxiang) {
     private val viewModel: MainViewModel by activityViewModels()
@@ -256,7 +254,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         val text = sb.toString()
         if (text.isEmpty()) return getString(R.string.wanxiang_no_hash)
         val color = requireContext().getColor(
-            if (needsUpdate) com.osfans.trime.R.color.red else com.osfans.trime.R.color.green,
+            if (needsUpdate) R.color.red else R.color.green,
         )
         return SpannableString(text).apply {
             setSpan(ForegroundColorSpan(color), 0, text.length, 0)
@@ -264,7 +262,16 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
     }
 
     private fun notifySummariesChanged() {
-        listView?.adapter?.notifyDataSetChanged()
+        dictSwitchPref.summary = buildHashSummary(
+            prefs.lastDictSha256.getValue(),
+            prefs.lastDictUpdatedAt.getValue(),
+            prefs.needsUpdateDict.getValue(),
+        )
+        modelSwitchPref.summary = buildHashSummary(
+            prefs.lastModelSha256.getValue(),
+            prefs.lastModelUpdatedAt.getValue(),
+            prefs.needsUpdateModel.getValue(),
+        )
     }
 
     private fun fetchLatestVersionTag(notifyOnNew: Boolean = false) {
@@ -452,14 +459,14 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             val label = TextView(ctx).apply {
                 text = uriToDisplayPath(target.path)
                 textSize = 13f
-                setTextColor(ctx.getColor(com.osfans.trime.R.color.text))
+                setTextColor(ctx.getColor(R.color.text))
                 setPadding(8.dp(), 0, 8.dp(), 0)
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             }
             row.addView(label)
 
             val deleteBtn = ImageButton(ctx).apply {
-                setImageResource(android.R.drawable.ic_menu_delete)
+                setImageResource(R.drawable.ic_baseline_delete_24)
                 setBackgroundResource(android.R.color.transparent)
                 setPadding(8.dp(), 4.dp(), 8.dp(), 4.dp())
                 setOnClickListener {
@@ -531,8 +538,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
         val dictAssetName = when (isPro) {
             "pro" -> "pro-$schemeStr-fuzhu-dicts.zip"
-            "pure" -> "pure-dicts.zip"
-            else -> "base-dicts.zip"
+            else -> "$schemeStr-dicts.zip"
         }
 
         val modelAssetName = "wanxiang-lts-zh-hans.gram"
@@ -543,7 +549,6 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
         val urls = mutableListOf<String>()
         val expectedShas = mutableMapOf<String, String>()
-        var modelFetchFailed = false
         var modelUpToDate = false
         var dictUpToDate = false
 
@@ -561,17 +566,12 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 val dictJson = ResourceUrls.fetchReleaseJson(dictApiUrl, token, client)
                 val asset = dictJson?.let { ResourceUrls.findAssetByName(it, dictAssetName, downloadSource) }
                 if (asset != null && asset.downloadUrl.isNotEmpty()) {
-                    if (forceUpdate) {
-                        prefs.lastDictUpdatedAt.setValue(asset.releaseUpdatedAt)
+                    val storedSha = prefs.lastDictSha256.getValue()
+                    if (forceUpdate || storedSha.isEmpty() || storedSha != asset.sha256) {
+                        prefs.lastDictUpdatedAt.setValue(formatUpdatedAt(asset.releaseUpdatedAt))
                         urls.add(asset.downloadUrl)
                     } else {
-                        val storedSha = prefs.lastDictSha256.getValue()
-                        if (storedSha.isNotEmpty() && storedSha == asset.sha256) {
-                            dictUpToDate = true
-                        } else {
-                            prefs.lastDictUpdatedAt.setValue(asset.releaseUpdatedAt)
-                            urls.add(asset.downloadUrl)
-                        }
+                        dictUpToDate = true
                     }
                     expectedShas[asset.name] = asset.sha256
                 }
@@ -582,15 +582,13 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 val asset = modelJson?.let { ResourceUrls.findAssetByName(it, modelAssetName, downloadSource) }
                 if (asset != null && asset.downloadUrl.isNotEmpty()) {
                     val storedSha = prefs.lastModelSha256.getValue()
-                    if (!forceUpdate && storedSha.isNotEmpty() && storedSha == asset.sha256) {
-                        modelUpToDate = true
-                    } else {
-                        prefs.lastModelUpdatedAt.setValue(asset.releaseUpdatedAt)
+                    if (forceUpdate || storedSha.isEmpty() || storedSha != asset.sha256) {
+                        prefs.lastModelUpdatedAt.setValue(formatUpdatedAt(asset.releaseUpdatedAt))
                         urls.add(asset.downloadUrl)
+                    } else {
+                        modelUpToDate = true
                     }
                     expectedShas[asset.name] = asset.sha256
-                } else if (asset == null) {
-                    modelFetchFailed = true
                 }
             }
         }
@@ -605,25 +603,13 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             }
         }
 
-        if (checkModel) {
-            if (modelFetchFailed) {
-                val proceed = suspendCancellableCoroutine { cont ->
-                    requireContext().buildDialog()
-                        .setMessage(R.string.wanxiang_model_check_failed)
-                        .setPositiveButton(R.string.wanxiang_continue_anyway) { _, _ -> cont.resume(true) }
-                        .setNegativeButton(android.R.string.cancel) { _, _ -> cont.resume(false) }
-                        .setOnCancelListener { cont.resume(false) }
-                        .show()
-                }
-                if (!proceed) return
-            } else if (!forceUpdate && modelUpToDate) {
-                withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(
-                        requireContext(),
-                        R.string.wanxiang_model_up_to_date,
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
-                }
+        if (checkModel && !forceUpdate && modelUpToDate) {
+            withContext(Dispatchers.Main) {
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    R.string.wanxiang_model_up_to_date,
+                    android.widget.Toast.LENGTH_SHORT,
+                ).show()
             }
         }
 

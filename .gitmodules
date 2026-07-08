@@ -5,9 +5,15 @@
 [submodule "OpenCC"]
 	path = app/src/main/jni/OpenCC
 	url = https://github.com/BYVoid/OpenCC.git
+[submodule "yaml-cpp"]
+	path = app/src/main/jni/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
 [submodule "snappy"]
 	path = app/src/main/jni/snappy
 	url = https://github.com/google/snappy.git
+[submodule "leveldb"]
+	path = app/src/main/jni/leveldb
+	url = https://github.com/google/leveldb.git
 [submodule "librime"]
 	path = app/src/main/jni/librime
 	url = https://github.com/rime/librime.git

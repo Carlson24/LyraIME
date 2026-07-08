@@ -12,10 +12,16 @@ import androidx.transition.Transition
 import com.google.android.flexbox.AlignItems
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
+import com.osfans.trime.core.RimeKeyEvent
+import com.osfans.trime.core.RimeKeyMapping
+import com.osfans.trime.daemon.launchOnReady
+import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.ime.candidates.CandidateViewHolder
 import com.osfans.trime.ime.candidates.unrolled.PagingCandidateViewAdapter
 import com.osfans.trime.ime.candidates.unrolled.UnrolledCandidateLayout
 import com.osfans.trime.ime.candidates.unrolled.decoration.FlexboxHorizontalDecoration
+import com.osfans.trime.ime.enums.Keycode
+import com.osfans.trime.ime.keyboard.InputFeedbackManager
 import com.osfans.trime.ime.window.BoardWindow
 import splitties.dimensions.dp
 import splitties.views.dsl.core.wrapContent
@@ -63,6 +69,17 @@ class FlexboxUnrolledCandidateWindow : BaseUnrolledCandidateWindow() {
             adapter = this@FlexboxUnrolledCandidateWindow.adapter
             layoutManager = this@FlexboxUnrolledCandidateWindow.layoutManager
             addItemDecoration(FlexboxHorizontalDecoration(separatorDrawable))
+        }
+        navBar?.setOnActionClick { actionString, view ->
+            InputFeedbackManager.keyPressVibrate(view)
+            val keyAction = KeyActionManager.getAction(actionString)
+            val rimeKeyVal = RimeKeyMapping
+                .keyCodeToVal(keyAction.code)
+                .takeIf { it != RimeKeyMapping.RimeKey_VoidSymbol }
+                ?: RimeKeyEvent.getKeycodeByName(Keycode.keyNameOf(keyAction.code))
+            rime.launchOnReady { rimeApi ->
+                rimeApi.processKey(rimeKeyVal, keyAction.modifier.toUInt())
+            }
         }
     }
 }

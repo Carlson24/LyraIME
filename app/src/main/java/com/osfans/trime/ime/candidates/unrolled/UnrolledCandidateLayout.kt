@@ -10,10 +10,15 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.osfans.trime.R
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
+import com.osfans.trime.ime.candidates.unrolled.nav.UnrolledNavBarView
 import splitties.dimensions.dp
-import splitties.views.dsl.constraintlayout.centerInParent
+import splitties.views.dsl.constraintlayout.endOfParent
+import splitties.views.dsl.constraintlayout.endToStartOf
 import splitties.views.dsl.constraintlayout.lParams
+import splitties.views.dsl.constraintlayout.startOfParent
+import splitties.views.dsl.constraintlayout.topOfParent
 import splitties.views.dsl.core.add
+import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.recyclerview.recyclerView
 
 @SuppressLint("ViewConstructor")
@@ -26,6 +31,13 @@ class UnrolledCandidateLayout(
             isVerticalScrollBarEnabled = false
         }
 
+    val navBar: UnrolledNavBarView? =
+        if (theme.unrolledNavBar != null) {
+            UnrolledNavBarView(context, theme)
+        } else {
+            null
+        }
+
     init {
         id = R.id.unrolled_candidate_view
         background =
@@ -36,12 +48,33 @@ class UnrolledCandidateLayout(
                 dp(theme.generalStyle.candidateBorderRound),
             )
 
-        add(
-            recyclerView,
-            lParams {
-                centerInParent()
-            },
-        )
+        if (navBar != null) {
+            val navWidth = dp(theme.unrolledNavBar!!.width)
+            add(
+                navBar,
+                lParams(navWidth, matchParent) {
+                    endOfParent()
+                    topOfParent()
+                },
+            )
+            add(
+                recyclerView,
+                lParams(matchParent, matchParent) {
+                    startOfParent()
+                    endToStartOf(navBar)
+                    topOfParent()
+                },
+            )
+        } else {
+            add(
+                recyclerView,
+                lParams(matchParent, matchParent) {
+                    startOfParent()
+                    endOfParent()
+                    topOfParent()
+                },
+            )
+        }
     }
 
     fun resetPosition() {

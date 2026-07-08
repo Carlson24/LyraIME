@@ -10,6 +10,9 @@ import android.icu.util.Calendar
 import android.icu.util.ULocale
 import android.os.Build
 import java.text.SimpleDateFormat
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -62,5 +65,17 @@ fun customFormatDateTime(
         }
     } else {
         SimpleDateFormat(option, loc).format(date)
+    }
+}
+
+fun formatUpdatedAt(isoTimestamp: String): String {
+    if (isoTimestamp.isEmpty()) return ""
+    return try {
+        val parsed = ZonedDateTime.parse(isoTimestamp)
+        val formatter = DateTimeFormatter.ofPattern("M月dd日 HH:mm:ss")
+            .withZone(ZoneId.of("Asia/Shanghai"))
+        formatter.format(parsed)
+    } catch (_: Exception) {
+        isoTimestamp
     }
 }

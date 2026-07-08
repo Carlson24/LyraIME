@@ -192,9 +192,10 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
         adapter.updateLayoutParams(layoutMinWidth, layoutFlexGrow)
         adapter.updateCandidates(candidates, total, highlighted)
 
-        // not sure why empty candidates won't trigger `FlexboxLayoutManager#onLayoutCompleted()`
         if (candidates.isEmpty()) {
             refreshUnrolled(0)
+        } else {
+            view.post { refreshUnrolled(view.childCount) }
         }
     }
 }

@@ -1178,7 +1178,7 @@ class InputView(
         adjustableHandle.translationX = kX + (kWidth - moveHandleSize) / 2
         adjustableHandle.translationY = kY - moveHandleSize - dp(8)
         val moveBgDrawable = createHandleDrawable(moveHandleSize / 2f)
-        val moveIconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_move_handle_cross)?.mutate()
+        val moveIconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_move_handle_cross_24)?.mutate()
         val finalDrawable = if (moveIconDrawable != null) {
             moveIconDrawable.setTint(handleColor())
             val inset = dp(4)

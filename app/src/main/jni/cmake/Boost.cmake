@@ -30,6 +30,7 @@ set(BOOST_INCLUDE_LIBRARIES
     crc
     dll
     interprocess
+    preprocessor
     range
     regex
     scope_exit

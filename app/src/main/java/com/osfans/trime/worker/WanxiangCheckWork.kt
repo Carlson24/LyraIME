@@ -24,6 +24,7 @@ import com.osfans.trime.ui.main.MainActivity
 import com.osfans.trime.ui.main.NavigationRoute
 import com.osfans.trime.util.compareVersions
 import com.osfans.trime.util.createNotificationChannel
+import com.osfans.trime.util.formatUpdatedAt
 import com.osfans.trime.util.readLocalWanxiangVersion
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -62,7 +63,7 @@ class WanxiangCheckWork(
                 val (modelSha, updatedAt) = result
                 sharedPref.edit()
                     .putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_MODEL, modelSha != lastModelSha)
-                    .putString(AppPrefs.Wanxiang.LAST_MODEL_UPDATED_AT, updatedAt)
+                    .putString(AppPrefs.Wanxiang.LAST_MODEL_UPDATED_AT, formatUpdatedAt(updatedAt))
                     .apply()
                 if (modelSha != lastModelSha) contentUpdate = true
             }
@@ -77,7 +78,7 @@ class WanxiangCheckWork(
                 val (dictSha, updatedAt) = result
                 sharedPref.edit()
                     .putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_DICT, dictSha != lastDictSha)
-                    .putString(AppPrefs.Wanxiang.LAST_DICT_UPDATED_AT, updatedAt)
+                    .putString(AppPrefs.Wanxiang.LAST_DICT_UPDATED_AT, formatUpdatedAt(updatedAt))
                     .apply()
                 if (dictSha != lastDictSha) contentUpdate = true
             }

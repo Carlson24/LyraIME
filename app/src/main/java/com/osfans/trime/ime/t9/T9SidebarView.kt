@@ -254,9 +254,7 @@ class T9SidebarView(
         return view
     }
 
-    private fun obtainDivider(): View {
-        return if (dividerPool.isNotEmpty()) dividerPool.removeLast() else createDivider()
-    }
+    private fun obtainDivider(): View = if (dividerPool.isNotEmpty()) dividerPool.removeLast() else createDivider()
 
     private fun createSymbolItemView(symbol: String, itemHeight: Int): FrameLayout {
         val label = TextView(context).apply {

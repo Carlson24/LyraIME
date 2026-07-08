@@ -2,5 +2,6 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-set(LevelDb_FOUNT TRUE)
+set(LevelDb_FOUND TRUE)
 set(LevelDb_LIBRARY leveldb)
+set(LevelDb_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/leveldb/include")

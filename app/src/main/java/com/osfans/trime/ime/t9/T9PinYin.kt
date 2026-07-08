@@ -94,9 +94,7 @@ object T9PinYin {
     }
 
     private val searchCache = object : LinkedHashMap<String, List<String>>(16, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<String>>): Boolean {
-            return size > 32
-        }
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<String>>): Boolean = size > 32
     }
 
     fun possibleCombinations(sequence: String?): List<String> {

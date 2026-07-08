@@ -4,3 +4,4 @@
 
 set(YamlCpp_FOUND TRUE)
 set(YamlCpp_LIBRARY yaml-cpp)
+set(YamlCpp_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp/include")
