@@ -8,6 +8,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
@@ -28,6 +29,7 @@ import androidx.core.app.NotificationCompat
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
+import androidx.preference.PreferenceManager
 import androidx.preference.SwitchPreferenceCompat
 import com.osfans.trime.R
 import com.osfans.trime.daemon.RimeDaemon
@@ -62,6 +64,21 @@ import kotlin.coroutines.cancellation.CancellationException
 class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultInstance().wanxiang) {
     private val viewModel: MainViewModel by activityViewModels()
     private val prefs = AppPrefs.defaultInstance().wanxiang
+    private val summaryKeys = setOf(
+        AppPrefs.Wanxiang.LAST_DICT_SHA256,
+        AppPrefs.Wanxiang.LAST_DICT_UPDATED_AT,
+        AppPrefs.Wanxiang.NEEDS_UPDATE_DICT,
+        AppPrefs.Wanxiang.LAST_MODEL_SHA256,
+        AppPrefs.Wanxiang.LAST_MODEL_UPDATED_AT,
+        AppPrefs.Wanxiang.NEEDS_UPDATE_MODEL,
+    )
+    private val prefsChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key in summaryKeys) {
+            lifecycleScope.launch(Dispatchers.Main) {
+                refreshSwitchSummaries()
+            }
+        }
+    }
 
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -119,6 +136,8 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs.registerOnChangeListener(onWorkerChange)
+        PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .registerOnSharedPreferenceChangeListener(prefsChangeListener)
     }
 
     override fun onStart() {
@@ -143,6 +162,8 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
     override fun onDestroy() {
         prefs.unregisterOnChangeListener(onWorkerChange)
+        PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .unregisterOnSharedPreferenceChangeListener(prefsChangeListener)
         super.onDestroy()
     }
 
@@ -189,9 +210,6 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                     isChecked = prefs.checkDict.getValue()
                     isIconSpaceReserved = false
                     isSingleLineTitle = false
-                    summaryProvider = Preference.SummaryProvider<SwitchPreferenceCompat> {
-                        buildHashSummary(prefs.lastDictSha256.getValue(), prefs.lastDictUpdatedAt.getValue(), prefs.needsUpdateDict.getValue())
-                    }
                     setOnPreferenceChangeListener { _, newValue ->
                         prefs.checkDict.setValue(newValue as Boolean)
                         true
@@ -204,9 +222,6 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                     isChecked = prefs.checkModel.getValue()
                     isIconSpaceReserved = false
                     isSingleLineTitle = false
-                    summaryProvider = Preference.SummaryProvider<SwitchPreferenceCompat> {
-                        buildHashSummary(prefs.lastModelSha256.getValue(), prefs.lastModelUpdatedAt.getValue(), prefs.needsUpdateModel.getValue())
-                    }
                     setOnPreferenceChangeListener { _, newValue ->
                         prefs.checkModel.setValue(newValue as Boolean)
                         true
@@ -218,6 +233,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
         refreshLocalVersion()
         fetchLatestVersionTag()
+        refreshSwitchSummaries()
     }
 
     private fun refreshLocalVersion() {
@@ -261,7 +277,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         }
     }
 
-    private fun notifySummariesChanged() {
+    private fun refreshSwitchSummaries() {
         dictSwitchPref.summary = buildHashSummary(
             prefs.lastDictSha256.getValue(),
             prefs.lastDictUpdatedAt.getValue(),
@@ -756,7 +772,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 }
                 completed = true
                 withContext(Dispatchers.Main) {
-                    if (allSucceeded) notifySummariesChanged()
+                    if (allSucceeded) refreshSwitchSummaries()
                     val button = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
                     if (button != null) {
                         button.text = getString(android.R.string.ok)
