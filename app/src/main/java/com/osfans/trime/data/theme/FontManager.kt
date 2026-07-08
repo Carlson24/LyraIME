@@ -137,7 +137,7 @@ object FontManager {
             FontKey.TEXT_FONT -> style.textFont
             FontKey.TOOLBAR_FONT -> theme.toolBar.buttonFont
             FontKey.T9_SIDE_FONT -> style.t9SideFont
-            FontKey.UNROLLED_NAV_BAR_FONT -> theme.unrolledNavBar.buttonFont
+            FontKey.UNROLLED_NAV_BAR_FONT -> theme.unrolledNavBar?.buttonFont.orEmpty()
             else -> null
         }
     }
