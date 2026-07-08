@@ -30,6 +30,8 @@ class T9InputController(
 
     var onCandidatesChanged: ((List<PinYinToken>) -> Unit)? = null
 
+    private var cachedInputString = ""
+    private var lastRimeInput = ""
     private var messageJob: Job? = null
 
     companion object {
@@ -57,6 +59,7 @@ class T9InputController(
 
     fun onDigitKey(digit: String) {
         inputQueue.add(digit)
+        cachedInputString += digit
         behaviorQueue.add(Behavior.NORMAL)
         fireCandidatesChanged()
     }
@@ -69,9 +72,8 @@ class T9InputController(
         when (behaviorQueue.removeLast()) {
             Behavior.SELECT_PINYIN -> {
                 if (selectedQueue.isNotEmpty()) {
-                    val currentInput = runCatching { rime.run { getRawInput() } }.getOrDefault("")
                     val lastSelected = selectedQueue.last()
-                    if (!currentInput.contains(lastSelected.pinYin)) {
+                    if (!lastRimeInput.contains(lastSelected.pinYin)) {
                         return false
                     }
                     selectedQueue.removeLast()
@@ -83,6 +85,7 @@ class T9InputController(
             else -> {
                 if (inputQueue.isNotEmpty()) {
                     inputQueue.removeLast()
+                    cachedInputString = cachedInputString.dropLast(1)
                     modified = true
                 }
             }
@@ -106,6 +109,7 @@ class T9InputController(
             return true
         }
         inputQueue.add(SEGMENT_KEY_CHAR.toString())
+        cachedInputString += SEGMENT_KEY_CHAR.toString()
         behaviorQueue.add(Behavior.SEGMENT)
         fireCandidatesChanged()
         return false
@@ -128,7 +132,7 @@ class T9InputController(
         if (inputQueue.isEmpty()) return emptyList()
         val position = nextSequencePosition()
         if (position < 0) return emptyList()
-        val sequence = inputQueue.joinToString("").substring(position)
+        val sequence = cachedInputString.substring(position)
         return T9PinYin.possibleCombinations(sequence).map { pinYin ->
             var raw = sequence.substring(0, minOf(pinYin.length, sequence.length))
             if (sequence.getOrNull(pinYin.length) == SEGMENT_KEY_CHAR) {
@@ -139,7 +143,7 @@ class T9InputController(
     }
 
     fun buildRimeInput(): String {
-        val input = inputQueue.joinToString("")
+        val input = cachedInputString
         if (selectedQueue.isEmpty()) return input
         val first = selectedQueue.first()
         val last = selectedQueue.last()
@@ -171,9 +175,11 @@ class T9InputController(
     }
 
     fun updateRimeInput() {
+        val input = buildRimeInput()
+        lastRimeInput = input
         rime.lifecycleScope.launch {
             rime.runOnReady {
-                setRawInput(buildRimeInput())
+                setRawInput(input)
             }
         }
     }
@@ -182,6 +188,7 @@ class T9InputController(
         inputQueue.clear()
         selectedQueue.clear()
         behaviorQueue.clear()
+        cachedInputString = ""
         fireCandidatesChanged()
     }
 
@@ -190,22 +197,14 @@ class T9InputController(
     }
 
     private fun nextSequencePosition(): Int {
-        val inputSize = inputQueue.size
-        val ranges =
-            selectedQueue.map { it.pos until (it.pos + it.raw.length) }.sortedBy { it.first }
-        if (inputSize == 0) return 0
+        if (selectedQueue.isEmpty()) return 0
         var pos = 0
-        while (pos < inputSize) {
-            var jumped = false
-            for (r in ranges) {
-                if (pos in r) {
-                    pos = r.last + 1
-                    jumped = true
-                    break
-                }
-            }
-            if (!jumped) return pos
+        for (token in selectedQueue) {
+            if (token.pos > pos) return pos
+            val end = token.pos + token.raw.length
+            if (end > pos) pos = end
         }
-        return inputSize
+        if (pos >= inputQueue.size) return pos
+        return pos
     }
 }

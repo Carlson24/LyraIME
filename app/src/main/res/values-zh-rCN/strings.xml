@@ -9,6 +9,7 @@
     <!-- 输入法平台名称  -->
     <string name="app_name_release">灵韵输入法</string>
     <string name="app_name_debug">灵韵输入法（调试）</string>
+    <string name="qq_group_lyraime">灵韵 QQ 群</string>
     <string name="qq_group_1">同文 QQ 群 1</string>
     <string name="qq_group_2">同文 QQ 群 2</string>
     <string name="rime_qq_group">中州韵 QQ 群</string>

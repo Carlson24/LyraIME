@@ -2,42 +2,29 @@ package com.osfans.trime.ime.t9
 
 object T9PinYin {
 
-    private val t9KeyMap = mapOf(
-        'a' to 'A',
-        'b' to 'A',
-        'c' to 'A',
-        'd' to 'D',
-        'e' to 'D',
-        'f' to 'D',
-        'g' to 'G',
-        'h' to 'G',
-        'i' to 'G',
-        'j' to 'J',
-        'k' to 'J',
-        'l' to 'J',
-        'm' to 'M',
-        'n' to 'M',
-        'o' to 'M',
-        'p' to 'P',
-        'q' to 'P',
-        'r' to 'P',
-        's' to 'P',
-        't' to 'T',
-        'u' to 'T',
-        'v' to 'T',
-        'w' to 'W',
-        'x' to 'W',
-        'y' to 'W',
-        'z' to 'W',
-        '2' to 'A',
-        '3' to 'D',
-        '4' to 'G',
-        '5' to 'J',
-        '6' to 'M',
-        '7' to 'P',
-        '8' to 'T',
-        '9' to 'W',
-    )
+    private val t9KeyArray = CharArray(128) { idx -> idx.toChar() }
+
+    init {
+        val rangeToKey = listOf(
+            'a'..'c' to '2',
+            'd'..'f' to '3',
+            'g'..'i' to '4',
+            'j'..'l' to '5',
+            'm'..'o' to '6',
+            'p'..'s' to '7',
+            't'..'v' to '8',
+            'w'..'z' to '9',
+        )
+        for ((range, key) in rangeToKey) {
+            for (c in range) {
+                t9KeyArray[c.code] = key
+                t9KeyArray[c.uppercaseChar().code] = key
+            }
+        }
+        for (d in '2'..'9') {
+            t9KeyArray[d.code] = d
+        }
+    }
 
     private val allPinyin = setOf(
         "a", "ai", "an", "ang", "ao",
@@ -95,36 +82,42 @@ object T9PinYin {
         "zi", "zong", "zou", "zu", "zuan", "zui", "zun", "zuo",
     )
 
-    private val pinyinMap: Map<String, List<String>> = buildMap {
-        val grouped = allPinyin.groupBy { pinyin ->
-            buildString {
-                pinyin.forEach { c ->
-                    append(t9KeyMap[c] ?: c)
-                }
+    private val pinyinMap: Map<String, List<String>> = buildMap<String, MutableList<String>> {
+        for (pinyin in allPinyin) {
+            val chars = CharArray(pinyin.length)
+            for (i in pinyin.indices) {
+                chars[i] = t9KeyArray[pinyin[i].code]
             }
-        }
-        grouped.forEach { (key, value) ->
-            put(key, value)
+            val key = String(chars)
+            getOrPut(key) { mutableListOf() }.add(pinyin)
         }
     }
 
-    fun possibleCombinations(sequence: String?): Array<String> {
-        if (sequence.isNullOrBlank()) {
-            return emptyArray()
+    private val searchCache = object : LinkedHashMap<String, List<String>>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<String>>): Boolean {
+            return size > 32
         }
-        val mappedSequence = buildString {
-            sequence.forEach { c ->
-                append(t9KeyMap[c.lowercaseChar()] ?: c)
-            }
+    }
+
+    fun possibleCombinations(sequence: String?): List<String> {
+        if (sequence.isNullOrBlank()) return emptyList()
+
+        searchCache[sequence]?.let { return it }
+
+        val len = minOf(sequence.length, 6)
+        val numChars = CharArray(len)
+        for (i in 0 until len) {
+            val c = sequence[i]
+            numChars[i] = if (c.code < 128) t9KeyArray[c.code] else c
         }
-        val numString = mappedSequence.take(6)
+        val numString = String(numChars)
+
         val result = mutableListOf<String>()
         for (length in numString.length downTo 1) {
-            val prefix = numString.substring(0, length)
-            pinyinMap[prefix]?.forEach {
-                result.add(it)
-            }
+            pinyinMap[numString.substring(0, length)]?.let { result.addAll(it) }
         }
-        return result.toTypedArray()
+
+        searchCache[sequence] = result
+        return result
     }
 }

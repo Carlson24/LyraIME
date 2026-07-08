@@ -83,6 +83,17 @@ class T9SidebarView(
         }
     }
 
+    private val itemViewPool = ArrayDeque<FrameLayout>(8)
+    private val dividerPool = ArrayDeque<View>(8)
+
+    private companion object {
+        private const val MODE_EMPTY = 0
+        private const val MODE_SYMBOLS = 1
+        private const val MODE_TOKENS = 2
+    }
+
+    private var currentMode = MODE_EMPTY
+
     init {
         setWillNotDraw(false)
         val vGap = verticalGap
@@ -121,27 +132,85 @@ class T9SidebarView(
 
     fun updateItems(items: List<T9InputController.PinYinToken>) {
         tokens = items
-        itemContainer.removeAllViews()
 
-        if (items.isEmpty() && defaultSymbols.isNotEmpty()) {
-            showDefaultSymbols()
+        if (items.isEmpty()) {
+            if (defaultSymbols.isNotEmpty()) {
+                if (currentMode != MODE_SYMBOLS) {
+                    recycleAllViews()
+                    showDefaultSymbols()
+                }
+            } else {
+                recycleAllViews()
+            }
             return
         }
-        if (items.isEmpty()) return
 
         val itemHeight = computeItemHeight()
 
+        if (currentMode != MODE_TOKENS) {
+            recycleAllViews()
+            buildTokenViews(items, itemHeight)
+            return
+        }
+
+        updateTokenViewsIncremental(items, itemHeight)
+    }
+
+    private fun buildTokenViews(
+        items: List<T9InputController.PinYinToken>,
+        itemHeight: Int,
+    ) {
+        currentMode = MODE_TOKENS
         items.forEachIndexed { index, token ->
-            val itemView = createItemView(token, itemHeight)
-            itemContainer.addView(itemView)
+            itemContainer.addView(obtainItemView(token, itemHeight))
             if (index < items.size - 1) {
-                itemContainer.addView(createDivider())
+                itemContainer.addView(obtainDivider())
+            }
+        }
+    }
+
+    private fun updateTokenViewsIncremental(
+        items: List<T9InputController.PinYinToken>,
+        itemHeight: Int,
+    ) {
+        val targetChildCount = items.size * 2 - 1
+
+        while (itemContainer.childCount > targetChildCount) {
+            val idx = itemContainer.childCount - 1
+            val child = itemContainer.getChildAt(idx)
+            if (child is FrameLayout) {
+                child.setOnClickListener(null)
+                itemViewPool.addLast(child)
+            } else {
+                dividerPool.addLast(child)
+            }
+            itemContainer.removeViewAt(idx)
+        }
+
+        for (i in items.indices) {
+            val itemIdx = i * 2
+            val token = items[i]
+
+            if (itemIdx < itemContainer.childCount) {
+                val itemView = itemContainer.getChildAt(itemIdx) as? FrameLayout ?: continue
+                itemView.layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    itemHeight,
+                )
+                (itemView.getChildAt(0) as? TextView)?.text = UnicodeVariantUtils.toDisplay(token.display)
+                itemView.setOnClickListener { onItemSelected?.invoke(token) }
+            } else {
+                itemContainer.addView(obtainItemView(token, itemHeight))
+            }
+
+            if (i < items.size - 1 && itemIdx + 1 >= itemContainer.childCount) {
+                itemContainer.addView(obtainDivider())
             }
         }
     }
 
     private fun showDefaultSymbols() {
-        if (defaultSymbols.isEmpty()) return
+        currentMode = MODE_SYMBOLS
         val itemHeight = computeItemHeight()
         defaultSymbols.forEachIndexed { index, symbol ->
             val itemView = createSymbolItemView(symbol, itemHeight)
@@ -152,7 +221,44 @@ class T9SidebarView(
         }
     }
 
-    private fun createSymbolItemView(symbol: String, itemHeight: Int): View {
+    private fun recycleAllViews() {
+        for (i in 0 until itemContainer.childCount) {
+            val child = itemContainer.getChildAt(i)
+            if (child is FrameLayout) {
+                child.setOnClickListener(null)
+                itemViewPool.addLast(child)
+            } else {
+                dividerPool.addLast(child)
+            }
+        }
+        itemContainer.removeAllViews()
+        currentMode = MODE_EMPTY
+    }
+
+    private fun obtainItemView(
+        token: T9InputController.PinYinToken,
+        itemHeight: Int,
+    ): FrameLayout {
+        val view = if (itemViewPool.isNotEmpty()) {
+            itemViewPool.removeLast().also { v ->
+                v.layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    itemHeight,
+                )
+                (v.getChildAt(0) as? TextView)?.text = UnicodeVariantUtils.toDisplay(token.display)
+            }
+        } else {
+            createItemView(token, itemHeight)
+        }
+        view.setOnClickListener { onItemSelected?.invoke(token) }
+        return view
+    }
+
+    private fun obtainDivider(): View {
+        return if (dividerPool.isNotEmpty()) dividerPool.removeLast() else createDivider()
+    }
+
+    private fun createSymbolItemView(symbol: String, itemHeight: Int): FrameLayout {
         val label = TextView(context).apply {
             text = UnicodeVariantUtils.toDisplay(symbol)
             setTextColor(sideTextColor)
@@ -193,8 +299,12 @@ class T9SidebarView(
         return (availableHeight / count)
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        sidebarBg.setBounds(paddingLeft, paddingTop, w - paddingRight, h - paddingBottom)
+    }
+
     override fun onDraw(canvas: Canvas) {
-        sidebarBg.setBounds(paddingLeft, paddingTop, width - paddingRight, height - paddingBottom)
         sidebarBg.draw(canvas)
         super.onDraw(canvas)
     }
@@ -213,7 +323,7 @@ class T9SidebarView(
     private fun createItemView(
         token: T9InputController.PinYinToken,
         itemHeight: Int,
-    ): View {
+    ): FrameLayout {
         val label = TextView(context).apply {
             text = UnicodeVariantUtils.toDisplay(token.display)
             setTextColor(sideTextColor)
@@ -250,16 +360,6 @@ class T9SidebarView(
         }
     }
 
-    private fun createDivider(): View = View(context).apply {
-        layoutParams =
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                context.dp(1),
-            )
-        setBackgroundColor(sideSpacingColor)
-        alpha = 0.3f
-    }
-
     private fun createPressStateDrawable(): StateListDrawable {
         val pressed = GradientDrawable().apply {
             setColor(sideHilitedBackColor)
@@ -273,5 +373,15 @@ class T9SidebarView(
             addState(intArrayOf(android.R.attr.state_pressed), pressed)
             addState(intArrayOf(), normal)
         }
+    }
+
+    private fun createDivider(): View = View(context).apply {
+        layoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                context.dp(1),
+            )
+        setBackgroundColor(sideSpacingColor)
+        alpha = 0.3f
     }
 }

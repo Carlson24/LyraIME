@@ -10,6 +10,7 @@
     <string name="app_name_release">LyraIME</string>
     <string name="app_name_debug">LyraIME (Debug)</string>
     <!-- Preference settings -->
+    <string name="qq_group_lyraime">LyraIME QQ group</string>
     <string name="qq_group_1">Trime QQ group 1</string>
     <string name="qq_group_2">Trime QQ group 2</string>
     <string name="rime_qq_group">RIME QQ group</string>

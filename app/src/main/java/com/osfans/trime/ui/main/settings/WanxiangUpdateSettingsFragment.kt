@@ -560,39 +560,36 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             if (checkDict) {
                 val dictJson = ResourceUrls.fetchReleaseJson(dictApiUrl, token, client)
                 val asset = dictJson?.let { ResourceUrls.findAssetByName(it, dictAssetName, downloadSource) }
-                if (asset != null) {
-                    prefs.lastDictUpdatedAt.setValue(asset.releaseUpdatedAt)
-                    if (asset.downloadUrl.isNotEmpty()) {
-                        if (forceUpdate) {
-                            urls.add(asset.downloadUrl)
+                if (asset != null && asset.downloadUrl.isNotEmpty()) {
+                    if (forceUpdate) {
+                        prefs.lastDictUpdatedAt.setValue(asset.releaseUpdatedAt)
+                        urls.add(asset.downloadUrl)
+                    } else {
+                        val storedSha = prefs.lastDictSha256.getValue()
+                        if (storedSha.isNotEmpty() && storedSha == asset.sha256) {
+                            dictUpToDate = true
                         } else {
-                            val storedSha = prefs.lastDictSha256.getValue()
-                            if (storedSha.isNotEmpty() && storedSha == asset.sha256) {
-                                dictUpToDate = true
-                            } else {
-                                urls.add(asset.downloadUrl)
-                            }
+                            prefs.lastDictUpdatedAt.setValue(asset.releaseUpdatedAt)
+                            urls.add(asset.downloadUrl)
                         }
-                        expectedShas[asset.name] = asset.sha256
                     }
+                    expectedShas[asset.name] = asset.sha256
                 }
             }
 
             if (checkModel) {
                 val modelJson = ResourceUrls.fetchReleaseJson(modelApiUrl, token, client)
                 val asset = modelJson?.let { ResourceUrls.findAssetByName(it, modelAssetName, downloadSource) }
-                if (asset != null) {
-                    prefs.lastModelUpdatedAt.setValue(asset.releaseUpdatedAt)
-                    if (asset.downloadUrl.isNotEmpty()) {
-                        val storedSha = prefs.lastModelSha256.getValue()
-                        if (!forceUpdate && storedSha.isNotEmpty() && storedSha == asset.sha256) {
-                            modelUpToDate = true
-                        } else {
-                            urls.add(asset.downloadUrl)
-                        }
+                if (asset != null && asset.downloadUrl.isNotEmpty()) {
+                    val storedSha = prefs.lastModelSha256.getValue()
+                    if (!forceUpdate && storedSha.isNotEmpty() && storedSha == asset.sha256) {
+                        modelUpToDate = true
+                    } else {
+                        prefs.lastModelUpdatedAt.setValue(asset.releaseUpdatedAt)
+                        urls.add(asset.downloadUrl)
                     }
                     expectedShas[asset.name] = asset.sha256
-                } else {
+                } else if (asset == null) {
                     modelFetchFailed = true
                 }
             }

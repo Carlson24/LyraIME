@@ -15,6 +15,8 @@ object Const {
     const val LIBRIME_URL = "https://github.com/rime/librime"
     const val OPENCC_URL = "https://github.com/BYVoid/OpenCC"
     const val SHERPA_ONNX_URL = "https://github.com/k2-fsa/sherpa-onnx"
+    const val QQ_GROUP_LYRAIME_NUM = "195363320"
+    const val QQ_GROUP_LYRAIME_URL = "mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26k%3DLeK6Q9RnmpOS3sh2B-2hUwDgswvq8Hv50"
     const val QQ_GROUP_1_NUM = "811142286"
     const val QQ_GROUP_2_NUM = "224230445"
     const val RIME_QQ_GROUP_NUM = "77608640"
