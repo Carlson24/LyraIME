@@ -21,7 +21,9 @@ import com.mikepenz.iconics.IconicsDrawable
 import com.mikepenz.iconics.utils.sizeDp
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
+import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.model.ToolBar
+import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.keyboard.LabelSegment
 import com.osfans.trime.ime.keyboard.isIconFont
 import com.osfans.trime.ime.keyboard.parseLabelSegments
@@ -77,7 +79,10 @@ class NavBarButton(
 
     private fun setupContent(config: ToolBar.Button) {
         val foreground = config.foreground
-        val style = foreground.style
+        val style = foreground.style.ifEmpty {
+            KeyActionManager.getAction(config.action)
+                .getLabel(KeyboardWindow.currentKeyboard)
+        }
 
         when {
             style.matches(IMAGE_PATTERN) -> {
@@ -106,7 +111,7 @@ class NavBarButton(
                         text = style
                         textSize = foreground.fontSize
                         padding = dp(foreground.padding)
-                        typeface = FontManager.getTypeface("toolbar_font")
+                        typeface = FontManager.getTypeface("unrolled_nav_bar_font")
                         fontFeatureSettings = FontManager.fontFeatureSettings
                         isClickable = false
                         isFocusable = false
@@ -162,7 +167,7 @@ class NavBarButton(
                         text = seg.content
                         textSize = foreground.fontSize
                         padding = dp(foreground.padding)
-                        typeface = FontManager.getTypeface("toolbar_font")
+                        typeface = FontManager.getTypeface("unrolled_nav_bar_font")
                         fontFeatureSettings = FontManager.fontFeatureSettings
                     }
                     hLayout.addView(

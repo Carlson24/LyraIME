@@ -17,6 +17,8 @@ import kotlinx.parcelize.Parcelize
 data class UnrolledNavBar(
     val width: Int = 44,
     val background: String = "",
+    val separatorColor: String = "",
+    val buttonFont: List<String> = emptyList(),
     val buttons: List<ToolBar.Button> = emptyList(),
 ) : Parcelable {
     companion object {
@@ -25,6 +27,8 @@ data class UnrolledNavBar(
             return UnrolledNavBar(
                 width = node["width"]?.int ?: 44,
                 background = node["background"]?.string ?: "",
+                separatorColor = node["separator_color"]?.string ?: "",
+                buttonFont = node["button_font"]?.sequence?.mapNotNull(Node::string) ?: emptyList(),
                 buttons = node["buttons"]?.sequence?.map { ToolBar.Button.decode(it.mapping!!) } ?: emptyList(),
             )
         }

@@ -28,7 +28,10 @@ class UnrolledNavBarView(
         val navConfig = theme.unrolledNavBar!!
         orientation = HORIZONTAL
 
-        val separatorColor = ColorManager.getColor("candidate_separator_color")
+        val separatorColorKey = navConfig.separatorColor
+            .takeIf { it.isNotEmpty() }
+            ?: "candidate_separator_color"
+        val separatorColor = ColorManager.getColor(separatorColorKey)
         val separatorWidth = max(theme.generalStyle.candidateSpacing, dp(theme.generalStyle.candidateSpacing)).toInt()
 
         val separatorView = View(context).apply {

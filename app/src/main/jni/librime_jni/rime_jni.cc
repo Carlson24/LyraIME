@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include <rime_api.h>
-
 #include <rime/service.h>
+#include <rime_api.h>
 
 #include <memory>
 #include <string>
@@ -285,8 +284,9 @@ Java_com_osfans_trime_core_Rime_exitRime(JNIEnv* env, jclass /* thiz */) {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_osfans_trime_core_Rime_addExtraConfigSearchPath(
-    JNIEnv* env, jclass /* thiz */, jstring path) {
+Java_com_osfans_trime_core_Rime_addExtraConfigSearchPath(JNIEnv* env,
+                                                         jclass /* thiz */,
+                                                         jstring path) {
   s_pending_config_search_paths.push_back(*CString(env, path));
 }
 
