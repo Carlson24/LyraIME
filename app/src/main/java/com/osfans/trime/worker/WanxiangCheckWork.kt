@@ -24,7 +24,6 @@ import com.osfans.trime.ui.main.MainActivity
 import com.osfans.trime.ui.main.NavigationRoute
 import com.osfans.trime.util.compareVersions
 import com.osfans.trime.util.createNotificationChannel
-import com.osfans.trime.util.formatUpdatedAt
 import com.osfans.trime.util.readLocalWanxiangVersion
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -60,10 +59,9 @@ class WanxiangCheckWork(
         if (lastModelSha.isNotEmpty()) {
             val result = fetchRemoteModelSha256(downloadSource, token)
             if (result != null) {
-                val (modelSha, updatedAt) = result
+                val modelSha = result.first
                 sharedPref.edit()
                     .putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_MODEL, modelSha != lastModelSha)
-                    .putString(AppPrefs.Wanxiang.LAST_MODEL_UPDATED_AT, formatUpdatedAt(updatedAt))
                     .apply()
                 if (modelSha != lastModelSha) contentUpdate = true
             }
@@ -75,10 +73,9 @@ class WanxiangCheckWork(
         if (lastDictSha.isNotEmpty()) {
             val result = fetchRemoteDictSha256(sharedPref, downloadSource, token)
             if (result != null) {
-                val (dictSha, updatedAt) = result
+                val dictSha = result.first
                 sharedPref.edit()
                     .putBoolean(AppPrefs.Wanxiang.NEEDS_UPDATE_DICT, dictSha != lastDictSha)
-                    .putString(AppPrefs.Wanxiang.LAST_DICT_UPDATED_AT, formatUpdatedAt(updatedAt))
                     .apply()
                 if (dictSha != lastDictSha) contentUpdate = true
             }

@@ -39,10 +39,12 @@ import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.textView
 import splitties.views.dsl.core.wrapContent
+import splitties.views.dsl.core.withTheme
 import splitties.views.imageDrawable
 import splitties.views.setPaddingDp
 
-class ClipboardEntryUi(override val ctx: Context, private val theme: Theme) : Ui {
+class ClipboardEntryUi(ctx: Context, private val theme: Theme) : Ui {
+    override val ctx = ctx.withTheme(android.R.style.Theme_DeviceDefault_Settings)
 
     private val borderSpace get() = ctx.dp(3)
     private val checkboxInset get() = ctx.dp(26)

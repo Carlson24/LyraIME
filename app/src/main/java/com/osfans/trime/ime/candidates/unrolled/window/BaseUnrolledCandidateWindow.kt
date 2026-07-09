@@ -17,6 +17,7 @@ import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.daemon.launchOnReady
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
+import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.ime.bar.InputBarDelegate
 import com.osfans.trime.ime.bar.UnrollButtonStateMachine
 import com.osfans.trime.ime.broadcast.InputBroadcastReceiver
@@ -81,6 +82,7 @@ abstract class BaseUnrolledCandidateWindow :
     abstract val layoutManager: RecyclerView.LayoutManager
 
     private var offsetJob: Job? = null
+    private var themeChangeListener: ThemeManager.OnThemeChangeListener? = null
 
     private val candidatesPager by lazy {
         Pager(
@@ -124,6 +126,11 @@ abstract class BaseUnrolledCandidateWindow :
                     adapter.submitData(it)
                 }
             }
+        themeChangeListener =
+            ThemeManager.OnThemeChangeListener {
+                windowManager.attachWindow(KeyboardWindow)
+            }
+        ThemeManager.addOnChangedListener(themeChangeListener!!)
     }
 
     fun bindCandidateUiViewHolder(holder: CandidateViewHolder) {
@@ -146,5 +153,6 @@ abstract class BaseUnrolledCandidateWindow :
         )
         offsetJob?.cancel()
         candidatesSubmitJob?.cancel()
+        themeChangeListener?.let { ThemeManager.removeOnChangedListener(it) }
     }
 }

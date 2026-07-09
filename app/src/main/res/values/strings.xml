@@ -552,6 +552,8 @@
     <string name="text_editor_editor_options">Options</string>
     <string name="text_editor_tab_width">Tab width</string>
     <string name="text_editor_tab_width_hint">Number of columns a tab character occupies (1–16).</string>
+    <string name="text_editor_font_size">Font size</string>
+    <string name="text_editor_font_size_hint">Editor font size in sp (10–24).</string>
     <string name="text_editor_font_fallback">Font fallback</string>
     <string name="text_editor_font_fallback_hint">Drag to reorder. The first enabled font is primary; missing glyphs fall through to the next.</string>
     <string name="text_editor_font_fallback_empty">No fonts imported yet. Imported fonts are stored in the app\'s private data directory.</string>

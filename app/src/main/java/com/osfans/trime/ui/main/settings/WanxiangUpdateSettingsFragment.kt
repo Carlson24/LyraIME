@@ -565,6 +565,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
         val urls = mutableListOf<String>()
         val expectedShas = mutableMapOf<String, String>()
+        val releaseUpdatedAts = mutableMapOf<String, String>()
         var modelUpToDate = false
         var dictUpToDate = false
 
@@ -584,12 +585,12 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 if (asset != null && asset.downloadUrl.isNotEmpty()) {
                     val storedSha = prefs.lastDictSha256.getValue()
                     if (forceUpdate || storedSha.isEmpty() || storedSha != asset.sha256) {
-                        prefs.lastDictUpdatedAt.setValue(formatUpdatedAt(asset.releaseUpdatedAt))
                         urls.add(asset.downloadUrl)
                     } else {
                         dictUpToDate = true
                     }
                     expectedShas[asset.name] = asset.sha256
+                    releaseUpdatedAts[asset.name] = formatUpdatedAt(asset.releaseUpdatedAt)
                 }
             }
 
@@ -599,12 +600,12 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 if (asset != null && asset.downloadUrl.isNotEmpty()) {
                     val storedSha = prefs.lastModelSha256.getValue()
                     if (forceUpdate || storedSha.isEmpty() || storedSha != asset.sha256) {
-                        prefs.lastModelUpdatedAt.setValue(formatUpdatedAt(asset.releaseUpdatedAt))
                         urls.add(asset.downloadUrl)
                     } else {
                         modelUpToDate = true
                     }
                     expectedShas[asset.name] = asset.sha256
+                    releaseUpdatedAts[asset.name] = formatUpdatedAt(asset.releaseUpdatedAt)
                 }
             }
         }
@@ -631,7 +632,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
 
         if (urls.isEmpty()) return
         val rules = prefs.excludeRules.getValue().lines().filter { it.isNotBlank() }
-        startDownload(urls, rules, token, expectedShas, targetPaths)
+        startDownload(urls, rules, token, expectedShas, releaseUpdatedAts, targetPaths)
     }
 
     private fun startDownload(
@@ -639,6 +640,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
         rules: List<String>,
         githubToken: String,
         expectedShas: Map<String, String> = emptyMap(),
+        releaseUpdatedAts: Map<String, String> = emptyMap(),
         targetPaths: List<String> = emptyList(),
     ) {
         if (isDownloading) return
@@ -670,7 +672,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                 fName.contains("gram") -> "${getString(R.string.wanxiang_package_model)} ($fName)"
                 else -> "${getString(R.string.wanxiang_package_schema)} ($fName)"
             }
-            TaskState(title, url, expectedSha256 = expectedShas[fName])
+            TaskState(title, url, expectedSha256 = expectedShas[fName], releaseUpdatedAt = releaseUpdatedAts[fName])
         }
 
         val progressViews = mutableListOf<TextView>()
@@ -762,10 +764,12 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                             task.url.contains("dicts") -> {
                                 prefs.lastDictSha256.setValue(sha)
                                 prefs.needsUpdateDict.setValue(false)
+                                task.releaseUpdatedAt?.let { prefs.lastDictUpdatedAt.setValue(it) }
                             }
                             task.url.contains(".gram") -> {
                                 prefs.lastModelSha256.setValue(sha)
                                 prefs.needsUpdateModel.setValue(false)
+                                task.releaseUpdatedAt?.let { prefs.lastModelUpdatedAt.setValue(it) }
                             }
                         }
                     }

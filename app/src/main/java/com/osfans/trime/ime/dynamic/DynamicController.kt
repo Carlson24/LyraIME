@@ -16,6 +16,8 @@ class DynamicController(
     private var cursorPosition: Int = 0
     var originalKeyboard: String = ".default"
 
+    var isDynamicMode: Boolean = false
+
     @Volatile
     var isKeyProcessing: Boolean = false
 
@@ -23,7 +25,7 @@ class DynamicController(
 
     private val messageHandler: (RimeMessage<*>) -> Unit = { message ->
         if (message is RimeMessage.CommitTextMessage) {
-            if (!message.data.text.isNullOrEmpty() && keyboardList.isNotEmpty() && !isKeyProcessing) {
+            if (!message.data.text.isNullOrEmpty() && isDynamicMode && keyboardList.isNotEmpty() && !isKeyProcessing) {
                 mainHandler.post { clear() }
             }
         }
@@ -38,15 +40,20 @@ class DynamicController(
 
     fun onInput(dynamicTarget: String?) {
         val kb = when (dynamicTarget) {
-            null -> keyboardAt(cursorPosition)
+            null -> if (isDynamicMode) keyboardAt(cursorPosition) else originalKeyboard
             ".original" -> originalKeyboard
             else -> dynamicTarget
         }
-        Timber.d("dynamic onInput: target=$dynamicTarget, cursor=$cursorPosition, keyboard=$kb, list=$keyboardList")
-        keyboardList.add(cursorPosition, kb)
-        charCounts.add(cursorPosition, 1)
-        cursorPosition++
-        switchToKeyboardAt(cursorPosition)
+        if (isDynamicMode) {
+            Timber.d("dynamic onInput: target=$dynamicTarget, cursor=$cursorPosition, keyboard=$kb, list=$keyboardList")
+            keyboardList.add(cursorPosition, kb)
+            charCounts.add(cursorPosition, 1)
+            cursorPosition++
+            switchToKeyboardAt(cursorPosition)
+        } else {
+            Timber.d("dynamic onInput (direct): target=$dynamicTarget, keyboard=$kb")
+            onSwitchRequest(kb)
+        }
     }
 
     fun recordCharCount(count: Int) {

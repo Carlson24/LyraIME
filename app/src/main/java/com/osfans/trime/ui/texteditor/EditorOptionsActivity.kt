@@ -73,6 +73,7 @@ class EditorOptionsActivity : AppCompatActivity() {
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
         setupTabWidth()
+        setupFontSize()
         setupFontList()
     }
 
@@ -101,6 +102,30 @@ class EditorOptionsActivity : AppCompatActivity() {
                 val clamped = raw.coerceIn(MIN_TAB_WIDTH, MAX_TAB_WIDTH)
                 tabWidthInput.setText(clamped.toString())
                 prefs.edit().putInt(PREF_TAB_WIDTH, clamped).apply()
+            }
+        }
+    }
+
+    private fun setupFontSize() {
+        val fontSizeInput = findViewById<EditText>(R.id.fontSizeInput)
+        fontSizeInput.setText(
+            prefs.getInt(PREF_FONT_SIZE, DEFAULT_FONT_SIZE).toString(),
+        )
+        fontSizeInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val raw = s?.toString()?.toIntOrNull() ?: return
+                val clamped = raw.coerceIn(MIN_FONT_SIZE, MAX_FONT_SIZE)
+                prefs.edit().putInt(PREF_FONT_SIZE, clamped).apply()
+            }
+        })
+        fontSizeInput.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val raw = fontSizeInput.text?.toString()?.toIntOrNull() ?: DEFAULT_FONT_SIZE
+                val clamped = raw.coerceIn(MIN_FONT_SIZE, MAX_FONT_SIZE)
+                fontSizeInput.setText(clamped.toString())
+                prefs.edit().putInt(PREF_FONT_SIZE, clamped).apply()
             }
         }
     }
@@ -211,6 +236,11 @@ class EditorOptionsActivity : AppCompatActivity() {
         const val DEFAULT_TAB_WIDTH = 4
         const val MIN_TAB_WIDTH = 1
         const val MAX_TAB_WIDTH = 16
+
+        const val PREF_FONT_SIZE = "font_size"
+        const val DEFAULT_FONT_SIZE = 14
+        const val MIN_FONT_SIZE = 10
+        const val MAX_FONT_SIZE = 24
 
         private val ALLOWED_FONT_EXTS = setOf("ttf", "otf", "ttc", "otc")
         private const val DISABLED_PREFIX = '!'

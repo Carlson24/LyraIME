@@ -14,11 +14,11 @@
           "type": "number",
           "default": 10
         },
-        "bg_normal": {
+        "normal": {
           "type": "string",
           "default": ""
         },
-        "bg_highlight": {
+        "highlight": {
           "type": "string",
           "default": ""
         },
@@ -28,7 +28,7 @@
         },
         "horizontal_inset": {
           "type": "integer",
-          "default": 0
+          "default": 4
         }
       }
     },
@@ -41,33 +41,24 @@
         },
         "option_styles": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "default": []
         },
-        "fg_normal": {
-          "type": ["string", "null"],
-          "default": null
+        "normal": {
+          "type": "string",
+          "default": ""
         },
-        "fg_highlight": {
-          "type": ["string", "null"],
-          "default": null
+        "highlight": {
+          "type": "string",
+          "default": ""
         },
         "font_size": {
           "type": "number",
-          "default": 15
-        },
-        "size": {
-          "type": "array",
-          "items": {
-            "type": "integer"
-          },
-          "default": []
+          "default": 18
         },
         "padding": {
           "type": "integer",
-          "default": 5
+          "default": 4
         }
       }
     },
@@ -83,8 +74,23 @@
         "action": {
           "type": "string",
           "default": ""
+        },
+        "long_press_action": {
+          "type": "string",
+          "default": ""
+        },
+        "size": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "default": []
         }
       }
+    },
+    "colorValue": {
+      "oneOf": [
+        { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        { "type": "string", "pattern": "^0x[0-9a-fA-F]{1,8}$" }
+      ]
     }
   },
   "type": "object",
@@ -96,257 +102,104 @@
     },
     "name": {
       "type": "string",
-      "description": "方案名稱"
+      "description": "主题名称"
     },
     "author": {
       "type": "string",
-      "description": "作者資訊"
+      "description": "作者信息"
     },
     "style": {
       "type": "object",
       "properties": {
-        "auto_caps": {
-          "enum": [true, false, "ascii"],
-          "default": false,
-          "description": "自动句首大写"
-        },
-        "candidate_font": {
-          "type": "string",
-          "description": "候選字型"
-        },
-        "candidate_padding": {
-          "type": "integer",
-          "description": "候選項內邊距"
-        },
-        "candidate_spacing": {
-          "type": "number",
-          "description": "候選間距"
-        },
-        "candidate_text_size": {
-          "type": "integer",
-          "description": "候選字號"
-        },
-        "candidate_view_height": {
-          "type": "integer",
-          "description": "候選區高度"
-        },
-        "comment_font": {
-          "type": "string",
-          "description": "編碼提示字型"
-        },
-        "comment_height": {
-          "type": "integer",
-          "description": "編碼提示區高度"
-        },
-        "comment_on_top": {
-          "type": "boolean",
-          "description": "編碼提示在上方或右側"
-        },
-        "comment_text_size": {
-          "type": "integer",
-          "description": "編碼提示字號"
-        },
-        "hanb_font": {
-          "type": "string",
-          "description": "擴充字型"
-        },
-        "horizontal_gap": {
-          "type": "integer",
-          "description": "鍵水平間距"
-        },
-        "keyboard_padding": {
-          "type": "integer",
-          "description": "竖屏模式下，屏幕左右两侧与键盘的距离（曲面屏减少误触）"
-        },
-        "keyboard_padding_left": {
-          "type": "integer",
-          "description": "竖屏屏模式下，左手键盘布局，屏幕左侧与键盘的距离"
-        },
-        "keyboard_padding_right": {
-          "type": "integer",
-          "description": "竖屏屏模式下，左手键盘布局，屏幕右侧与键盘的距离"
-        },
-        "keyboard_padding_bottom": {
-          "type": "integer",
-          "description": "竖屏模式下，屏幕下边缘与键盘的距离（避免误触发全面屏手势）"
-        },
-        "keyboard_padding_land": {
-          "type": "integer",
-          "description": "横屏模式下，屏幕左右两侧与键盘的距离（避免横屏按键过度拉伸变形）"
-        },
-        "keyboard_padding_land_bottom": {
-          "type": "integer",
-          "description": "横屏模式下，屏幕下侧与键盘的距离"
-        },
-        "key_font": {
-          "type": "string",
-          "description": "鍵盤字型"
-        },
-        "key_height": {
-          "type": "integer",
-          "description": "鍵高"
-        },
-        "key_text_size": {
-          "type": "integer",
-          "description": "鍵字號"
-        },
-        "key_width": {
-          "type": "number",
-          "description": "鍵寬，佔螢幕寬的百分比"
-        },
-        "keyboards": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "鍵盤配置"
-        },
-        "label_text_size": {
-          "type": "integer",
-          "description": "標籤字號"
-        },
-        "label_font": {
-          "type": "string",
-          "description": "編標籤字型"
-        },
-        "latin_font": {
-          "type": "string",
-          "description": "西文字型"
-        },
-        "keyboard_height": {
-          "type": "integer",
-          "description": "锁定键盘高度，避免切换时键盘高度变化而造成闪烁"
-        },
-        "keyboard_height_land": {
-          "type": "integer",
-          "description": "锁定横屏下键盘高度，避免切换时键盘高度变化而造成闪烁"
-        },
-        "preview_font": {
-          "type": "string",
-          "description": "按鍵提示字型"
-        },
-        "preview_height": {
-          "type": "integer",
-          "description": "按鍵提示高度"
-        },
-        "preview_offset": {
-          "type": "integer",
-          "default": "-12",
-          "description": "按鍵提示縱向偏移"
-        },
-        "preview_text_size": {
-          "type": "integer",
-          "description": "按鍵提示字號"
-        },
-        "proximity_correction": {
-          "type": "boolean",
-          "description": "按鍵糾錯"
-        },
-        "reset_ascii_mode_on_focus_change": {
-          "type": "boolean",
-          "description": "焦点变更弹起输入法软键盘时，重置 ascii_mode"
-        },
-        "round_corner": {
-          "type": "number",
-          "description": "按鍵圓角半徑"
-        },
-        "shadow_radius": {
-          "type": "number",
-          "description": "按鍵陰影半徑"
-        },
-        "symbol_font": {
-          "type": "string",
-          "description": "符號字型"
-        },
-        "symbol_text_size": {
-          "type": "integer",
-          "description": "編碼字型"
-        },
-        "vertical_correction": {
-          "type": "number",
-          "default": "-10",
-          "description": "触摸位置校正（竖直方向）。为了提升打字手感，可将按键的实际触摸位置相对其显示位置上下偏移一点点"
-        },
-        "vertical_gap": {
-          "type": "number",
-          "description": "鍵盤行距"
-        },
-        "background_folder": {
-          "type": "string",
-          "description": "背景图保存在background目录下的哪个子目录"
-        },
-        "enter_label_mode": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 3,
-          "description": "是否使用App提供的ActionLabel内容作为Enter键的文本（由于多数App没有适配ActionLable，实际影响不大）。0不使用，1只使用actionlabel，2优先使用，3当其他方式没有获得label时才读取actionlabel"
-        },
+        "auto_caps": { "type": "boolean", "default": false },
+        "background_folder": { "type": "string", "default": "backgrounds" },
+        "candidate_border": { "type": "integer", "default": 0 },
+        "candidate_border_round": { "type": "number", "default": 0 },
+        "candidate_corner_radius": { "type": "number", "default": 5 },
+        "candidate_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "candidate_padding": { "type": "integer", "default": 0 },
+        "candidate_spacing": { "type": "number", "default": 0 },
+        "candidate_text_size": { "type": "number", "default": 15 },
+        "candidate_text_vertical_bias": { "type": "number", "default": 1 },
+        "candidate_view_height": { "type": "integer", "default": 28 },
+        "clipboard_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "clipboard_category_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "clipboard_category_text_size": { "type": "number", "default": 13 },
+        "clipboard_text_size": { "type": "number", "default": 14 },
+        "comment_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "comment_height": { "type": "integer", "default": 12 },
+        "comment_position": { "enum": ["right", "top", "overlay"], "default": "right" },
+        "comment_text_size": { "type": "number", "default": 10 },
+        "comment_vertical_bias": { "type": "number", "default": 0 },
+        "display_variants": { "type": "object", "additionalProperties": { "type": "string" }, "default": {} },
+        "enter_label_mode": { "type": "integer", "minimum": 0, "maximum": 3, "default": 0 },
         "enter_labels": {
           "type": "object",
-          "description": "定义Enter键的文本",
           "properties": {
-            "go": {
-              "type": "string",
-              "default": "前往"
-            },
-            "done": {
-              "type": "string",
-              "default": "完成"
-            },
-            "next": {
-              "type": "string",
-              "default": "下个"
-            },
-            "pre": {
-              "type": "string",
-              "default": "上个"
-            },
-            "search": {
-              "type": "string",
-              "default": "搜索"
-            },
-            "send": {
-              "type": "string",
-              "default": "发送"
-            },
-            "default": {
-              "type": "string",
-              "default": "Enter"
-            }
+            "go": { "type": "string", "default": "go" },
+            "done": { "type": "string", "default": "done" },
+            "next": { "type": "string", "default": "next" },
+            "pre": { "type": "string", "default": "pre" },
+            "search": { "type": "string", "default": "search" },
+            "send": { "type": "string", "default": "send" },
+            "default": { "type": "string", "default": "default" }
           }
-        }
+        },
+        "font_variations": { "type": "object", "additionalProperties": { "type": "boolean" }, "default": {} },
+        "hanb_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "hint_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "hint_text_size": { "type": "number", "default": 0 },
+        "horizontal_gap": { "type": "integer", "default": 0 },
+        "key_border": { "type": "integer", "default": 0 },
+        "key_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "key_hint_offset_x": { "type": "number", "default": 0 },
+        "key_hint_offset_y": { "type": "number", "default": 0 },
+        "key_long_text_size": { "type": "number", "default": 15 },
+        "key_press_offset_x": { "type": "number", "default": 0 },
+        "key_press_offset_y": { "type": "number", "default": 0 },
+        "key_symbol_offset_x": { "type": "number", "default": 0 },
+        "key_symbol_offset_y": { "type": "number", "default": 0 },
+        "key_text_offset_x": { "type": "number", "default": 0 },
+        "key_text_offset_y": { "type": "number", "default": 0 },
+        "key_text_size": { "type": "number", "default": 15 },
+        "keyboard_height": { "type": "integer", "default": 0 },
+        "keyboard_height_land": { "type": "integer", "default": 0 },
+        "keyboard_padding": { "type": "integer", "default": 0 },
+        "keyboard_padding_bottom": { "type": "integer", "default": 0 },
+        "keyboard_padding_land": { "type": "integer", "default": 0 },
+        "keyboard_padding_land_bottom": { "type": "integer", "default": 0 },
+        "keyboard_padding_top": { "type": "integer", "default": 0 },
+        "label_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "label_text_size": { "type": "number", "default": 0 },
+        "latin_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "popup_bottom_margin": { "type": "integer", "default": 0 },
+        "popup_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "popup_height": { "type": "integer", "default": 0 },
+        "popup_key_height": { "type": "integer", "default": 0 },
+        "popup_text_size": { "type": "number", "default": 0 },
+        "popup_width": { "type": "integer", "default": 0 },
+        "reset_ascii_mode_on_focus_change": { "type": "boolean", "default": false },
+        "round_corner": { "type": "number", "default": 0 },
+        "shadow_radius": { "type": "number", "default": 0 },
+        "symbol_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "symbol_text_size": { "type": "number", "default": 0 },
+        "t9_side_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "t9_side_round_corner": { "type": "number", "default": -1 },
+        "t9_side_text_size": { "type": "number", "default": -1 },
+        "text_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "vertical_gap": { "type": "integer", "default": 0 }
       }
     },
     "preedit": {
       "type": "object",
       "properties": {
-        "horizontal_padding": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 64,
-          "default": 8
-        },
-        "top_end_radius": {
-          "type": "number",
-          "minimum": 0.0,
-          "maximum": 48,
-          "default": 0.0
-        },
-        "alpha": {
-          "type": "number",
-          "minimum": 0.0,
-          "maximum": 1.0,
-          "default": 1.0
-        },
+        "horizontal_padding": { "type": "integer", "default": 8 },
+        "top_end_radius": { "type": "number", "default": 0 },
+        "alpha": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.8 },
         "foreground": {
           "type": "object",
           "properties": {
-            "font_size": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 64,
-              "default": 16
-            }
+            "font_size": { "type": "number", "default": 16 }
           }
         }
       }
@@ -357,114 +210,55 @@
         "insets": {
           "type": "object",
           "properties": {
-            "vertical": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 64,
-              "default": 0
-            },
-            "horizontal": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 64,
-              "default": 0
-            }
+            "vertical": { "type": "integer", "default": 0 },
+            "horizontal": { "type": "integer", "default": 0 }
           }
         },
         "item_padding": {
           "type": "object",
           "properties": {
-            "vertical": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 64,
-              "default": 0
-            },
-            "horizontal": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 64,
-              "default": 0
-            }
+            "vertical": { "type": "integer", "default": 0 },
+            "horizontal": { "type": "integer", "default": 0 }
           }
         },
-        "min_width": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 640,
-          "default": 0
-        },
-        "corner_radius": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 48,
-          "default": 0
-        },
-        "border": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 24,
-          "default": 0
-        },
-        "shadow": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 64,
-          "default": 0
-        },
-        "alpha": {
-          "type": "number",
-          "minimum": 0.0,
-          "maximum": 1.0,
-          "default": 1.0
-        },
+        "min_width": { "type": "integer", "default": 0 },
+        "corner_radius": { "type": "number", "default": 0 },
+        "border": { "type": "integer", "default": 0 },
+        "shadow": { "type": "number", "default": 0 },
+        "alpha": { "type": "number", "minimum": 0, "maximum": 1, "default": 1 },
         "foreground": {
           "type": "object",
           "properties": {
-            "label_font_size": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 64,
-              "default": 20
-            },
-            "text_font_size": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 64,
-              "default": 20
-            },
-            "comment_font_size": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 64,
-              "default": 16
-            }
+            "label_font_size": { "type": "number", "default": 20 },
+            "text_font_size": { "type": "number", "default": 20 },
+            "comment_font_size": { "type": "number", "default": 20 }
           }
         }
       }
     },
     "tool_bar": {
+      "type": "object",
       "properties": {
-        "primary_button": {
-          "$ref": "#/definitions/ToolBar.Button"
-        },
+        "back_style": { "type": "string", "default": "ic@arrow-left" },
+        "button_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "primary_button": { "$ref": "#/definitions/ToolBar.Button" },
         "buttons": {
           "type": "array",
-          "items": {
-            "$ref": "#/definitions/ToolBar.Button"
-          },
+          "items": { "$ref": "#/definitions/ToolBar.Button" },
           "default": []
-        },
-        "button_spacing": {
-          "type": "integer",
-          "default": 18,
-          "description": "已弃用(deprecated)。按钮自动均分可用宽度，不再使用此参数。"
-        },
-        "button_font": {
+        }
+      }
+    },
+    "unrolled_nav_bar": {
+      "type": "object",
+      "properties": {
+        "width": { "type": "integer", "default": 44 },
+        "background": { "type": "string", "default": "" },
+        "separator_color": { "type": "string", "default": "" },
+        "button_font": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "buttons": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "items": { "$ref": "#/definitions/ToolBar.Button" },
           "default": []
         }
       }
@@ -472,348 +266,106 @@
     "fallback_colors": {
       "type": "object",
       "properties": {
-        "candidate_text_color": {
-          "type": "string",
-          "default": "text_color"
-        },
-        "comment_text_color": {
-          "type": "string",
-          "default": "candidate_text_color"
-        },
+        "candidate_text_color": { "type": "string", "default": "text_color" },
+        "comment_text_color": { "type": "string", "default": "candidate_text_color" },
         "border_color": { "type": "string", "default": "back_color" },
-        "candidate_separator_color": {
-          "type": "string",
-          "default": "border_color"
-        },
+        "candidate_separator_color": { "type": "string", "default": "border_color" },
         "hilited_text_color": { "type": "string", "default": "text_color" },
         "hilited_back_color": { "type": "string", "default": "back_color" },
-        "hilited_candidate_text_color": {
-          "type": "string",
-          "default": "hilited_text_color"
-        },
-        "hilited_candidate_back_color": {
-          "type": "string",
-          "default": "hilited_back_color"
-        },
-        "hilited_label_color": {
-          "type": "string",
-          "default": "hilited_candidate_text_color",
-          "description": "高亮候选序号"
-        },
-        "hilited_comment_text_color": {
-          "type": "string",
-          "default": "comment_text_color"
-        },
-        "hilited_key_back_color": {
-          "type": "string",
-          "default": "hilited_candidate_back_color"
-        },
-        "hilited_key_text_color": {
-          "type": "string",
-          "default": "hilited_candidate_text_color"
-        },
-        "hilited_key_symbol_color": {
-          "type": "string",
-          "default": "hilited_comment_text_color"
-        },
-        "hilited_off_key_back_color": {
-          "type": "string",
-          "default": "hilited_key_back_color"
-        },
-        "hilited_on_key_back_color": {
-          "type": "string",
-          "default": "hilited_key_back_color"
-        },
-        "hilited_off_key_text_color": {
-          "type": "string",
-          "default": "hilited_key_text_color"
-        },
-        "hilited_on_key_text_color": {
-          "type": "string",
-          "default": "hilited_key_text_color"
-        },
+        "hilited_candidate_text_color": { "type": "string", "default": "hilited_text_color" },
+        "hilited_candidate_back_color": { "type": "string", "default": "hilited_back_color" },
+        "hilited_label_color": { "type": "string", "default": "hilited_candidate_text_color" },
+        "hilited_comment_text_color": { "type": "string", "default": "comment_text_color" },
+        "hilited_key_back_color": { "type": "string", "default": "hilited_candidate_back_color" },
+        "hilited_key_text_color": { "type": "string", "default": "hilited_candidate_text_color" },
+        "hilited_key_symbol_color": { "type": "string", "default": "hilited_comment_text_color" },
+        "hilited_off_key_back_color": { "type": "string", "default": "hilited_key_back_color" },
+        "hilited_on_key_back_color": { "type": "string", "default": "hilited_key_back_color" },
+        "hilited_off_key_text_color": { "type": "string", "default": "hilited_key_text_color" },
+        "hilited_on_key_text_color": { "type": "string", "default": "hilited_key_text_color" },
         "key_back_color": { "type": "string", "default": "back_color" },
         "key_border_color": { "type": "string", "default": "border_color" },
-        "key_text_color": {
-          "type": "string",
-          "default": "candidate_text_color"
-        },
-        "key_symbol_color": {
-          "type": "string",
-          "default": "comment_text_color"
-        },
+        "key_text_color": { "type": "string", "default": "candidate_text_color" },
+        "key_symbol_color": { "type": "string", "default": "comment_text_color" },
         "label_color": { "type": "string", "default": "candidate_text_color" },
         "off_key_back_color": { "type": "string", "default": "key_back_color" },
         "off_key_text_color": { "type": "string", "default": "key_text_color" },
-        "on_key_back_color": {
-          "type": "string",
-          "default": "hilited_key_back_color"
-        },
-        "on_key_text_color": {
-          "type": "string",
-          "default": "hilited_key_text_color"
-        },
+        "on_key_back_color": { "type": "string", "default": "hilited_key_back_color" },
+        "on_key_text_color": { "type": "string", "default": "hilited_key_text_color" },
         "preview_back_color": { "type": "string", "default": "key_back_color" },
         "preview_text_color": { "type": "string", "default": "key_text_color" },
         "shadow_color": { "type": "string", "default": "border_color" },
-        "root_background": {
-          "type": "string",
-          "default": "back_color",
-          "description": "整个键盘区+候选栏的背景图/色"
-        },
-        "candidate_background": {
-          "type": "string",
-          "default": "back_color",
-          "description": "候选栏的整体背景图/色"
-        },
-        "keyboard_back_color": {
-          "type": "string",
-          "default": "border_color",
-          "description": "键盘区的背景图/色"
-        },
-        "liquid_keyboard_background": {
-          "type": "string",
-          "default": "keyboard_back_color",
-          "description": "liquidKeyboard 的背景图/色"
-        },
-        "text_back_color": {
-          "type": "string",
-          "default": "back_color",
-          "description": "编码区背景，即悬浮窗背景"
-        },
-        "long_text_back_color": {
-          "type": "string",
-          "default": "key_back_color",
-          "description": "长文本按键的背景(剪贴板）"
-        }
+        "root_background": { "type": "string", "default": "back_color" },
+        "candidate_background": { "type": "string", "default": "back_color" },
+        "keyboard_back_color": { "type": "string", "default": "border_color" },
+        "liquid_keyboard_background": { "type": "string", "default": "keyboard_back_color" },
+        "text_back_color": { "type": "string", "default": "back_color" },
+        "long_text_back_color": { "type": "string", "default": "key_back_color" },
+        "clipboard_checkbox_color": { "type": "string", "default": "key_text_color" },
+        "clipboard_entry_back_color": { "type": "string" },
+        "hilited_clipboard_entry_back_color": { "type": "string" },
+        "clipboard_category_back_color": { "type": "string" },
+        "clipboard_category_selected_back_color": { "type": "string" },
+        "clipboard_category_selected_text_color": { "type": "string" },
+        "candidate_view_back_color": { "type": "string" },
+        "candidate_virtual_tab_color": { "type": "string" },
+        "candidate_virtual_tab_highlight_color": { "type": "string" }
       }
     },
     "preset_color_schemes": {
       "type": "object",
       "patternProperties": {
         "\\w+": {
-          "name": {
-            "type": "string",
-            "description": "方案名稱"
-          },
-          "author": {
-            "type": "string",
-            "description": "作者資訊"
-          },
-          "back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xe4e7e9",
-            "description": "候選區背景"
-          },
-          "border_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xc1c7ca",
-            "description": "邊框"
-          },
-          "candidate_separator_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xc1c7ca",
-            "description": "候選分割背景"
-          },
-          "candidate_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x5a676e",
-            "description": "候選文字"
-          },
-          "comment_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x7b868c",
-            "description": "提示"
-          },
-          "hilited_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xccd3d7da",
-            "description": "標明編碼背景"
-          },
-          "hilited_candidate_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xd3d7da",
-            "description": "標明候選背景"
-          },
-          "hilited_candidate_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "description": "標明候選文字"
-          },
-          "hilited_comment_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "description": "標明提示"
-          },
-          "hilited_key_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xd3d7da",
-            "description": "標明按鍵背景"
-          },
-          "hilited_key_symbol_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "description": "標明按鍵符號"
-          },
-          "hilited_key_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "description": "標明按鍵文字"
-          },
-          "hilited_off_key_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xd3d7da",
-            "description": "標明按鍵關閉狀態背景"
-          },
-          "hilited_off_key_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "description": "標明按鍵關閉狀態文字"
-          },
-          "hilited_on_key_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xd3d7da",
-            "description": "標明按鍵打開狀態背景"
-          },
-          "hilited_on_key_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "description": "標明按鍵打開狀態文字"
-          },
-          "hilited_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x23948e",
-            "description": "標明編碼"
-          },
-          "key_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xeceff1",
-            "description": "按鍵背景"
-          },
-          "key_border_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xeceff1",
-            "description": "按鍵邊框"
-          },
-          "key_symbol_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x5f6b73",
-            "description": "按鍵符號"
-          },
-          "key_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x37474f",
-            "description": "按鍵文字"
-          },
-          "keyboard_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xffffff",
-            "description": "鍵盤背景"
-          },
-          "label_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "description": "標籤"
-          },
-          "off_key_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xd3d7da",
-            "description": "按鍵關閉狀態背景"
-          },
-          "off_key_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "description": "按鍵關閉狀態文字"
-          },
-          "on_key_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x23948e",
-            "description": "按鍵打開狀態背景"
-          },
-          "on_key_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x37474f",
-            "description": "按鍵打開狀態文字"
-          },
-          "preview_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x55bfbfbf",
-            "description": "按鍵提示背景"
-          },
-          "preview_text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x23948e",
-            "description": "按鍵提示文字"
-          },
-          "shadow_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "description": "按鍵文字陰影"
-          },
-          "text_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0x5a676e",
-            "description": "編碼"
-          },
-          "text_back_color": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 16777215,
-            "default": "0xcce4e7e9",
-            "description": "編碼區背景"
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "方案名稱" },
+            "author": { "type": "string", "description": "作者資訊" },
+            "back_color": { "$ref": "#/definitions/colorValue" },
+            "border_color": { "$ref": "#/definitions/colorValue" },
+            "candidate_background": { "$ref": "#/definitions/colorValue" },
+            "candidate_separator_color": { "$ref": "#/definitions/colorValue" },
+            "candidate_text_color": { "$ref": "#/definitions/colorValue" },
+            "candidate_view_back_color": { "$ref": "#/definitions/colorValue" },
+            "candidate_virtual_tab_color": { "$ref": "#/definitions/colorValue" },
+            "candidate_virtual_tab_highlight_color": { "$ref": "#/definitions/colorValue" },
+            "clipboard_category_back_color": { "$ref": "#/definitions/colorValue" },
+            "clipboard_category_selected_back_color": { "$ref": "#/definitions/colorValue" },
+            "clipboard_category_selected_text_color": { "$ref": "#/definitions/colorValue" },
+            "clipboard_checkbox_color": { "$ref": "#/definitions/colorValue" },
+            "clipboard_entry_back_color": { "$ref": "#/definitions/colorValue" },
+            "comment_text_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_back_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_candidate_back_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_candidate_text_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_clipboard_entry_back_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_comment_text_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_key_back_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_key_symbol_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_key_text_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_label_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_off_key_back_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_off_key_text_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_on_key_back_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_on_key_text_color": { "$ref": "#/definitions/colorValue" },
+            "hilited_text_color": { "$ref": "#/definitions/colorValue" },
+            "key_back_color": { "$ref": "#/definitions/colorValue" },
+            "key_border_color": { "$ref": "#/definitions/colorValue" },
+            "key_symbol_color": { "$ref": "#/definitions/colorValue" },
+            "key_text_color": { "$ref": "#/definitions/colorValue" },
+            "keyboard_back_color": { "$ref": "#/definitions/colorValue" },
+            "label_color": { "$ref": "#/definitions/colorValue" },
+            "liquid_keyboard_background": { "$ref": "#/definitions/colorValue" },
+            "long_text_back_color": { "$ref": "#/definitions/colorValue" },
+            "off_key_back_color": { "$ref": "#/definitions/colorValue" },
+            "off_key_text_color": { "$ref": "#/definitions/colorValue" },
+            "on_key_back_color": { "$ref": "#/definitions/colorValue" },
+            "on_key_text_color": { "$ref": "#/definitions/colorValue" },
+            "preview_back_color": { "$ref": "#/definitions/colorValue" },
+            "preview_text_color": { "$ref": "#/definitions/colorValue" },
+            "root_background": { "$ref": "#/definitions/colorValue" },
+            "shadow_color": { "$ref": "#/definitions/colorValue" },
+            "text_back_color": { "$ref": "#/definitions/colorValue" },
+            "text_color": { "$ref": "#/definitions/colorValue" }
           }
         }
       }
@@ -821,39 +373,80 @@
     "liquid_keyboard": {
       "type": "object",
       "properties": {
-        "author": {
-          "type": "string"
-        },
-        "row": { "type": "integer", "description": "每屏最多显示多少行按键" },
-        "row_land": {
-          "type": "integer",
-          "description": "横屏每屏最多显示多少行按键"
-        },
-        "key_height": { "type": "integer", "description": "按键高度" },
-        "key_height_land": {
-          "type": "integer",
-          "description": "横屏模式按键高度"
-        },
-        "single_width": {
-          "type": "integer",
-          "description": "single类型的按键宽度"
-        },
-        "vertical_gap": { "type": "integer", "description": "纵向按键间隙" },
-        "margin_x": { "type": "number", "description": "左右按键间隙的1/2" },
+        "author": { "type": "string" },
+        "row": { "type": "integer", "default": 6 },
+        "row_land": { "type": "integer", "default": 5 },
+        "key_height": { "type": "integer", "default": 40 },
+        "key_height_land": { "type": "integer", "default": 40 },
+        "single_width": { "type": "integer", "default": 60 },
+        "vertical_gap": { "type": "integer", "default": 1 },
+        "margin_x": { "type": "number", "default": 5 },
         "fixed_key_bar": {
           "type": "object",
           "properties": {
             "position": {
-              "enum": ["top", "bottom", "left", "right"],
-              "description": "固定按键条摆放位置（相对滚动区域的上/下/左/右方位）"
+              "enum": ["top", "bottom", "left", "right", "navbar"],
+              "default": "bottom"
             },
             "keys": {
               "type": "array",
-              "description": "固定按键条的按键（显示名称为对应的label，不能放太多）"
+              "items": {
+                "oneOf": [
+                  { "type": "string" },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "click": { "type": "string", "default": "" },
+                      "label": { "type": "string", "default": "" },
+                      "width": { "type": "number" },
+                      "height": { "type": "number" },
+                      "margin": {
+                        "oneOf": [
+                          { "type": "number" },
+                          { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 4 }
+                        ]
+                      },
+                      "padding": {
+                        "oneOf": [
+                          { "type": "number" },
+                          { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 4 }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
             }
           }
         },
-        "keyboards": { "type": "array", "items": { "type": "string" } }
+        "keyboards": {
+          "type": "object",
+          "patternProperties": {
+            "\\w+": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "enum": ["SINGLE", "SYMBOL", "TABS", "HISTORY", "VAR_LENGTH"] },
+                "keys": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      { "type": "string" },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "click": { "type": "string", "default": "" },
+                          "label": { "type": "string", "default": "" }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": ["type"]
+            }
+          }
+        }
       }
     },
     "preset_keys": {
@@ -862,8 +455,22 @@
         "\\w+": {
           "type": "object",
           "properties": {
-            "label": { "oneOf": [{ "type": "string" }, { "type": "integer" }] },
-            "send": { "oneOf": [{ "type": "string" }, { "type": "integer" }] }
+            "label": { "type": "string", "default": "" },
+            "preview": { "type": "string" },
+            "send": { "type": "string", "default": "" },
+            "command": { "type": "string", "default": "" },
+            "option": { "type": "string", "default": "" },
+            "select": { "type": "string", "default": "" },
+            "toggle": { "type": "string", "default": "" },
+            "commit": { "type": "string", "default": "" },
+            "text": { "type": "string", "default": "" },
+            "shift_lock": { "type": "string", "default": "" },
+            "sticky": { "type": "boolean", "default": false },
+            "repeatable": { "type": "boolean", "default": false },
+            "slide_cursor": { "type": "boolean", "default": false },
+            "slide_delete": { "type": "boolean", "default": false },
+            "functional": { "type": "boolean", "default": false },
+            "states": { "type": "array", "items": { "type": "string" }, "default": [] }
           }
         }
       }
@@ -874,35 +481,99 @@
         "\\w+": {
           "type": "object",
           "properties": {
+            "__include": { "type": "string" },
             "name": { "type": "string" },
             "author": { "type": "string" },
-            "ascii_mode": { "type": "integer" },
-            "width": { "type": "number" },
-            "height": { "type": "number" },
+            "ascii_mode": { "type": "integer", "enum": [0, 1] },
+            "reset_ascii_mode": { "type": "boolean" },
             "lock": { "type": "boolean" },
-            "keys": {
+            "label_transform": { "enum": ["none", "uppercase"] },
+            "keyboard_height": { "type": "integer" },
+            "keyboard_height_land": { "type": "integer" },
+            "horizontal_gap": { "type": "integer" },
+            "vertical_gap": { "type": "integer" },
+            "round_corner": { "type": "number" },
+            "key_border": { "type": "integer" },
+            "auto_height_index": { "type": "integer" },
+            "ascii_keyboard": { "type": "string" },
+            "landscape_keyboard": { "type": "string" },
+            "landscape_split_percent": { "type": "integer" },
+            "import_preset": { "type": "string" },
+            "keyboard_padding_top": { "type": "integer" },
+            "navbar": { "type": "boolean" },
+            "t9_mode": { "type": "boolean" },
+            "t9_sidebar_width": { "type": "number" },
+            "t9_sidebar_position": { "type": "string" },
+            "t9_sidebar_span_rows": { "type": "integer" },
+            "t9_sidebar_show_items": { "type": "integer" },
+            "t9_sidebar_symbols": { "type": "array", "items": { "type": "string" } },
+            "dynamic_mode": { "type": "boolean" },
+            "dynamic_original": { "type": "string" },
+            "key_text_offset_x": { "type": "number" },
+            "key_text_offset_y": { "type": "number" },
+            "key_symbol_offset_x": { "type": "number" },
+            "key_symbol_offset_y": { "type": "number" },
+            "key_hint_offset_x": { "type": "number" },
+            "key_hint_offset_y": { "type": "number" },
+            "key_press_offset_x": { "type": "number" },
+            "key_press_offset_y": { "type": "number" },
+            "rows": {
               "type": "array",
               "items": {
                 "type": "object",
                 "properties": {
-                  "click": {
-                    "oneOf": [
-                      { "type": "string" },
-                      { "type": "integer" },
-                      { "type": "boolean" }
-                    ]
-                  },
-                  "long_click": {
-                    "oneOf": [{ "type": "string" }, { "type": "integer" }]
-                  },
-                  "label": { "type": "string" },
-                  "width": { "type": "number" },
-                  "swipe_left": { "type": "string" },
-                  "swipe_right": { "type": "string" },
-                  "swipe_up": { "type": "string" },
-                  "swipe_down": { "type": "string" },
-                  "composing": { "type": "string" },
-                  "send_bindings": { "type": "boolean" }
+                  "height": { "type": "number" },
+                  "split": { "type": "boolean" },
+                  "keys": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "click": { "type": "string" },
+                        "label": { "type": "string" },
+                        "label_symbol": { "type": "string" },
+                        "hint": { "type": "string" },
+                        "width": { "type": "number" },
+                        "spacer": { "type": "boolean" },
+                        "send_bindings": { "type": "boolean" },
+                        "round_corner": { "type": "number" },
+                        "key_border": { "type": "integer" },
+                        "key_border_color": { "type": "string" },
+                        "popup": { "type": "array", "items": { "type": "string" } },
+                        "dynamic": { "type": "string" },
+                        "key_text_color": { "type": "string" },
+                        "key_back_color": { "type": "string" },
+                        "key_symbol_color": { "type": "string" },
+                        "hilited_key_text_color": { "type": "string" },
+                        "hilited_key_back_color": { "type": "string" },
+                        "hilited_key_symbol_color": { "type": "string" },
+                        "key_text_size": { "type": "number" },
+                        "symbol_text_size": { "type": "number" },
+                        "hint_text_size": { "type": "number" },
+                        "key_text_offset_x": { "type": "number" },
+                        "key_text_offset_y": { "type": "number" },
+                        "key_symbol_offset_x": { "type": "number" },
+                        "key_symbol_offset_y": { "type": "number" },
+                        "key_hint_offset_x": { "type": "number" },
+                        "key_hint_offset_y": { "type": "number" },
+                        "key_press_offset_x": { "type": "number" },
+                        "key_press_offset_y": { "type": "number" },
+                        "composing": { "type": "string" },
+                        "has_menu": { "type": "string" },
+                        "paging": { "type": "string" },
+                        "combo": { "type": "string" },
+                        "ascii": { "type": "string" },
+                        "double_click": { "type": "string" },
+                        "lazy_double_click": { "type": "string" },
+                        "long_click": { "type": "string" },
+                        "swipe_left": { "type": "string" },
+                        "swipe_right": { "type": "string" },
+                        "swipe_up": { "type": "string" },
+                        "swipe_down": { "type": "string" },
+                        "extra": { "type": "string" }
+                      }
+                    }
+                  }
                 }
               }
             }

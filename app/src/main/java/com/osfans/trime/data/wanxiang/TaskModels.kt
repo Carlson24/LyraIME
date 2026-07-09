@@ -14,6 +14,7 @@ data class TaskState(
     val title: String,
     val url: String,
     val expectedSha256: String? = null,
+    val releaseUpdatedAt: String? = null,
     val needsDecompress: Boolean = true,
     var progress: Float = 0f,
     var downloadedBytes: Long = 0L,

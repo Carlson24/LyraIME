@@ -83,6 +83,7 @@ class BackgroundSyncWork(
                     includeClipboard = true,
                     includeWanxiang = true,
                     includeCustomTasks = true,
+                    onlyPinnedClipboard = true,
                 )
                 BackupManager.saveBackupToFile(backupData, backupFile)
                 lastSyncSettingsHash = currentHash

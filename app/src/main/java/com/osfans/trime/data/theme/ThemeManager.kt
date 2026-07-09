@@ -139,7 +139,16 @@ object ThemeManager {
             }
         }
 
-        error("No valid theme available")
+        Timber.e("All themes failed to load, using hardcoded fallback")
+        return ResolvedTheme("fallback", createFallbackTheme())
+    }
+
+    private fun createFallbackTheme(): Theme {
+        val minimal = """
+            name: Fallback
+            style: {}
+        """.trimIndent()
+        return Theme.decode(Yaml.parseToYamlNode(minimal).mapping!!)
     }
 
     private fun evaluateActiveTheme(): Theme {

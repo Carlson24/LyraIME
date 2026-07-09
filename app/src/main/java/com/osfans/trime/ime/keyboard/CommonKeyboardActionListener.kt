@@ -192,7 +192,7 @@ class CommonKeyboardActionListener {
                         action.code == KeyEvent.KEYCODE_MOVE_END ||
                         isSwipe
                     if (!skip) {
-                        sc.onInput(key?.dynamicTarget)
+                        key?.dynamicTarget?.let { sc.onInput(it) }
                     }
                     if (!sc.isEmpty && KeyboardWindow.currentKeyboard.isDynamicMode &&
                         action.code in setOf(KeyEvent.KEYCODE_SPACE, KeyEvent.KEYCODE_ENTER)

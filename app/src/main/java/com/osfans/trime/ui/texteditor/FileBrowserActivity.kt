@@ -306,7 +306,7 @@ class FileBrowserActivity : AppCompatActivity() {
 
     private fun deleteNativeFile(file: File) {
         val ok = try {
-            file.delete()
+            file.deleteRecursively()
         } catch (_: Exception) {
             false
         }
@@ -396,9 +396,20 @@ class FileBrowserActivity : AppCompatActivity() {
         }
     }
 
+    private fun deleteSafRecursive(dir: DocumentFile): Boolean {
+        return try {
+            dir.listFiles().forEach { child ->
+                if (child.isDirectory) deleteSafRecursive(child) else child.delete()
+            }
+            dir.delete()
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun deleteSafFile(doc: DocumentFile) {
         val ok = try {
-            doc.delete()
+            if (doc.isDirectory) deleteSafRecursive(doc) else doc.delete()
         } catch (_: Exception) {
             false
         }

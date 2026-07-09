@@ -552,6 +552,8 @@
     <string name="text_editor_editor_options">選項</string>
     <string name="text_editor_tab_width">Tab 寬度</string>
     <string name="text_editor_tab_width_hint">Tab 字元佔用的欄數（1–16）。</string>
+    <string name="text_editor_font_size">字體大小</string>
+    <string name="text_editor_font_size_hint">編輯器字體大小，單位 sp（10–24）。</string>
     <string name="text_editor_font_fallback">字型回退</string>
     <string name="text_editor_font_fallback_hint">拖曳排序。第一項為主字型，缺少的字形會依序向下回退。</string>
     <string name="text_editor_font_fallback_empty">尚未匯入字型。匯入的字型儲存在應用程式的私有資料目錄中。</string>

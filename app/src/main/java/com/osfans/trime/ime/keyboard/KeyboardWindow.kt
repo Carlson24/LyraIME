@@ -176,24 +176,20 @@ class KeyboardWindow :
         KeyboardWindow.t9Controller = newT9Controller
 
         val newDynamicController =
-            if (keyboard.isDynamicMode) {
-                if (dynamicController == null) {
-                    DynamicController(rime) { switchKeyboard(it) }.also {
-                        it.originalKeyboard = keyboard.dynamicOriginal
-                        dynamicController = it
-                        Timber.d("dynamic controller created: original=${it.originalKeyboard}")
-                    }
-                } else {
-                    dynamicController!!.originalKeyboard = keyboard.dynamicOriginal
-                    Timber.d("dynamic controller reused: original=${dynamicController!!.originalKeyboard}")
-                    dynamicController
+            if (dynamicController == null) {
+                DynamicController(rime) { switchKeyboard(it) }.also {
+                    it.originalKeyboard = keyboard.dynamicOriginal
+                    it.isDynamicMode = keyboard.isDynamicMode
+                    dynamicController = it
+                    Timber.d("dynamic controller created: original=${it.originalKeyboard}, mode=${it.isDynamicMode}")
                 }
             } else {
-                if (dynamicController?.isEmpty != false) {
-                    dynamicController?.destroy()
-                    dynamicController = null
+                dynamicController!!.apply {
+                    originalKeyboard = keyboard.dynamicOriginal
+                    isDynamicMode = keyboard.isDynamicMode
                 }
-                null
+                Timber.d("dynamic controller reused: original=${dynamicController!!.originalKeyboard}, mode=${dynamicController!!.isDynamicMode}")
+                dynamicController
             }
         KeyboardWindow.dynamicController = newDynamicController
 
@@ -347,9 +343,10 @@ class KeyboardWindow :
                     if (currentKeyboard?.isT9Mode == true) {
                         refreshT9SidebarForReopen()
                     }
-                    if (currentKeyboard?.isDynamicMode == true && dynamicController == null) {
+                    if (dynamicController == null) {
                         val newController = DynamicController(rime) { switchKeyboard(it) }
                         newController.originalKeyboard = currentKeyboard!!.dynamicOriginal
+                        newController.isDynamicMode = currentKeyboard!!.isDynamicMode
                         dynamicController = newController
                         KeyboardWindow.dynamicController = newController
                     }
@@ -534,12 +531,13 @@ class KeyboardWindow :
             KeyboardWindow.t9Controller = newController
             currentKeyboardView?.updateT9Controller(newController)
         }
-        if (dynamicController == null && currentKeyboard?.isDynamicMode == true) {
+        if (dynamicController == null) {
             val newController = DynamicController(rime) { switchKeyboard(it) }
             newController.originalKeyboard = currentKeyboard!!.dynamicOriginal
+            newController.isDynamicMode = currentKeyboard!!.isDynamicMode
             dynamicController = newController
             KeyboardWindow.dynamicController = newController
-            Timber.d("dynamic controller recreated in onAttached: original=${newController.originalKeyboard}")
+            Timber.d("dynamic controller recreated in onAttached: original=${newController.originalKeyboard}, mode=${newController.isDynamicMode}")
         }
     }
 

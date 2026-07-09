@@ -40,6 +40,7 @@ import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.util.AppUtils
+import com.osfans.trime.util.Logcat
 import io.github.rosemoe.sora.event.PublishSearchResultEvent
 import io.github.rosemoe.sora.event.ScrollEvent
 import io.github.rosemoe.sora.widget.CodeEditor
@@ -203,7 +204,7 @@ class TextFileEditActivity : AppCompatActivity() {
             setEditorLanguage(
                 TextMateSetup.createLanguage(initialScopeName(), assets, useTab),
             )
-            setTextSize(14f)
+            setTextSize(readFontSize().toFloat())
             applyUserTypeface(this)
             tabWidth = readTabWidth()
             setWordwrap(wordWrap)
@@ -316,6 +317,20 @@ class TextFileEditActivity : AppCompatActivity() {
                 true
             }
         }
+        menu.add(R.string.real_time_logs_clear).apply {
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+            setOnMenuItemClickListener {
+                AlertDialog.Builder(this@TextFileEditActivity)
+                    .setMessage(R.string.real_time_logs_confirm)
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        Logcat.Companion.default.clearLog()
+                        toast(getString(R.string.real_time_logs_clear))
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+                true
+            }
+        }
         menu.add(R.string.text_editor_word_wrap).apply {
             setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
             isCheckable = true
@@ -365,11 +380,16 @@ class TextFileEditActivity : AppCompatActivity() {
         if (!isViewReady) return
         val newTabWidth = readTabWidth()
         if (editor.tabWidth != newTabWidth) editor.tabWidth = newTabWidth
+        val newFontSize = readFontSize()
+        editor.setTextSize(newFontSize.toFloat())
         applyUserTypeface(editor)
     }
 
     private fun readTabWidth(): Int = prefs.getInt(EditorOptionsActivity.PREF_TAB_WIDTH, EditorOptionsActivity.DEFAULT_TAB_WIDTH)
         .coerceIn(EditorOptionsActivity.MIN_TAB_WIDTH, EditorOptionsActivity.MAX_TAB_WIDTH)
+
+    private fun readFontSize(): Int = prefs.getInt(PREF_FONT_SIZE, EditorOptionsActivity.DEFAULT_FONT_SIZE)
+        .coerceIn(EditorOptionsActivity.MIN_FONT_SIZE, EditorOptionsActivity.MAX_FONT_SIZE)
 
     private fun applyUserTypeface(editor: io.github.rosemoe.sora.widget.CodeEditor) {
         val raw = prefs.getString(EditorOptionsActivity.PREF_FONT_FALLBACK, null).orEmpty()
@@ -855,6 +875,7 @@ class TextFileEditActivity : AppCompatActivity() {
         private const val PREF_WORD_WRAP = "word_wrap"
         private const val PREF_SHOW_WHITESPACE = "show_whitespace"
         private const val PREF_USE_TAB = "use_tab"
+        private const val PREF_FONT_SIZE = "font_size"
         private const val LARGE_FILE_PAGE_BYTES = 256 * 1024
         private const val PREFETCH_VIEWPORT_MULTIPLIER = 2
         private const val DEFERRED_HIGHLIGHT_DELAY_MS = 180L

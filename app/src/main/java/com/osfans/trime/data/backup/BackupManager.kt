@@ -24,7 +24,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.serializer
 import timber.log.Timber
 import java.io.File
 import java.security.MessageDigest
@@ -76,12 +78,13 @@ object BackupManager {
         includeClipboard: Boolean = true,
         includeWanxiang: Boolean = true,
         includeCustomTasks: Boolean = true,
+        onlyPinnedClipboard: Boolean = false,
     ): BackupData = backupMutex.withLock {
         withContext(Dispatchers.IO) {
-            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, wanxiang=$includeWanxiang, customTasks=$includeCustomTasks")
+            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, wanxiang=$includeWanxiang, customTasks=$includeCustomTasks, onlyPinnedClipboard=$onlyPinnedClipboard")
             BackupData(
                 preferences = if (includePreferences) exportPreferences() else null,
-                clipboard = if (includeClipboard) exportClipboard() else null,
+                clipboard = if (includeClipboard) exportClipboard(onlyPinnedClipboard) else null,
                 wanxiangPrefs = if (includeWanxiang) exportWanxiangPrefs() else null,
                 customTasks = if (includeCustomTasks) exportCustomTasks() else null,
             ).also {
@@ -190,13 +193,20 @@ object BackupManager {
         return migrated.copy(version = BackupData.CURRENT_VERSION)
     }
 
+    private fun JsonElement.sortKeys(): JsonElement = when (this) {
+        is JsonObject -> JsonObject(entries.map { (k, v) -> k to v.sortKeys() }.sortedBy { it.first }.toMap())
+        is JsonArray -> JsonArray(map { it.sortKeys() })
+        else -> this
+    }
+
     suspend fun saveBackupToFile(
         backupData: BackupData,
         file: File,
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             Timber.d("Saving backup to file: ${file.absolutePath}")
-            val jsonString = json.encodeToString(backupData)
+            val sorted = json.encodeToJsonElement(serializer(), backupData).sortKeys()
+            val jsonString = json.encodeToString(sorted)
             file.writeText(jsonString)
             Timber.d("Backup saved successfully, file size: ${file.length()} bytes")
             Result.success(Unit)
@@ -336,7 +346,7 @@ object BackupManager {
         }
     }
 
-    private suspend fun exportClipboard(): List<BackupBean> {
+    private suspend fun exportClipboard(onlyPinned: Boolean = false): List<BackupBean> {
         var retryCount = 0
         val maxRetries = 3
         var lastException: Exception? = null
@@ -347,13 +357,13 @@ object BackupManager {
                     .fallbackToDestructiveMigration(true)
                     .build()
                 val dao = db.databaseDao()
-                val pagingSource = dao.allEntries()
+                val pagingSource = if (onlyPinned) dao.favoriteEntries() else dao.allEntries()
                 val beans = mutableListOf<DatabaseBean>()
                 val params = PagingSource.LoadParams.Refresh<Int>(null, Int.MAX_VALUE, false)
                 val result = pagingSource.load(params) as PagingSource.LoadResult.Page
                 beans.addAll(result.data)
                 db.close()
-                Timber.d("Successfully exported clipboard data with ${beans.size} items")
+                Timber.d("Successfully exported clipboard data with ${beans.size} items (onlyPinned=$onlyPinned)")
                 return beans.map { bean ->
                     BackupBean(
                         text = bean.text,

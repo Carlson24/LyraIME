@@ -551,6 +551,8 @@
     <string name="text_editor_editor_options">选项</string>
     <string name="text_editor_tab_width">Tab 宽度</string>
     <string name="text_editor_tab_width_hint">Tab 字符占用的列数（1–16）。</string>
+    <string name="text_editor_font_size">字号</string>
+    <string name="text_editor_font_size_hint">编辑器字号，单位 sp（10–24）。</string>
     <string name="text_editor_font_fallback">字体回退</string>
     <string name="text_editor_font_fallback_hint">拖动排序。第一项为主字体，缺失的字形会依次向下回退。</string>
     <string name="text_editor_font_fallback_empty">尚未导入字体。导入的字体保存在应用的私有数据目录中。</string>
