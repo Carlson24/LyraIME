@@ -41,6 +41,10 @@ class NativeCacheHashPlugin : Plugin<Project> {
                             appendLine(sha256(source))
                         }
                         appendLine(sha256(file("src/main/jni/CMakeLists.txt")))
+                        fileTree("patches").matching { include("*.patch") }.forEach { patch ->
+                            appendLine(sha256(patch))
+                        }
+                        appendLine(qnnSdkRoot ?: "no-qnn")
                     }
                 val hash = sha256(magic)
                 logger.log(LogLevel.DEBUG, "Native Cache Hash: $hash")
