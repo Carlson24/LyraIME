@@ -13,7 +13,7 @@ import com.osfans.trime.data.theme.Theme
 import splitties.dimensions.dp
 import kotlin.math.max
 
-class UnrolledNavBarView(
+class CandidatesToolView(
     context: Context,
     theme: Theme,
 ) : LinearLayout(context) {
@@ -25,7 +25,7 @@ class UnrolledNavBarView(
     private val buttonEntries = mutableListOf<ButtonEntry>()
 
     init {
-        val navConfig = theme.unrolledNavBar!!
+        val navConfig = theme.candidatesTool!!
         orientation = HORIZONTAL
 
         val separatorColorKey = navConfig.separatorColor

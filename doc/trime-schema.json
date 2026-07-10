@@ -249,7 +249,7 @@
         }
       }
     },
-    "unrolled_nav_bar": {
+    "candidates_tool": {
       "type": "object",
       "properties": {
         "width": { "type": "integer", "default": 44 },
@@ -259,6 +259,17 @@
         "buttons": {
           "type": "array",
           "items": { "$ref": "#/definitions/ToolBar.Button" },
+          "default": []
+        },
+        "popup": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "action": { "type": "string", "default": "" },
+              "label": { "type": "string", "default": "" }
+            }
+          },
           "default": []
         }
       }

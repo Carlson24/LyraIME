@@ -17,13 +17,19 @@ import androidx.core.text.color
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
+import com.osfans.trime.core.RimeKeyEvent
+import com.osfans.trime.core.RimeKeyMapping
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.daemon.RimeSession
+import com.osfans.trime.daemon.launchOnReady
+import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.data.theme.ThemePrefs
+import com.osfans.trime.ime.enums.Keycode
 import com.osfans.trime.ime.keyboard.InputFeedbackManager
+import com.osfans.trime.ime.keyboard.KeyboardWindow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import splitties.dimensions.dp
@@ -74,6 +80,7 @@ abstract class BaseInputView(
                 color(highlightColor) { append(text) }
             }
         }
+        val popupActions = theme.candidatesTool?.popup
         service.lifecycleScope.launch {
             InputFeedbackManager.keyPressVibrate(view, longPress = true)
             candidateActionMenu =
@@ -81,15 +88,44 @@ abstract class BaseInputView(
                     menu.add(title).apply {
                         isEnabled = false
                     }
-                    menu.add(R.string.forget_this_word).setOnMenuItemClickListener {
-                        rime.runIfReady { deleteCandidate(idx, global) }
-                        true
+                    if (popupActions.isNullOrEmpty()) {
+                        menu.add(R.string.forget_this_word).setOnMenuItemClickListener {
+                            rime.runIfReady { deleteCandidate(idx, global) }
+                            true
+                        }
+                    } else {
+                        popupActions.forEach { popupAction ->
+                            val label = popupAction.label.ifEmpty {
+                                KeyboardWindow.currentKeyboard.let { kb ->
+                                    KeyActionManager.getAction(popupAction.action).getLabel(kb)
+                                }
+                            }
+                            menu.add(label).setOnMenuItemClickListener {
+                                handlePopupAction(popupAction.action, idx, global)
+                                true
+                            }
+                        }
                     }
                     setOnDismissListener {
                         candidateActionMenu = null
                     }
                     show()
                 }
+        }
+    }
+
+    private fun handlePopupAction(action: String, idx: Int, global: Boolean) {
+        if (action == "DeleteCandidate") {
+            rime.runIfReady { deleteCandidate(idx, global) }
+            return
+        }
+        val keyAction = KeyActionManager.getAction(action)
+        val rimeKeyVal = RimeKeyMapping
+            .keyCodeToVal(keyAction.code)
+            .takeIf { it != RimeKeyMapping.RimeKey_VoidSymbol }
+            ?: RimeKeyEvent.getKeycodeByName(Keycode.keyNameOf(keyAction.code))
+        rime.launchOnReady { rimeApi ->
+            rimeApi.processKey(rimeKeyVal, keyAction.modifier.toUInt())
         }
     }
 

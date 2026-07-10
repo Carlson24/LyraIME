@@ -10,7 +10,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.osfans.trime.R
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
-import com.osfans.trime.ime.candidates.unrolled.nav.UnrolledNavBarView
+import com.osfans.trime.ime.candidates.unrolled.nav.CandidatesToolView
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.endOfParent
 import splitties.views.dsl.constraintlayout.endToStartOf
@@ -31,9 +31,9 @@ class UnrolledCandidateLayout(
             isVerticalScrollBarEnabled = false
         }
 
-    val navBar: UnrolledNavBarView? =
-        if (theme.unrolledNavBar != null) {
-            UnrolledNavBarView(context, theme)
+    val navBar: CandidatesToolView? =
+        if (theme.candidatesTool != null) {
+            CandidatesToolView(context, theme)
         } else {
             null
         }
@@ -49,7 +49,7 @@ class UnrolledCandidateLayout(
             )
 
         if (navBar != null) {
-            val navWidth = dp(theme.unrolledNavBar!!.width)
+            val navWidth = dp(theme.candidatesTool!!.width)
             add(
                 navBar,
                 lParams(navWidth, matchParent) {

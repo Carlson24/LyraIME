@@ -13,7 +13,7 @@ import com.osfans.trime.data.theme.model.Preedit
 import com.osfans.trime.data.theme.model.PresetKey
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.data.theme.model.ToolBar
-import com.osfans.trime.data.theme.model.UnrolledNavBar
+import com.osfans.trime.data.theme.model.CandidatesTool
 import com.osfans.trime.data.theme.model.Window
 import com.osfans.trime.util.yaml.Node
 import com.osfans.trime.util.yaml.mapping
@@ -33,7 +33,7 @@ data class Theme(
     val colorSchemes: List<ColorScheme>,
     val fallbackColors: Map<String, String>,
     val toolBar: ToolBar,
-    val unrolledNavBar: UnrolledNavBar? = null,
+    val candidatesTool: CandidatesTool? = null,
 ) : Parcelable {
     companion object {
         fun decode(node: Node.Mapping): Theme = Theme(
@@ -43,7 +43,7 @@ data class Theme(
             window = Window.decode(node["window"]?.mapping),
             liquidKeyboard = LiquidKeyboard.decode(node["liquid_keyboard"]?.mapping),
             toolBar = ToolBar.decode(node["tool_bar"]?.mapping),
-            unrolledNavBar = UnrolledNavBar.decode(node["unrolled_nav_bar"]?.mapping),
+            candidatesTool = CandidatesTool.decode(node["candidates_tool"]?.mapping),
             presetKeys = node["preset_keys"]?.mapping?.entries?.associate {
                 it.key.string!! to PresetKey.decode(it.value.mapping!!)
             } ?: emptyMap(),

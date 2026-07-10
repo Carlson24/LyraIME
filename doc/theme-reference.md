@@ -669,22 +669,30 @@ tool_bar:
 
 ---
 
-## `unrolled_nav_bar` — 未展开导航栏
+## `candidates_tool` — 候选工具栏
 
 | YAML 键 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| `width` | `Int` | `44` | 导航栏宽度 |
+| `width` | `Int` | `44` | 工具栏宽度 |
 | `background` | `String` | `""` | 背景颜色 |
 | `separator_color` | `String` | `""` | 分割线颜色 |
 | `button_font` | `List<String>` | `[]` | 按钮字体 |
 | `buttons` | `List<Button>` | `[]` | 按钮列表 |
+| `popup` | `List<PopupAction>` | `[]` | 候选长按菜单项列表 |
 
 `Button` 结构与 `tool_bar.buttons[]` 相同。
+
+`PopupAction` 字段：
+
+| 字段 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `action` | `String` | `""` | 动作名称，`"DeleteCandidate"` 为删除候选词的专用动作 |
+| `label` | `String` | `""` | 菜单显示文本，留空则使用动作内置标签 |
 
 **示例：**
 
 ```yaml
-unrolled_nav_bar:
+candidates_tool:
   width: 44
   background: "0xeeeeee"
   separator_color: "0xcccccc"
@@ -697,6 +705,11 @@ unrolled_nav_bar:
       foreground:
         style: "ic"
         normal: "assignment"
+  popup:
+    - action: "DeleteCandidate"
+      label: "忘记该词"
+    - action: "Keyboard_symbols"
+    - action: "SwitchAsciiMode"
 ```
 
 ---
