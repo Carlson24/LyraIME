@@ -34,6 +34,7 @@ object FontManager {
         TOOLBAR_FONT,
         T9_SIDE_FONT,
         CANDIDATES_TOOL_FONT,
+        CANDIDATES_TOOL_POPUP_FONT,
     }
 
     private val fontDir get() = File(DataManager.userDataBaseDir, "themes/fonts")
@@ -138,6 +139,7 @@ object FontManager {
             FontKey.TOOLBAR_FONT -> theme.toolBar.buttonFont
             FontKey.T9_SIDE_FONT -> style.t9SideFont
             FontKey.CANDIDATES_TOOL_FONT -> theme.candidatesTool?.buttonFont.orEmpty()
+            FontKey.CANDIDATES_TOOL_POPUP_FONT -> theme.candidatesTool?.popupFont.orEmpty()
             else -> null
         }
     }

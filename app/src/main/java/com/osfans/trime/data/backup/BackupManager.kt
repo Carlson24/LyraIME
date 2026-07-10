@@ -254,6 +254,11 @@ object BackupManager {
             if (key in passwordKeys && value.isNotEmpty()) {
                 val encoded = Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP)
                 BackupPreference(JsonPrimitive(encoded), PreferenceType.STRING, encoded = true)
+            } else if (value.contains('\n')) {
+                BackupPreference(
+                    JsonArray(value.lines().map { JsonPrimitive(it) }),
+                    PreferenceType.STRING,
+                )
             } else {
                 BackupPreference(tryParseJsonValue(value), PreferenceType.STRING)
             }
@@ -301,6 +306,10 @@ object BackupManager {
                         PreferenceType.STRING_SET -> {
                             val stringSet = value.map<JsonElement, String> { (it as JsonPrimitive).content }.toSet()
                             editor.putStringSet(key, stringSet)
+                        }
+                        PreferenceType.STRING -> {
+                            val joined = value.joinToString("\n") { (it as JsonPrimitive).content }
+                            editor.putString(key, joined)
                         }
                         else -> {
                             val jsonString = value.toString()
@@ -488,6 +497,10 @@ object BackupManager {
                         PreferenceType.STRING_SET -> {
                             val stringSet = value.map<JsonElement, String> { (it as JsonPrimitive).content }.toSet()
                             editor.putStringSet(key, stringSet)
+                        }
+                        PreferenceType.STRING -> {
+                            val joined = value.joinToString("\n") { (it as JsonPrimitive).content }
+                            editor.putString(key, joined)
                         }
                         else -> {
                             editor.putString(key, value.toString())

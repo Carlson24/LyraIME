@@ -96,7 +96,7 @@ value class KeyModifiers(
             // ... but some keys can have event.getNumber() return 0, need to check displayLabel as well
             val unicode = event.unicodeChar
             // skip ' ', because it would produce same unicodeChar regardless of the modifier
-            if (unicode != 0 && unicode != ' '.code) {
+            if (unicode != 0 && unicode != ' '.code && unicode >= 0x20 && unicode != 0x7F) {
                 val char = unicode.toChar()
                 if (char == event.number || event.displayLabel.uppercaseChar() != char.uppercaseChar()) {
                     return if (isRelease) Release else Empty

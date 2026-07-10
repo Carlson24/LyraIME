@@ -673,7 +673,11 @@ tool_bar:
 
 | YAML 键 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| `width` | `Int` | `44` | 工具栏宽度 |
+| `nav_width` | `Int` | `44` | 导航栏宽度 |
+| `popup_width` | `Int` | `0` | 长按菜单最大宽度（dp），0=不限制 |
+| `popup_text_size` | `Float` | `0` | 长按菜单文字大小（sp），0=使用系统默认 |
+| `popup_text_color` | `String` | `""` | 长按菜单文字颜色键 |
+| `popup_font` | `List<String>` | `[]` | 长按菜单字体 |
 | `background` | `String` | `""` | 背景颜色 |
 | `separator_color` | `String` | `""` | 分割线颜色 |
 | `button_font` | `List<String>` | `[]` | 按钮字体 |
@@ -693,7 +697,8 @@ tool_bar:
 
 ```yaml
 candidates_tool:
-  width: 44
+  nav_width: 44
+  popup_width: 120
   background: "0xeeeeee"
   separator_color: "0xcccccc"
   buttons:

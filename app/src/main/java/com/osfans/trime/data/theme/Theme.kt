@@ -6,6 +6,7 @@
 package com.osfans.trime.data.theme
 
 import android.os.Parcelable
+import com.osfans.trime.data.theme.model.CandidatesTool
 import com.osfans.trime.data.theme.model.ColorScheme
 import com.osfans.trime.data.theme.model.GeneralStyle
 import com.osfans.trime.data.theme.model.LiquidKeyboard
@@ -13,7 +14,6 @@ import com.osfans.trime.data.theme.model.Preedit
 import com.osfans.trime.data.theme.model.PresetKey
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.data.theme.model.ToolBar
-import com.osfans.trime.data.theme.model.CandidatesTool
 import com.osfans.trime.data.theme.model.Window
 import com.osfans.trime.util.yaml.Node
 import com.osfans.trime.util.yaml.mapping

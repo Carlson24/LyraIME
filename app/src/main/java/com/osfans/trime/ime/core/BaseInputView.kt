@@ -7,9 +7,16 @@ package com.osfans.trime.ime.core
 
 import android.annotation.SuppressLint
 import android.content.res.Resources
+import android.graphics.Typeface
+import android.text.TextPaint
+import android.text.TextUtils
+import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowInsets
-import android.widget.PopupMenu
+import android.widget.ArrayAdapter
+import android.widget.ListPopupWindow
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.text.bold
 import androidx.core.text.buildSpannedString
@@ -17,13 +24,15 @@ import androidx.core.text.color
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
+import com.osfans.trime.core.KeyModifiers
 import com.osfans.trime.core.RimeKeyEvent
 import com.osfans.trime.core.RimeKeyMapping
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.daemon.launchOnReady
-import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.ColorManager
+import com.osfans.trime.data.theme.FontManager
+import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.data.theme.ThemePrefs
@@ -69,49 +78,97 @@ abstract class BaseInputView(
 
     val themedContext = context.withTheme(android.R.style.Theme_DeviceDefault_Settings)
 
-    private var candidateActionMenu: PopupMenu? = null
+    private var candidateActionMenu: ListPopupWindow? = null
 
     fun showCandidateActionMenu(idx: Int, text: String, view: View, global: Boolean) {
         candidateActionMenu?.dismiss()
         candidateActionMenu = null
         val highlightColor = ColorManager.getColor("hilited_candidate_text_color")
+        val popupWidthDp = theme.candidatesTool?.popupWidth ?: 0
+        val density = resources.displayMetrics.density
+        val textPaint =
+            TextPaint().apply {
+                textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16f, themedContext.resources.displayMetrics)
+            }
+        val availWidthPx = (popupWidthDp - 24) * density
         val title = buildSpannedString {
             bold {
-                color(highlightColor) { append(text) }
+                color(highlightColor) {
+                    append(truncateText(text, popupWidthDp, textPaint, availWidthPx))
+                }
             }
         }
         val popupActions = theme.candidatesTool?.popup
+        val popupTextSize = theme.candidatesTool?.popupTextSize ?: 0f
+        val popupTextColorKey = theme.candidatesTool?.popupTextColor ?: ""
+        val popupTextColor = if (popupTextColorKey.isNotEmpty()) ColorManager.getColor(popupTextColorKey) else null
+        val popupTypeface = FontManager.getTypeface("candidates_tool_popup_font")
+            .takeIf { it != Typeface.DEFAULT }
         service.lifecycleScope.launch {
             InputFeedbackManager.keyPressVibrate(view, longPress = true)
-            candidateActionMenu =
-                PopupMenu(themedContext, view).apply {
-                    menu.add(title).apply {
-                        isEnabled = false
-                    }
-                    if (popupActions.isNullOrEmpty()) {
-                        menu.add(R.string.forget_this_word).setOnMenuItemClickListener {
-                            rime.runIfReady { deleteCandidate(idx, global) }
-                            true
-                        }
-                    } else {
-                        popupActions.forEach { popupAction ->
-                            val label = popupAction.label.ifEmpty {
-                                KeyboardWindow.currentKeyboard.let { kb ->
-                                    KeyActionManager.getAction(popupAction.action).getLabel(kb)
-                                }
-                            }
-                            menu.add(label).setOnMenuItemClickListener {
-                                handlePopupAction(popupAction.action, idx, global)
-                                true
-                            }
+            val items = mutableListOf<CharSequence>()
+            items.add(title)
+            if (popupActions.isNullOrEmpty()) {
+                items.add(themedContext.getString(R.string.forget_this_word))
+            } else {
+                popupActions.forEach { popupAction ->
+                    val rawLabel = popupAction.label.ifEmpty {
+                        KeyboardWindow.currentKeyboard.let { kb ->
+                            KeyActionManager.getAction(popupAction.action).getLabel(kb)
                         }
                     }
-                    setOnDismissListener {
-                        candidateActionMenu = null
-                    }
-                    show()
+                    items.add(truncateText(rawLabel, popupWidthDp, textPaint, availWidthPx))
                 }
+            }
+            candidateActionMenu = ListPopupWindow(themedContext).apply {
+                anchorView = view
+                if (popupWidthDp > 0) setContentWidth(dp(popupWidthDp))
+                setAdapter(object : ArrayAdapter<CharSequence>(
+                    themedContext,
+                    R.layout.candidate_popup_item,
+                    items,
+                ) {
+                    override fun isEnabled(position: Int) = position != 0
+                    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                        val view = super.getView(position, convertView, parent) as TextView
+                        val hPad = dp(8)
+                        val vPad = if (position == 0) dp(8) else dp(6)
+                        view.setPadding(hPad, vPad, hPad, vPad)
+                        if (popupTextSize > 0f) {
+                            view.setTextSize(TypedValue.COMPLEX_UNIT_SP, popupTextSize)
+                        }
+                        if (popupTextColor != null) {
+                            view.setTextColor(popupTextColor)
+                        }
+                        if (popupTypeface != null) {
+                            view.typeface = popupTypeface
+                        }
+                        return view
+                    }
+                })
+                setOnItemClickListener { _, _, position, _ ->
+                    if (popupActions.isNullOrEmpty()) {
+                        rime.runIfReady { deleteCandidate(idx, global) }
+                    } else {
+                        handlePopupAction(popupActions[position - 1].action, idx, global)
+                    }
+                }
+                setOnDismissListener {
+                    candidateActionMenu = null
+                }
+                show()
+            }
         }
+    }
+
+    private fun truncateText(
+        text: String,
+        maxWidthDp: Int,
+        paint: TextPaint,
+        availWidthPx: Float,
+    ): CharSequence {
+        if (maxWidthDp <= 0 || availWidthPx <= 0) return text
+        return TextUtils.ellipsize(text, paint, availWidthPx, TextUtils.TruncateAt.END)
     }
 
     private fun handlePopupAction(action: String, idx: Int, global: Boolean) {
@@ -124,8 +181,9 @@ abstract class BaseInputView(
             .keyCodeToVal(keyAction.code)
             .takeIf { it != RimeKeyMapping.RimeKey_VoidSymbol }
             ?: RimeKeyEvent.getKeycodeByName(Keycode.keyNameOf(keyAction.code))
+        val rimeMods = KeyModifiers.fromMetaState(keyAction.modifier)
         rime.launchOnReady { rimeApi ->
-            rimeApi.processKey(rimeKeyVal, keyAction.modifier.toUInt())
+            rimeApi.processKey(rimeKeyVal, rimeMods.modifiers)
         }
     }
 

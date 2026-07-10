@@ -304,10 +304,8 @@ class CommonKeyboardActionListener {
 
             private fun handleTheme(arg: String) {
                 if (arg.isEmpty()) {
-                    // 参数为空时，刷新当前主题
-                    ThemeManager.selectTheme(ThemeManager.prefs.selectedTheme.getValue())
+                    ThemeManager.selectTheme(ThemeManager.prefs.selectedTheme.getValue(), forceReload = true)
                 } else {
-                    // 通过主题名称查找对应的配置ID并切换主题
                     ThemeManager.getAllThemes()
                         .find { it.name.equals(arg, ignoreCase = true) }?.let {
                             ThemeManager.selectTheme(it.configId)

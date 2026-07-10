@@ -71,16 +71,12 @@ object ThemeManager {
         val sourceFile = if (userSource.exists()) userSource else bundledSource
         val cacheFile = DataManager.themesBuildDir.resolve("$id.yaml")
 
-        val sourceNewest =
-            sourceFile.parentFile
-                ?.listFiles()
-                ?.maxOfOrNull { it.lastModified() }
-                ?: 0L
+        val sourceFileTime = if (sourceFile.exists()) sourceFile.lastModified() else 0L
 
         val cacheValid =
             cacheFile.exists() &&
-                sourceFile.exists() &&
-                cacheFile.lastModified() >= sourceNewest
+                sourceFileTime > 0L &&
+                cacheFile.lastModified() >= sourceFileTime
 
         if (!cacheValid) {
             if (!sourceFile.exists()) {
@@ -88,38 +84,39 @@ object ThemeManager {
                 return null
             }
 
-            if (!Rime.deployRimeConfigFile(id, "config_version")) {
-                Timber.w("Failed to deploy theme config file '$id.yaml'")
-                return null
-            }
+            Rime.deployRimeConfigFile(id, "config_version")
             val compiled = File(DataManager.resolveDeployedResourcePath(id))
             if (compiled.exists()) {
                 compiled.copyTo(cacheFile, overwrite = true)
             }
-        }
 
-        if (!cacheFile.exists()) {
-            Timber.w("Theme cache file not found for '$id'")
-            return null
+            if (!cacheFile.exists()) {
+                Timber.w("Compiled theme not available for '$id', loading from source file")
+                return parseThemeFile(sourceFile, id)?.also {
+                    sourceFile.copyTo(cacheFile, overwrite = true)
+                }
+            }
         }
 
         val lastModified = cacheFile.lastModified()
         themeCache[id]?.let { (cachedTime, cachedTheme) ->
             if (cachedTime == lastModified) return cachedTheme
         }
-        return try {
-            val node = Yaml.parseToYamlNode(cacheFile.readText())
-            val mapping = node.mapping
-            if (mapping == null) {
-                Timber.w("Failed to load theme '$id': YAML root is not a mapping")
-                null
-            } else {
-                Theme.decode(mapping).also { themeCache[id] = cacheFile.lastModified() to it }
-            }
-        } catch (e: Exception) {
-            Timber.w(e, "Failed to load theme '$id'")
+        return parseThemeFile(cacheFile, id)
+    }
+
+    private fun parseThemeFile(file: File, id: String): Theme? = try {
+        val node = Yaml.parseToYamlNode(file.readText())
+        val mapping = node.mapping
+        if (mapping == null) {
+            Timber.w("Failed to load theme '$id': YAML root is not a mapping")
             null
+        } else {
+            Theme.decode(mapping).also { themeCache[id] = file.lastModified() to it }
         }
+    } catch (e: Exception) {
+        Timber.w(e, "Failed to load theme '$id'")
+        null
     }
 
     private fun getThemeById(id: String): ResolvedTheme {
@@ -170,7 +167,10 @@ object ThemeManager {
         ColorManager.init(configuration)
     }
 
-    fun selectTheme(configId: String) {
+    fun selectTheme(configId: String, forceReload: Boolean = false) {
+        if (forceReload) {
+            themeCache.remove(configId)
+        }
         val resolvedTheme = getThemeById(configId)
         val theme = resolvedTheme.theme
         KeyActionManager.resetCache()

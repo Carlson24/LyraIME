@@ -49,7 +49,7 @@ class UnrolledCandidateLayout(
             )
 
         if (navBar != null) {
-            val navWidth = dp(theme.candidatesTool!!.width)
+            val navWidth = dp(theme.candidatesTool!!.navWidth)
             add(
                 navBar,
                 lParams(navWidth, matchParent) {

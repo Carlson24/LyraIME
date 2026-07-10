@@ -12,6 +12,8 @@ import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.text.Editable
@@ -134,7 +136,7 @@ class TextFileEditActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val uri = intent.data
         if (uri == null) {
-            finish()
+            Handler(Looper.getMainLooper()).post { finish() }
             return
         }
         docUri = uri
@@ -621,8 +623,10 @@ class TextFileEditActivity : AppCompatActivity() {
                     } ?: error("openInputStream returned null")
                 }
             } catch (e: Exception) {
-                toast(getString(R.string.text_editor_error_open_file, e.message ?: displayName))
-                finish()
+                if (!isFinishing && !isDestroyed) {
+                    toast(getString(R.string.text_editor_error_open_file, e.message ?: displayName))
+                    Handler(Looper.getMainLooper()).post { finish() }
+                }
                 return@launch
             }
             originalText = original
@@ -666,8 +670,10 @@ class TextFileEditActivity : AppCompatActivity() {
         val pager = try {
             withContext(Dispatchers.IO) { LargeFilePager(this@TextFileEditActivity, docUri) }
         } catch (e: Exception) {
-            toast(getString(R.string.text_editor_error_open_file, e.message ?: displayName))
-            finish()
+            if (!isFinishing && !isDestroyed) {
+                toast(getString(R.string.text_editor_error_open_file, e.message ?: displayName))
+                Handler(Looper.getMainLooper()).post { finish() }
+            }
             return
         }
         largeFilePager = pager
@@ -676,8 +682,10 @@ class TextFileEditActivity : AppCompatActivity() {
         } catch (e: Exception) {
             pager.close()
             largeFilePager = null
-            toast(getString(R.string.text_editor_error_open_file, e.message ?: displayName))
-            finish()
+            if (!isFinishing && !isDestroyed) {
+                toast(getString(R.string.text_editor_error_open_file, e.message ?: displayName))
+                Handler(Looper.getMainLooper()).post { finish() }
+            }
             return
         }
         originalText = ""

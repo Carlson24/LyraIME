@@ -20,7 +20,7 @@ value class KeyValue(
         fun fromKeyEvent(event: KeyEvent): KeyValue {
             val charCode = event.unicodeChar
             // try charCode first, allow upper and lower case characters generating different KeyValue
-            if (charCode != 0 &&
+            if (charCode != 0 && charCode >= 0x20 && charCode != 0x7F &&
                 // skip \t, because it's charCode is different from KeyValue
                 charCode != '\t'.code &&
                 // skip \n, because rime wants \r for return

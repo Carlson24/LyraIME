@@ -12,6 +12,7 @@ import androidx.transition.Transition
 import com.google.android.flexbox.AlignItems
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
+import com.osfans.trime.core.KeyModifiers
 import com.osfans.trime.core.RimeKeyEvent
 import com.osfans.trime.core.RimeKeyMapping
 import com.osfans.trime.daemon.launchOnReady
@@ -77,8 +78,9 @@ class FlexboxUnrolledCandidateWindow : BaseUnrolledCandidateWindow() {
                 .keyCodeToVal(keyAction.code)
                 .takeIf { it != RimeKeyMapping.RimeKey_VoidSymbol }
                 ?: RimeKeyEvent.getKeycodeByName(Keycode.keyNameOf(keyAction.code))
+            val rimeMods = KeyModifiers.fromMetaState(keyAction.modifier)
             rime.launchOnReady { rimeApi ->
-                rimeApi.processKey(rimeKeyVal, keyAction.modifier.toUInt())
+                rimeApi.processKey(rimeKeyVal, rimeMods.modifiers)
             }
         }
     }

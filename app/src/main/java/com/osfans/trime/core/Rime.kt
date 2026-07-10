@@ -165,6 +165,10 @@ class Rime :
         selectRimeCandidate(idx, global).also { emitResponse() }
     }
 
+    override suspend fun highlightCandidate(idx: Int, global: Boolean): Boolean = withRimeContext {
+        highlightRimeCandidate(idx, global).also { emitResponse() }
+    }
+
     override suspend fun deleteCandidate(idx: Int, global: Boolean): Boolean = withRimeContext {
         deleteRimeCandidate(idx, global).also { emitResponse() }
     }
@@ -554,6 +558,9 @@ class Rime :
 
         @JvmStatic
         external fun selectRimeCandidate(index: Int, global: Boolean): Boolean
+
+        @JvmStatic
+        external fun highlightRimeCandidate(index: Int, global: Boolean): Boolean
 
         @JvmStatic
         external fun deleteRimeCandidate(index: Int, global: Boolean): Boolean

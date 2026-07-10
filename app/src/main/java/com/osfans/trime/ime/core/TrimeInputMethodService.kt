@@ -289,7 +289,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
                 }
             is RimeMessage.DeployMessage -> {
                 if (it.data == RimeMessage.DeployMessage.State.Success) {
-                    ThemeManager.selectTheme(ThemeManager.prefs.selectedTheme.getValue())
+                    ThemeManager.selectTheme(ThemeManager.prefs.selectedTheme.getValue(), forceReload = true)
                     inputDeviceManager.reapplyWindowMode(this)
                 }
             }
@@ -903,7 +903,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     ): Boolean {
         val ic = currentInputConnection ?: return false
         // 没按下 Ctrl 键
-        if (mask != KeyEvent.META_CTRL_ON) {
+        if (!mask.hasFlag(KeyEvent.META_CTRL_ON)) {
             return false
         }
 

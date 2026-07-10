@@ -7,6 +7,7 @@ package com.osfans.trime.data.theme.model
 
 import android.os.Parcelable
 import com.osfans.trime.util.yaml.Node
+import com.osfans.trime.util.yaml.float
 import com.osfans.trime.util.yaml.int
 import com.osfans.trime.util.yaml.mapping
 import com.osfans.trime.util.yaml.sequence
@@ -15,7 +16,11 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class CandidatesTool(
-    val width: Int = 44,
+    val navWidth: Int = 44,
+    val popupWidth: Int = 0,
+    val popupTextSize: Float = 0f,
+    val popupTextColor: String = "",
+    val popupFont: List<String> = emptyList(),
     val background: String = "",
     val separatorColor: String = "",
     val buttonFont: List<String> = emptyList(),
@@ -38,9 +43,19 @@ data class CandidatesTool(
 
     companion object {
         fun decode(node: Node.Mapping?): CandidatesTool? {
-            if (node == null || node["buttons"]?.sequence.isNullOrEmpty()) return null
+            if (node == null) return null
+            if (node["buttons"]?.sequence.isNullOrEmpty() &&
+                node["popup"]?.sequence.isNullOrEmpty() &&
+                (node["popup_width"]?.int ?: 0) <= 0
+            ) {
+                return null
+            }
             return CandidatesTool(
-                width = node["width"]?.int ?: 44,
+                navWidth = node["nav_width"]?.int ?: 44,
+                popupWidth = node["popup_width"]?.int ?: 0,
+                popupTextSize = node["popup_text_size"]?.float ?: 0f,
+                popupTextColor = node["popup_text_color"]?.string ?: "",
+                popupFont = node["popup_font"]?.sequence?.mapNotNull(Node::string) ?: emptyList(),
                 background = node["background"]?.string ?: "",
                 separatorColor = node["separator_color"]?.string ?: "",
                 buttonFont = node["button_font"]?.sequence?.mapNotNull(Node::string) ?: emptyList(),

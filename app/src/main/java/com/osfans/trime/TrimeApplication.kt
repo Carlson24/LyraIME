@@ -26,6 +26,7 @@ import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.ime.clipboard.ScreenshotClipboardWatcher
 import com.osfans.trime.receiver.RimeIntentReceiver
 import com.osfans.trime.ui.main.LogActivity
+import com.osfans.trime.util.CrashLogExporter
 import com.osfans.trime.util.isNightMode
 import com.osfans.trime.util.toast
 import com.osfans.trime.worker.BackgroundSyncWork
@@ -69,6 +70,9 @@ class TrimeApplication : Application() {
         super.onCreate()
         if (!BuildConfig.DEBUG) {
             Thread.setDefaultUncaughtExceptionHandler { _, e ->
+                try {
+                    CrashLogExporter.exportCrash(applicationContext, e)
+                } catch (_: Exception) {}
                 val crashTime = System.currentTimeMillis()
                 val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
                 val lastCrashTimePrefKey = "last_crash_time"
@@ -150,6 +154,10 @@ class TrimeApplication : Application() {
             initSyncClipboardManager(sharedPreferences)
             registerBroadcastReceiver()
             startWorkManager()
+            coroutineScope.launch {
+                runCatching { CrashLogExporter.checkAndExportHistoricalExits(applicationContext, getLastPid()) }
+                runCatching { CrashLogExporter.cleanupOldLogs() }
+            }
         } catch (e: Exception) {
             e.fillInStackTrace()
             return

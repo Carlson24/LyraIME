@@ -172,6 +172,14 @@ class Rime {
     }
   }
 
+  bool highlightCandidate(size_t index, bool global) {
+    if (global) {
+      return rime->highlight_candidate(session(), index);
+    } else {
+      return rime->highlight_candidate_on_current_page(session(), index);
+    }
+  }
+
   bool deleteCandidate(size_t index, bool global) {
     if (global) {
       return rime->delete_candidate(session(), index);
@@ -419,6 +427,14 @@ Java_com_osfans_trime_core_Rime_selectRimeCandidate(JNIEnv* env,
                                                     jint index,
                                                     jboolean global) {
   return Rime::Instance().selectCandidate(index, global);
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_osfans_trime_core_Rime_highlightRimeCandidate(JNIEnv* env,
+                                                       jclass /* thiz */,
+                                                       jint index,
+                                                       jboolean global) {
+  return Rime::Instance().highlightCandidate(index, global);
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
