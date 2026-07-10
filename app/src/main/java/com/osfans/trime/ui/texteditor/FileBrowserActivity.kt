@@ -396,15 +396,13 @@ class FileBrowserActivity : AppCompatActivity() {
         }
     }
 
-    private fun deleteSafRecursive(dir: DocumentFile): Boolean {
-        return try {
-            dir.listFiles().forEach { child ->
-                if (child.isDirectory) deleteSafRecursive(child) else child.delete()
-            }
-            dir.delete()
-        } catch (_: Exception) {
-            false
+    private fun deleteSafRecursive(dir: DocumentFile): Boolean = try {
+        dir.listFiles().forEach { child ->
+            if (child.isDirectory) deleteSafRecursive(child) else child.delete()
         }
+        dir.delete()
+    } catch (_: Exception) {
+        false
     }
 
     private fun deleteSafFile(doc: DocumentFile) {

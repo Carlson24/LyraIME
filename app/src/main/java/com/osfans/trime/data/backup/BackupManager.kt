@@ -235,7 +235,7 @@ object BackupManager {
         val filteredPrefs = mutableMapOf<String, BackupPreference>()
 
         for ((key, value) in allPrefs) {
-            if (key != AppPrefs.Internal.PID && !key.startsWith("wanxiang_")) {
+            if (key != AppPrefs.Internal.PID && !key.startsWith("wanxiang_") && key != "screenshot_sync_handled_items") {
                 filteredPrefs[key] = valueToBackupPreference(key, value)
             }
         }
@@ -255,7 +255,7 @@ object BackupManager {
                 val encoded = Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP)
                 BackupPreference(JsonPrimitive(encoded), PreferenceType.STRING, encoded = true)
             } else {
-                BackupPreference(JsonPrimitive(value), PreferenceType.STRING)
+                BackupPreference(tryParseJsonValue(value), PreferenceType.STRING)
             }
         }
         is Set<*> -> {
@@ -263,6 +263,17 @@ object BackupManager {
             BackupPreference(jsonArray, PreferenceType.STRING_SET)
         }
         else -> BackupPreference(JsonPrimitive(value.toString()), PreferenceType.STRING)
+    }
+
+    private fun tryParseJsonValue(value: String): JsonElement {
+        if (!value.startsWith("[") && !value.startsWith("{")) {
+            return JsonPrimitive(value)
+        }
+        return try {
+            json.parseToJsonElement(value)
+        } catch (_: Exception) {
+            JsonPrimitive(value)
+        }
     }
 
     private suspend fun importPreferences(prefs: Map<String, BackupPreference>) {

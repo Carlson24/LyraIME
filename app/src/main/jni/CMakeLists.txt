@@ -63,7 +63,7 @@ include(Rime)
 add_subdirectory(librime_jni)
 
 # ---- sherpa-onnx (voice ASR with optional QNN) ----
-include(DownloadOnnxRuntime)
+include(OnnxRuntime)
 
 # Point sherpa-onnx's cmake module to the downloaded onnxruntime shared libs
 set(ENV{SHERPA_ONNXRUNTIME_LIB_DIR} "${SHERPA_ONNXRUNTIME_LIB_DIR}")

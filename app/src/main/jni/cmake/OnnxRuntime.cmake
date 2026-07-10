@@ -1,10 +1,10 @@
 # Download pre-built onnxruntime shared libraries for Android.
-# Uses SHERPA_ONNX_ONNXRUNTIME_VERSION from outer scope (default 1.26.0).
+# Uses SHERPA_ONNX_ONNXRUNTIME_VERSION from outer scope (default 1.27.0).
 # Downloads the shared package which includes the full set of headers
 # (onnxruntime_cxx_api.h, nnapi_provider_factory.h, etc.).
 
 if(NOT DEFINED SHERPA_ONNX_ONNXRUNTIME_VERSION)
-  set(SHERPA_ONNX_ONNXRUNTIME_VERSION "1.26.0")
+  set(SHERPA_ONNX_ONNXRUNTIME_VERSION "1.27.0")
 endif()
 
 message(STATUS "ONNXRUNTIME_VERSION: ${SHERPA_ONNX_ONNXRUNTIME_VERSION}")
@@ -19,19 +19,24 @@ endif()
 
 set(ONNXRUNTIME_URL "https://github.com/csukuangfj/onnxruntime-libs/releases/download/v${SHERPA_ONNX_ONNXRUNTIME_VERSION}/onnxruntime-android-${SHERPA_ONNX_ONNXRUNTIME_VERSION}.zip")
 set(ONNXRUNTIME_DIR "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime-android-${SHERPA_ONNX_ONNXRUNTIME_VERSION}")
+set(ONNXRUNTIME_ZIP "onnxruntime-android-${SHERPA_ONNX_ONNXRUNTIME_VERSION}.zip")
 
-if(NOT EXISTS "${ONNXRUNTIME_DIR}/jni/${ONNXRUNTIME_ANDROID_ABI}/libonnxruntime.so")
+if(NOT EXISTS "${ONNXRUNTIME_ZIP}")
   message(STATUS "Downloading onnxruntime from ${ONNXRUNTIME_URL}")
-  file(DOWNLOAD "${ONNXRUNTIME_URL}" "${ONNXRUNTIME_DIR}.zip"
+  file(DOWNLOAD "${ONNXRUNTIME_URL}" "${ONNXRUNTIME_ZIP}"
+       EXPECTED_HASH
+          SHA256=a78f303a26b5e75c84c8b2a97fa2ddb400b2d1b5e069bec19aa229ccd3597fdb
        SHOW_PROGRESS STATUS download_status)
   list(GET download_status 0 status_code)
   if(NOT status_code EQUAL 0)
-    file(REMOVE "${ONNXRUNTIME_DIR}.zip")
+    file(REMOVE "${ONNXRUNTIME_ZIP}")
     message(FATAL_ERROR "Failed to download onnxruntime: ${ONNXRUNTIME_URL}")
   endif()
+endif()
 
-  file(ARCHIVE_EXTRACT INPUT "${ONNXRUNTIME_DIR}.zip" DESTINATION "${ONNXRUNTIME_DIR}")
-  file(REMOVE "${ONNXRUNTIME_DIR}.zip")
+if(NOT EXISTS "${ONNXRUNTIME_DIR}/jni/${ONNXRUNTIME_ANDROID_ABI}/libonnxruntime.so")
+  message(STATUS "Extracting onnxruntime from cached zip")
+  file(ARCHIVE_EXTRACT INPUT "${ONNXRUNTIME_ZIP}" DESTINATION "${ONNXRUNTIME_DIR}")
 
   if(NOT EXISTS "${ONNXRUNTIME_DIR}/jni/${ONNXRUNTIME_ANDROID_ABI}/libonnxruntime.so")
     file(GLOB_RECURSE found_libs "${ONNXRUNTIME_DIR}/libonnxruntime.so")
@@ -41,7 +46,7 @@ if(NOT EXISTS "${ONNXRUNTIME_DIR}/jni/${ONNXRUNTIME_ANDROID_ABI}/libonnxruntime.
     endif()
   endif()
 
-  message(STATUS "onnxruntime downloaded and extracted to ${ONNXRUNTIME_DIR}")
+  message(STATUS "onnxruntime extracted to ${ONNXRUNTIME_DIR}")
 endif()
 
 set(SHERPA_ONNXRUNTIME_LIB_DIR "${ONNXRUNTIME_DIR}/jni/${ONNXRUNTIME_ANDROID_ABI}" CACHE PATH "" FORCE)

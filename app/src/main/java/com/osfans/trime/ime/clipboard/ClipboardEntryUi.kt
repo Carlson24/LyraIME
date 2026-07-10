@@ -38,8 +38,8 @@ import splitties.views.dsl.core.imageView
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.textView
-import splitties.views.dsl.core.wrapContent
 import splitties.views.dsl.core.withTheme
+import splitties.views.dsl.core.wrapContent
 import splitties.views.imageDrawable
 import splitties.views.setPaddingDp
 
