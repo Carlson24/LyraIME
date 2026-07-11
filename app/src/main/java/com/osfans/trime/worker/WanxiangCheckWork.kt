@@ -136,6 +136,7 @@ class WanxiangCheckWork(
         createNotificationChannel(channelId, context.getString(R.string.wanxiang_updater))
 
         val intent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_RUN
             putExtra(MainActivity.EXTRA_SETTINGS_ROUTE, NavigationRoute.Wanxiang)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -164,6 +165,7 @@ class WanxiangCheckWork(
         createNotificationChannel(channelId, context.getString(R.string.wanxiang_updater))
 
         val intent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_RUN
             putExtra(MainActivity.EXTRA_SETTINGS_ROUTE, NavigationRoute.Wanxiang)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
