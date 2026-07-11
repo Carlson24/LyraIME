@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2025 - 2026 LyraIME community
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: Publish QNN HTP Libraries
+on:
+  workflow_dispatch:
+    inputs:
+      qnn_sdk_version:
+        description: 'QNN SDK version'
+        required: false
+        default: '2.48.40.260702'
+
+env:
+  QNN_SDK_VERSION: ${{ github.event.inputs.qnn_sdk_version || '2.48.40.260702' }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download QNN SDK
+        run: |
+          mkdir -p "${{ runner.temp }}/qnn"
+          cd "${{ runner.temp }}/qnn"
+          curl -fSL -o "v${QNN_SDK_VERSION}.zip" \
+            "https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/${QNN_SDK_VERSION}/v${QNN_SDK_VERSION}.zip"
+          unzip -q "v${QNN_SDK_VERSION}.zip"
+          echo "QNN_SDK_ROOT=${{ runner.temp }}/qnn/qairt/${QNN_SDK_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Package HTP libraries
+        run: |
+          QNN_LIB="$QNN_SDK_ROOT/lib/aarch64-android"
+          HEXAGON_LIB="$QNN_SDK_ROOT/lib"
+          OUT_DIR="${{ runner.temp }}/qnn-htp"
+          mkdir -p "$OUT_DIR"
+
+          for ver in 68 69 73 75 79 81; do
+            ARCHIVE="libQnnHtpV${ver}.tar.bz2"
+            echo "Packaging $ARCHIVE..."
+            WORKDIR="${{ runner.temp }}/htp_work_v${ver}"
+            mkdir -p "$WORKDIR"
+            cp -v "$QNN_LIB/libQnnHtp.so" "$WORKDIR/"
+            cp -v "$QNN_LIB/libQnnHtpV${ver}Stub.so" "$WORKDIR/"
+            cp -v "$HEXAGON_LIB/hexagon-v${ver}/unsigned/libQnnHtpV${ver}Skel.so" "$WORKDIR/"
+            cp -v "$QNN_LIB/libQnnSystem.so" "$WORKDIR/"
+            tar -cjf "$OUT_DIR/$ARCHIVE" -C "$WORKDIR" .
+            rm -rf "$WORKDIR"
+          done
+
+          echo "Packaged archives:"
+          ls -lh "$OUT_DIR"
+
+      - name: Publish release
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: libQnnHtp
+          prerelease: false
+          title: "QNN HTP Libraries"
+          files: |
+            ${{ runner.temp }}/qnn-htp/*.tar.bz2
