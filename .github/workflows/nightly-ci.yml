@@ -72,26 +72,7 @@ jobs:
 
       - name: Add JNI cache
         if: ${{ !steps.jni-cache.outputs.cache-hit }}
-        run: |
-          SRC=app/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib
-          DST=app/prebuilt
-          for abi in arm64-v8a x86_64; do
-            mkdir -p "$DST/$abi"
-            for lib in librime_jni.so libsherpa-onnx-jni.so libonnxruntime.so \
-                       libsherpa-onnx-c-api.so libsherpa-onnx-cxx-api.so; do
-              cp -v "$SRC/$abi/$lib" "$DST/$abi/" 2>/dev/null || true
-            done
-          done
-
-      - name: Rename APK
-        run: |
-          cd app/build/outputs/apk/release
-          for apk in *.apk; do
-            [ -f "$apk" ] || continue
-            arch=$(echo "$apk" | grep -oE '(arm64-v8a|x86_64)')
-            ver=$(echo "$apk" | grep -oP 'v\d+\.\d+\.\d+\.\d+')
-            mv "$apk" "LyraIME-${arch}-${ver}.apk"
-          done
+        run: cp -R app/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib app/prebuilt
 
       - name: Create Nightly release
         uses: 'marvinpinto/action-automatic-releases@latest'
