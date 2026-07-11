@@ -483,7 +483,9 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
             row.addView(label)
 
             val deleteBtn = ImageButton(ctx).apply {
+                layoutParams = LinearLayout.LayoutParams(40.dp(), 40.dp())
                 setImageResource(R.drawable.ic_baseline_delete_24)
+                imageTintList = android.content.res.ColorStateList.valueOf(ctx.getColor(R.color.text))
                 setBackgroundResource(android.R.color.transparent)
                 setPadding(8.dp(), 4.dp(), 8.dp(), 4.dp())
                 setOnClickListener {

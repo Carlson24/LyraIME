@@ -51,9 +51,7 @@ class LogAdapter(
         TextView(parent.context).apply {
             textSize = 12f
             typeface = Typeface.MONOSPACE
-            if (Build.VERSION.SDK_INT >= VERSION_CODES.O) {
-                setTextClassifier(TextClassifier.NO_OP)
-            }
+            setTextClassifier(TextClassifier.NO_OP)
             layoutParams =
                 MarginLayoutParams(MarginLayoutParams.WRAP_CONTENT, MarginLayoutParams.WRAP_CONTENT).apply {
                     marginStart = dp(4)

@@ -32,6 +32,9 @@
 [submodule "librime-predict"]
 	path = app/src/main/jni/librime-predict
 	url = https://github.com/rime/librime-predict.git
+[submodule "librime-user-predict"]
+	path = app/src/main/jni/librime-user-predict
+	url = https://github.com/Carlson24/librime-user-predict
 [submodule "prelude"]
 	path = app/data/rime/prelude
 	url = https://github.com/rime/rime-prelude.git
