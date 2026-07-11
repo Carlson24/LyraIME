@@ -348,6 +348,10 @@ class Key(
     fun getCode(behavior: KeyBehavior): Int = getAction(behavior)!!.code
 
     fun getLabel(): String = when {
+        isOn && hasAction(KeyBehavior.DOUBLE_CLICK) ->
+            keyActions[KeyBehavior.DOUBLE_CLICK]!!.getLabel(parent)
+        isOn && hasAction(KeyBehavior.LAZY_DOUBLE_CLICK) ->
+            keyActions[KeyBehavior.LAZY_DOUBLE_CLICK]!!.getLabel(parent)
         label.isNotEmpty() &&
             keyAction == click &&
             !keyActions.containsKey(KeyBehavior.ASCII) &&
@@ -361,7 +365,12 @@ class Key(
     }
 
     val symbolLabel: String
-        get() = labelSymbol.ifEmpty { longClick?.getLabel(parent) ?: "" }
+        get() = labelSymbol.ifEmpty {
+            longClick?.getLabel(parent)
+                ?: keyActions[KeyBehavior.DOUBLE_CLICK]?.getLabel(parent)
+                ?: keyActions[KeyBehavior.LAZY_DOUBLE_CLICK]?.getLabel(parent)
+                ?: ""
+        }
 
     private val appearanceType: Int
         get() {

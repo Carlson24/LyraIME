@@ -222,7 +222,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         dspJob = lifecycleScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) {
-                    QnnDspManager.ensureInstalled(ctx)
+                    QnnDspManager.ensureInstalled(ctx, force = true)
                 }
 
                 progressBar.isIndeterminate = false

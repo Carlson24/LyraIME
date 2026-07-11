@@ -52,7 +52,7 @@ object QnnDspManager {
         return DspLibs(stub, skel, htp, system)
     }
 
-    suspend fun ensureInstalled(context: Context): DspLibs? = withContext(Dispatchers.IO) {
+    suspend fun ensureInstalled(context: Context, force: Boolean = false): DspLibs? = withContext(Dispatchers.IO) {
         val variant = getHtpVariant() ?: return@withContext null
         val dir = dspDir
         val stub = File(dir, "libQnnHtp${variant}Stub.so")
@@ -60,9 +60,11 @@ object QnnDspManager {
         val htp = File(dir, "libQnnHtp.so")
         val system = File(dir, "libQnnSystem.so")
 
-        if (stub.exists() && skel.exists() && htp.exists() && system.exists()) {
+        if (!force && stub.exists() && skel.exists() && htp.exists() && system.exists()) {
             return@withContext DspLibs(stub, skel, htp, system)
         }
+
+        dir.listFiles()?.forEach { it.deleteRecursively() }
 
         val entry = ResourceUrls.QNN_DSP_MAP[Build.SOC_MODEL]
             ?: ResourceUrls.QNN_DSP_MAP["SM8850"]!!

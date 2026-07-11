@@ -10,9 +10,6 @@
 .gradle/
 build/
 
-# sherpa-onnx AAR (downloaded in CI)
-app/libs/*.aar
-
 # Local configuration file (sdk path, etc)
 local.properties
 
@@ -478,12 +475,13 @@ keystore.properties
 app/release/output-metadata.json
 app/src/main/assets/checksums.json
 app/src/main/assets/**/opencc
-doc/voice-models/sherpa-onnx-*.tar.bz2
-doc/libQnnHtp/libQnnHtp*.tar.bz2
 
 # boost
 app/boost-*.tar.xz
 app/src/main/jni/boost/
+
+# onnx-runtime
+app/onnxruntime-android-*.zip
 
 # kotlin
 .kotlin
