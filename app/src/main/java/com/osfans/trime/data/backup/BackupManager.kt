@@ -6,7 +6,9 @@
 package com.osfans.trime.data.backup
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Base64
+import androidx.core.content.edit
 import androidx.paging.PagingSource
 import androidx.preference.PreferenceManager
 import androidx.room.Room
@@ -19,7 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -29,7 +30,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.serializer
 import timber.log.Timber
 import java.io.File
+import kotlinx.coroutines.delay
 import java.security.MessageDigest
+import kotlin.time.Duration.Companion.milliseconds
 
 object BackupManager {
     private const val CUSTOM_TASKS_KEY = "custom_tasks_data"
@@ -68,6 +71,8 @@ object BackupManager {
         ignoreUnknownKeys = true
         encodeDefaults = true
         isLenient = true
+        prettyPrint = true
+        prettyPrintIndent = "\t"
     }
 
     private val backupMutex = Mutex()
@@ -160,37 +165,14 @@ object BackupManager {
      * @return 迁移后的备份数据
      * @throws Exception 如果备份版本比当前版本新
      */
-    suspend fun migrateBackup(backupData: BackupData): BackupData = when {
+    fun migrateBackup(backupData: BackupData): BackupData = when {
         backupData.version > BackupData.CURRENT_VERSION -> {
             throw Exception("Backup version ${backupData.version} is newer than current version ${BackupData.CURRENT_VERSION}")
         }
         backupData.version < BackupData.CURRENT_VERSION -> {
-            performMigration(backupData)
+            backupData.copy(version = BackupData.CURRENT_VERSION)
         }
         else -> backupData
-    }
-
-    /**
-     * 执行备份数据的版本迁移
-     * @param backupData 原始备份数据
-     * @return 迁移后的备份数据
-     * @note 当前版本为1，尚未需要迁移，此方法为未来版本升级预留
-     * @example 当版本从1升级到2时，添加case 1 -> migrateFromVersion1ToVersion2(backupData)
-     */
-    private suspend fun performMigration(backupData: BackupData): BackupData {
-        var migrated = backupData
-
-        for (version in backupData.version until BackupData.CURRENT_VERSION) {
-            migrated = when (version) {
-                // 示例：当版本从1升级到2时，添加
-                // 1 -> migrateFromVersion1ToVersion2(migrated)
-                else -> {
-                    migrated
-                }
-            }
-        }
-
-        return migrated.copy(version = BackupData.CURRENT_VERSION)
     }
 
     private fun JsonElement.sortKeys(): JsonElement = when (this) {
@@ -281,75 +263,10 @@ object BackupManager {
         }
     }
 
-    private suspend fun importPreferences(prefs: Map<String, BackupPreference>) {
+    private fun importPreferences(prefs: Map<String, BackupPreference>) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
-        val editor = sharedPreferences.edit()
-
-        // 获取 AppPrefs 实例用于验证
         val appPrefs = AppPrefs.defaultInstance()
-
-        prefs.forEach { (key, backupPref) ->
-            val value = backupPref.value
-            val type = backupPref.type
-
-            // 验证偏好键和类型
-            val validationResult = appPrefs.validatePreference(key, type.name)
-
-            if (!validationResult.isValid) {
-                Timber.w("Skipping preference '$key': ${validationResult.message}")
-                return@forEach
-            }
-
-            when {
-                value is JsonArray -> {
-                    when (type) {
-                        PreferenceType.STRING_SET -> {
-                            val stringSet = value.map<JsonElement, String> { (it as JsonPrimitive).content }.toSet()
-                            editor.putStringSet(key, stringSet)
-                        }
-                        PreferenceType.STRING -> {
-                            val joined = value.joinToString("\n") { (it as JsonPrimitive).content }
-                            editor.putString(key, joined)
-                        }
-                        else -> {
-                            val jsonString = value.toString()
-                            editor.putString(key, jsonString)
-                        }
-                    }
-                }
-                value is JsonPrimitive -> {
-                    val content = value.content
-
-                    when (type) {
-                        PreferenceType.BOOLEAN -> {
-                            editor.putBoolean(key, content.toBoolean())
-                        }
-                        PreferenceType.INT -> {
-                            editor.putInt(key, content.toIntOrNull() ?: 0)
-                        }
-                        PreferenceType.LONG -> {
-                            editor.putLong(key, content.toLongOrNull() ?: 0L)
-                        }
-                        PreferenceType.FLOAT -> {
-                            editor.putFloat(key, content.toFloatOrNull() ?: 0f)
-                        }
-                        PreferenceType.STRING -> {
-                            editor.putString(key, importStringValue(key, content, backupPref.encoded))
-                        }
-                        else -> {
-                            editor.putString(key, content)
-                        }
-                    }
-                }
-                value is JsonNull -> editor.putString(key, null)
-                else -> {
-                    val jsonString = value.toString()
-                    editor.putString(key, jsonString)
-                }
-            }
-        }
-
-        editor.apply()
+        sharedPreferences.edit { writePreferenceValues(prefs, appPrefs) }
     }
 
     private fun importStringValue(
@@ -366,88 +283,119 @@ object BackupManager {
         }
     }
 
-    private suspend fun exportClipboard(onlyPinned: Boolean = false): List<BackupBean> {
+    private suspend fun <T> withRetry(
+        maxRetries: Int = 3,
+        operation: String,
+        block: suspend () -> T,
+    ): T {
         var retryCount = 0
-        val maxRetries = 3
         var lastException: Exception? = null
-
         while (retryCount < maxRetries) {
             try {
-                val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
-                    .fallbackToDestructiveMigration(true)
-                    .build()
-                val dao = db.databaseDao()
-                val pagingSource = if (onlyPinned) dao.favoriteEntries() else dao.allEntries()
-                val beans = mutableListOf<DatabaseBean>()
-                val params = PagingSource.LoadParams.Refresh<Int>(null, Int.MAX_VALUE, false)
-                val result = pagingSource.load(params) as PagingSource.LoadResult.Page
-                beans.addAll(result.data)
-                db.close()
-                Timber.d("Successfully exported clipboard data with ${beans.size} items (onlyPinned=$onlyPinned)")
-                return beans.map { bean ->
-                    BackupBean(
-                        text = bean.text,
-                        type = bean.type,
-                        time = bean.time,
-                        pinned = bean.pinned,
-                    )
-                }
+                return block()
             } catch (e: Exception) {
                 lastException = e
                 retryCount++
-                Timber.w("Failed to export clipboard data, attempt $retryCount/$maxRetries: ${e.message}")
-
+                Timber.w("Failed to $operation, attempt $retryCount/$maxRetries: ${e.message}")
                 if (retryCount < maxRetries) {
-                    kotlinx.coroutines.delay(500L * retryCount)
+                    delay((500L * retryCount).milliseconds)
                 }
             }
         }
+        throw lastException ?: Exception("Failed to $operation after $maxRetries attempts")
+    }
 
-        throw lastException ?: Exception("Failed to export clipboard data after $maxRetries attempts")
+    private fun SharedPreferences.Editor.writePreferenceValues(
+        prefs: Map<String, BackupPreference>,
+        appPrefs: AppPrefs,
+        label: String = "",
+    ) {
+        val prefix = if (label.isEmpty()) "" else "$label "
+        prefs.forEach { (key, backupPref) ->
+            val value = backupPref.value
+            val type = backupPref.type
+
+            val validationResult = appPrefs.validatePreference(key, type.name)
+            if (!validationResult.isValid) {
+                Timber.w("Skipping ${prefix}preference '$key': ${validationResult.message}")
+                return@forEach
+            }
+
+            when (value) {
+                is JsonArray -> {
+                    when (type) {
+                        PreferenceType.STRING_SET -> {
+                            val stringSet = value.map { (it as JsonPrimitive).content }.toSet()
+                            putStringSet(key, stringSet)
+                        }
+                        PreferenceType.STRING -> {
+                            val joined = value.joinToString("\n") { (it as JsonPrimitive).content }
+                            putString(key, joined)
+                        }
+                        else -> putString(key, value.toString())
+                    }
+                }
+                is JsonPrimitive -> {
+                    val content = value.content
+                    when (type) {
+                        PreferenceType.BOOLEAN -> putBoolean(key, content.toBoolean())
+                        PreferenceType.INT -> putInt(key, content.toIntOrNull() ?: 0)
+                        PreferenceType.LONG -> putLong(key, content.toLongOrNull() ?: 0L)
+                        PreferenceType.FLOAT -> putFloat(key, content.toFloatOrNull() ?: 0f)
+                        PreferenceType.STRING -> putString(key, importStringValue(key, content, backupPref.encoded))
+                        else -> putString(key, content)
+                    }
+                }
+                else -> putString(key, value.toString())
+            }
+        }
+    }
+
+    private suspend fun exportClipboard(onlyPinned: Boolean = false): List<BackupBean> {
+        return withRetry(operation = "export clipboard data") {
+            val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
+                .fallbackToDestructiveMigration(true)
+                .build()
+            val dao = db.databaseDao()
+            val pagingSource = if (onlyPinned) dao.favoriteEntries() else dao.allEntries()
+            val beans = mutableListOf<DatabaseBean>()
+            val params = PagingSource.LoadParams.Refresh<Int>(null, Int.MAX_VALUE, false)
+            val result = pagingSource.load(params) as PagingSource.LoadResult.Page
+            beans.addAll(result.data)
+            db.close()
+            Timber.d("Successfully exported clipboard data with ${beans.size} items (onlyPinned=$onlyPinned)")
+            beans.map { bean ->
+                BackupBean(
+                    text = bean.text,
+                    type = bean.type,
+                    time = bean.time,
+                    pinned = bean.pinned,
+                )
+            }
+        }
     }
 
     private suspend fun importClipboard(beans: List<BackupBean>) {
-        var retryCount = 0
-        val maxRetries = 3
-        var lastException: Exception? = null
-
-        while (retryCount < maxRetries) {
-            try {
-                val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
-                    .fallbackToDestructiveMigration(true)
-                    .build()
-                val dao = db.databaseDao()
-
-                db.withTransaction {
-                    dao.deleteAll()
-
-                    beans.forEach { backupBean ->
-                        val bean =
-                            DatabaseBean(
-                                text = backupBean.text ?: "",
-                                type = backupBean.type,
-                                time = backupBean.time,
-                                pinned = backupBean.pinned,
-                            )
-                        dao.insert(bean)
-                    }
-                }
-
-                db.close()
-                Timber.d("Successfully imported clipboard data with ${beans.size} items")
-                return
-            } catch (e: Exception) {
-                lastException = e
-                retryCount++
-                Timber.w("Failed to import clipboard data, attempt $retryCount/$maxRetries: ${e.message}")
-
-                if (retryCount < maxRetries) {
-                    kotlinx.coroutines.delay(500L * retryCount)
+        withRetry(operation = "import clipboard data") {
+            val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
+                .fallbackToDestructiveMigration(true)
+                .build()
+            val dao = db.databaseDao()
+            db.withTransaction {
+                dao.deleteAll()
+                beans.forEach { backupBean ->
+                    val bean = DatabaseBean(
+                        text = backupBean.text ?: "",
+                        type = backupBean.type,
+                        time = backupBean.time,
+                        pinned = backupBean.pinned,
+                    )
+                    dao.insert(bean)
                 }
             }
+            db.close()
+            Timber.d("Successfully imported clipboard data with ${beans.size} items")
         }
-
-        throw lastException ?: Exception("Failed to import clipboard data after $maxRetries attempts")
     }
 
     private fun exportWanxiangPrefs(): Map<String, BackupPreference> {
@@ -472,73 +420,14 @@ object BackupManager {
 
     private fun importCustomTasks(data: String) {
         val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
-        sharedPreferences.edit().putString(CUSTOM_TASKS_KEY, data).apply()
+        sharedPreferences.edit { putString(CUSTOM_TASKS_KEY, data)}
         Timber.d("Successfully imported custom tasks")
     }
 
-    private suspend fun importWanxiangPrefs(prefs: Map<String, BackupPreference>) {
+    private fun importWanxiangPrefs(prefs: Map<String, BackupPreference>) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
-        val editor = sharedPreferences.edit()
         val appPrefs = AppPrefs.defaultInstance()
-
-        prefs.forEach { (key, backupPref) ->
-            val value = backupPref.value
-            val type = backupPref.type
-
-            val validationResult = appPrefs.validatePreference(key, type.name)
-            if (!validationResult.isValid) {
-                Timber.w("Skipping Wanxiang preference '$key': ${validationResult.message}")
-                return@forEach
-            }
-
-            when {
-                value is JsonArray -> {
-                    when (type) {
-                        PreferenceType.STRING_SET -> {
-                            val stringSet = value.map<JsonElement, String> { (it as JsonPrimitive).content }.toSet()
-                            editor.putStringSet(key, stringSet)
-                        }
-                        PreferenceType.STRING -> {
-                            val joined = value.joinToString("\n") { (it as JsonPrimitive).content }
-                            editor.putString(key, joined)
-                        }
-                        else -> {
-                            editor.putString(key, value.toString())
-                        }
-                    }
-                }
-                value is JsonPrimitive -> {
-                    val content = value.content
-
-                    when (type) {
-                        PreferenceType.BOOLEAN -> {
-                            editor.putBoolean(key, content.toBoolean())
-                        }
-                        PreferenceType.INT -> {
-                            editor.putInt(key, content.toIntOrNull() ?: 0)
-                        }
-                        PreferenceType.LONG -> {
-                            editor.putLong(key, content.toLongOrNull() ?: 0L)
-                        }
-                        PreferenceType.FLOAT -> {
-                            editor.putFloat(key, content.toFloatOrNull() ?: 0f)
-                        }
-                        PreferenceType.STRING -> {
-                            editor.putString(key, importStringValue(key, content, backupPref.encoded))
-                        }
-                        else -> {
-                            editor.putString(key, content)
-                        }
-                    }
-                }
-                value is JsonNull -> editor.putString(key, null)
-                else -> {
-                    editor.putString(key, value.toString())
-                }
-            }
-        }
-
-        editor.apply()
+        sharedPreferences.edit { writePreferenceValues(prefs, appPrefs, "Wanxiang") }
         Timber.d("Successfully imported Wanxiang preferences with ${prefs.size} items")
     }
 }

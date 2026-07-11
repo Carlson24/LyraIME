@@ -86,7 +86,7 @@ object ThemeManager {
 
             Rime.deployRimeConfigFile(id, "config_version")
             val compiled = File(DataManager.resolveDeployedResourcePath(id))
-            if (compiled.exists()) {
+            if (compiled.exists() && compiled.lastModified() >= sourceFileTime) {
                 compiled.copyTo(cacheFile, overwrite = true)
             }
 

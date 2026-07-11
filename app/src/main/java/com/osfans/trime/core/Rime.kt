@@ -277,6 +277,7 @@ class Rime :
         DataManager.sync()
         addExtraConfigSearchPath(DataManager.themesDir.absolutePath)
         addExtraConfigSearchPath(DataManager.userThemesDir.absolutePath)
+        cleanStaleThemeFiles()
         val sharedDataDir = DataManager.sharedDataDir.absolutePath
         val userDataDir = DataManager.userDataDir.absolutePath
         Timber.d(
@@ -288,6 +289,16 @@ class Rime :
             """.trimIndent(),
         )
         startupRime(sharedDataDir, userDataDir, BuildConfig.BUILD_VERSION_NAME, needsDeploy)
+    }
+
+    private fun cleanStaleThemeFiles() {
+        val dirsToClean = listOf(DataManager.userDataDir, DataManager.sharedDataDir)
+        for (dir in dirsToClean) {
+            dir.listFiles { _, name -> name.endsWith(".trime.yaml") }?.forEach { file ->
+                Timber.d("Removing stale theme file from Rime data dir: ${file.absolutePath}")
+                file.delete()
+            }
+        }
     }
 
     private fun processKeyInner(value: Int, modifiers: Int, isVirtual: Boolean): Boolean {
