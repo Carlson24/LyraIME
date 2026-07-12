@@ -41,7 +41,7 @@ The DSP packages (`libQnnHtpV{n}.tar.bz2`) are hosted at `https://github.com/Car
 - **CMake**: 4.1.2 (override with `$CMAKE_VERSION` env or `cmakeVersion` gradle property)
 - **ABIs**: arm64-v8a, x86_64 (split APKs, no universal; maintained in `Versions.kt`)
 - **Default ABI**: `buildABI=arm64-v8a` in `gradle.properties` limits builds to arm64-v8a only. Build for emulator (x86_64) with `BUILD_ABI=x86_64 make debug` or change the property. Set to empty or comma-separated list for multi-ABI.
-- Native source: `app/src/main/jni/` — submodules: librime, OpenCC, snappy, librime-lua, librime-lua-deps, librime-octagram, librime-predict, sherpa-onnx
+- Native source: `app/src/main/jni/` — submodules: librime, OpenCC, snappy, librime-lua, librime-lua-deps, librime-octagram, librime-calculator, sherpa-onnx
 - Output: `librime_jni.so` + `libsherpa-onnx-jni.so` + `libonnxruntime.so` (and others)
 
 **Prebuilt JNI caching**: if `app/prebuilt/` exists, the build reuses pre-compiled `.so` files instead of rebuilding native code. To force a full native rebuild, delete `app/prebuilt/`.

@@ -29,9 +29,9 @@
 [submodule "librime-octagram"]
 	path = app/src/main/jni/librime-octagram
 	url = https://github.com/lotem/librime-octagram.git
-[submodule "librime-predict"]
-	path = app/src/main/jni/librime-predict
-	url = https://github.com/rime/librime-predict.git
+[submodule "librime-calculator"]
+	path = app/src/main/jni/librime-calculator
+	url = https://github.com/Carlson24/librime-calculator.git
 [submodule "librime-user-predict"]
 	path = app/src/main/jni/librime-user-predict
 	url = https://github.com/Carlson24/librime-user-predict
