@@ -50,8 +50,11 @@ import io.github.rosemoe.sora.widget.EditorSearcher
 import io.github.rosemoe.sora.widget.SymbolPairMatch
 import io.github.rosemoe.sora.widget.component.EditorAutoCompletion
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -87,8 +90,7 @@ class TextFileEditActivity : AppCompatActivity() {
     private val keyUndo: View by lazy { findViewById(R.id.keyUndo) }
     private val keyRedo: View by lazy { findViewById(R.id.keyRedo) }
     private val keyTab: View by lazy { findViewById(R.id.keyTab) }
-    private val keyHome: View by lazy { findViewById(R.id.keyHome) }
-    private val keyEnd: View by lazy { findViewById(R.id.keyEnd) }
+    private val keySearch: View by lazy { findViewById(R.id.keySearch) }
     private val keyLeft: View by lazy { findViewById(R.id.keyLeft) }
     private val keyUp: View by lazy { findViewById(R.id.keyUp) }
     private val keyDown: View by lazy { findViewById(R.id.keyDown) }
@@ -109,6 +111,8 @@ class TextFileEditActivity : AppCompatActivity() {
     private var deferredSyntaxHighlightPending: Boolean = false
     private var lowMemoryMode: Boolean = false
     private var lowMemoryNoticeShown: Boolean = false
+    private var yamlCheckJob: Job? = null
+    private var yamlCheckEnabled: Boolean = false
     private var largeFilePager: LargeFilePager? = null
     private var largeFileFullyLoaded: Boolean = false
     private var largeFileLoadInFlight: Boolean = false
@@ -229,12 +233,17 @@ class TextFileEditActivity : AppCompatActivity() {
                 largeFileDirty = true
             }
             editor.post { updateMenuState() }
+            if (yamlCheckEnabled) scheduleYamlCheck()
         }
         editor.subscribeAlways(PublishSearchResultEvent::class.java) {
             updateMatchInfo()
         }
         editor.subscribeAlways(ScrollEvent::class.java) {
             if (isLargeFile) tryLoadNextLargeFilePage()
+        }
+
+        if (TextFileSupport.detectScopeName(displayName) == "source.yaml") {
+            yamlCheckEnabled = true
         }
 
         setupSearchBar()
@@ -371,6 +380,24 @@ class TextFileEditActivity : AppCompatActivity() {
                 editor.installOnlineBracketsMatcher()
                 prefs.edit().putBoolean(PREF_USE_TAB, useTab).apply()
                 true
+            }
+        }
+        if (TextFileSupport.detectScopeName(displayName) == "source.yaml") {
+            menu.add(R.string.text_editor_yaml_check).apply {
+                setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+                isCheckable = true
+                isChecked = yamlCheckEnabled
+                setOnMenuItemClickListener {
+                    yamlCheckEnabled = !yamlCheckEnabled
+                    isChecked = yamlCheckEnabled
+                    if (yamlCheckEnabled) {
+                        scheduleYamlCheck()
+                    } else {
+                        yamlCheckJob?.cancel()
+                        editor.setDiagnostics(null)
+                    }
+                    true
+                }
             }
         }
         updateMenuState()
@@ -525,8 +552,7 @@ class TextFileEditActivity : AppCompatActivity() {
             if (editor.canRedo()) editor.redo()
         }
         keyTab.setOnClickListener { sendKey(KeyEvent.KEYCODE_TAB) }
-        keyHome.setOnClickListener { sendKey(KeyEvent.KEYCODE_MOVE_HOME) }
-        keyEnd.setOnClickListener { sendKey(KeyEvent.KEYCODE_MOVE_END) }
+        keySearch.setOnClickListener { openSearchBar() }
         keyLeft.setOnClickListener { sendKey(KeyEvent.KEYCODE_DPAD_LEFT) }
         keyUp.setOnClickListener { sendKey(KeyEvent.KEYCODE_DPAD_UP) }
         keyDown.setOnClickListener { sendKey(KeyEvent.KEYCODE_DPAD_DOWN) }
@@ -639,7 +665,23 @@ class TextFileEditActivity : AppCompatActivity() {
             editor.setText(draft ?: original)
             editor.installOnlineBracketsMatcher()
             scheduleDeferredSyntaxHighlightIfNeeded()
+            if (yamlCheckEnabled) scheduleYamlCheck()
             updateMenuState()
+        }
+    }
+
+    private fun scheduleYamlCheck() {
+        if (!yamlCheckEnabled || isLargeFile) return
+        yamlCheckJob?.cancel()
+        yamlCheckJob = lifecycleScope.launch(crashHandler + Dispatchers.IO) {
+            delay(YAML_CHECK_DEBOUNCE_MS)
+            val text = withContext(Dispatchers.Main) { editor.text.toString() }
+            val diagnostics = YamlSyntaxChecker.check(text)
+            withContext(Dispatchers.Main) {
+                if (diagnostics != null) {
+                    editor.setDiagnostics(diagnostics)
+                }
+            }
         }
     }
 
@@ -774,6 +816,34 @@ class TextFileEditActivity : AppCompatActivity() {
                     loadRemainingLargeFilePagesForSave()
                 }
                 val content = editor.text.toString()
+                if (yamlCheckEnabled) {
+                    val error = withContext(Dispatchers.IO) {
+                        YamlSyntaxChecker.firstError(content)
+                    }
+                    if (error != null) {
+                        val confirmed = CompletableDeferred<Boolean>()
+                        withContext(Dispatchers.Main) {
+                            AlertDialog.Builder(this@TextFileEditActivity)
+                                .setTitle(R.string.text_editor_yaml_check)
+                                .setMessage(
+                                    getString(
+                                        R.string.text_editor_yaml_error_on_save,
+                                        error.line,
+                                        error.column,
+                                        error.message,
+                                    ),
+                                )
+                                .setPositiveButton(R.string.text_editor_save) { _, _ ->
+                                    confirmed.complete(true)
+                                }
+                                .setNegativeButton(android.R.string.cancel) { _, _ ->
+                                    confirmed.complete(false)
+                                }
+                                .show()
+                        }
+                        if (!confirmed.await()) return@launch
+                    }
+                }
                 withContext(Dispatchers.IO) {
                     contentResolver.openOutputStream(docUri, "wt")?.use {
                         it.write(content.toByteArray())
@@ -838,6 +908,8 @@ class TextFileEditActivity : AppCompatActivity() {
         if (!isViewReady || lowMemoryMode) return
         lowMemoryMode = true
         deferredSyntaxHighlightPending = false
+        yamlCheckJob?.cancel()
+        yamlCheckEnabled = false
         runCatching {
             editor.apply {
                 setStyles(null)
@@ -887,6 +959,7 @@ class TextFileEditActivity : AppCompatActivity() {
         private const val LARGE_FILE_PAGE_BYTES = 256 * 1024
         private const val PREFETCH_VIEWPORT_MULTIPLIER = 2
         private const val DEFERRED_HIGHLIGHT_DELAY_MS = 180L
+        private const val YAML_CHECK_DEBOUNCE_MS = 500L
     }
 
     private class LargeFilePager(

@@ -583,4 +583,6 @@
     <string name="text_editor_up">Up</string>
     <string name="text_editor_down">Down</string>
     <string name="text_editor_right">Right</string>
+    <string name="text_editor_yaml_check">YAML 语法检查</string>
+    <string name="text_editor_yaml_error_on_save">YAML 语法错误（第 %1$d 行，第 %2$d 列）：\n%3$s\n\n确定要保存吗？</string>
 </resources>

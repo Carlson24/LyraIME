@@ -226,19 +226,11 @@
                     app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView
-                    android:id="@+id/keyHome"
+                    android:id="@+id/keySearch"
                     style="@style/EditorKeyStyle"
-                    android:contentDescription="@string/text_editor_home"
+                    android:contentDescription="@string/text_editor_find_replace"
                     android:padding="10dp"
-                    android:src="@drawable/ic_baseline_first_page_24"
-                    app:tint="?android:attr/textColorPrimary" />
-
-                <ImageView
-                    android:id="@+id/keyEnd"
-                    style="@style/EditorKeyStyle"
-                    android:contentDescription="@string/text_editor_end"
-                    android:padding="10dp"
-                    android:src="@drawable/ic_baseline_last_page_24"
+                    android:src="@drawable/ic_baseline_search_24"
                     app:tint="?android:attr/textColorPrimary" />
 
                 <ImageView

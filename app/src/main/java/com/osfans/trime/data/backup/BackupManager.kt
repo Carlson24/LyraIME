@@ -18,6 +18,7 @@ import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.util.appContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -30,7 +31,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.serializer
 import timber.log.Timber
 import java.io.File
-import kotlinx.coroutines.delay
 import java.security.MessageDigest
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -351,27 +351,25 @@ object BackupManager {
         }
     }
 
-    private suspend fun exportClipboard(onlyPinned: Boolean = false): List<BackupBean> {
-        return withRetry(operation = "export clipboard data") {
-            val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
-                .fallbackToDestructiveMigration(true)
-                .build()
-            val dao = db.databaseDao()
-            val pagingSource = if (onlyPinned) dao.favoriteEntries() else dao.allEntries()
-            val beans = mutableListOf<DatabaseBean>()
-            val params = PagingSource.LoadParams.Refresh<Int>(null, Int.MAX_VALUE, false)
-            val result = pagingSource.load(params) as PagingSource.LoadResult.Page
-            beans.addAll(result.data)
-            db.close()
-            Timber.d("Successfully exported clipboard data with ${beans.size} items (onlyPinned=$onlyPinned)")
-            beans.map { bean ->
-                BackupBean(
-                    text = bean.text,
-                    type = bean.type,
-                    time = bean.time,
-                    pinned = bean.pinned,
-                )
-            }
+    private suspend fun exportClipboard(onlyPinned: Boolean = false): List<BackupBean> = withRetry(operation = "export clipboard data") {
+        val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
+            .fallbackToDestructiveMigration(true)
+            .build()
+        val dao = db.databaseDao()
+        val pagingSource = if (onlyPinned) dao.favoriteEntries() else dao.allEntries()
+        val beans = mutableListOf<DatabaseBean>()
+        val params = PagingSource.LoadParams.Refresh<Int>(null, Int.MAX_VALUE, false)
+        val result = pagingSource.load(params) as PagingSource.LoadResult.Page
+        beans.addAll(result.data)
+        db.close()
+        Timber.d("Successfully exported clipboard data with ${beans.size} items (onlyPinned=$onlyPinned)")
+        beans.map { bean ->
+            BackupBean(
+                text = bean.text,
+                type = bean.type,
+                time = bean.time,
+                pinned = bean.pinned,
+            )
         }
     }
 
@@ -420,7 +418,7 @@ object BackupManager {
 
     private fun importCustomTasks(data: String) {
         val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
-        sharedPreferences.edit { putString(CUSTOM_TASKS_KEY, data)}
+        sharedPreferences.edit { putString(CUSTOM_TASKS_KEY, data) }
         Timber.d("Successfully imported custom tasks")
     }
 

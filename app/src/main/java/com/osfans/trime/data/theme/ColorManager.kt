@@ -100,6 +100,16 @@ object ColorManager {
             "clipboard_entry_back_color" to "key_back_color",
             "hilited_clipboard_entry_back_color" to "hilited_candidate_back_color",
             "clipboard_checkbox_color" to "key_text_color",
+            "candidate_border_color" to "border_color",
+            "off_key_symbol_color" to "key_symbol_color",
+            "on_key_symbol_color" to "hilited_key_symbol_color",
+            "hilited_off_key_symbol_color" to "hilited_key_symbol_color",
+            "hilited_on_key_symbol_color" to "hilited_key_symbol_color",
+            "t9_side_back_color" to "key_back_color",
+            "t9_side_hilited_back_color" to "hilited_key_back_color",
+            "t9_side_text_color" to "key_text_color",
+            "t9_side_border_color" to "key_border_color",
+            "t9_side_spacing_color" to "key_border_color",
         )
 
     private var bitmapCache: LruCache<String, Bitmap>? = null
@@ -206,10 +216,20 @@ object ColorManager {
         val color =
             try {
                 resolveValue(key) { value ->
+                    if (SUPPORTED_IMG_FORMATS.any { value.endsWith(it, ignoreCase = true) }) {
+                        throw IllegalArgumentException(
+                            "Color key '$key' resolved to image file '$value' - use a color, not an image",
+                        )
+                    }
                     ColorUtils.parseColor(value)
                 }
-            } catch (_: IllegalArgumentException) {
-                ColorUtils.parseColor(key)
+            } catch (e: IllegalArgumentException) {
+                if (e.message?.contains("image file") == true) throw e
+                try {
+                    ColorUtils.parseColor(key)
+                } catch (_: IllegalArgumentException) {
+                    throw IllegalArgumentException("Color key '$key' not found")
+                }
             }
         colorCache.put(key, color)
         color
