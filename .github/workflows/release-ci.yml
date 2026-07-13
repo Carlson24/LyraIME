@@ -55,16 +55,6 @@ jobs:
           keyPassword=${{ secrets.KEY_PASSWORD }}
           EOF
 
-      - name: Rename APK
-        run: |
-          cd app/build/outputs/apk/release
-          for apk in *.apk; do
-            [ -f "$apk" ] || continue
-            arch=$(echo "$apk" | grep -oE '(arm64-v8a|x86_64)')
-            ver=$(echo "$apk" | grep -oP 'v\d+\.\d+\.\d+\.\d+')
-            mv "$apk" "LyraIME-${arch}-${ver}.apk"
-          done
-
       - name: Create Stable release
         uses: ncipollo/release-action@v1
         with:
