@@ -25,13 +25,13 @@ import java.util.TimeZone
 
 object CrashLogExporter {
     private const val LOG_DIR_NAME = "logs"
-    private const val RETENTION_MS = 10L * 24 * 60 * 60 * 1000
+    private const val RETENTION_MS = 3L * 24 * 60 * 60 * 1000
 
     private val excludedTags = listOf("InsetsSource", "ViewRootImplStubImpl", "MIUIInput")
 
     private val fileTimestampFormat by lazy {
         SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
+            timeZone = TimeZone.getTimeZone("Asia/Shanghai")
         }
     }
 
