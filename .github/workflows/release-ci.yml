@@ -55,6 +55,9 @@ jobs:
           keyPassword=${{ secrets.KEY_PASSWORD }}
           EOF
 
+      - name: Build LyraIME
+        run: make release
+
       - name: Create Stable release
         uses: ncipollo/release-action@v1
         with:
