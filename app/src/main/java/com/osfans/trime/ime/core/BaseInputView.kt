@@ -100,8 +100,10 @@ abstract class BaseInputView(
         }
         val popupActions = theme.candidatesTool?.popup
         val popupTextSize = theme.candidatesTool?.popupTextSize ?: 0f
-        val popupTextColorKey = theme.candidatesTool?.popupTextColor ?: ""
-        val popupTextColor = if (popupTextColorKey.isNotEmpty()) ColorManager.getColor(popupTextColorKey) else null
+        val popupTextColorKey = theme.candidatesTool?.popupTextColor?.takeIf { it.isNotEmpty() } ?: "candidate_text_color"
+        val popupTextColor = ColorManager.getColor(popupTextColorKey)
+        val popupBackgroundColorKey = theme.candidatesTool?.popupBackgroundColor?.takeIf { it.isNotEmpty() } ?: "candidate_background"
+        val popupBackgroundColor = ColorManager.getColor(popupBackgroundColorKey)
         val popupTypeface = FontManager.getTypeface("candidates_tool_popup_font")
             .takeIf { it != Typeface.DEFAULT }
         service.lifecycleScope.launch {
@@ -122,6 +124,9 @@ abstract class BaseInputView(
             }
             candidateActionMenu = ListPopupWindow(themedContext).apply {
                 anchorView = view
+                if (popupBackgroundColor != 0) {
+                    setBackgroundDrawable(android.graphics.drawable.ColorDrawable(popupBackgroundColor))
+                }
                 if (popupWidthDp > 0) setContentWidth(dp(popupWidthDp))
                 setAdapter(object : ArrayAdapter<CharSequence>(
                     themedContext,
@@ -137,9 +142,7 @@ abstract class BaseInputView(
                         if (popupTextSize > 0f) {
                             view.setTextSize(TypedValue.COMPLEX_UNIT_SP, popupTextSize)
                         }
-                        if (popupTextColor != null) {
-                            view.setTextColor(popupTextColor)
-                        }
+                        view.setTextColor(popupTextColor)
                         if (popupTypeface != null) {
                             view.typeface = popupTypeface
                         }
