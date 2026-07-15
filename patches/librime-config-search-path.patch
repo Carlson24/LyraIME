@@ -10,6 +10,40 @@ index c13bc10f..fe7a94bf 100644
    string user_id;
    string distribution_name;
    string distribution_code_name;
+diff --git a/src/rime/gear/table_translator.cc b/src/rime/gear/table_translator.cc
+index 67bc2292..10c3d969 100644
+--- a/src/rime/gear/table_translator.cc
++++ b/src/rime/gear/table_translator.cc
+@@ -221,6 +221,7 @@ TableTranslator::TableTranslator(const Ticket& ticket)
+     config->GetBool(name_space_ + "/enable_encoder", &enable_encoder_);
+     config->GetBool(name_space_ + "/encode_commit_history",
+                     &encode_commit_history_);
++    config->GetInt(name_space_ + "/min_word_length", &min_word_length_);
+     config->GetInt(name_space_ + "/max_phrase_length", &max_phrase_length_);
+     config->GetInt(name_space_ + "/max_homographs", &max_homographs_);
+     if (enable_sentence_ || sentence_over_completion_ ||
+@@ -245,6 +246,9 @@ an<Translation> TableTranslator::Query(const string& input,
+                                        const Segment& segment) {
+   if (!segment.HasAnyTagIn(tags_))
+     return nullptr;
++  int len = static_cast<int>(input.length());
++  if (min_word_length_ > 0 && len < min_word_length_)
++    return nullptr;
+   DLOG(INFO) << "input = '" << input << "', [" << segment.start << ", "
+              << segment.end << ")";
+ 
+diff --git a/src/rime/gear/table_translator.h b/src/rime/gear/table_translator.h
+index 7057ed4b..bbc6d05b 100644
+--- a/src/rime/gear/table_translator.h
++++ b/src/rime/gear/table_translator.h
+@@ -43,6 +43,7 @@ class TableTranslator : public Translator,
+   bool enable_sentence_ = true;
+   bool sentence_over_completion_ = false;
+   bool encode_commit_history_ = true;
++  int min_word_length_ = 0;
+   int max_phrase_length_ = 5;
+   int max_homographs_ = 1;
+   the<Poet> poet_;
 diff --git a/src/rime/resource.cc b/src/rime/resource.cc
 index 045e047f..d14311c9 100644
 --- a/src/rime/resource.cc
