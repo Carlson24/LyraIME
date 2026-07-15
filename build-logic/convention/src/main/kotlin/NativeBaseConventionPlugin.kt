@@ -63,7 +63,7 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
         val applyPatches =
             project.tasks.register("applyNativePatches") {
                 group = "native"
-                description = "Apply patches required for native build (lua + sherpa-onnx-qnn + librime-config-search-path)"
+                description = "Apply patches required for native build (lua + sherpa-onnx-qnn + librime-custom + librime-lua-utf8)"
                 doLast {
                     ProcessBuilder(
                         "git",
@@ -81,13 +81,20 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                         "git",
                         "apply",
                         "--directory=$jniDir/librime",
-                        "patches/librime-config-search-path.patch",
+                        "patches/librime-custom.patch",
+                    ).directory(rootDir).inheritIO().start().waitFor()
+                    ProcessBuilder(
+                        "git",
+                        "apply",
+                        "--directory=$jniDir/librime-lua",
+                        "patches/librime-lua-utf8.patch",
                     ).directory(rootDir).inheritIO().start().waitFor()
                 }
                 outputs.upToDateWhen {
                     (macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")) &&
                         (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)")) &&
-                        (resourceH.exists() && resourceH.readText().contains("extra_fallback_paths_"))
+                        (resourceH.exists() && resourceH.readText().contains("extra_fallback_paths_")) &&
+                        (project.file("src/main/jni/librime-lua/CMakeLists.txt").readText().contains("lua-utf8"))
                 }
             }
 

@@ -50,3 +50,6 @@
 [submodule "sherpa-onnx"]
 	path = app/src/main/jni/sherpa-onnx
 	url = https://github.com/k2-fsa/sherpa-onnx.git
+[submodule "lua-utf8"]
+	path = app/src/main/jni/lua-utf8
+	url = https://github.com/starwing/luautf8.git

@@ -10,6 +10,47 @@ index c13bc10f..fe7a94bf 100644
    string user_id;
    string distribution_name;
    string distribution_code_name;
+diff --git a/src/rime/gear/script_translator.cc b/src/rime/gear/script_translator.cc
+index aef62178..7a48c413 100644
+--- a/src/rime/gear/script_translator.cc
++++ b/src/rime/gear/script_translator.cc
+@@ -75,6 +75,16 @@ static bool syllabify_dfs(SyllabifyTask* task,
+ 
+ }  // anonymous namespace
+ 
++// Cache SyllableGraph across ScriptTranslator instances.
++// All instances share the same prism and input per key event;
++// caching eliminates 2 of 3 redundant BuildSyllableGraph calls.
++struct SyllableGraphCache {
++  string input;
++  const Prism* prism = nullptr;
++  SyllableGraph graph;
++};
++static thread_local SyllableGraphCache g_syllable_graph_cache;
++
+ class ScriptSyllabifier : public PhraseSyllabifier {
+  public:
+   ScriptSyllabifier(ScriptTranslator* translator,
+@@ -365,8 +375,17 @@ Spans ScriptSyllabifier::Syllabify(const Phrase* phrase) {
+ }
+ 
+ size_t ScriptSyllabifier::BuildSyllableGraph(Prism& prism) {
+-  return (size_t)syllabifier_.BuildSyllableGraph(input_, prism,
+-                                                 &syllable_graph_);
++  if (g_syllable_graph_cache.input == input_ &&
++      g_syllable_graph_cache.prism == &prism) {
++    syllable_graph_ = g_syllable_graph_cache.graph;
++    return syllable_graph_.interpreted_length;
++  }
++  size_t result = (size_t)syllabifier_.BuildSyllableGraph(input_, prism,
++                                                          &syllable_graph_);
++  g_syllable_graph_cache.input = input_;
++  g_syllable_graph_cache.prism = &prism;
++  g_syllable_graph_cache.graph = syllable_graph_;
++  return result;
+ }
+ 
+ bool ScriptSyllabifier::IsCorrection(const Code& code,
 diff --git a/src/rime/gear/table_translator.cc b/src/rime/gear/table_translator.cc
 index 67bc2292..10c3d969 100644
 --- a/src/rime/gear/table_translator.cc

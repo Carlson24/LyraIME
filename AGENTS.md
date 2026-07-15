@@ -46,10 +46,11 @@ The DSP packages (`libQnnHtpV{n}.tar.bz2`) are hosted at `https://github.com/Car
 
 **Prebuilt JNI caching**: if `app/prebuilt/` exists, the build reuses pre-compiled `.so` files instead of rebuilding native code. To force a full native rebuild, delete `app/prebuilt/`.
 
-**Auto-patch**: the `native-base-convention` Gradle plugin automatically applies three patches as a dependency of `ExternalNativeBuildTask`:
+**Auto-patch**: the `native-base-convention` Gradle plugin automatically applies four patches as a dependency of `ExternalNativeBuildTask`:
 - `patches/lua.patch` → `librime-lua-deps`
 - `patches/sherpa-onnx-qnn.patch` → `sherpa-onnx`
-- `patches/librime-config-search-path.patch` → `librime`
+- `patches/librime-custom.patch` → `librime`
+- `patches/librime-lua-utf8.patch` → `librime-lua`
 The Makefile `patch-apply` target is idempotent and can still be used standalone. Building via Gradle directly (e.g. from Android Studio) also works because the plugin handles it.
 
 ## sherpa-onnx (native, submodule)

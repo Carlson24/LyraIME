@@ -1,0 +1,33 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 42f2ebb..745d88c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -19,7 +19,12 @@ else()
+   message(STATUS "Using in-tree lua source")
+   include_directories(thirdparty/lua5.4)
+   aux_source_directory(thirdparty/lua5.4 LUA_SRC)
++  if(NOT WIN32)
++    # Standard utf8 source replaced by lua-utf8 (provides super-set API)
++    list(FILTER LUA_SRC EXCLUDE REGEX "lutf8lib\\.c$")
++  endif()
+   add_definitions(-DLUA_COMPAT_5_3)
++
+   if(WIN32)
+     set_property(SOURCE ${LUA_SRC} PROPERTY COMPILE_DEFINITIONS LUA_BUILD_AS_DLL)
+   else()
+@@ -36,10 +41,14 @@ else()
+   endif()
+ endif()
+ 
++# lua-utf8: enhanced UTF-8 module (sub, find, gsub, width, upper/lower, etc.)
++include_directories("${CMAKE_SOURCE_DIR}/lua-utf8")
++set(LUA_UTF8_SRC "${CMAKE_SOURCE_DIR}/lua-utf8/lutf8lib.c")
++
+ aux_source_directory(src RIME_LUA_SRC)
+ aux_source_directory(src/lib RIME_LUA_LIB_SRC)
+ 
+-add_library(rime-lua-objs OBJECT ${RIME_LUA_SRC} ${RIME_LUA_LIB_SRC} ${LUA_SRC})
++add_library(rime-lua-objs OBJECT ${RIME_LUA_SRC} ${RIME_LUA_LIB_SRC} ${LUA_SRC} ${LUA_UTF8_SRC})
+ if(BUILD_SHARED_LIBS)
+   set_target_properties(rime-lua-objs PROPERTIES POSITION_INDEPENDENT_CODE ON)
+ endif()
