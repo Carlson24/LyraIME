@@ -1,11 +1,12 @@
 diff --git a/src/rime/deployer.h b/src/rime/deployer.h
-index c13bc10f..fe7a94bf 100644
+index c13bc10f..ef7f2fbc 100644
 --- a/src/rime/deployer.h
 +++ b/src/rime/deployer.h
-@@ -37,6 +37,7 @@ class Deployer : public Messenger {
+@@ -37,6 +37,8 @@ class Deployer : public Messenger {
    path prebuilt_data_dir;
    path staging_dir;
    path sync_dir;
++  path common_data_dir;
 +  vector<path> extra_config_search_paths;
    string user_id;
    string distribution_name;
@@ -51,6 +52,27 @@ index aef62178..7a48c413 100644
  }
  
  bool ScriptSyllabifier::IsCorrection(const Code& code,
+diff --git a/src/rime/gear/simplifier.cc b/src/rime/gear/simplifier.cc
+index a2161c6d..1dfaaf9b 100644
+--- a/src/rime/gear/simplifier.cc
++++ b/src/rime/gear/simplifier.cc
+@@ -183,12 +183,16 @@ Simplifier* SimplifierComponent::Create(const Ticket& ticket) {
+   if (opencc_config_path.is_relative()) {
+     path user_config_path = Service::instance().deployer().user_data_dir;
+     path shared_config_path = Service::instance().deployer().shared_data_dir;
++    path common_config_path = Service::instance().deployer().common_data_dir;
+     (user_config_path /= "opencc") /= opencc_config_path;
+     (shared_config_path /= "opencc") /= opencc_config_path;
++    (common_config_path /= "opencc") /= opencc_config_path;
+     if (exists(user_config_path)) {
+       opencc_config_path = user_config_path;
+     } else if (exists(shared_config_path)) {
+       opencc_config_path = shared_config_path;
++    } else if (exists(common_config_path)) {
++      opencc_config_path = common_config_path;
+     }
+   }
+   opencc = New<Opencc>(opencc_config_path);
 diff --git a/src/rime/gear/table_translator.cc b/src/rime/gear/table_translator.cc
 index 67bc2292..10c3d969 100644
 --- a/src/rime/gear/table_translator.cc
@@ -135,3 +157,18 @@ index d30f991e..f2f245fa 100644
    return resolver.release();
  }
  
+diff --git a/src/rime/setup.cc b/src/rime/setup.cc
+index 4e644b0e..dbabd1ef 100644
+--- a/src/rime/setup.cc
++++ b/src/rime/setup.cc
+@@ -78,6 +78,10 @@ RIME_DLL void SetupDeployer(RimeTraits* traits) {
+     deployer.staging_dir = path(traits->staging_dir);
+   else
+     deployer.staging_dir = deployer.user_data_dir / "build";
++  const char* common_data_dir = getenv("RIME_COMMON_DATA_DIR");
++  if (common_data_dir) {
++    deployer.common_data_dir = path(common_data_dir);
++  }
+ }
+ 
+ RIME_DLL void SetupLogging(const char* app_name,

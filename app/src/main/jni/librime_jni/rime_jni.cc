@@ -20,12 +20,14 @@ extern void rime_require_module_lua();
 extern void rime_require_module_octagram();
 extern void rime_require_module_user_predict();
 extern void rime_require_module_calculator();
+extern void rime_require_module_typo();
 // librime is compiled as a static library, we have to link modules explicitly
 static void declare_librime_module_dependencies() {
   rime_require_module_lua();
   rime_require_module_octagram();
   rime_require_module_user_predict();
   rime_require_module_calculator();
+  rime_require_module_typo();
 }
 
 static std::vector<std::string> s_pending_config_search_paths;
@@ -259,12 +261,14 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* jvm, void* reserved) {
 
 extern "C" JNIEXPORT void JNICALL Java_com_osfans_trime_core_Rime_startupRime(
     JNIEnv* env, jclass clazz, jstring shared_dir, jstring user_dir,
-    jstring version_name, jboolean full_check) {
+    jstring version_name, jstring common_dir, jboolean full_check) {
   // for rime shared data dir
   setenv("RIME_SHARED_DATA_DIR", CString(env, shared_dir), 1);
   // for rime user data dir
   setenv("RIME_USER_DATA_DIR", CString(env, user_dir), 1);
   setenv("RIME_DISTRIBUTION_VERSION", CString(env, version_name), 1);
+  // for common shared data dir (OpenCC etc.)
+  setenv("RIME_COMMON_DATA_DIR", CString(env, common_dir), 1);
 
   auto notificationHandler = [](void* context_object, RimeSessionId session_id,
                                 const char* message_type,

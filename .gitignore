@@ -474,7 +474,7 @@ keystore.properties
 # Project
 app/release/output-metadata.json
 app/src/main/assets/checksums.json
-app/src/main/assets/**/opencc
+app/src/main/assets/shared
 
 # boost
 app/boost-*.tar.xz

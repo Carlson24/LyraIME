@@ -68,6 +68,9 @@ object DataManager {
     val sharedDataDir
         get() = File(externalFilesDir, SchemaPackageManager.activePackageId).also { it.mkdirs() }
 
+    val commonDataDir
+        get() = File(externalFilesDir, "shared").also { it.mkdirs() }
+
     val voiceDataDir = File(externalFilesDir, "voice").also { it.mkdirs() }
 
     val userDataBaseDir
@@ -126,7 +129,7 @@ object DataManager {
 
         ResourceUtils.copyFile(DATA_CHECKSUMS_NAME, dataDir.resolve(DATA_CHECKSUMS_NAME).absolutePath)
 
-        Timber.d("DataManager.sync: sharedDataDir=$sharedDataDir, exists=${sharedDataDir.exists()}")
+        Timber.d("DataManager.sync: sharedDataDir=$sharedDataDir, commonDataDir=$commonDataDir")
         sharedDataDir.listFiles()?.forEach { f ->
             Timber.d("DataManager.sync: sharedDataDir file: ${f.name} (dir=${f.isDirectory})")
         }

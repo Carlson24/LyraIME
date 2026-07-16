@@ -277,18 +277,21 @@ class Rime :
         DataManager.sync()
         addExtraConfigSearchPath(DataManager.themesDir.absolutePath)
         addExtraConfigSearchPath(DataManager.userThemesDir.absolutePath)
+        addExtraConfigSearchPath(DataManager.commonDataDir.absolutePath)
         cleanStaleThemeFiles()
         val sharedDataDir = DataManager.sharedDataDir.absolutePath
         val userDataDir = DataManager.userDataDir.absolutePath
+        val commonDataDir = DataManager.commonDataDir.absolutePath
         Timber.d(
             """
             Starting rime with:
             sharedDataDir: $sharedDataDir
             userDataDir: $userDataDir
+            commonDataDir: $commonDataDir
             fullCheck: $needsDeploy
             """.trimIndent(),
         )
-        startupRime(sharedDataDir, userDataDir, BuildConfig.BUILD_VERSION_NAME, needsDeploy)
+        startupRime(sharedDataDir, userDataDir, BuildConfig.BUILD_VERSION_NAME, commonDataDir, needsDeploy)
     }
 
     private fun cleanStaleThemeFiles() {
@@ -488,6 +491,7 @@ class Rime :
             sharedDir: String,
             userDir: String,
             versionName: String,
+            commonDir: String,
             fullCheck: Boolean,
         )
 

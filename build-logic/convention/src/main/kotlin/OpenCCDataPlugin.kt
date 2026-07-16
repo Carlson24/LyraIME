@@ -8,7 +8,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
@@ -26,25 +25,16 @@ class OpenCCDataPlugin : Plugin<Project> {
     private val Project.dataBaseDir
         get() = file("src/main/jni/OpenCC/data")
 
-    private val Project.packageDirs: Array<File>
-        get() = assetsDir.listFiles()?.filter {
-            it.isDirectory && it.name !in setOf("themes", "textmate") && !it.name.startsWith(".") && it.resolve("default.yaml").exists()
-        }?.toTypedArray() ?: emptyArray()
-
     override fun apply(target: Project) {
         registerInstallTask(target)
         registerCleanTask(target)
     }
 
     private fun registerInstallTask(project: Project) {
-        val packages = project.packageDirs
         val task =
             project.tasks.register<InstallOpenCCDataTask>(INSTALL_TASK) {
                 inputDir.set(project.dataBaseDir)
-                if (packages.isNotEmpty()) {
-                    outputDir.set(project.layout.projectDirectory.dir(packages.first().resolve("opencc").relativeTo(project.projectDir).path))
-                }
-                packageDirs = packages
+                outputDir.set(project.layout.projectDirectory.dir("src/main/assets/shared"))
             }
         project.tasks.getByName(DataChecksumsPlugin.TASK).dependsOn(task)
     }
@@ -52,9 +42,7 @@ class OpenCCDataPlugin : Plugin<Project> {
     private fun registerCleanTask(project: Project) {
         project
             .tasks.register<Delete>(CLEAN_TASK) {
-                for (pkgDir in project.packageDirs) {
-                    delete(pkgDir.resolve("opencc"))
-                }
+                delete(project.projectDir.resolve("src/main/assets/shared/opencc"))
             }.also {
                 project.cleanTask.dependsOn(it)
             }
@@ -67,9 +55,6 @@ class OpenCCDataPlugin : Plugin<Project> {
 
         @get:OutputDirectory
         abstract val outputDir: DirectoryProperty
-
-        @get:Input
-        var packageDirs: Array<File> = emptyArray()
 
         private val input by lazy { inputDir.get().asFile }
 
@@ -123,9 +108,7 @@ class OpenCCDataPlugin : Plugin<Project> {
 
         @TaskAction
         fun execute() {
-            for (pkgDir in packageDirs) {
-                installOpenCC(pkgDir.resolve("opencc"))
-            }
+            installOpenCC(outputDir.get().asFile.resolve("opencc"))
         }
     }
 }
