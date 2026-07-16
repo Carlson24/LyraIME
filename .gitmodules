@@ -34,7 +34,7 @@
 	url = https://github.com/Carlson24/librime-calculator.git
 [submodule "librime-typo"]
 	path = app/src/main/jni/librime-typo
-	url = https://github.com/amzxyz/librime-typo.git
+	url = https://github.com/Carlson24/librime-typo.git
 [submodule "librime-user-predict"]
 	path = app/src/main/jni/librime-user-predict
 	url = https://github.com/Carlson24/librime-user-predict
