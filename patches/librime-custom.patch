@@ -12,7 +12,7 @@ index c13bc10f..ef7f2fbc 100644
    string distribution_name;
    string distribution_code_name;
 diff --git a/src/rime/gear/script_translator.cc b/src/rime/gear/script_translator.cc
-index aef62178..7a48c413 100644
+index aef62178..b27196f6 100644
 --- a/src/rime/gear/script_translator.cc
 +++ b/src/rime/gear/script_translator.cc
 @@ -75,6 +75,16 @@ static bool syllabify_dfs(SyllabifyTask* task,
@@ -27,7 +27,7 @@ index aef62178..7a48c413 100644
 +  const Prism* prism = nullptr;
 +  SyllableGraph graph;
 +};
-+static thread_local SyllableGraphCache g_syllable_graph_cache;
++static thread_local SyllableGraphCache syllable_graph_cache;
 +
  class ScriptSyllabifier : public PhraseSyllabifier {
   public:
@@ -38,16 +38,16 @@ index aef62178..7a48c413 100644
  size_t ScriptSyllabifier::BuildSyllableGraph(Prism& prism) {
 -  return (size_t)syllabifier_.BuildSyllableGraph(input_, prism,
 -                                                 &syllable_graph_);
-+  if (g_syllable_graph_cache.input == input_ &&
-+      g_syllable_graph_cache.prism == &prism) {
-+    syllable_graph_ = g_syllable_graph_cache.graph;
++  if (syllable_graph_cache.input == input_ &&
++      syllable_graph_cache.prism == &prism) {
++    syllable_graph_ = syllable_graph_cache.graph;
 +    return syllable_graph_.interpreted_length;
 +  }
-+  size_t result = (size_t)syllabifier_.BuildSyllableGraph(input_, prism,
-+                                                          &syllable_graph_);
-+  g_syllable_graph_cache.input = input_;
-+  g_syllable_graph_cache.prism = &prism;
-+  g_syllable_graph_cache.graph = syllable_graph_;
++  size_t result =
++      (size_t)syllabifier_.BuildSyllableGraph(input_, prism, &syllable_graph_);
++  syllable_graph_cache.input = input_;
++  syllable_graph_cache.prism = &prism;
++  syllable_graph_cache.graph = syllable_graph_;
 +  return result;
  }
  
@@ -74,17 +74,17 @@ index a2161c6d..1dfaaf9b 100644
    }
    opencc = New<Opencc>(opencc_config_path);
 diff --git a/src/rime/gear/table_translator.cc b/src/rime/gear/table_translator.cc
-index 67bc2292..10c3d969 100644
+index 67bc2292..5491d7f5 100644
 --- a/src/rime/gear/table_translator.cc
 +++ b/src/rime/gear/table_translator.cc
-@@ -221,6 +221,7 @@ TableTranslator::TableTranslator(const Ticket& ticket)
-     config->GetBool(name_space_ + "/enable_encoder", &enable_encoder_);
-     config->GetBool(name_space_ + "/encode_commit_history",
+@@ -223,6 +223,7 @@ TableTranslator::TableTranslator(const Ticket& ticket)
                      &encode_commit_history_);
-+    config->GetInt(name_space_ + "/min_word_length", &min_word_length_);
      config->GetInt(name_space_ + "/max_phrase_length", &max_phrase_length_);
      config->GetInt(name_space_ + "/max_homographs", &max_homographs_);
++    config->GetInt(name_space_ + "/min_word_length", &min_word_length_);
      if (enable_sentence_ || sentence_over_completion_ ||
+         contextual_suggestions_) {
+       poet_.reset(new Poet(language(), config, Poet::LeftAssociateCompare));
 @@ -245,6 +246,9 @@ an<Translation> TableTranslator::Query(const string& input,
                                         const Segment& segment) {
    if (!segment.HasAnyTagIn(tags_))
@@ -96,30 +96,30 @@ index 67bc2292..10c3d969 100644
               << segment.end << ")";
  
 diff --git a/src/rime/gear/table_translator.h b/src/rime/gear/table_translator.h
-index 7057ed4b..bbc6d05b 100644
+index 7057ed4b..78ee5d65 100644
 --- a/src/rime/gear/table_translator.h
 +++ b/src/rime/gear/table_translator.h
-@@ -43,6 +43,7 @@ class TableTranslator : public Translator,
-   bool enable_sentence_ = true;
-   bool sentence_over_completion_ = false;
+@@ -45,6 +45,7 @@ class TableTranslator : public Translator,
    bool encode_commit_history_ = true;
-+  int min_word_length_ = 0;
    int max_phrase_length_ = 5;
    int max_homographs_ = 1;
++  int min_word_length_ = 0;
    the<Poet> poet_;
+   the<UnityTableEncoder> encoder_;
+ };
 diff --git a/src/rime/resource.cc b/src/rime/resource.cc
-index 045e047f..d14311c9 100644
+index 045e047f..3078ff78 100644
 --- a/src/rime/resource.cc
 +++ b/src/rime/resource.cc
 @@ -39,6 +39,13 @@ path FallbackResourceResolver::ResolvePath(const string& resource_id) {
      if (std::filesystem::exists(fallback_path)) {
        return fallback_path;
      }
-+    for (const auto& extra : extra_fallback_paths_) {
-+      auto extra_path = std::filesystem::absolute(
-+          extra / (type_.prefix + resource_id + type_.suffix));
-+      if (std::filesystem::exists(extra_path)) {
-+        return extra_path;
++    for (const auto& p : extra_fallback_paths_) {
++      auto fp = std::filesystem::absolute(
++          p / (type_.prefix + resource_id + type_.suffix));
++      if (std::filesystem::exists(fp)) {
++        return fp;
 +      }
 +    }
    }
