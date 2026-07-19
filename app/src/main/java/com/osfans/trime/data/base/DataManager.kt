@@ -63,8 +63,6 @@ object DataManager {
 
     val userThemesDir get() = File(userDataBaseDir, "themes").also { it.mkdirs() }
 
-    val themesBuildDir get() = File(userDataBaseDir, "themes/build").also { it.mkdirs() }
-
     val sharedDataDir
         get() = File(externalFilesDir, SchemaPackageManager.activePackageId).also { it.mkdirs() }
 
@@ -81,23 +79,6 @@ object DataManager {
 
     val prebuiltDataDir get() = File(sharedDataDir, "build")
     val stagingDir get() = File(userDataDir, "build")
-
-    /**
-     * Return the absolute path of the compiled config file
-     * based on given resource id.
-     *
-     * @param resourceId usually equals the config file name without the extension
-     * @return the absolute path of the compiled config file
-     */
-    @JvmStatic
-    fun resolveDeployedResourcePath(resourceId: String): String {
-        val defaultPath = File(stagingDir, "$resourceId.yaml")
-        if (!defaultPath.exists()) {
-            val fallbackPath = File(prebuiltDataDir, "$resourceId.yaml")
-            if (fallbackPath.exists()) return fallbackPath.absolutePath
-        }
-        return defaultPath.absolutePath
-    }
 
     fun sync() = lock.withLock {
         Timber.d("DataManager.sync() called")

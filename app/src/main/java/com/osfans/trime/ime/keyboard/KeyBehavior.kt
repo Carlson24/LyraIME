@@ -4,7 +4,10 @@
 
 package com.osfans.trime.ime.keyboard
 
+import kotlinx.serialization.Serializable
+
 /** 按键行为枚举  */
+@Serializable
 enum class KeyBehavior {
     // 长按按键展开列表时，正上方为长按对应按键，排序如上，不展示combo及之前的按键，展示extra
     COMPOSING,

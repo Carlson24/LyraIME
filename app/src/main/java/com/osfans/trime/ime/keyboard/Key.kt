@@ -30,6 +30,12 @@ class Key(
             selfConfig?.behaviors?.forEach {
                 put(it.key, KeyActionManager.getAction(it.value))
             }
+            val clickAction = selfConfig?.click?.takeIf { it.isNotEmpty() }?.let {
+                KeyActionManager.getAction(it)
+            }
+            if (clickAction != null) {
+                put(KeyBehavior.CLICK, clickAction)
+            }
         }
         private set
     var edgeFlags = 0
@@ -207,6 +213,12 @@ class Key(
         keyActions = buildMap {
             newConfig.behaviors.forEach {
                 put(it.key, KeyActionManager.getAction(it.value))
+            }
+            val clickAction = newConfig.click.takeIf { it.isNotEmpty() }?.let {
+                KeyActionManager.getAction(it)
+            }
+            if (clickAction != null) {
+                put(KeyBehavior.CLICK, clickAction)
             }
         }
         val hasStateDependentBehavior = newConfig.behaviors.keys.any { it < KeyBehavior.COMBO }

@@ -184,7 +184,7 @@ object ColorManager {
             } ?: defaultModeScheme
         }
         else -> colorScheme(normalModeColor)
-    } ?: colorScheme("default") ?: theme.colorSchemes.first()
+    } ?: colorScheme("default") ?: theme.colorSchemes.firstOrNull() ?: ColorScheme("default", emptyMap())
 
     /** 每次切换主题后，都要调用此函数，初始化配色 */
     fun switchTheme(
@@ -195,7 +195,7 @@ object ColorManager {
         gradientDrawableCache?.evictAll()
         colorCache.evictAll()
         this.theme = theme
-        val defaultScheme = colorScheme("default") ?: theme.colorSchemes.first()
+        val defaultScheme = colorScheme("default") ?: theme.colorSchemes.firstOrNull() ?: ColorScheme("default", emptyMap())
         lightModeColorScheme = defaultScheme.colors["light_scheme"]?.let { colorScheme(it) }
         darkModeColorScheme = defaultScheme.colors["dark_scheme"]?.let { colorScheme(it) }
         if (suppressFireChange) {
@@ -228,7 +228,8 @@ object ColorManager {
                 try {
                     ColorUtils.parseColor(key)
                 } catch (_: IllegalArgumentException) {
-                    throw IllegalArgumentException("Color key '$key' not found")
+                    Timber.w(e, "Color key '$key' not resolved, falling back to transparent")
+                    Color.TRANSPARENT
                 }
             }
         colorCache.put(key, color)

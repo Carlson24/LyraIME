@@ -3,10 +3,10 @@ package com.osfans.trime.data.packaging
 import com.osfans.trime.core.SchemaItem
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
-import com.osfans.trime.util.yaml.Yaml
-import com.osfans.trime.util.yaml.mapping
-import com.osfans.trime.util.yaml.sequence
-import com.osfans.trime.util.yaml.string
+import com.osfans.trime.data.theme.LuaThemeBridge
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
 import java.io.File
 
@@ -53,7 +53,6 @@ object SchemaPackageManager {
     fun discoverPackages(): List<SchemaPackage> {
         val candidates = mutableMapOf<String, File>()
 
-        // 扫描共享目录（APK 同步的包）
         val sharedDir = DataManager.externalFilesDir
         Timber.d("discoverPackages: scanning sharedDir=$sharedDir, exists=${sharedDir.exists()}")
         if (sharedDir.exists() && sharedDir.isDirectory) {
@@ -67,7 +66,6 @@ object SchemaPackageManager {
             }
         }
 
-        // 扫描用户目录（用户安装的包，优先级高于共享目录中同 ID 的包）
         val userDir = DataManager.userDataBaseDir
         Timber.d("discoverPackages: scanning userDir=$userDir, exists=${userDir.exists()}")
         if (userDir.exists() && userDir.isDirectory) {
@@ -94,10 +92,9 @@ object SchemaPackageManager {
         ?.map { file ->
             val id = file.nameWithoutExtension.removeSuffix(".schema")
             val name = runCatching {
-                Yaml.parseToYamlNode(file.readText()).mapping
-                    ?.get("schema")?.mapping
-                    ?.get("name")?.string ?: ""
-            }.getOrDefault("")
+                val json = LuaThemeBridge.nativeParseYaml(file.absolutePath, "schema.name")
+                com.osfans.trime.data.theme.Theme.json.decodeFromString<String>(json)
+            }.getOrDefault(id)
             SchemaItem(id = id, name = name)
         }
         ?.sortedBy { it.name }
@@ -112,10 +109,9 @@ object SchemaPackageManager {
             return emptySet()
         }
         return try {
-            val root = Yaml.parseToYamlNode(customFile.readText()).mapping ?: return emptySet()
-            val patch = root["patch"]?.mapping ?: return emptySet()
-            val schemaList = patch["schema_list"]?.sequence ?: return emptySet()
-            schemaList.mapNotNull { it.mapping?.get("schema")?.string }.toSet()
+            val json = LuaThemeBridge.nativeParseYaml(customFile.absolutePath, "patch.schema_list")
+            val arr = com.osfans.trime.data.theme.Theme.json.parseToJsonElement(json).jsonArray
+            arr.mapNotNull { it.jsonObject["schema"]?.jsonPrimitive?.content }.toSet()
         } catch (e: Exception) {
             Timber.w(e, "getEnabledSchemaIds: failed to parse $customFile")
             emptySet()

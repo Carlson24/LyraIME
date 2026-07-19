@@ -20,8 +20,8 @@ index 42f2ebb..745d88c 100644
  endif()
  
 +# lua-utf8: enhanced UTF-8 module (sub, find, gsub, width, upper/lower, etc.)
-+include_directories("${CMAKE_SOURCE_DIR}/lua-utf8")
-+set(LUA_UTF8_SRC "${CMAKE_SOURCE_DIR}/lua-utf8/lutf8lib.c")
++include_directories("${CMAKE_SOURCE_DIR}/librime-plugins/lua-utf8")
++set(LUA_UTF8_SRC "${CMAKE_SOURCE_DIR}/librime-plugins/lua-utf8/lutf8lib.c")
 +
  aux_source_directory(src RIME_LUA_SRC)
  aux_source_directory(src/lib RIME_LUA_LIB_SRC)

@@ -298,7 +298,7 @@ class ClipboardWindow(
 
     private val barUsageText = TextView(context).apply {
         gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
-        textSize = theme.generalStyle.clipboardCategoryTextSize
+        textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
         typeface = FontManager.getTypeface("clipboard_category_font")
@@ -322,7 +322,7 @@ class ClipboardWindow(
     private val barUndoButton = TextView(context).apply {
         text = context.getString(R.string.undo)
         gravity = android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL
-        textSize = theme.generalStyle.clipboardCategoryTextSize
+        textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
         typeface = FontManager.getTypeface("clipboard_category_font")
@@ -333,7 +333,7 @@ class ClipboardWindow(
 
     private val barSelectedCountText = TextView(context).apply {
         gravity = android.view.Gravity.CENTER or android.view.Gravity.CENTER_VERTICAL
-        textSize = theme.generalStyle.clipboardCategoryTextSize
+        textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
         typeface = FontManager.getTypeface("clipboard_category_font")
@@ -343,7 +343,7 @@ class ClipboardWindow(
     private val barCancelSelectButton = TextView(context).apply {
         text = context.getString(R.string.clipboard_exit_select)
         gravity = android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL
-        textSize = theme.generalStyle.clipboardCategoryTextSize
+        textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
         typeface = FontManager.getTypeface("clipboard_category_font")
@@ -354,7 +354,7 @@ class ClipboardWindow(
     private val barDeleteSelectedButton = TextView(context).apply {
         text = context.getString(R.string.clipboard_delete_selected)
         gravity = android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL
-        textSize = theme.generalStyle.clipboardCategoryTextSize
+        textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
         typeface = FontManager.getTypeface("clipboard_category_font")

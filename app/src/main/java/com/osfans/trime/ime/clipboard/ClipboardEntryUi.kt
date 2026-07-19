@@ -76,7 +76,7 @@ class ClipboardEntryUi(ctx: Context, private val theme: Theme) : Ui {
     val textView = textView {
         minLines = 1
         maxLines = 5
-        textSize = theme.generalStyle.clipboardTextSize
+        textSize = theme.generalStyle.fonts.clipboard_size
         includeFontPadding = false
         setPaddingDp(8, 4, 8, 4)
         ellipsize = TextUtils.TruncateAt.END

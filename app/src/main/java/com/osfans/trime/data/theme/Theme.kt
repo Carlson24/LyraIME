@@ -15,54 +15,39 @@ import com.osfans.trime.data.theme.model.PresetKey
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.data.theme.model.ToolBar
 import com.osfans.trime.data.theme.model.Window
-import com.osfans.trime.util.yaml.Node
-import com.osfans.trime.util.yaml.mapping
-import com.osfans.trime.util.yaml.string
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNamingStrategy
 
 /** 主题和样式配置  */
 @Parcelize
+@Serializable
 data class Theme(
     val name: String,
+    val version: String = "",
+    val author: String = "",
+    @SerialName("style")
     val generalStyle: GeneralStyle,
-    val preedit: Preedit,
-    val window: Window,
-    val liquidKeyboard: LiquidKeyboard,
-    val presetKeys: Map<String, PresetKey>,
-    val presetKeyboards: Map<String, TextKeyboard>,
-    val colorSchemes: List<ColorScheme>,
-    val fallbackColors: Map<String, String>,
-    val toolBar: ToolBar,
+    val preedit: Preedit = Preedit(),
+    val window: Window = Window(),
+    val liquidKeyboard: LiquidKeyboard = LiquidKeyboard(),
+    val presetKeys: Map<String, PresetKey> = emptyMap(),
+    val presetKeyboards: Map<String, TextKeyboard> = emptyMap(),
+    @SerialName("preset_color_schemes")
+    val colorSchemes: List<ColorScheme> = emptyList(),
+    val fallbackColors: Map<String, String> = emptyMap(),
+    val toolBar: ToolBar = ToolBar(),
     val candidatesTool: CandidatesTool? = null,
 ) : Parcelable {
     companion object {
-        fun decode(node: Node.Mapping): Theme = Theme(
-            name = node["name"]?.string!!,
-            generalStyle = GeneralStyle.decode(node["style"]!!),
-            preedit = Preedit.decode(node["preedit"]?.mapping),
-            window = Window.decode(node["window"]?.mapping),
-            liquidKeyboard = LiquidKeyboard.decode(node["liquid_keyboard"]?.mapping),
-            toolBar = ToolBar.decode(node["tool_bar"]?.mapping),
-            candidatesTool = CandidatesTool.decode(node["candidates_tool"]?.mapping),
-            presetKeys = node["preset_keys"]?.mapping?.entries?.associate {
-                it.key.string!! to PresetKey.decode(it.value.mapping!!)
-            } ?: emptyMap(),
-            presetKeyboards =
-            node["preset_keyboards"]?.mapping?.entries?.associate {
-                it.key.string!! to TextKeyboard.decode(it.value.mapping!!)
-            } ?: emptyMap(),
-            colorSchemes =
-            node["preset_color_schemes"]?.mapping?.map {
-                ColorScheme(
-                    it.key.string!!,
-                    it.value.mapping!!.entries.associate { (k, v) ->
-                        k.string!! to v.string!!
-                    },
-                )
-            } ?: emptyList(),
-            fallbackColors = node["fallback_colors"]?.mapping?.entries?.associate {
-                it.key.string!! to it.value.string!!
-            } ?: emptyMap(),
-        )
+        @OptIn(ExperimentalSerializationApi::class)
+        val json = Json {
+            namingStrategy = JsonNamingStrategy.SnakeCase
+            ignoreUnknownKeys = true
+            coerceInputValues = true
+        }
     }
 }

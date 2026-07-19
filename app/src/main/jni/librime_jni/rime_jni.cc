@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include <rime/service.h>
 #include <rime_api.h>
 
 #include <memory>
@@ -29,8 +28,6 @@ static void declare_librime_module_dependencies() {
   rime_require_module_calculator();
   rime_require_module_typo();
 }
-
-static std::vector<std::string> s_pending_config_search_paths;
 
 class Rime {
  public:
@@ -62,11 +59,6 @@ class Rime {
     rime->setup(&trime_traits);
     rime->initialize(&trime_traits);
     rime->set_notification_handler(notificationHandler, GlobalRef->jvm);
-    for (const auto& p : s_pending_config_search_paths) {
-      rime::Service::instance().deployer().extra_config_search_paths.push_back(
-          rime::path(p));
-    }
-    s_pending_config_search_paths.clear();
     rime->start_maintenance(fullCheck);
   }
 
@@ -295,13 +287,6 @@ extern "C" JNIEXPORT void JNICALL Java_com_osfans_trime_core_Rime_startupRime(
 extern "C" JNIEXPORT void JNICALL
 Java_com_osfans_trime_core_Rime_exitRime(JNIEnv* env, jclass /* thiz */) {
   Rime::Instance().exit();
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_osfans_trime_core_Rime_addExtraConfigSearchPath(JNIEnv* env,
-                                                         jclass /* thiz */,
-                                                         jstring path) {
-  s_pending_config_search_paths.push_back(*CString(env, path));
 }
 
 // deployment

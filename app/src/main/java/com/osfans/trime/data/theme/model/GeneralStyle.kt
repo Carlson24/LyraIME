@@ -6,86 +6,57 @@
 package com.osfans.trime.data.theme.model
 
 import android.os.Parcelable
-import com.osfans.trime.util.yaml.Node
-import com.osfans.trime.util.yaml.boolean
-import com.osfans.trime.util.yaml.enum
-import com.osfans.trime.util.yaml.float
-import com.osfans.trime.util.yaml.get
-import com.osfans.trime.util.yaml.int
-import com.osfans.trime.util.yaml.mapping
-import com.osfans.trime.util.yaml.sequence
-import com.osfans.trime.util.yaml.string
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 @Parcelize
+@Serializable
 data class GeneralStyle(
-    val autoCaps: Boolean,
-    val candidateBorder: Int,
-    val candidateBorderRound: Float,
-    val candidateFont: List<String>,
-    val clipboardFont: List<String>,
-    val clipboardCategoryFont: List<String>,
-    val clipboardCategoryTextSize: Float,
-    val clipboardTextSize: Float,
-    val candidatePadding: Int,
-    val candidateSpacing: Float,
-    val candidateTextSize: Float,
-    val candidateTextVerticalBias: Float,
-    val candidateViewHeight: Int,
-    val candidateCornerRadius: Float,
-    val commentFont: List<String>,
-    val commentHeight: Int,
-    val commentPosition: CommentPosition,
-    val commentTextSize: Float,
-    val commentVerticalBias: Float,
-    val hanbFont: List<String>,
-    val horizontalGap: Int,
-    val keyboardPadding: Int,
-    val keyboardPaddingBottom: Int,
-    val keyboardPaddingLand: Int,
-    val keyboardPaddingLandBottom: Int,
-    val keyFont: List<String>,
-    val keyBorder: Int,
-    val keyLongTextSize: Float,
-    val keyTextSize: Float,
-    val keyTextOffsetX: Float,
-    val keyTextOffsetY: Float,
-    val keySymbolOffsetX: Float,
-    val keySymbolOffsetY: Float,
-    val keyHintOffsetX: Float,
-    val keyHintOffsetY: Float,
-    val keyPressOffsetX: Float,
-    val keyPressOffsetY: Float,
-    val labelTextSize: Float,
-    val labelFont: List<String>,
-    val latinFont: List<String>,
-    val keyboardHeight: Int,
-    val keyboardHeightLand: Int,
-    val popupBottomMargin: Int,
-    val popupWidth: Int,
-    val popupHeight: Int,
-    val popupKeyHeight: Int,
-    val popupFont: List<String>,
-    val popupTextSize: Float,
-    val resetAsciiModeOnFocusChange: Boolean,
-    val roundCorner: Float,
-    val shadowRadius: Float,
-    val symbolFont: List<String>,
-    val symbolTextSize: Float,
-    val hintFont: List<String>,
-    val hintTextSize: Float,
-    val textFont: List<String>,
-    val verticalGap: Int,
-    val backgroundFolder: String,
-    val enterLabelMode: Int,
-    val enterLabel: EnterLabel,
-    val keyboardPaddingTop: Int,
-    val t9SideFont: List<String>,
-    val t9SideTextSize: Float,
-    val t9SideRoundCorner: Float,
-    val fontVariations: Map<String, Boolean>,
-    val displayVariants: Map<String, String>,
+    val fonts: FontStyle = FontStyle(),
+    val autoCaps: Boolean = false,
+    val candidateBorder: Int = 0,
+    val candidateBorderRound: Float = 0f,
+    val candidatePadding: Int = 0,
+    val candidateSpacing: Float = 0f,
+    val candidateTextVerticalBias: Float = 1f,
+    val candidateViewHeight: Int = 28,
+    val candidateCornerRadius: Float = 5f,
+    val commentHeight: Int = 12,
+    val commentPosition: CommentPosition = CommentPosition.RIGHT,
+    val commentVerticalBias: Float = 0f,
+    val horizontalGap: Int = 0,
+    val keyboardPadding: Int = 0,
+    val keyboardPaddingBottom: Int = 0,
+    val keyboardPaddingLand: Int = 0,
+    val keyboardPaddingLandBottom: Int = 0,
+    val keyBorder: Int = 0,
+    val keyTextOffsetX: Float = 0f,
+    val keyTextOffsetY: Float = 0f,
+    val keySymbolOffsetX: Float = 0f,
+    val keySymbolOffsetY: Float = 0f,
+    val keyHintOffsetX: Float = 0f,
+    val keyHintOffsetY: Float = 0f,
+    val keyPressOffsetX: Float = 0f,
+    val keyPressOffsetY: Float = 0f,
+    val keyboardHeight: Int = 0,
+    val keyboardHeightLand: Int = 0,
+    val popupBottomMargin: Int = 0,
+    val popupWidth: Int = 0,
+    val popupHeight: Int = 0,
+    val popupKeyHeight: Int = 0,
+    val resetAsciiModeOnFocusChange: Boolean = false,
+    val roundCorner: Float = 0f,
+    val shadowRadius: Float = 0f,
+    val verticalGap: Int = 0,
+    val backgroundFolder: String = "backgrounds",
+    val enterLabelMode: Int = 0,
+    @SerialName("enter_labels")
+    val enterLabel: EnterLabel = EnterLabel(),
+    val keyboardPaddingTop: Int = 0,
+    val t9SideRoundCorner: Float = -1f,
 ) : Parcelable {
+    @Serializable
     enum class CommentPosition {
         RIGHT,
         TOP,
@@ -93,6 +64,38 @@ data class GeneralStyle(
     }
 
     @Parcelize
+    @Serializable
+    data class FontStyle(
+        val candidate: List<String> = emptyList(),
+        val comment: List<String> = emptyList(),
+        val key: List<String> = emptyList(),
+        val label: List<String> = emptyList(),
+        val latin: List<String> = emptyList(),
+        val symbol: List<String> = emptyList(),
+        val text: List<String> = emptyList(),
+        val hint: List<String> = emptyList(),
+        val hanb: List<String> = emptyList(),
+        val popup: List<String> = emptyList(),
+        val t9_side: List<String> = emptyList(),
+        val clipboard: List<String> = emptyList(),
+        val clipboard_category: List<String> = emptyList(),
+        val candidate_size: Float = 15f,
+        val comment_size: Float = 10f,
+        val key_size: Float = 15f,
+        val key_long_size: Float = 15f,
+        val label_size: Float = 0f,
+        val symbol_size: Float = 0f,
+        val hint_size: Float = 0f,
+        val popup_size: Float = 0f,
+        val clipboard_category_size: Float = 13f,
+        val clipboard_size: Float = 14f,
+        val t9_side_size: Float = -1f,
+        val variations: Map<String, Boolean> = emptyMap(),
+        val display: Map<String, String> = emptyMap(),
+    ) : Parcelable
+
+    @Parcelize
+    @Serializable
     data class EnterLabel(
         val go: String = "go",
         val done: String = "done",
@@ -101,104 +104,5 @@ data class GeneralStyle(
         val search: String = "search",
         val send: String = "send",
         val default: String = "default",
-    ) : Parcelable {
-        companion object {
-            fun decode(node: Node?): EnterLabel = EnterLabel(
-                go = node?.get("go")?.string ?: "go",
-                done = node?.get("done")?.string ?: "done",
-                next = node?.get("next")?.string ?: "next",
-                pre = node?.get("pre")?.string ?: "pre",
-                search = node?.get("search")?.string ?: "search",
-                send = node?.get("send")?.string ?: "send",
-                default = node?.get("default")?.string ?: "default",
-            )
-        }
-    }
-
-    companion object {
-        fun decode(node: Node): GeneralStyle = GeneralStyle(
-            autoCaps = node["auto_caps"]?.boolean ?: false,
-            candidateBorder = node["candidate_border"]?.int ?: 0,
-            candidateBorderRound = node["candidate_border_round"]?.float ?: 0f,
-            candidateFont = node["candidate_font"]?.sequence?.mapNotNull { it.string } ?: emptyList(),
-            candidatePadding = node["candidate_padding"]?.int ?: 0,
-            candidateSpacing = node["candidate_spacing"]?.float ?: 0f,
-            candidateTextSize = node["candidate_text_size"]?.float ?: 15f,
-            candidateTextVerticalBias = node["candidate_text_vertical_bias"]?.float ?: 1f,
-            candidateViewHeight = node["candidate_view_height"]?.int ?: 28,
-            candidateCornerRadius = node["candidate_corner_radius"]?.float ?: 5f,
-            commentFont = node["comment_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            clipboardFont = node["clipboard_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            clipboardCategoryFont = node["clipboard_category_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            clipboardCategoryTextSize = node["clipboard_category_text_size"]?.float ?: 13f,
-            clipboardTextSize = node["clipboard_text_size"]?.float ?: 14f,
-            commentHeight = node["comment_height"]?.int ?: 12,
-            commentPosition = node["comment_position"]?.enum<CommentPosition>() ?: CommentPosition.RIGHT,
-            commentTextSize = node["comment_text_size"]?.float ?: 10f,
-            commentVerticalBias = node["comment_vertical_bias"]?.float ?: 0f,
-            hanbFont = node["hanb_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            horizontalGap = node["horizontal_gap"]?.int ?: 0,
-            keyboardPadding = node["keyboard_padding"]?.int ?: 0,
-            keyboardPaddingBottom = node["keyboard_padding_bottom"]?.int ?: 0,
-            keyboardPaddingLand = node["keyboard_padding_land"]?.int ?: 0,
-            keyboardPaddingLandBottom = node["keyboard_padding_land_bottom"]?.int ?: 0,
-            keyFont = node["key_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            keyBorder = node["key_border"]?.int ?: 0,
-            keyLongTextSize = node["key_long_text_size"]?.float ?: 15f,
-            keyTextSize = node["key_text_size"]?.float ?: 15f,
-            keyTextOffsetX = node["key_text_offset_x"]?.float ?: 0f,
-            keyTextOffsetY = node["key_text_offset_y"]?.float ?: 0f,
-            keySymbolOffsetX = node["key_symbol_offset_x"]?.float ?: 0f,
-            keySymbolOffsetY = node["key_symbol_offset_y"]?.float ?: 0f,
-            keyHintOffsetX = node["key_hint_offset_x"]?.float ?: 0f,
-            keyHintOffsetY = node["key_hint_offset_y"]?.float ?: 0f,
-            keyPressOffsetX = node["key_press_offset_x"]?.float ?: 0f,
-            keyPressOffsetY = node["key_press_offset_y"]?.float ?: 0f,
-            labelTextSize = node["label_text_size"]?.float ?: 0f,
-            labelFont = node["label_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            latinFont = node["latin_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            keyboardHeight = node["keyboard_height"]?.int ?: 0,
-            keyboardHeightLand = node["keyboard_height_land"]?.int ?: 0,
-            popupBottomMargin = node["popup_bottom_margin"]?.int ?: 0,
-            popupWidth = node["popup_width"]?.int ?: 0,
-            popupHeight = node["popup_height"]?.int ?: 0,
-            popupKeyHeight = node["popup_key_height"]?.int ?: 0,
-            popupFont = node["popup_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            popupTextSize = node["popup_text_size"]?.float ?: 0f,
-            resetAsciiModeOnFocusChange = node["reset_ascii_mode_on_focus_change"]?.boolean ?: false,
-            roundCorner = node["round_corner"]?.float ?: 0f,
-            shadowRadius = node["shadow_radius"]?.float ?: 0f,
-            symbolFont = node["symbol_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            symbolTextSize = node["symbol_text_size"]?.float ?: 0f,
-            hintFont = node["hint_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            hintTextSize = node["hint_text_size"]?.float ?: 0f,
-            textFont = node["text_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            verticalGap = node["vertical_gap"]?.int ?: 0,
-            backgroundFolder = node["background_folder"]?.string ?: "backgrounds",
-            enterLabelMode = node["enter_label_mode"]?.int ?: 0,
-            enterLabel = EnterLabel.decode(node["enter_labels"]),
-            keyboardPaddingTop = node["keyboard_padding_top"]?.int ?: 0,
-            t9SideFont = node["t9_side_font"]?.sequence
-                ?.mapNotNull(Node::string) ?: emptyList(),
-            t9SideTextSize = node["t9_side_text_size"]?.float ?: -1f,
-            t9SideRoundCorner = node["t9_side_round_corner"]?.float ?: -1f,
-            fontVariations = node["font_variations"]?.mapping?.entries?.associate {
-                it.key.string!! to (it.value.boolean ?: false)
-            } ?: emptyMap(),
-            displayVariants = node["display_variants"]?.mapping?.entries?.associate {
-                it.key.string!! to it.value.string!!
-            } ?: emptyMap(),
-        )
-    }
+    ) : Parcelable
 }

@@ -7,9 +7,9 @@ package com.osfans.trime.data.soundeffect
 
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.theme.LuaThemeBridge
 import com.osfans.trime.ime.keyboard.InputFeedbackManager
 import com.osfans.trime.util.FileUtils
-import com.osfans.trime.util.yaml.Yaml
 import timber.log.Timber
 import java.io.File
 
@@ -25,15 +25,15 @@ object SoundEffectManager {
     private val userDirFallback get() = File(DataManager.userDataBaseDir, "soundeffect")
 
     private fun listSounds(): MutableList<SoundEffect> {
-        fun list(dir: File) = dir.listFiles { f -> f.name.endsWith("sound.yaml") }.orEmpty().toList()
+        fun list(dir: File) = dir.listFiles { f -> f.name.endsWith(".sound.lua") }.orEmpty().toList()
         val files = list(userDir) + list(userDirFallback)
         return files
             .mapNotNull decode@{ f ->
                 val effect = try {
-                    val node = Yaml.parseToYamlNode(f.bufferedReader().readText())
-                    val result = SoundEffect.decode(node)
+                    val json = LuaThemeBridge.nativeLoadSoundEffect(f.absolutePath)
+                    val result = com.osfans.trime.data.theme.Theme.json.decodeFromString<SoundEffect>(json)
                     if (result.name.isEmpty()) {
-                        result.copy(name = f.name.substringBefore("."))
+                        result.copy(name = f.nameWithoutExtension.removeSuffix(".sound"))
                     } else {
                         result
                     }

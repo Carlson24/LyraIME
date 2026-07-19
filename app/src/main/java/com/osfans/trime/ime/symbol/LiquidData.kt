@@ -7,8 +7,10 @@ package com.osfans.trime.ime.symbol
 
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.LiquidKeyboard
+import kotlinx.serialization.Serializable
 
 object LiquidData {
+    @Serializable
     enum class Type {
         SINGLE,
         SYMBOL,

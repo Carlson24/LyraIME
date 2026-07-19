@@ -6,13 +6,15 @@
 package com.osfans.trime.data.theme
 
 import android.content.res.Configuration
-import com.osfans.trime.core.Rime
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.theme.model.GeneralStyle
 import com.osfans.trime.ime.symbol.LiquidData
 import com.osfans.trime.util.WeakHashSet
-import com.osfans.trime.util.yaml.Yaml
-import com.osfans.trime.util.yaml.mapping
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import timber.log.Timber
 import java.io.File
 
@@ -65,54 +67,51 @@ object ThemeManager {
 
     private val themeCache = mutableMapOf<String, Pair<Long, Theme>>()
 
+    private val prettyJson = Json(from = Theme.json) {
+        prettyPrint = true
+        prettyPrintIndent = "\t"
+    }
+
+    private fun sortJsonKeys(element: JsonElement): JsonElement = when (element) {
+        is JsonObject -> JsonObject(
+            element.toSortedMap().mapValues { (_, v) -> sortJsonKeys(v) }
+        )
+        is JsonArray -> JsonArray(element.map { sortJsonKeys(it) })
+        else -> element
+    }
+
     private fun loadThemeByIdOrNull(id: String): Theme? {
-        val bundledSource = DataManager.themesDir.resolve("$id.yaml")
-        val userSource = DataManager.userThemesDir.resolve("$id.yaml")
+        val bundledSource = DataManager.themesDir.resolve("$id.lua")
+        val userSource = DataManager.userThemesDir.resolve("$id.lua")
         val sourceFile = if (userSource.exists()) userSource else bundledSource
-        val cacheFile = DataManager.themesBuildDir.resolve("$id.yaml")
 
-        val sourceFileTime = if (sourceFile.exists()) sourceFile.lastModified() else 0L
-
-        val cacheValid =
-            cacheFile.exists() &&
-                sourceFileTime > 0L &&
-                cacheFile.lastModified() >= sourceFileTime
-
-        if (!cacheValid) {
-            if (!sourceFile.exists()) {
-                Timber.w("Theme source file not found for '$id'")
-                return null
-            }
-
-            Rime.deployRimeConfigFile(id, "config_version")
-            val compiled = File(DataManager.resolveDeployedResourcePath(id))
-            if (compiled.exists() && compiled.lastModified() >= sourceFileTime) {
-                compiled.copyTo(cacheFile, overwrite = true)
-            }
-
-            if (!cacheFile.exists()) {
-                Timber.w("Compiled theme not available for '$id', loading from source file")
-                return parseThemeFile(sourceFile, id)?.also {
-                    sourceFile.copyTo(cacheFile, overwrite = true)
-                }
-            }
+        if (!sourceFile.exists()) {
+            Timber.w("Theme source file not found for '$id'")
+            return null
         }
 
-        val lastModified = cacheFile.lastModified()
+        val lastModified = sourceFile.lastModified()
         themeCache[id]?.let { (cachedTime, cachedTheme) ->
             if (cachedTime == lastModified) return cachedTheme
         }
-        return parseThemeFile(cacheFile, id)
+
+        return loadThemeFromLua(sourceFile, id)
     }
 
-    private fun parseThemeFile(file: File, id: String): Theme? = try {
-        val node = Yaml.parseToYamlNode(file.readText())
-        val mapping = node.mapping
-        if (mapping == null) {
-            Timber.w("Failed to load theme '$id': YAML root is not a mapping")
-            null
+    private fun loadThemeFromLua(file: File, id: String): Theme? = try {
+        val cacheFile = DataManager.userThemesDir.resolve("build/$id.json")
+        val jsonStr = if (cacheFile.exists() && cacheFile.lastModified() >= file.lastModified()) {
+            cacheFile.readText()
         } else {
-            Theme.decode(mapping).also { themeCache[id] = file.lastModified() to it }
+            val json = LuaThemeBridge.nativeLoadTheme(file.absolutePath)
+            cacheFile.parentFile?.mkdirs()
+            val sorted = sortJsonKeys(prettyJson.parseToJsonElement(json))
+            val formatted = prettyJson.encodeToString(sorted)
+            cacheFile.writeText(formatted)
+            json
+        }
+        Theme.json.decodeFromString<Theme>(jsonStr).also {
+            themeCache[id] = file.lastModified() to it
         }
     } catch (e: Exception) {
         Timber.w(e, "Failed to load theme '$id'")
@@ -140,13 +139,10 @@ object ThemeManager {
         return ResolvedTheme("fallback", createFallbackTheme())
     }
 
-    private fun createFallbackTheme(): Theme {
-        val minimal = """
-            name: Fallback
-            style: {}
-        """.trimIndent()
-        return Theme.decode(Yaml.parseToYamlNode(minimal).mapping!!)
-    }
+    private fun createFallbackTheme(): Theme = Theme(
+        name = "Fallback",
+        generalStyle = GeneralStyle(),
+    )
 
     private fun evaluateActiveTheme(): Theme {
         val selectedThemeId = prefs.selectedTheme.getValue()
@@ -163,6 +159,7 @@ object ThemeManager {
     }
 
     fun init(configuration: Configuration) {
+        LuaThemeBridge.nativeInit(DataManager.themesDir.absolutePath)
         _activeTheme = evaluateActiveTheme()
         ColorManager.init(configuration)
     }

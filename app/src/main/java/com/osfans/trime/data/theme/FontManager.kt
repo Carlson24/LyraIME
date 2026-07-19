@@ -53,12 +53,12 @@ object FontManager {
         typefaceCache.clear()
         fontFamilyCache.clear()
         this.theme = theme
-        fontFeatureSettings = theme.generalStyle.fontVariations
+        fontFeatureSettings = theme.generalStyle.fonts.variations
             .filter { (key, value) -> value && key != "cpct" }
             .keys.joinToString(", ")
         UnicodeVariantUtils.configure(
-            variants = theme.generalStyle.displayVariants,
-            enabled = theme.generalStyle.fontVariations["cpct"] == true,
+            variants = theme.generalStyle.fonts.display,
+            enabled = theme.generalStyle.fonts.variations["cpct"] == true,
         )
         hanBFont = getTypefaceOrDefault(FontKey.HANB_FONT.name)
         latinFont = getTypefaceOrDefault(FontKey.LATIN_FONT.name)
@@ -124,20 +124,20 @@ object FontManager {
     private fun getFontFromStyle(key: String): List<String>? {
         val style = theme.generalStyle
         return when (FontKey.entries.firstOrNull { it.name == key.uppercase() }) {
-            FontKey.HANB_FONT -> style.hanbFont
-            FontKey.LATIN_FONT -> style.latinFont
-            FontKey.CANDIDATE_FONT -> style.candidateFont
-            FontKey.CLIPBOARD_FONT -> style.clipboardFont.ifEmpty { style.keyFont }
-            FontKey.CLIPBOARD_CATEGORY_FONT -> style.clipboardCategoryFont.ifEmpty { style.keyFont }
-            FontKey.COMMENT_FONT -> style.commentFont
-            FontKey.KEY_FONT -> style.keyFont
-            FontKey.LABEL_FONT -> style.labelFont
-            FontKey.POPUP_FONT -> style.popupFont
-            FontKey.SYMBOL_FONT -> style.symbolFont
-            FontKey.HINT_FONT -> style.hintFont
-            FontKey.TEXT_FONT -> style.textFont
+            FontKey.HANB_FONT -> style.fonts.hanb
+            FontKey.LATIN_FONT -> style.fonts.latin
+            FontKey.CANDIDATE_FONT -> style.fonts.candidate
+            FontKey.CLIPBOARD_FONT -> style.fonts.clipboard.ifEmpty { style.fonts.key }
+            FontKey.CLIPBOARD_CATEGORY_FONT -> style.fonts.clipboard_category.ifEmpty { style.fonts.key }
+            FontKey.COMMENT_FONT -> style.fonts.comment
+            FontKey.KEY_FONT -> style.fonts.key
+            FontKey.LABEL_FONT -> style.fonts.label
+            FontKey.POPUP_FONT -> style.fonts.popup
+            FontKey.SYMBOL_FONT -> style.fonts.symbol
+            FontKey.HINT_FONT -> style.fonts.hint
+            FontKey.TEXT_FONT -> style.fonts.text
             FontKey.TOOLBAR_FONT -> theme.toolBar.buttonFont
-            FontKey.T9_SIDE_FONT -> style.t9SideFont
+            FontKey.T9_SIDE_FONT -> style.fonts.t9_side
             FontKey.CANDIDATES_TOOL_FONT -> theme.candidatesTool?.buttonFont.orEmpty()
             FontKey.CANDIDATES_TOOL_POPUP_FONT -> theme.candidatesTool?.popupFont.orEmpty()
             else -> null

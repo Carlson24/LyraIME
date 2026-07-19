@@ -8,14 +8,14 @@ set(RIME_PLUGINS librime-lua librime-octagram librime-user-predict librime-calcu
 # symlink plugins
 foreach(plugin ${RIME_PLUGINS})
   if(NOT EXISTS "${CMAKE_SOURCE_DIR}/librime/plugins/${plugin}")
-    file(CREATE_LINK "${CMAKE_SOURCE_DIR}/${plugin}"
+    file(CREATE_LINK "${CMAKE_SOURCE_DIR}/librime-plugins/${plugin}"
          "${CMAKE_SOURCE_DIR}/librime/plugins/${plugin}" COPY_ON_ERROR SYMBOLIC)
   endif()
 endforeach()
 
 # librime-lua
 if(NOT EXISTS "${CMAKE_SOURCE_DIR}/librime/plugins/librime-lua/thirdparty")
-  file(CREATE_LINK "${CMAKE_SOURCE_DIR}/librime-lua-deps"
+  file(CREATE_LINK "${CMAKE_SOURCE_DIR}/librime-plugins/librime-lua-deps"
        "${CMAKE_SOURCE_DIR}/librime/plugins/librime-lua/thirdparty"
        COPY_ON_ERROR SYMBOLIC)
 endif()

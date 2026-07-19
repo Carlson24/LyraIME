@@ -78,7 +78,7 @@ class PopupKeyboardUi(
 
         val textView = view(::AutoScaleTextView) {
             scaleMode = AutoScaleTextView.Mode.Proportional
-            textSize = theme.generalStyle.popupTextSize
+            textSize = theme.generalStyle.fonts.popup_size
             setTextColor(ColorManager.getColor("popup_text_color"))
             typeface = FontManager.getTypeface("POPUP_FONT")
             fontFeatureSettings = FontManager.fontFeatureSettings
@@ -110,7 +110,7 @@ class PopupKeyboardUi(
                             val iv = view(::AppCompatImageView)
                             iv.setImageDrawable(
                                 IconicsDrawable(ctx, seg.cmdName).apply {
-                                    sizeDp = theme.generalStyle.popupTextSize.toInt()
+                                    sizeDp = theme.generalStyle.fonts.popup_size.toInt()
                                     colorFilter = PorterDuffColorFilter(ColorManager.getColor("popup_text_color"), PorterDuff.Mode.SRC_IN)
                                 },
                             )
@@ -120,7 +120,7 @@ class PopupKeyboardUi(
                         is LabelSegment.Text -> {
                             val tv = view(::AutoScaleTextView) {
                                 scaleMode = AutoScaleTextView.Mode.Proportional
-                                textSize = theme.generalStyle.popupTextSize
+                                textSize = theme.generalStyle.fonts.popup_size
                                 setTextColor(ColorManager.getColor("popup_text_color"))
                                 typeface = FontManager.getTypeface("POPUP_FONT")
                                 fontFeatureSettings = FontManager.fontFeatureSettings
@@ -140,7 +140,7 @@ class PopupKeyboardUi(
                     is LabelSegment.Icon -> {
                         imageView.setImageDrawable(
                             IconicsDrawable(ctx, seg.cmdName).apply {
-                                sizeDp = theme.generalStyle.popupTextSize.toInt()
+                                sizeDp = theme.generalStyle.fonts.popup_size.toInt()
                                 colorFilter = PorterDuffColorFilter(ColorManager.getColor("popup_text_color"), PorterDuff.Mode.SRC_IN)
                             },
                         )

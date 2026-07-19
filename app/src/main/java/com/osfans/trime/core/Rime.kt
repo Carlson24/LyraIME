@@ -90,42 +90,60 @@ class Rime :
     }
 
     override suspend fun deploy() = withRimeContext {
-        exitRime()
-        startRime(true)
+        try {
+            exitRime()
+            startRime(true)
+        } catch (e: Exception) {
+            Timber.w(e, "deploy failed")
+        }
     }
 
     override suspend fun switchPackage(packageId: String): Boolean = withRimeContext {
-        val oldId = SchemaPackageManager.activePackageId
-        if (oldId == packageId) return@withRimeContext false
+        try {
+            val oldId = SchemaPackageManager.activePackageId
+            if (oldId == packageId) return@withRimeContext false
 
-        if (oldId.isNotEmpty()) {
-            PackageStateManager.saveState(
-                oldId,
-                PackageStateManager.PackageState(
-                    lastSchemaId = getCurrentRimeSchema(),
-                    lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
-                ),
-            )
+            if (oldId.isNotEmpty()) {
+                PackageStateManager.saveState(
+                    oldId,
+                    PackageStateManager.PackageState(
+                        lastSchemaId = getCurrentRimeSchema(),
+                        lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
+                    ),
+                )
+            }
+
+            SchemaPackageManager.setActivePackageId(packageId)
+            exitRime()
+            startRime()
+
+            val state = PackageStateManager.getState(packageId)
+            if (state.lastSchemaId.isNotEmpty()) {
+                selectRimeSchema(state.lastSchemaId)
+            }
+            true
+        } catch (e: Exception) {
+            Timber.w(e, "switchPackage failed")
+            false
         }
-
-        SchemaPackageManager.setActivePackageId(packageId)
-        exitRime()
-        startRime()
-
-        val state = PackageStateManager.getState(packageId)
-        if (state.lastSchemaId.isNotEmpty()) {
-            selectRimeSchema(state.lastSchemaId)
-        }
-        true
     }
 
     override suspend fun updateConfig() = withRimeContext {
-        exitRime()
-        startRime(false)
+        try {
+            exitRime()
+            startRime(false)
+        } catch (e: Exception) {
+            Timber.w(e, "updateConfig failed")
+        }
     }
 
     override suspend fun syncUserData(): Boolean = withRimeContext {
-        syncRimeUserData()
+        try {
+            syncRimeUserData()
+        } catch (e: Exception) {
+            Timber.w(e, "syncUserData failed")
+            false
+        }
     }
 
     override suspend fun processKey(
@@ -197,37 +215,42 @@ class Rime :
     override suspend fun selectSchema(schemaId: String) = withRimeContext { selectRimeSchema(schemaId) }
 
     override suspend fun selectSchemaCrossPackage(schemaId: String): Boolean = withRimeContext {
-        val pkgId = SchemaPackageManager.findPackageForSchema(schemaId) ?: return@withRimeContext false
-        val currentPkg = SchemaPackageManager.activePackageId
+        try {
+            val pkgId = SchemaPackageManager.findPackageForSchema(schemaId) ?: return@withRimeContext false
+            val currentPkg = SchemaPackageManager.activePackageId
 
-        if (pkgId == currentPkg) {
-            selectRimeSchema(schemaId)
-        } else {
-            if (currentPkg.isNotEmpty()) {
-                PackageStateManager.saveState(
-                    currentPkg,
-                    PackageStateManager.PackageState(
-                        lastSchemaId = getCurrentRimeSchema(),
-                        lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
-                    ),
-                )
+            if (pkgId == currentPkg) {
+                selectRimeSchema(schemaId)
+            } else {
+                if (currentPkg.isNotEmpty()) {
+                    PackageStateManager.saveState(
+                        currentPkg,
+                        PackageStateManager.PackageState(
+                            lastSchemaId = getCurrentRimeSchema(),
+                            lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
+                        ),
+                    )
+                }
+
+                SchemaPackageManager.setActivePackageId(pkgId)
+                exitRime()
+                startRime()
+
+                selectRimeSchema(schemaId)
             }
 
-            SchemaPackageManager.setActivePackageId(pkgId)
-            exitRime()
-            startRime()
-
-            selectRimeSchema(schemaId)
+            PackageStateManager.saveState(
+                pkgId,
+                PackageStateManager.PackageState(
+                    lastSchemaId = schemaId,
+                    lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
+                ),
+            )
+            true
+        } catch (e: Exception) {
+            Timber.w(e, "selectSchemaCrossPackage failed")
+            false
         }
-
-        PackageStateManager.saveState(
-            pkgId,
-            PackageStateManager.PackageState(
-                lastSchemaId = schemaId,
-                lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
-            ),
-        )
-        true
     }
 
     override suspend fun currentSchema(): RimeSchema = withRimeContext {
@@ -275,10 +298,6 @@ class Rime :
             !staging.exists() || (staging.list()?.isEmpty() ?: true)
         }
         DataManager.sync()
-        addExtraConfigSearchPath(DataManager.themesDir.absolutePath)
-        addExtraConfigSearchPath(DataManager.userThemesDir.absolutePath)
-        addExtraConfigSearchPath(DataManager.commonDataDir.absolutePath)
-        cleanStaleThemeFiles()
         val sharedDataDir = DataManager.sharedDataDir.absolutePath
         val userDataDir = DataManager.userDataDir.absolutePath
         val commonDataDir = DataManager.commonDataDir.absolutePath
@@ -292,16 +311,6 @@ class Rime :
             """.trimIndent(),
         )
         startupRime(sharedDataDir, userDataDir, BuildConfig.BUILD_VERSION_NAME, commonDataDir, needsDeploy)
-    }
-
-    private fun cleanStaleThemeFiles() {
-        val dirsToClean = listOf(DataManager.userDataDir, DataManager.sharedDataDir)
-        for (dir in dirsToClean) {
-            dir.listFiles { _, name -> name.endsWith(".trime.yaml") }?.forEach { file ->
-                Timber.d("Removing stale theme file from Rime data dir: ${file.absolutePath}")
-                file.delete()
-            }
-        }
     }
 
     private fun processKeyInner(value: Int, modifiers: Int, isVirtual: Boolean): Boolean {
@@ -497,9 +506,6 @@ class Rime :
 
         @JvmStatic
         external fun exitRime()
-
-        @JvmStatic
-        external fun addExtraConfigSearchPath(path: String)
 
         @JvmStatic
         external fun deployRimeSchemaFile(schemaFile: String): Boolean

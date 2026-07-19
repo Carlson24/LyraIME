@@ -4,7 +4,7 @@
 
 cmake_minimum_required(VERSION 3.18.0)
 
-project(trime VERSION 3.0.0)
+project(lyraime VERSION 5.0.0)
 
 # for reproducible build
 add_link_options("LINKER:--hash-style=both,--build-id=none")
@@ -16,6 +16,12 @@ option(BUILD_SHARED_LIBS "" OFF)
 option(BUILD_TESTING "" OFF)
 
 include(Boost)
+include(Lua55)
+
+file(GLOB LUA55_SOURCES "${CMAKE_SOURCE_DIR}/lua55/src/*.c")
+list(FILTER LUA55_SOURCES EXCLUDE REGEX "/(lua|luac|ltests)\\.c$")
+add_library(lua55 STATIC ${LUA55_SOURCES})
+target_include_directories(lua55 PUBLIC "${CMAKE_SOURCE_DIR}/lua55/src")
 
 option(WITH_GFLAGS "Use gflags" OFF)
 option(WITH_GTEST "Use googletest" OFF)
@@ -38,13 +44,13 @@ add_subdirectory(yaml-cpp)
 option(SNAPPY_BUILD_TESTS "" OFF)
 option(SNAPPY_BUILD_BENCHMARKS "" OFF)
 option(SNAPPY_INSTALL "" OFF)
-add_subdirectory(snappy)
+add_subdirectory(librime-plugins/snappy)
 
 set(HAVE_SNAPPY TRUE)
 option(LEVELDB_BUILD_TESTS "" OFF)
 option(LEVELDB_BUILD_BENCHMARKS "" OFF)
 option(LEVELDB_INSTALL "" OFF)
-add_subdirectory(leveldb)
+add_subdirectory(librime-plugins/leveldb)
 
 add_subdirectory(librime/deps/marisa-trie)
 target_compile_options(
@@ -61,6 +67,7 @@ include_directories("${X11Keysym}")
 include(Rime)
 
 add_subdirectory(librime_jni)
+add_subdirectory(lua_theme_jni)
 
 # ---- sherpa-onnx (voice ASR with optional QNN) ----
 include(OnnxRuntime)

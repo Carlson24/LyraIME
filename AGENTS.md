@@ -41,16 +41,16 @@ The DSP packages (`libQnnHtpV{n}.tar.bz2`) are hosted at `https://github.com/Car
 - **CMake**: 4.1.2 (override with `$CMAKE_VERSION` env or `cmakeVersion` gradle property)
 - **ABIs**: arm64-v8a, x86_64 (split APKs, no universal; maintained in `Versions.kt`)
 - **Default ABI**: `buildABI=arm64-v8a` in `gradle.properties` limits builds to arm64-v8a only. Build for emulator (x86_64) with `BUILD_ABI=x86_64 make debug` or change the property. Set to empty or comma-separated list for multi-ABI.
-- Native source: `app/src/main/jni/` — submodules: librime, OpenCC, snappy, librime-lua, librime-lua-deps, librime-octagram, librime-calculator, sherpa-onnx
+- Native source: `app/src/main/jni/` — submodules: librime, OpenCC, yaml-cpp, sherpa-onnx; Rime plugins, snappy, and leveldb under `librime-plugins/`
 - Output: `librime_jni.so` + `libsherpa-onnx-jni.so` + `libonnxruntime.so` (and others)
 
 **Prebuilt JNI caching**: if `app/prebuilt/` exists, the build reuses pre-compiled `.so` files instead of rebuilding native code. To force a full native rebuild, delete `app/prebuilt/`.
 
 **Auto-patch**: the `native-base-convention` Gradle plugin automatically applies four patches as a dependency of `ExternalNativeBuildTask`:
-- `patches/lua.patch` → `librime-lua-deps`
+- `patches/lua.patch` → `librime-plugins/librime-lua-deps`
 - `patches/sherpa-onnx-qnn.patch` → `sherpa-onnx`
 - `patches/librime-custom.patch` → `librime`
-- `patches/librime-lua-utf8.patch` → `librime-lua`
+- `patches/librime-lua-utf8.patch` → `librime-plugins/librime-lua`
 The Makefile `patch-apply` target is idempotent and can still be used standalone. Building via Gradle directly (e.g. from Android Studio) also works because the plugin handles it.
 
 ## sherpa-onnx (native, submodule)
@@ -135,7 +135,7 @@ keyBase64=<base64-encoded-keystore>
 
 ## Key gotchas
 
-- `librime-lua-deps` submodule tracks branch `thirdparty` (not `master`) — verify after clone
+- `librime-plugins/librime-lua-deps` submodule tracks branch `thirdparty` (not `master`) — verify after clone
 - `build-logic/` is a composite build; changing convention plugins requires stopping Gradle daemons
 - OpenCC data generation runs a Python script from the JNI submodule — Python 3 required
 - Symlinks are used in the native build tree; on Windows, enable Developer Mode + `git config core.symlinks true`

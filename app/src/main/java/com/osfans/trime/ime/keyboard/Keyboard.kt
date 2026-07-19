@@ -169,11 +169,11 @@ class Keyboard(
     val t9SidebarSymbols: List<String> = selfConfig?.t9SidebarSymbols ?: emptyList()
 
     val t9SideFont: List<String>
-        get() = theme.generalStyle.t9SideFont.ifEmpty { theme.generalStyle.keyFont }
+        get() = theme.generalStyle.fonts.t9_side.ifEmpty { theme.generalStyle.fonts.key }
     val t9SideTextSize: Float
         get() {
-            val v = theme.generalStyle.t9SideTextSize
-            return if (v > 0f) v else theme.generalStyle.keyTextSize
+            val v = theme.generalStyle.fonts.t9_side_size
+            return if (v > 0f) v else theme.generalStyle.fonts.key_size
         }
     val t9SideRoundCorner: Float
         get() {

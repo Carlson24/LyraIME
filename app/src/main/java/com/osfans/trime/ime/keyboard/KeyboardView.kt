@@ -47,10 +47,10 @@ class KeyboardView(
 
     internal val labelEnter: String
         get() = enterKeyDisplay.keyLabel
-    internal val keyTextSize = theme.generalStyle.keyTextSize
-    internal val keyLongTextSize = theme.generalStyle.keyLongTextSize.takeIf { it > 0 } ?: keyTextSize
-    internal val symbolTextSize = theme.generalStyle.symbolTextSize.takeIf { it > 0 } ?: keyTextSize
-    internal val hintTextSize = theme.generalStyle.hintTextSize.takeIf { it > 0 } ?: keyTextSize
+    internal val keyTextSize = theme.generalStyle.fonts.key_size
+    internal val keyLongTextSize = theme.generalStyle.fonts.key_long_size.takeIf { it > 0 } ?: keyTextSize
+    internal val symbolTextSize = theme.generalStyle.fonts.symbol_size.takeIf { it > 0 } ?: keyTextSize
+    internal val hintTextSize = theme.generalStyle.fonts.hint_size.takeIf { it > 0 } ?: keyTextSize
     internal val popupOnKeyPress by AppPrefs.defaultInstance().keyboard.popupOnKeyPress
 
     var showKeySymbols = true

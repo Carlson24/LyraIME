@@ -26,6 +26,8 @@ done
 native_path=(
 	"app/src/main/jni/librime_jni/*.h"
 	"app/src/main/jni/librime_jni/*.cc"
+	"app/src/main/jni/lua_theme_jni/*h"
+	"app/src/main/jni/lua_theme_jni/*cc"
 )
 
 # iterate over all files in current entry

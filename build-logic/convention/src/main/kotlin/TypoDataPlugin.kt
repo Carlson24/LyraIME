@@ -30,7 +30,7 @@ class TypoDataPlugin : Plugin<Project> {
     private fun registerInstallTask(project: Project) {
         val task =
             project.tasks.register<InstallTypoDataTask>(INSTALL_TASK) {
-                inputDir.set(project.layout.projectDirectory.dir("src/main/jni/librime-typo/data"))
+                inputDir.set(project.layout.projectDirectory.dir("src/main/jni/librime-plugins/librime-typo/data"))
                 outputDir.set(project.layout.projectDirectory.dir("src/main/assets/shared/typo"))
             }
         project.tasks.getByName(DataChecksumsPlugin.TASK).dependsOn(task)

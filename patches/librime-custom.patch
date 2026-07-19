@@ -1,13 +1,12 @@
 diff --git a/src/rime/deployer.h b/src/rime/deployer.h
-index c13bc10f..ef7f2fbc 100644
+index c13bc10f..2e5a5fe8 100644
 --- a/src/rime/deployer.h
 +++ b/src/rime/deployer.h
-@@ -37,6 +37,8 @@ class Deployer : public Messenger {
+@@ -37,6 +37,7 @@ class Deployer : public Messenger {
    path prebuilt_data_dir;
    path staging_dir;
    path sync_dir;
 +  path common_data_dir;
-+  vector<path> extra_config_search_paths;
    string user_id;
    string distribution_name;
    string distribution_code_name;
@@ -107,56 +106,6 @@ index 7057ed4b..78ee5d65 100644
    the<Poet> poet_;
    the<UnityTableEncoder> encoder_;
  };
-diff --git a/src/rime/resource.cc b/src/rime/resource.cc
-index 045e047f..3078ff78 100644
---- a/src/rime/resource.cc
-+++ b/src/rime/resource.cc
-@@ -39,6 +39,13 @@ path FallbackResourceResolver::ResolvePath(const string& resource_id) {
-     if (std::filesystem::exists(fallback_path)) {
-       return fallback_path;
-     }
-+    for (const auto& p : extra_fallback_paths_) {
-+      auto fp = std::filesystem::absolute(
-+          p / (type_.prefix + resource_id + type_.suffix));
-+      if (std::filesystem::exists(fp)) {
-+        return fp;
-+      }
-+    }
-   }
-   return default_path;
- }
-diff --git a/src/rime/resource.h b/src/rime/resource.h
-index 7ffa2ef4..c325e87f 100644
---- a/src/rime/resource.h
-+++ b/src/rime/resource.h
-@@ -43,9 +43,13 @@ class RIME_DLL FallbackResourceResolver : public ResourceResolver {
-   void set_fallback_root_path(path fallback_root_path) {
-     fallback_root_path_ = fallback_root_path;
-   }
-+  void add_fallback_root_path(path p) {
-+    extra_fallback_paths_.push_back(std::move(p));
-+  }
- 
-  private:
-   path fallback_root_path_;
-+  vector<path> extra_fallback_paths_;
- };
- 
- }  // namespace rime
-diff --git a/src/rime/service.cc b/src/rime/service.cc
-index d30f991e..f2f245fa 100644
---- a/src/rime/service.cc
-+++ b/src/rime/service.cc
-@@ -168,6 +168,9 @@ ResourceResolver* Service::CreateResourceResolver(const ResourceType& type) {
-   the<FallbackResourceResolver> resolver(new FallbackResourceResolver(type));
-   resolver->set_root_path(deployer().user_data_dir);
-   resolver->set_fallback_root_path(deployer().shared_data_dir);
-+  for (const auto& p : deployer().extra_config_search_paths) {
-+    resolver->add_fallback_root_path(p);
-+  }
-   return resolver.release();
- }
- 
 diff --git a/src/rime/setup.cc b/src/rime/setup.cc
 index 4e644b0e..dbabd1ef 100644
 --- a/src/rime/setup.cc

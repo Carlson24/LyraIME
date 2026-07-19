@@ -9,34 +9,34 @@
 	path = app/src/main/jni/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
 [submodule "snappy"]
-	path = app/src/main/jni/snappy
+	path = app/src/main/jni/librime-plugins/snappy
 	url = https://github.com/google/snappy.git
 [submodule "leveldb"]
-	path = app/src/main/jni/leveldb
+	path = app/src/main/jni/librime-plugins/leveldb
 	url = https://github.com/google/leveldb.git
 [submodule "librime"]
 	path = app/src/main/jni/librime
 	url = https://github.com/rime/librime.git
 	ignore = dirty
 [submodule "librime-lua"]
-	path = app/src/main/jni/librime-lua
+	path = app/src/main/jni/librime-plugins/librime-lua
 	url = https://github.com/hchunhui/librime-lua.git
 	ignore = dirty
 [submodule "librime-lua-deps"]
-	path = app/src/main/jni/librime-lua-deps
+	path = app/src/main/jni/librime-plugins/librime-lua-deps
 	url = https://github.com/hchunhui/librime-lua.git
 	branch = thirdparty
 [submodule "librime-octagram"]
-	path = app/src/main/jni/librime-octagram
+	path = app/src/main/jni/librime-plugins/librime-octagram
 	url = https://github.com/lotem/librime-octagram.git
 [submodule "librime-calculator"]
-	path = app/src/main/jni/librime-calculator
+	path = app/src/main/jni/librime-plugins/librime-calculator
 	url = https://github.com/Carlson24/librime-calculator.git
 [submodule "librime-typo"]
-	path = app/src/main/jni/librime-typo
+	path = app/src/main/jni/librime-plugins/librime-typo
 	url = https://github.com/Carlson24/librime-typo.git
 [submodule "librime-user-predict"]
-	path = app/src/main/jni/librime-user-predict
+	path = app/src/main/jni/librime-plugins/librime-user-predict
 	url = https://github.com/Carlson24/librime-user-predict
 [submodule "prelude"]
 	path = app/data/rime/prelude
@@ -54,6 +54,6 @@
 	path = app/src/main/jni/sherpa-onnx
 	url = https://github.com/k2-fsa/sherpa-onnx.git
 [submodule "lua-utf8"]
-	path = app/src/main/jni/lua-utf8
+	path = app/src/main/jni/librime-plugins/lua-utf8
 	url = https://github.com/starwing/luautf8.git
 

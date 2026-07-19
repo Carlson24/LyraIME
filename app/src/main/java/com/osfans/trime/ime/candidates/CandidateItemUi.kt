@@ -48,8 +48,8 @@ class CandidateItemUi(
     private val theme: Theme,
 ) : Ui {
 
-    private val textSize = theme.generalStyle.candidateTextSize
-    private val commentSize = theme.generalStyle.commentTextSize
+    private val textSize = theme.generalStyle.fonts.candidate_size
+    private val commentSize = theme.generalStyle.fonts.comment_size
 
     private val textFont = FontManager.getTypeface("candidate_font")
     private val commentFont = FontManager.getTypeface("comment_font")

@@ -73,7 +73,7 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
         gravity = gravityCenter
         minWidth = dp(64)
         text = ctx.getString(textRes)
-        textSize = theme.generalStyle.clipboardCategoryTextSize
+        textSize = theme.generalStyle.fonts.clipboard_category_size
         setPaddingDp(12, 0, 12, 0)
         background = categoryBackground(selected = false)
         setTextColor(ColorManager.getColor("key_text_color"))

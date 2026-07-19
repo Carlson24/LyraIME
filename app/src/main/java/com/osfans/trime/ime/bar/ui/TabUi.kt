@@ -50,7 +50,7 @@ class TabUi(
     private val titleText = textView {
         typeface = Typeface.defaultFromStyle(Typeface.BOLD)
         gravity = gravityVerticalCenter
-        textSize = theme.generalStyle.candidateTextSize
+        textSize = theme.generalStyle.fonts.candidate_size
         setTextColor(ColorManager.getColor("key_text_color"))
     }
 

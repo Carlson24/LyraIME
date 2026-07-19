@@ -58,20 +58,14 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
         val rootDir = project.rootDir
         val jniDir = "app/src/main/jni"
         val macrosHeader = project.file("src/main/jni/sherpa-onnx/sherpa-onnx/csrc/macros.h")
-        val luaLiolib = project.file("src/main/jni/librime-lua-deps/lua5.4/liolib.c")
-        val resourceH = project.file("src/main/jni/librime/src/rime/resource.h")
-        val luaCmake = project.file("src/main/jni/librime-lua/CMakeLists.txt")
+        val deployerH = project.file("src/main/jni/librime/src/rime/deployer.h")
+        val luaCmake = project.file("src/main/jni/librime-plugins/librime-lua/CMakeLists.txt")
+        val luaLiolib = project.file("src/main/jni/librime-plugins/librime-lua-deps/lua5.4/liolib.c")
         val applyPatches =
             project.tasks.register("applyNativePatches") {
                 group = "native"
                 description = "Apply patches required for native build (lua + sherpa-onnx-qnn + librime-custom + librime-lua-utf8)"
                 doLast {
-                    ProcessBuilder(
-                        "git",
-                        "apply",
-                        "--directory=$jniDir/librime-lua-deps",
-                        "patches/lua.patch",
-                    ).directory(rootDir).inheritIO().start().waitFor()
                     ProcessBuilder(
                         "git",
                         "apply",
@@ -87,14 +81,20 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                     ProcessBuilder(
                         "git",
                         "apply",
-                        "--directory=$jniDir/librime-lua",
+                        "--directory=$jniDir/librime-plugins/librime-lua",
                         "patches/librime-lua-utf8.patch",
+                    ).directory(rootDir).inheritIO().start().waitFor()
+                    ProcessBuilder(
+                        "git",
+                        "apply",
+                        "--directory=$jniDir/librime-plugins/librime-lua-deps",
+                        "patches/lua.patch",
                     ).directory(rootDir).inheritIO().start().waitFor()
                 }
                 outputs.upToDateWhen {
                     (macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")) &&
+                        (deployerH.exists() && deployerH.readText().contains("path common_data_dir")) &&
                         (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)")) &&
-                        (resourceH.exists() && resourceH.readText().contains("extra_fallback_paths_")) &&
                         (luaCmake.exists() && luaCmake.readText().contains("lua-utf8"))
                 }
             }

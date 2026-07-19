@@ -40,7 +40,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, private 
 
     val textView = view(::AutoScaleTextView) {
         scaleMode = AutoScaleTextView.Mode.Proportional
-        textSize = theme.generalStyle.popupTextSize
+        textSize = theme.generalStyle.fonts.popup_size
         gravity = gravityCenter
         setTextColor(ColorManager.getColor("popup_text_color"))
         typeface = FontManager.getTypeface("POPUP_FONT")
@@ -103,7 +103,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, private 
                 is LabelSegment.Icon -> {
                     imageView.setImageDrawable(
                         IconicsDrawable(ctx, seg.cmdName).apply {
-                            sizeDp = theme.generalStyle.popupTextSize.toInt()
+                            sizeDp = theme.generalStyle.fonts.popup_size.toInt()
                             colorFilter = PorterDuffColorFilter(ColorManager.getColor("popup_text_color"), PorterDuff.Mode.SRC_IN)
                         },
                     )
@@ -130,7 +130,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, private 
                         val iv = AppCompatImageView(ctx)
                         iv.setImageDrawable(
                             IconicsDrawable(ctx, seg.cmdName).apply {
-                                sizeDp = theme.generalStyle.popupTextSize.toInt()
+                                sizeDp = theme.generalStyle.fonts.popup_size.toInt()
                                 colorFilter = PorterDuffColorFilter(ColorManager.getColor("popup_text_color"), PorterDuff.Mode.SRC_IN)
                             },
                         )
@@ -142,7 +142,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, private 
                     is LabelSegment.Text -> {
                         val tv = AutoScaleTextView(ctx).apply {
                             scaleMode = AutoScaleTextView.Mode.Proportional
-                            textSize = theme.generalStyle.popupTextSize
+                            textSize = theme.generalStyle.fonts.popup_size
                             setTextColor(ColorManager.getColor("popup_text_color"))
                             typeface = FontManager.getTypeface("POPUP_FONT")
                             fontFeatureSettings = FontManager.fontFeatureSettings
