@@ -303,7 +303,7 @@ class CommonKeyboardActionListener {
             }
 
             private fun handleTheme(arg: String) {
-                if (arg.isEmpty()) {
+                if (arg == $$"$reload") {
                     ThemeManager.selectTheme(ThemeManager.prefs.selectedTheme.getValue(), forceReload = true)
                 } else {
                     ThemeManager.getAllThemes()

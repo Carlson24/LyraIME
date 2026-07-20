@@ -141,6 +141,9 @@ class KeyAction(
                 shiftLock = presetKey.shiftLock
                 commit = presetKey.commit
                 text = presetKey.text
+                if (presetKey.actions.isNotEmpty()) {
+                    text = presetKey.actions.joinToString("") { "{$it}" }
+                }
                 isSticky = presetKey.sticky
                 isRepeatable = presetKey.repeatable
                 isFunctional = presetKey.functional

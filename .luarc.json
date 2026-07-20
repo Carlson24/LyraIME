@@ -1,0 +1,67 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "runtime.version": "Lua 5.5",
+  "runtime.builtin": {
+    "basic": "enable",
+    "coroutine": "enable",
+    "math": "enable",
+    "string": "enable",
+    "table": "enable",
+    "utf8": "enable",
+    "os": "default",
+    "debug": "disable",
+    "io": "disable",
+    "package": "default"
+  },
+  "workspace.library": ["doc"],
+  "runtime.special": {
+    "safe_require": "require"
+  },
+  "runtime.path": ["lib/?.lua", "lib/?/init.lua", "?.lua", "?/init.lua"],
+  "diagnostics.severity": {
+    "undefined-field": "Warning",
+    "missing-parameter": "Error",
+    "inject-field": "Warning",
+    "deprecated": "Warning"
+  },
+  "diagnostics.workspaceEvent": "OnChange",
+  "diagnostics.globals": [
+    "safe_require",
+    "theme",
+    "style",
+    "keyboard",
+    "row",
+    "key",
+    "preedit",
+    "window",
+    "toolbar",
+    "btn",
+    "bg",
+    "fg",
+    "liquid",
+    "fallback",
+    "scheme",
+    "pk",
+    "merge",
+    "insert"
+  ],
+  "diagnostics.disable": ["redundant-return"],
+  "hint.enable": true,
+  "hint.paramName": "All",
+  "hint.paramType": true,
+  "hint.setType": true,
+  "hint.arrayIndex": "Auto",
+  "type.castNumberToInteger": true,
+  "format.defaultConfig": {
+    "indent_style": "space",
+    "indent_size": "2",
+    "tab_width": "2",
+    "max_line_length": "120",
+    "quote_style": "double",
+    "align_parameter": "true",
+    "align_table_field_to_first_field": "true",
+    "align_continuous_assign_statement": "true",
+    "align_continuous_inline_comment": "true",
+    "align_chain_expr": "true"
+  }
+}

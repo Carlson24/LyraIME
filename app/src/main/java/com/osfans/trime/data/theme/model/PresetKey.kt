@@ -21,6 +21,7 @@ data class PresetKey(
     val shiftLock: String = "",
     val commit: String = "",
     val text: String = "",
+    val actions: List<String> = emptyList(),
     val sticky: Boolean = false,
     val repeatable: Boolean = false,
     val slideCursor: Boolean = false,

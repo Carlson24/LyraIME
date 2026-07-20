@@ -115,17 +115,38 @@ data class TextKeyboard(
         UPPERCASE,
     }
 
+    @Serializable
+    enum class Align {
+        LEFT,
+        CENTER,
+        RIGHT,
+    }
+
+    @Parcelize
+    @Serializable
+    data class LabelSegment(
+        val text: String = "",
+        val bold: Boolean = false,
+        val color: String? = null,
+        val scale: Float? = null,
+        val align: Align? = null,
+    ) : Parcelable
+
     @Parcelize
     @Serializable(with = TextKeySerializer::class)
     data class TextKey(
         val width: Float = 0f,
         val spacer: Boolean = false,
         val roundCorner: Float = -1f,
+        val roundedCornerTopLeft: Float? = null,
+        val roundedCornerTopRight: Float? = null,
+        val roundedCornerBottomLeft: Float? = null,
+        val roundedCornerBottomRight: Float? = null,
         val keyBorder: Int = -1,
         val keyBorderColor: String = "",
-        val label: String = "",
-        val labelSymbol: String = "",
-        val hint: String = "",
+        val label: List<LabelSegment> = emptyList(),
+        val labelSymbol: List<LabelSegment> = emptyList(),
+        val hint: List<LabelSegment> = emptyList(),
         val click: String = "",
         val sendBindings: Boolean = true,
         val keyTextSize: Float = 0f,
@@ -164,11 +185,38 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
 
     private fun flt(obj: JsonObject, key: String, default: Float = 0f): Float = obj[key]?.jsonPrimitive?.float ?: default
 
+    private fun fltOrNull(obj: JsonObject, key: String): Float? = obj[key]?.jsonPrimitive?.float
+
     private fun int(obj: JsonObject, key: String, default: Int = 0): Int = obj[key]?.jsonPrimitive?.int ?: default
 
     private fun bool(obj: JsonObject, key: String, default: Boolean = false): Boolean = obj[key]?.jsonPrimitive?.boolean ?: default
 
     private fun strList(obj: JsonObject, key: String): List<String> = obj[key]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+
+    private fun labelSegments(obj: JsonObject, key: String): List<TextKeyboard.LabelSegment> {
+        val arr = obj[key]?.jsonArray ?: return emptyList()
+        return arr.mapNotNull { el ->
+            val o = el.jsonObject
+            TextKeyboard.LabelSegment(
+                text = o["text"]?.jsonPrimitive?.contentOrNull ?: "",
+                bold = o["bold"]?.jsonPrimitive?.boolean ?: false,
+                color = o["color"]?.jsonPrimitive?.contentOrNull,
+                scale = o["scale"]?.jsonPrimitive?.float,
+                align = o["align"]?.jsonPrimitive?.contentOrNull?.let { TextKeyboard.Align.valueOf(it.uppercase()) },
+            )
+        }
+    }
+
+    private fun labelSegmentsToJson(segs: List<TextKeyboard.LabelSegment>): kotlinx.serialization.json.JsonElement =
+        kotlinx.serialization.json.JsonArray(segs.map { seg ->
+            val m = mutableMapOf<String, kotlinx.serialization.json.JsonElement>()
+            m["text"] = kotlinx.serialization.json.JsonPrimitive(seg.text)
+            if (seg.bold) m["bold"] = kotlinx.serialization.json.JsonPrimitive(true)
+            seg.color?.let { m["color"] = kotlinx.serialization.json.JsonPrimitive(it) }
+            seg.scale?.let { m["scale"] = kotlinx.serialization.json.JsonPrimitive(it) }
+            seg.align?.let { m["align"] = kotlinx.serialization.json.JsonPrimitive(it.name.lowercase()) }
+            kotlinx.serialization.json.JsonObject(m)
+        })
 
     override fun serialize(encoder: Encoder, value: TextKeyboard.TextKey) {
         val jsonEncoder = encoder as JsonEncoder
@@ -176,11 +224,15 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
         map["width"] = kotlinx.serialization.json.JsonPrimitive(value.width)
         map["spacer"] = kotlinx.serialization.json.JsonPrimitive(value.spacer)
         map["round_corner"] = kotlinx.serialization.json.JsonPrimitive(value.roundCorner)
+        value.roundedCornerTopLeft?.let { map["round_corner_top_left"] = kotlinx.serialization.json.JsonPrimitive(it) }
+        value.roundedCornerTopRight?.let { map["round_corner_top_right"] = kotlinx.serialization.json.JsonPrimitive(it) }
+        value.roundedCornerBottomLeft?.let { map["round_corner_bottom_left"] = kotlinx.serialization.json.JsonPrimitive(it) }
+        value.roundedCornerBottomRight?.let { map["round_corner_bottom_right"] = kotlinx.serialization.json.JsonPrimitive(it) }
         map["key_border"] = kotlinx.serialization.json.JsonPrimitive(value.keyBorder)
         map["key_border_color"] = kotlinx.serialization.json.JsonPrimitive(value.keyBorderColor)
-        map["label"] = kotlinx.serialization.json.JsonPrimitive(value.label)
-        map["label_symbol"] = kotlinx.serialization.json.JsonPrimitive(value.labelSymbol)
-        map["hint"] = kotlinx.serialization.json.JsonPrimitive(value.hint)
+        map["label"] = labelSegmentsToJson(value.label)
+        map["label_symbol"] = labelSegmentsToJson(value.labelSymbol)
+        map["hint"] = labelSegmentsToJson(value.hint)
         map["click"] = kotlinx.serialization.json.JsonPrimitive(value.click)
         map["send_bindings"] = kotlinx.serialization.json.JsonPrimitive(value.sendBindings)
         map["key_text_size"] = kotlinx.serialization.json.JsonPrimitive(value.keyTextSize)
@@ -225,11 +277,15 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
             width = flt(obj, "width"),
             spacer = bool(obj, "spacer"),
             roundCorner = flt(obj, "round_corner", -1f),
+            roundedCornerTopLeft = fltOrNull(obj, "round_corner_top_left"),
+            roundedCornerTopRight = fltOrNull(obj, "round_corner_top_right"),
+            roundedCornerBottomLeft = fltOrNull(obj, "round_corner_bottom_left"),
+            roundedCornerBottomRight = fltOrNull(obj, "round_corner_bottom_right"),
             keyBorder = int(obj, "key_border", -1),
             keyBorderColor = str(obj, "key_border_color"),
-            label = str(obj, "label"),
-            labelSymbol = str(obj, "label_symbol"),
-            hint = str(obj, "hint"),
+            label = labelSegments(obj, "label"),
+            labelSymbol = labelSegments(obj, "label_symbol"),
+            hint = labelSegments(obj, "hint"),
             click = str(obj, "click"),
             sendBindings = bool(obj, "send_bindings", true),
             keyTextSize = flt(obj, "key_text_size"),

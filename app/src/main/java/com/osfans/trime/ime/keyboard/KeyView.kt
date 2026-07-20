@@ -22,6 +22,7 @@ import com.mikepenz.iconics.utils.sizePx
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
+import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.popup.PopupAction
 import com.osfans.trime.ime.popup.PopupDelegate
@@ -80,12 +81,6 @@ class KeyView(
 
     private val iconCache = object : LruCache<String, IconicsDrawable>(4) {}
     private val iconVerticalOffset = dp(2).toFloat()
-
-    private val richTextCache = mutableMapOf<String, List<RichTextLine>>()
-    private var cachedRichTextSymbol: String? = null
-    private var cachedRichTextSymbolResult: List<RichTextLine>? = null
-    private var cachedRichTextLabel: String? = null
-    private var cachedRichTextLabelResult: List<RichTextLine>? = null
 
     private val cachedLocation = intArrayOf(0, 0)
     private val cachedBounds = Rect()
@@ -313,26 +308,30 @@ class KeyView(
 
         drawBackground(canvas, key)
 
-        val label = key.getLabel().let {
-            if (it == "enter_labels") keyboardView.labelEnter else it
+        val actionLabel = key.getLabel()
+
+        val labelSegments = if (actionLabel == "enter_labels") {
+            listOf(TextKeyboard.LabelSegment(text = keyboardView.labelEnter))
+        } else if (key.label.isNotEmpty()) {
+            key.label
+        } else {
+            emptyList()
         }
 
-        if (label.isNotEmpty()) {
-            drawLabel(canvas, label)
+        if (labelSegments.isNotEmpty()) {
+            drawLabelSegments(canvas, labelSegments)
         }
 
-        val symbol = key.symbolLabel
-        if (symbol.isNotEmpty()) {
-            drawSymbol(canvas, symbol)
+        if (key.labelSymbol.isNotEmpty()) {
+            drawSymbolSegments(canvas, key.labelSymbol, isTop = true)
         }
 
-        val hint = key.hint
-        if (hint.isNotEmpty()) {
-            drawSymbol(canvas, hint, isTop = false)
+        if (key.hint.isNotEmpty()) {
+            drawSymbolSegments(canvas, key.hint, isTop = false)
         }
     }
 
-    private fun drawSymbol(canvas: Canvas, text: String, isTop: Boolean = true) {
+    private fun drawSymbolSegments(canvas: Canvas, segments: List<TextKeyboard.LabelSegment>, isTop: Boolean) {
         if (isTop && !keyboardView.showKeySymbols) return
         if (!isTop && !keyboardView.showKeyHints) return
 
@@ -344,201 +343,89 @@ class KeyView(
                 key.hintTextSize.takeIf { it > 0f } ?: keyboardView.hintTextSize
             },
         )
+        val iconSize = textSize.toInt()
         val fontKey = if (isTop) "symbol_font" else "hint_font"
         val offsetX = if (isTop) key.keySymbolOffsetX else key.keyHintOffsetX
         val offsetY = if (isTop) key.keySymbolOffsetY else key.keyHintOffsetY
+        val mode = if (isTop) PositionMode.TOP else PositionMode.BOTTOM
 
-        if (text.isIconFont) {
-            val mode = if (isTop) PositionMode.TOP else PositionMode.BOTTOM
-            drawSegments(canvas, text.parseLabelSegments(), textSize, textSize.toInt(), textColor, offsetX, offsetY, mode, fontKey, symbolPaint)
-        } else {
-            symbolPaint.apply {
-                color = textColor
-                this.textSize = textSize
-                typeface = FontManager.getTypeface(fontKey)
-                fontFeatureSettings = FontManager.fontFeatureSettings
-            }
-
-            val hasRichText = text.contains(Regex("<(/?b>|/?c(=|>)|/?s(=|>)|/?l>|/?r>)"))
-
-            if (hasRichText) {
-                val lines = if (text == cachedRichTextSymbol) {
-                    cachedRichTextSymbolResult!!
-                } else {
-                    parseRichText(text).also {
-                        cachedRichTextSymbol = text
-                        cachedRichTextSymbolResult = it
-                    }
-                }
-                val mode = if (isTop) PositionMode.TOP else PositionMode.BOTTOM
-                val (centerX, linePositions) = calculateTextPosition(lines, offsetX, offsetY, mode, symbolPaint.fontMetrics, isDynamic = true)
-
-                drawRichText(canvas, lines, centerX, linePositions, offsetX = offsetX)
-            } else {
-                // 没有富文本标签，使用原版绘制逻辑
-                val lines = text.split("\n")
-                val mode = if (isTop) PositionMode.TOP else PositionMode.BOTTOM
-                val (centerX, linePositions) = calculateTextPosition(lines, offsetX, offsetY, mode, symbolPaint.fontMetrics)
-
-                for (i in lines.indices) {
-                    val (lineY, _) = linePositions[i]
-                    canvas.drawText(UnicodeVariantUtils.toDisplay(lines[i]), centerX, lineY, symbolPaint)
-                }
-            }
-        }
+        drawSegmentsImpl(canvas, segments, textSize, iconSize, textColor, offsetX, offsetY, mode, fontKey, symbolPaint)
     }
 
-    /**
-     * 计算文本绘制位置
-     * @param lines 文本行列表
-     * @param fontMetrics 使用的字体度量
-     * @param isDynamic 是否使用动态行高（默认false）
-     */
-    private fun calculateTextPosition(
-        lines: List<*>,
+    private fun drawLabelSegments(canvas: Canvas, segments: List<TextKeyboard.LabelSegment>) {
+        val textColor = key.getTextColor()
+        val plainText = segments.joinToString("") { it.text }
+        val textSize = sp(
+            key.keyTextSize.takeIf { it > 0 }
+                ?: if (plainText.length > 1) keyboardView.keyLongTextSize else keyboardView.keyTextSize,
+        )
+        val iconSize = textSize.toInt()
+
+        drawSegmentsImpl(
+            canvas, segments, textSize, iconSize, textColor,
+            key.keyTextOffsetX, key.keyTextOffsetY, PositionMode.CENTER, "key_font", textPaint,
+        )
+    }
+
+    private fun drawSegmentsImpl(
+        canvas: Canvas,
+        segments: List<TextKeyboard.LabelSegment>,
+        textSize: Float,
+        iconSize: Int,
+        textColor: Int,
         offsetX: Float,
         offsetY: Float,
         mode: PositionMode,
-        fontMetrics: Paint.FontMetrics,
-        isDynamic: Boolean = false,
-    ): Pair<Float, List<Pair<Float, Float>>> {
-        val baseLineHeight = fontMetrics.descent - fontMetrics.ascent
+        fontKey: String,
+        paint: Paint,
+    ) {
+        if (segments.isEmpty()) return
 
-        val totalHeight: Float
-        val linePositions = mutableListOf<Pair<Float, Float>>()
+        val richTextLines = segmentsToRichTextLines(segments)
 
-        var currentY = when (mode) {
-            PositionMode.TOP -> paddingTop - fontMetrics.top + sp(offsetY)
-            PositionMode.BOTTOM -> height - paddingBottom - fontMetrics.bottom + sp(offsetY)
-            PositionMode.CENTER -> {
-                val centerY = (height - paddingTop - paddingBottom) / 2f + paddingTop
-                val adjustmentY = -(fontMetrics.ascent + fontMetrics.descent) / 2f
-                centerY + adjustmentY + sp(offsetY)
-            }
+        paint.apply {
+            color = textColor
+            this.textSize = textSize
+            typeface = FontManager.getTypeface(fontKey)
+            fontFeatureSettings = FontManager.fontFeatureSettings
+            clearShadowLayer()
         }
 
-        if (isDynamic) {
-            @Suppress("UNCHECKED_CAST")
-            val richTextLines = lines as List<RichTextLine>
-            val scaleHeights = richTextLines.map { line ->
-                baseLineHeight * line.maxScale
-            }
-            totalHeight = scaleHeights.sum()
-            currentY -= (totalHeight - baseLineHeight) / 2
+        val (centerX, linePositions) = calculateTextPosition(
+            richTextLines, offsetX, offsetY, mode, paint.fontMetrics, isDynamic = true,
+        )
 
-            richTextLines.forEach { line ->
-                val scale = line.maxScale
-                val height = baseLineHeight * scale
-                val lineY = currentY + (height - baseLineHeight) / 2
-                linePositions.add(Pair(lineY, height))
-                currentY += height
-            }
-        } else {
-            totalHeight = baseLineHeight * lines.size
-            currentY -= (totalHeight - baseLineHeight) / 2
-
-            repeat(lines.size) {
-                linePositions.add(Pair(currentY, baseLineHeight))
-                currentY += baseLineHeight
-            }
-        }
-
-        val centerX = (width - paddingLeft - paddingRight) / 2f + paddingLeft + sp(offsetX)
-
-        return Pair(centerX, linePositions)
+        drawRichText(canvas, richTextLines, centerX, linePositions, paint, offsetX, textSize, iconSize, textColor)
     }
 
-    /**
-     * 绘制富文本到 canvas
-     */
-    private fun drawRichText(canvas: Canvas, lines: List<RichTextLine>, x: Float, linePositions: List<Pair<Float, Float>>, paint: Paint = symbolPaint, offsetX: Float = 0f) {
-        paint.textAlign = Paint.Align.CENTER
+    private fun segmentsToRichTextLines(segments: List<TextKeyboard.LabelSegment>): List<RichTextLine> {
+        val lines = mutableListOf<RichTextLine>()
+        var currentSegs = mutableListOf<StyledSegment>()
 
-        lines.forEachIndexed { index, line ->
-            val (lineY, _) = linePositions[index]
-            drawRichTextLine(canvas, line, x, lineY, paint, offsetX)
-        }
-    }
-
-    /**
-     * 绘制带样式的文本行
-     */
-    private fun drawRichTextLine(canvas: Canvas, line: RichTextLine, x: Float, y: Float, basePaint: Paint, offsetX: Float = 0f) {
-        if (line.segments.isEmpty()) {
-            canvas.drawText(UnicodeVariantUtils.toDisplay(line.text), x, y, basePaint)
-            return
+        fun buildLine(): RichTextLine {
+            val maxScale = currentSegs.maxOfOrNull { it.scale ?: 1.0f } ?: 1.0f
+            val text = currentSegs.joinToString("") { it.text }
+            return RichTextLine(text, currentSegs.toList(), maxScale)
         }
 
-        val baseTextSize = basePaint.textSize
-        val fontMetrics = basePaint.fontMetrics
-        val baseAscent = fontMetrics.ascent
-        val baseDescent = fontMetrics.descent
-        val baseTypeface = basePaint.typeface ?: Typeface.DEFAULT
-        val boldTypeface = Typeface.create(baseTypeface, Typeface.BOLD)
-
-        // 按水平对齐分组
-        val leftGroup = mutableListOf<StyledSegment>()
-        val centerGroup = mutableListOf<StyledSegment>()
-        val rightGroup = mutableListOf<StyledSegment>()
-        for (seg in line.segments) {
-            when (seg.horizontalAlign) {
-                HorizontalAlign.LEFT -> leftGroup.add(seg)
-                HorizontalAlign.CENTER -> centerGroup.add(seg)
-                HorizontalAlign.RIGHT -> rightGroup.add(seg)
+        for (seg in segments) {
+            if (seg.text == "\n") {
+                lines.add(buildLine())
+                currentSegs = mutableListOf()
+            } else {
+                currentSegs.add(
+                    StyledSegment(
+                        text = seg.text,
+                        colorKey = seg.color,
+                        scale = seg.scale,
+                        bold = seg.bold,
+                        horizontalAlign = seg.align ?: TextKeyboard.Align.CENTER,
+                    ),
+                )
             }
         }
-
-        fun measureSegments(group: List<StyledSegment>): Float = group.sumOf { seg ->
-            val textSize = seg.scale?.let { baseTextSize * it } ?: baseTextSize
-            richTextPaint.textSize = textSize
-            richTextPaint.typeface = if (seg.bold) boldTypeface else baseTypeface
-            richTextPaint.measureText(seg.text).toDouble()
-        }.toFloat()
-
-        val leftWidth = measureSegments(leftGroup)
-        val centerWidth = measureSegments(centerGroup)
-        val rightWidth = measureSegments(rightGroup)
-
-        val paddedLeft = paddingLeft.toFloat() + sp(offsetX)
-        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX)
-
-        val leftStart = paddedLeft
-        val rightStart = paddedRight - rightWidth
-        val centerStart = if (rightGroup.isNotEmpty()) {
-            (leftStart + leftWidth + rightStart - centerWidth) / 2f
-        } else {
-            paddedLeft + leftWidth + (paddedRight - paddedLeft - leftWidth - centerWidth) / 2f
-        }
-
-        fun drawGroup(group: List<StyledSegment>, startX: Float) {
-            var currentX = startX
-            group.forEach { seg ->
-                richTextPaint.color = basePaint.color
-                richTextPaint.textSize = baseTextSize
-                richTextPaint.typeface = basePaint.typeface
-                richTextPaint.textAlign = Paint.Align.LEFT
-
-                seg.colorKey?.let { richTextPaint.color = resolveColor(it, basePaint.color) }
-
-                var adjustedY = y
-                seg.scale?.let { scale ->
-                    richTextPaint.textSize = baseTextSize * scale
-                    val scaledAscent = baseAscent * scale
-                    val scaledDescent = baseDescent * scale
-                    adjustedY = y + (baseAscent + baseDescent - scaledAscent - scaledDescent) / 2
-                }
-                if (seg.bold) {
-                    richTextPaint.typeface = boldTypeface
-                }
-
-                canvas.drawText(UnicodeVariantUtils.toDisplay(seg.text), currentX, adjustedY, richTextPaint)
-                currentX += richTextPaint.measureText(seg.text)
-            }
-        }
-
-        drawGroup(leftGroup, leftStart)
-        drawGroup(centerGroup, centerStart)
-        drawGroup(rightGroup, rightStart)
+        lines.add(buildLine())
+        return lines.ifEmpty { listOf(RichTextLine("", emptyList())) }
     }
 
     /**
@@ -562,7 +449,20 @@ class KeyView(
         val bg = k.getBackgroundDrawable() ?: return
 
         if (bg is GradientDrawable) {
-            (k.roundCorner ?: keyboard.roundCorner).takeIf { it > 0f }?.let { bg.cornerRadius = dp(it) }
+            val uniform = k.roundCorner ?: keyboard.roundCorner
+            fun r(value: Float?): Float = (value ?: uniform).takeIf { it > 0f } ?: 0f
+            val tl = r(k.roundedCornerTopLeft)
+            val tr = r(k.roundedCornerTopRight)
+            val bl = r(k.roundedCornerBottomLeft)
+            val br = r(k.roundedCornerBottomRight)
+            if (tl == tr && tl == bl && tl == br && tl == uniform) {
+                uniform.takeIf { it > 0f }?.let { bg.cornerRadius = dp(it) }
+            } else {
+                bg.cornerRadii = floatArrayOf(
+                    dp(tl), dp(tl), dp(tr), dp(tr),
+                    dp(br), dp(br), dp(bl), dp(bl)
+                )
+            }
             (k.keyBorder ?: keyboard.keyBorder).takeIf { it > 0 }?.let { bg.setStroke(dp(it), k.keyBorderColorValue) }
         }
 
@@ -575,91 +475,166 @@ class KeyView(
         bg.draw(canvas)
     }
 
-    private fun drawLabel(canvas: Canvas, label: String) {
-        val textColor = key.getTextColor()
-        val textSize = sp(key.keyTextSize.takeIf { it > 0 } ?: if (label.length > 1) keyboardView.keyLongTextSize else keyboardView.keyTextSize)
+    private fun calculateTextPosition(
+        lines: List<RichTextLine>,
+        offsetX: Float,
+        offsetY: Float,
+        mode: PositionMode,
+        fontMetrics: Paint.FontMetrics,
+        isDynamic: Boolean = false,
+    ): Pair<Float, List<Pair<Float, Float>>> {
+        val baseLineHeight = fontMetrics.descent - fontMetrics.ascent
 
-        if (label.isIconFont) {
-            drawSegments(canvas, label.parseLabelSegments(), textSize, textSize.toInt(), textColor, key.keyTextOffsetX, key.keyTextOffsetY, PositionMode.CENTER, "key_font")
-            return
-        }
+        var totalHeight: Float
+        val linePositions = mutableListOf<Pair<Float, Float>>()
 
-        textPaint.apply {
-            color = textColor
-            this.textSize = textSize
-            typeface = FontManager.getTypeface("key_font")
-            fontFeatureSettings = FontManager.fontFeatureSettings
-            clearShadowLayer()
-        }
-
-        val hasNewline = '\n' in label
-        val hasRichText = label.contains(Regex("<(/?b>|/?c(=|>)|/?s(=|>)|/?l>|/?r>)"))
-
-        val offsetX = key.keyTextOffsetX
-        val offsetY = key.keyTextOffsetY
-
-        if (hasRichText) {
-            val lines = if (label == cachedRichTextLabel) {
-                cachedRichTextLabelResult!!
-            } else {
-                parseRichText(label).also {
-                    cachedRichTextLabel = label
-                    cachedRichTextLabelResult = it
-                }
+        var currentY = when (mode) {
+            PositionMode.TOP -> paddingTop - fontMetrics.top + sp(offsetY)
+            PositionMode.BOTTOM -> height - paddingBottom - fontMetrics.bottom + sp(offsetY)
+            PositionMode.CENTER -> {
+                val centerY = (height - paddingTop - paddingBottom) / 2f + paddingTop
+                val adjustmentY = -(fontMetrics.ascent + fontMetrics.descent) / 2f
+                centerY + adjustmentY + sp(offsetY)
             }
-            val (centerX, linePositions) = calculateTextPosition(
-                lines,
-                offsetX,
-                offsetY,
-                PositionMode.CENTER,
-                textPaint.fontMetrics,
-                isDynamic = true,
-            )
-            drawRichText(canvas, lines, centerX, linePositions, textPaint, offsetX)
-        } else if (hasNewline) {
-            val lines = label.split("\n")
-            val (centerX, linePositions) = calculateTextPosition(
-                lines,
-                offsetX,
-                offsetY,
-                PositionMode.CENTER,
-                textPaint.fontMetrics,
-            )
-            for (i in lines.indices) {
-                val (lineY, _) = linePositions[i]
-                canvas.drawText(UnicodeVariantUtils.toDisplay(lines[i]), centerX, lineY, textPaint)
-            }
-        } else {
-            val centerX = (width - paddingLeft - paddingRight) / 2f + paddingLeft
-            val centerY = (height - paddingTop - paddingBottom) / 2f + paddingTop
-            val fontMetrics = textPaint.fontMetrics
-            val adjustmentY = -(fontMetrics.ascent + fontMetrics.descent) / 2f
-
-            canvas.drawText(UnicodeVariantUtils.toDisplay(label), centerX + sp(offsetX), centerY + adjustmentY + sp(offsetY), textPaint)
         }
-    }
 
-    private fun drawIcon(
-        canvas: Canvas,
-        iconName: String,
-        size: Int,
-        color: Int,
-        offsetX: Float = 0f,
-        offsetY: Float = 0f,
-        isTop: Boolean? = null,
-    ) {
-        val cmdName = iconName.toIconName()
-        val halfSize = size / 2
+        val scaleHeights = lines.map { line ->
+            baseLineHeight * line.maxScale
+        }
+        totalHeight = scaleHeights.sum()
+        currentY -= (totalHeight - baseLineHeight) / 2
+
+        lines.forEach { line ->
+            val scale = line.maxScale
+            val height = baseLineHeight * scale
+            val lineY = currentY + (height - baseLineHeight) / 2
+            linePositions.add(Pair(lineY, height))
+            currentY += height
+        }
 
         val centerX = (width - paddingLeft - paddingRight) / 2f + paddingLeft + sp(offsetX)
 
-        val centerY = when (isTop) {
-            true -> paddingTop + halfSize + sp(offsetY)
-            false -> height - paddingBottom - size + sp(offsetY)
-            null -> (height - paddingTop - paddingBottom) / 2f + paddingTop + sp(offsetY)
+        return Pair(centerX, linePositions)
+    }
+
+    private fun drawRichText(
+        canvas: Canvas,
+        lines: List<RichTextLine>,
+        x: Float,
+        linePositions: List<Pair<Float, Float>>,
+        paint: Paint,
+        offsetX: Float,
+        baseTextSize: Float,
+        iconSize: Int,
+        textColor: Int,
+    ) {
+        paint.textAlign = Paint.Align.CENTER
+
+        lines.forEachIndexed { index, line ->
+            val (lineY, _) = linePositions[index]
+            drawRichTextLine(canvas, line, x, lineY, paint, offsetX, baseTextSize, iconSize, textColor)
+        }
+    }
+
+    private fun drawRichTextLine(
+        canvas: Canvas,
+        line: RichTextLine,
+        x: Float,
+        y: Float,
+        basePaint: Paint,
+        offsetX: Float,
+        baseTextSize: Float,
+        iconSize: Int,
+        textColor: Int,
+    ) {
+        if (line.segments.isEmpty()) {
+            basePaint.textAlign = Paint.Align.CENTER
+            canvas.drawText(UnicodeVariantUtils.toDisplay(line.text), x, y, basePaint)
+            return
         }
 
-        drawIconAt(canvas, cmdName, size, color, centerX, centerY)
+        val fontMetrics = basePaint.fontMetrics
+        val baseAscent = fontMetrics.ascent
+        val baseDescent = fontMetrics.descent
+        val baseTypeface = basePaint.typeface ?: Typeface.DEFAULT
+        val boldTypeface = Typeface.create(baseTypeface, Typeface.BOLD)
+
+        val leftGroup = mutableListOf<StyledSegment>()
+        val centerGroup = mutableListOf<StyledSegment>()
+        val rightGroup = mutableListOf<StyledSegment>()
+        for (seg in line.segments) {
+            when (seg.horizontalAlign) {
+                TextKeyboard.Align.LEFT -> leftGroup.add(seg)
+                TextKeyboard.Align.RIGHT -> rightGroup.add(seg)
+                else -> centerGroup.add(seg)
+            }
+        }
+
+        fun isIcon(seg: StyledSegment): Boolean = seg.text.startsWith("ic@")
+
+        fun measureSegments(group: List<StyledSegment>): Float = group.sumOf { seg ->
+            if (isIcon(seg)) {
+                iconSize.toDouble()
+            } else {
+                val sz = seg.scale?.let { baseTextSize * it } ?: baseTextSize
+                richTextPaint.textSize = sz
+                richTextPaint.typeface = if (seg.bold) boldTypeface else baseTypeface
+                richTextPaint.measureText(seg.text).toDouble()
+            }
+        }.toFloat()
+
+        val leftWidth = measureSegments(leftGroup)
+        val centerWidth = measureSegments(centerGroup)
+        val rightWidth = measureSegments(rightGroup)
+
+        val paddedLeft = paddingLeft.toFloat() + sp(offsetX)
+        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX)
+
+        val leftStart = paddedLeft
+        val rightStart = paddedRight - rightWidth
+        val centerStart = if (rightGroup.isNotEmpty()) {
+            (leftStart + leftWidth + rightStart - centerWidth) / 2f
+        } else {
+            paddedLeft + leftWidth + (paddedRight - paddedLeft - leftWidth - centerWidth) / 2f
+        }
+
+        fun drawGroup(group: List<StyledSegment>, startX: Float) {
+            var currentX = startX
+            group.forEach { seg ->
+                if (isIcon(seg)) {
+                    val cmdName = seg.text.replace("ic@", "cmd_")
+                    val halfIcon = iconSize / 2f
+                    val centerY = y + (baseAscent + baseDescent) / 2f - (iconSize / 4f)
+                    drawIconAt(canvas, cmdName, iconSize, textColor, currentX + halfIcon, centerY + iconVerticalOffset)
+                    currentX += iconSize
+                } else {
+                    richTextPaint.color = basePaint.color
+                    richTextPaint.textSize = baseTextSize
+                    richTextPaint.typeface = basePaint.typeface
+                    richTextPaint.textAlign = Paint.Align.LEFT
+
+                    seg.colorKey?.let { richTextPaint.color = resolveColor(it, basePaint.color) }
+
+                    var adjustedY = y
+                    seg.scale?.let { scale ->
+                        richTextPaint.textSize = baseTextSize * scale
+                        val scaledAscent = baseAscent * scale
+                        val scaledDescent = baseDescent * scale
+                        adjustedY = y + (baseAscent + baseDescent - scaledAscent - scaledDescent) / 2
+                    }
+                    if (seg.bold) {
+                        richTextPaint.typeface = boldTypeface
+                    }
+
+                    canvas.drawText(UnicodeVariantUtils.toDisplay(seg.text), currentX, adjustedY, richTextPaint)
+                    currentX += richTextPaint.measureText(seg.text)
+                }
+            }
+        }
+
+        drawGroup(leftGroup, leftStart)
+        drawGroup(centerGroup, centerStart)
+        drawGroup(rightGroup, rightStart)
     }
 
     private fun drawIconAt(
@@ -687,264 +662,6 @@ class KeyView(
         icon.draw(canvas)
     }
 
-    private fun drawSegments(
-        canvas: Canvas,
-        segments: List<LabelSegment>,
-        textSize: Float,
-        iconSize: Int,
-        textColor: Int,
-        offsetX: Float,
-        offsetY: Float,
-        mode: PositionMode,
-        fontKey: String? = null,
-        paint: Paint = textPaint,
-    ) {
-        val savedAlign = paint.textAlign
-
-        paint.apply {
-            color = textColor
-            this.textSize = textSize
-            if (fontKey != null) typeface = FontManager.getTypeface(fontKey)
-            fontFeatureSettings = FontManager.fontFeatureSettings
-            clearShadowLayer()
-            textAlign = Paint.Align.LEFT
-        }
-
-        val spacing = 0f
-        val iconPx = iconSize.toFloat()
-        val fontMetrics = paint.fontMetrics
-
-        val widths = segments.map { seg ->
-            when (seg) {
-                is LabelSegment.Icon -> iconPx
-                is LabelSegment.Text -> paint.measureText(UnicodeVariantUtils.toDisplay(seg.content))
-            }
-        }
-
-        val visualCenterY = (height - paddingTop - paddingBottom) / 2f + paddingTop + sp(offsetY)
-        val halfIcon = iconPx / 2f
-
-        val iconCenterY: Float
-        val textBaselineY: Float
-
-        when (mode) {
-            PositionMode.CENTER -> {
-                iconCenterY = visualCenterY + iconVerticalOffset
-                textBaselineY = visualCenterY - (fontMetrics.ascent + fontMetrics.descent) / 2f
-            }
-            PositionMode.TOP -> {
-                iconCenterY = paddingTop + halfIcon + sp(offsetY) + iconVerticalOffset
-                textBaselineY = paddingTop - fontMetrics.top + sp(offsetY)
-            }
-            PositionMode.BOTTOM -> {
-                iconCenterY = height - paddingBottom - iconPx.toInt() + sp(offsetY) + iconVerticalOffset
-                textBaselineY = height - paddingBottom - fontMetrics.bottom + sp(offsetY)
-            }
-        }
-
-        // 按对齐方向分组
-        data class IndexedSegment(val index: Int, val seg: LabelSegment, val width: Float)
-
-        val leftGroup = mutableListOf<IndexedSegment>()
-        val centerGroup = mutableListOf<IndexedSegment>()
-        val rightGroup = mutableListOf<IndexedSegment>()
-
-        for (i in segments.indices) {
-            val item = IndexedSegment(i, segments[i], widths[i])
-            when (segments[i].align) {
-                HorizontalAlign.LEFT -> leftGroup.add(item)
-                HorizontalAlign.CENTER -> centerGroup.add(item)
-                HorizontalAlign.RIGHT -> rightGroup.add(item)
-            }
-        }
-
-        fun measureGroup(group: List<IndexedSegment>): Float = group.sumOf { it.width.toDouble() }.toFloat() +
-            spacing * (group.size - 1).coerceAtLeast(0)
-
-        val leftTotal = measureGroup(leftGroup)
-        val centerTotal = measureGroup(centerGroup)
-        val rightTotal = measureGroup(rightGroup)
-
-        val paddedLeft = paddingLeft.toFloat() + sp(offsetX)
-        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX)
-
-        val leftStart = paddedLeft
-        val rightStart = paddedRight - rightTotal
-        val centerStart = if (rightGroup.isNotEmpty()) {
-            (leftStart + leftTotal + rightStart - centerTotal) / 2f
-        } else {
-            paddedLeft + leftTotal + (paddedRight - paddedLeft - leftTotal - centerTotal) / 2f
-        }
-
-        fun drawGroup(group: List<IndexedSegment>, startX: Float) {
-            var cursorX = startX
-            for (item in group) {
-                when (item.seg) {
-                    is LabelSegment.Icon -> {
-                        drawIconAt(canvas, item.seg.cmdName, iconSize, textColor, cursorX + item.width / 2f, iconCenterY)
-                    }
-                    is LabelSegment.Text -> {
-                        canvas.drawText(UnicodeVariantUtils.toDisplay(item.seg.content), cursorX, textBaselineY, paint)
-                    }
-                }
-                cursorX += item.width + spacing
-            }
-        }
-
-        drawGroup(leftGroup, leftStart)
-        drawGroup(centerGroup, centerStart)
-        drawGroup(rightGroup, rightStart)
-
-        paint.textAlign = savedAlign
-    }
-
-    /**
-     * 解析富文本标签，返回每行的样式分段信息
-     */
-    private fun parseRichText(text: String): List<RichTextLine> {
-        // 先解析出所有分段
-        val segments = mutableListOf<StyledSegment>()
-        val segmentBuilder = StringBuilder()
-
-        var i = 0
-        var currentColorKey: String? = null
-        var currentScale: Float? = null
-        var currentBold = false
-        var currentHorizontalAlign = HorizontalAlign.CENTER
-
-        fun flushSegment() {
-            if (segmentBuilder.isNotEmpty()) {
-                segments.add(
-                    StyledSegment(
-                        text = segmentBuilder.toString(),
-                        colorKey = currentColorKey,
-                        scale = currentScale,
-                        bold = currentBold,
-                        horizontalAlign = currentHorizontalAlign,
-                    ),
-                )
-                segmentBuilder.clear()
-            }
-        }
-
-        while (i < text.length) {
-            when {
-                // 处理转义字符（只处理 < > \）
-                text[i] == '\\' && i + 1 < text.length -> {
-                    val nextChar = text[i + 1]
-                    when (nextChar) {
-                        '<', '>', '\\' -> {
-                            segmentBuilder.append(nextChar)
-                            i += 2
-                        }
-                        else -> {
-                            segmentBuilder.append(text[i])
-                            i++
-                        }
-                    }
-                }
-                // 处理标签
-                text[i] == '<' -> {
-                    val endTagIndex = text.indexOf('>', i)
-                    if (endTagIndex == -1) {
-                        segmentBuilder.append(text[i])
-                        i++
-                        continue
-                    }
-
-                    val tagContent = text.substring(i + 1, endTagIndex)
-
-                    // 在标签前保存之前的文本段
-                    flushSegment()
-
-                    // 解析标签并更新状态
-                    when {
-                        tagContent == "b" -> currentBold = true
-                        tagContent == "/b" -> currentBold = false
-                        tagContent == "l" -> currentHorizontalAlign = HorizontalAlign.LEFT
-                        tagContent == "/l" -> currentHorizontalAlign = HorizontalAlign.CENTER
-                        tagContent == "r" -> currentHorizontalAlign = HorizontalAlign.RIGHT
-                        tagContent == "/r" -> currentHorizontalAlign = HorizontalAlign.CENTER
-                        tagContent.startsWith("c=") -> {
-                            currentColorKey = tagContent.substring(2)
-                        }
-                        tagContent == "/c" -> currentColorKey = null
-                        tagContent.startsWith("s=") -> {
-                            val scaleStr = tagContent.substring(2)
-                            try {
-                                currentScale = scaleStr.toFloat()
-                            } catch (e: Exception) {
-                                // 保持当前缩放
-                            }
-                        }
-                        tagContent == "/s" -> currentScale = null
-                        else -> {
-                            // 未知标签，作为普通文本
-                            segmentBuilder.append("<$tagContent>")
-                        }
-                    }
-
-                    i = endTagIndex + 1
-                }
-                // 普通字符
-                else -> {
-                    segmentBuilder.append(text[i])
-                    i++
-                }
-            }
-        }
-
-        // 保存最后一段
-        flushSegment()
-        // 按换行符分割成多行
-        return buildLines(segments)
-    }
-
-    /**
-     * 将分段按换行符分割成多行
-     */
-    private fun buildLines(segments: List<StyledSegment>): List<RichTextLine> {
-        val lines = mutableListOf<RichTextLine>()
-        val currentLineSegments = mutableListOf<StyledSegment>()
-
-        fun addCurrentLine() {
-            val maxScale = currentLineSegments.maxOfOrNull { it.scale ?: 1.0f } ?: 1.0f
-            lines.add(RichTextLine(currentLineSegments.joinToString("") { it.text }, currentLineSegments.toList(), maxScale))
-            currentLineSegments.clear()
-        }
-
-        segments.forEach { segment ->
-            val parts = segment.text.split("\n")
-            if (parts.size == 1) {
-                // 没有换行符，直接添加到当前行
-                currentLineSegments.add(segment)
-            } else {
-                // 有换行符，分割成多段
-                parts.forEachIndexed { index: Int, part: String ->
-                    if (part.isNotEmpty()) {
-                        currentLineSegments.add(
-                            StyledSegment(
-                                text = part,
-                                colorKey = segment.colorKey,
-                                scale = segment.scale,
-                                bold = segment.bold,
-                                horizontalAlign = segment.horizontalAlign,
-                            ),
-                        )
-                    }
-                    // 除了最后一段，前面每段后面都有换行符，需要开始新行
-                    if (index < parts.size - 1) {
-                        addCurrentLine()
-                    }
-                }
-            }
-        }
-
-        // 添加最后一行
-        addCurrentLine()
-
-        return lines.ifEmpty { listOf(RichTextLine("", emptyList())) }
-    }
 }
 
 /**
@@ -953,19 +670,16 @@ class KeyView(
  */
 private data class StyledSegment(
     val text: String,
-    val colorKey: String?, // null 表示使用默认颜色；非 null 为颜色标识符字符串
-    val scale: Float?, // null 表示使用默认大小（缩放比例）
-    val bold: Boolean, // 是否加粗
-    val horizontalAlign: HorizontalAlign = HorizontalAlign.CENTER, // 水平对齐方向
+    val colorKey: String?,
+    val scale: Float?,
+    val bold: Boolean,
+    val horizontalAlign: com.osfans.trime.data.theme.model.TextKeyboard.Align = com.osfans.trime.data.theme.model.TextKeyboard.Align.CENTER,
 )
 
-/**
- * 富文本行：存储一行的文本和样式分段
- */
 private data class RichTextLine(
-    val text: String, // 整行文本
-    val segments: List<StyledSegment>, // 样式分段
-    val maxScale: Float = 1.0f, // 该行最大字体缩放比例（用于计算行高）
+    val text: String,
+    val segments: List<StyledSegment>,
+    val maxScale: Float = 1.0f,
 )
 
 private enum class PositionMode { TOP, CENTER, BOTTOM }
