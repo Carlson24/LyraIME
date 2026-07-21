@@ -26,9 +26,9 @@
 	path = app/src/main/jni/librime-plugins/librime-lua-deps
 	url = https://github.com/hchunhui/librime-lua.git
 	branch = thirdparty
-[submodule "librime-octagram"]
-	path = app/src/main/jni/librime-plugins/librime-octagram
-	url = https://github.com/lotem/librime-octagram.git
+[submodule "librime-witogram"]
+	path = app/src/main/jni/librime-plugins/librime-witogram
+	url = https://github.com/levelel/librime-witogram.git
 [submodule "librime-calculator"]
 	path = app/src/main/jni/librime-plugins/librime-calculator
 	url = https://github.com/Carlson24/librime-calculator.git
@@ -56,4 +56,7 @@
 [submodule "lua-utf8"]
 	path = app/src/main/jni/librime-plugins/lua-utf8
 	url = https://github.com/starwing/luautf8.git
+[submodule "abseil-cpp"]
+	path = app/src/main/jni/librime-plugins/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
 

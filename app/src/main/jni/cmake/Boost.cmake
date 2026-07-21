@@ -31,10 +31,15 @@ set(BOOST_INCLUDE_LIBRARIES
     dll
     interprocess
     preprocessor
+    program_options
+    ptr_container
+    random
     range
     regex
     scope_exit
     signals2
+    system
+    thread
     utility
     uuid
     vmd)
