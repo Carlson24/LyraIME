@@ -9,8 +9,8 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
-import android.view.MenuItem
 import android.view.ViewGroup
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -20,8 +20,10 @@ import androidx.appcompat.graphics.drawable.DrawerArrowDrawable
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.forEach
+import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -49,8 +51,7 @@ class MainActivity : AppCompatActivity() {
     private val uiMode by AppPrefs.defaultInstance().advanced.uiMode
 
     private lateinit var navController: NavController
-    private lateinit var activityBinding: ActivityMainBinding
-    private var showTestInputMenuItem: MenuItem? = null
+    private var testInputPanel: TestInputPanel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val uiMode =
@@ -65,21 +66,34 @@ class MainActivity : AppCompatActivity() {
         val binding = ActivityMainBinding.inflate(layoutInflater)
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, windowInsets ->
             val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime())
             binding.root.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 leftMargin = systemBars.left
                 rightMargin = systemBars.right
-                bottomMargin = maxOf(systemBars.bottom, ime.bottom)
             }
             binding.mainToolbar.root.topPadding = systemBars.top
             windowInsets
         }
+        ViewCompat.setWindowInsetsAnimationCallback(
+            binding.root,
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: List<WindowInsetsAnimationCompat?>,
+                ): WindowInsetsCompat {
+                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                    val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+                    binding.root.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                        bottomMargin = maxOf(systemBars.bottom, ime.bottom)
+                    }
+                    return insets
+                }
+            },
+        )
         WindowCompat
             .getInsetsController(window, window.decorView)
             .isAppearanceLightStatusBars = false
 
         setContentView(binding.root)
-        activityBinding = binding
         // always show toolbar back arrow icon
         binding.mainToolbar.toolbar.navigationIcon =
             DrawerArrowDrawable(this).apply {
@@ -90,9 +104,6 @@ class MainActivity : AppCompatActivity() {
         // don't use `setSupportActionBar(binding.toolbar)` here,
         // because navController would change toolbar title, we need to control it by ourselves
         setupToolbarMenu(binding.mainToolbar.toolbar.menu)
-        binding.testInputPanel.bind { visible ->
-            showTestInputMenuItem?.isVisible = !visible
-        }
         navController = binding.navHostFragment.getFragment<NavHostFragment>().navController
         navController.graph = NavigationRoute.createGraph(navController)
         binding.mainToolbar.toolbar.setNavigationOnClickListener {
@@ -104,6 +115,15 @@ class MainActivity : AppCompatActivity() {
             // "minimize" the activity if we can't go back
             navController.navigateUp() || onSupportNavigateUp() || moveTaskToBack(false)
         }
+        onBackPressedDispatcher.addCallback {
+            if (binding.testInputPanel.isVisible) {
+                binding.testInputPanel.dismiss()
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
+        testInputPanel = binding.testInputPanel
         viewModel.toolbarTitle.observe(this) {
             binding.mainToolbar.toolbar.title = it
         }
@@ -146,6 +166,9 @@ class MainActivity : AppCompatActivity() {
             menu.item(R.string.deploy, R.drawable.ic_baseline_refresh_reversed_24, showAsAction = true) {
                 viewModel.rime.launchOnReady { it.deploy() }
             },
+            menu.item(R.string.test_input, R.drawable.ic_baseline_keyboard_24, showAsAction = true) {
+                testInputPanel?.show(window)
+            },
             menu.item(R.string.developer) {
                 navController.navigate(NavigationRoute.Developer)
             },
@@ -184,16 +207,6 @@ class MainActivity : AppCompatActivity() {
             // show menu item on demand
             item.isVisible = false
         }
-        showTestInputMenuItem =
-            menu.item(
-                R.string.show_test_input,
-                R.drawable.ic_baseline_keyboard_24,
-                iconTint = ContextCompat.getColor(this, R.color.base),
-                showAsAction = true,
-            ) {
-                activityBinding.testInputPanel.showExpanded()
-            }
-        showTestInputMenuItem?.isVisible = false
     }
 
     override fun onResume() {
@@ -201,6 +214,16 @@ class MainActivity : AppCompatActivity() {
         if (isStorageAvailable()) {
             SoundEffectManager.init()
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        testInputPanel?.dismiss()
+    }
+
+    override fun onDestroy() {
+        testInputPanel = null
+        super.onDestroy()
     }
 
     private fun checkNotificationPermission() {

@@ -38,7 +38,6 @@ import android.widget.FrameLayout
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
@@ -92,11 +91,15 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
     private val navBarManager = NavigationBarManager()
-    val inputDeviceManager =
-        InputDeviceManager onChange@{
-            val w = window.window ?: return@onChange
-            navBarManager.evaluate(w, useVirtualKeyboard = it)
+    private val inputDeviceManager = InputDeviceManager { useVirtualKeyboard, useCandidatesView ->
+        postRimeJob {
+            setRuntimeOption("paging_mode", useCandidatesView)
         }
+        currentInputConnection?.monitorCursorAnchor(useCandidatesView)
+        window.window?.let {
+            navBarManager.evaluate(it, useVirtualKeyboard)
+        }
+    }
     private val rimeIntentReceiver = RimeIntentReceiver()
 
     private var lastCommittedText: String = ""
@@ -301,7 +304,6 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         val newInputView = InputView(this, rime, theme)
         setInputView(newInputView)
         inputDeviceManager.setInputView(newInputView)
-        navBarManager.setupInputView(newInputView)
         inputView = newInputView
         return newInputView
     }
@@ -311,7 +313,6 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         contentView.removeView(candidatesView)
         contentView.addView(newCandidatesView)
         inputDeviceManager.setCandidatesView(newCandidatesView)
-        navBarManager.setupInputView(newCandidatesView)
         candidatesView = newCandidatesView
         if (decorLocationUpdated) {
             candidatesView?.updateCursorAnchor(anchorPosition, contentSize)
@@ -322,7 +323,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     }
 
     private fun replaceInputViews(theme: Theme) {
-        navBarManager.evaluate(window.window!!)
+        navBarManager.evaluate(window.window!!, inputDeviceManager.useVirtualKeyboard)
         replaceInputView(theme)
         replaceCandidateView(theme)
         inputView?.updateEnterKeyLabel(currentInputEditorInfo)
@@ -389,12 +390,6 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         lastKnownConfig.setTo(newConfig)
     }
 
-    override fun onWindowShown() {
-        super.onWindowShown()
-        // navbar foreground/background color would reset every time window shows
-        navBarManager.update(window.window!!)
-    }
-
     private val contentSize = floatArrayOf(0f, 0f)
     private val decorLocation = floatArrayOf(0f, 0f)
     private val decorLocationInt = intArrayOf(0, 0)
@@ -403,7 +398,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private fun updateDecorLocation() {
         contentSize[0] = contentView.width.toFloat()
         contentSize[1] =
-            if (inputDeviceManager.isVirtualKeyboard) {
+            if (inputDeviceManager.useVirtualKeyboard) {
                 inputViewLocation[1].toFloat()
             } else {
                 contentView.height.toFloat()
@@ -523,7 +518,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             return
         }
 
-        if (inputDeviceManager.isVirtualKeyboard) {
+        if (inputDeviceManager.useVirtualKeyboard) {
             inputView?.keyboardView?.getLocationInWindow(inputViewLocation)
             outInsets.apply {
                 contentTopInsets = inputViewLocation[1]
@@ -594,13 +589,13 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreateInlineSuggestionsRequest(uiExtras: Bundle): InlineSuggestionsRequest? {
-        if (!inlineSuggestions || !inputDeviceManager.isVirtualKeyboard) return null
+        if (!inlineSuggestions || !inputDeviceManager.useVirtualKeyboard) return null
         return InlineSuggestions.createRequest(this)
     }
 
     @SuppressLint("NewApi")
     override fun onInlineSuggestionsResponse(response: InlineSuggestionsResponse): Boolean {
-        if (!inputDeviceManager.isVirtualKeyboard) return false
+        if (!inputDeviceManager.useVirtualKeyboard) return false
         return inputView?.handleInlineSuggestions(response) == true
     }
 
