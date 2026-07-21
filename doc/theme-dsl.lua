@@ -191,6 +191,7 @@
 ---| '"MediaStop"'
 ---| '"MediaNext"'
 ---| '"MediaPrevious"'
+---| '"VOICE_ASSIST"'
 ---| '"VolumeUp"'
 ---| '"VolumeDown"'
 ---| '"VolumeMute"'
