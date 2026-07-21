@@ -74,7 +74,7 @@ object ThemeManager {
 
     private fun sortJsonKeys(element: JsonElement): JsonElement = when (element) {
         is JsonObject -> JsonObject(
-            element.toSortedMap().mapValues { (_, v) -> sortJsonKeys(v) }
+            element.toSortedMap().mapValues { (_, v) -> sortJsonKeys(v) },
         )
         is JsonArray -> JsonArray(element.map { sortJsonKeys(it) })
         else -> element

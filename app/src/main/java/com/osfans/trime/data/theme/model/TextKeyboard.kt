@@ -207,8 +207,8 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
         }
     }
 
-    private fun labelSegmentsToJson(segs: List<TextKeyboard.LabelSegment>): kotlinx.serialization.json.JsonElement =
-        kotlinx.serialization.json.JsonArray(segs.map { seg ->
+    private fun labelSegmentsToJson(segs: List<TextKeyboard.LabelSegment>): kotlinx.serialization.json.JsonElement = kotlinx.serialization.json.JsonArray(
+        segs.map { seg ->
             val m = mutableMapOf<String, kotlinx.serialization.json.JsonElement>()
             m["text"] = kotlinx.serialization.json.JsonPrimitive(seg.text)
             if (seg.bold) m["bold"] = kotlinx.serialization.json.JsonPrimitive(true)
@@ -216,7 +216,8 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
             seg.scale?.let { m["scale"] = kotlinx.serialization.json.JsonPrimitive(it) }
             seg.align?.let { m["align"] = kotlinx.serialization.json.JsonPrimitive(it.name.lowercase()) }
             kotlinx.serialization.json.JsonObject(m)
-        })
+        },
+    )
 
     override fun serialize(encoder: Encoder, value: TextKeyboard.TextKey) {
         val jsonEncoder = encoder as JsonEncoder

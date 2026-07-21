@@ -176,7 +176,7 @@ constructor(
         add(
             imageButton {
                 background = styledDrawable(android.R.attr.selectableItemBackgroundBorderless)
-                imageDrawable = drawable(R.drawable.ic_outline_cancel_24)!!.apply {
+                imageDrawable = drawable(R.drawable.ic_baseline_outline_cancel_24)!!.apply {
                     setTint(styledColor(android.R.attr.colorControlNormal))
                 }
                 setPaddingDp(6)
@@ -223,7 +223,7 @@ constructor(
 
     private val clearButton: ImageButton = imageButton {
         background = styledDrawable(android.R.attr.selectableItemBackgroundBorderless)
-        imageDrawable = drawable(R.drawable.ic_outline_cancel_24)!!.apply {
+        imageDrawable = drawable(R.drawable.ic_baseline_outline_cancel_24)!!.apply {
             setTint(styledColor(android.R.attr.colorControlNormal))
         }
         setPadding(dp(8))

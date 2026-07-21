@@ -314,6 +314,8 @@ class KeyView(
             listOf(TextKeyboard.LabelSegment(text = keyboardView.labelEnter))
         } else if (key.label.isNotEmpty()) {
             key.label
+        } else if (actionLabel.isNotEmpty()) {
+            listOf(TextKeyboard.LabelSegment(text = actionLabel))
         } else {
             emptyList()
         }
@@ -322,8 +324,8 @@ class KeyView(
             drawLabelSegments(canvas, labelSegments)
         }
 
-        if (key.labelSymbol.isNotEmpty()) {
-            drawSymbolSegments(canvas, key.labelSymbol, isTop = true)
+        if (key.symbolLabel.isNotEmpty()) {
+            drawSymbolSegments(canvas, key.symbolLabel, isTop = true)
         }
 
         if (key.hint.isNotEmpty()) {
@@ -392,7 +394,12 @@ class KeyView(
         }
 
         val (centerX, linePositions) = calculateTextPosition(
-            richTextLines, offsetX, offsetY, mode, paint.fontMetrics, isDynamic = true,
+            richTextLines,
+            offsetX,
+            offsetY,
+            mode,
+            paint.fontMetrics,
+            isDynamic = true,
         )
 
         drawRichText(canvas, richTextLines, centerX, linePositions, paint, offsetX, textSize, iconSize, textColor)
@@ -459,8 +466,14 @@ class KeyView(
                 uniform.takeIf { it > 0f }?.let { bg.cornerRadius = dp(it) }
             } else {
                 bg.cornerRadii = floatArrayOf(
-                    dp(tl), dp(tl), dp(tr), dp(tr),
-                    dp(br), dp(br), dp(bl), dp(bl)
+                    dp(tl),
+                    dp(tl),
+                    dp(tr),
+                    dp(tr),
+                    dp(br),
+                    dp(br),
+                    dp(bl),
+                    dp(bl),
                 )
             }
             (k.keyBorder ?: keyboard.keyBorder).takeIf { it > 0 }?.let { bg.setStroke(dp(it), k.keyBorderColorValue) }
@@ -661,7 +674,6 @@ class KeyView(
         )
         icon.draw(canvas)
     }
-
 }
 
 /**

@@ -192,8 +192,6 @@ return theme {
 
     -- 键盘边距（竖屏）
     keyboard_padding = 0,                    -- [int] 左右与屏幕的距离
-    keyboard_padding_left = 0,               -- [int] 左手模式左侧距离
-    keyboard_padding_right = 40,             -- [int] 左手模式右侧距离
     keyboard_padding_bottom = 0,             -- [int] 底部距离（避免触发全面屏手势）
     keyboard_padding_top = 0,                -- [int] 顶部距离
 

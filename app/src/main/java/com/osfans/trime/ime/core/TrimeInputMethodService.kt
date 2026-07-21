@@ -91,7 +91,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
     private val navBarManager = NavigationBarManager()
-    private val inputDeviceManager = InputDeviceManager { useVirtualKeyboard, useCandidatesView ->
+    val inputDeviceManager = InputDeviceManager { useVirtualKeyboard, useCandidatesView ->
         postRimeJob {
             setRuntimeOption("paging_mode", useCandidatesView)
         }
@@ -147,7 +147,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         }
 
     private fun invalidateInputViewColors(theme: Theme) {
-        navBarManager.evaluate(window.window!!)
+        navBarManager.evaluate(window.window!!, inputDeviceManager.useVirtualKeyboard)
         inputView?.reloadColors()
         candidatesView?.invalidateAllColors()
         inputView?.updateEnterKeyLabel(currentInputEditorInfo)
