@@ -8,7 +8,7 @@ on:
 
 env:
   QNN_SDK_VERSION: ${{ '2.48.40.260702' }}
-  ONNX_RUNTIME_VERSION: ${{ '1.15.1' }}
+  ONNX_RUNTIME_VERSION: ${{ '1.27.0' }}
 
 jobs:
   publish:
