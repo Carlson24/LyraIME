@@ -2,17 +2,13 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-name: Publish QNN HTP Libraries
+name: Publish Voice Libraries
 on:
   workflow_dispatch:
-    inputs:
-      qnn_sdk_version:
-        description: 'QNN SDK version'
-        required: false
-        default: '2.48.40.260702'
 
 env:
-  QNN_SDK_VERSION: ${{ github.event.inputs.qnn_sdk_version || '2.48.40.260702' }}
+  QNN_SDK_VERSION: ${{ '2.48.40.260702' }}
+  ONNX_RUNTIME_VERSION: ${{ '1.15.1' }}
 
 jobs:
   publish:
@@ -20,20 +16,24 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download QNN SDK
+      - name: Download Voice Lib
         run: |
-          mkdir -p "${{ runner.temp }}/qnn"
-          cd "${{ runner.temp }}/qnn"
+          mkdir -p "${{ runner.temp }}/voice"
+          cd "${{ runner.temp }}/voice"
           curl -fSL -o "v${QNN_SDK_VERSION}.zip" \
             "https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/${QNN_SDK_VERSION}/v${QNN_SDK_VERSION}.zip"
           unzip -q "v${QNN_SDK_VERSION}.zip"
-          echo "QNN_SDK_ROOT=${{ runner.temp }}/qnn/qairt/${QNN_SDK_VERSION}" >> "$GITHUB_ENV"
+          curl -fSL -o "v{ONNX_RUNTIME_VERSION}.zip" \
+            https://github.com/csukuangfj/onnxruntime-libs/releases/download/v${ONNX_RUNTIME_VERSION}/onnxruntime-android-${ONNX_RUNTIME_VERSION}.zip
+          unzip -q "v{ONNX_RUNTIME_VERSION}.zip"
+          echo "QNN_SDK_ROOT=${{ runner.temp }}/voice/qairt/${QNN_SDK_VERSION}" >> "$GITHUB_ENV"
+          echo "ONNX_RUNTIME_ROOT=${{ runner.temp }}/voice/jni/arm64-v8a" >> "$GITHUB_ENV"
 
       - name: Package HTP libraries
         run: |
           QNN_LIB="$QNN_SDK_ROOT/lib/aarch64-android"
           HEXAGON_LIB="$QNN_SDK_ROOT/lib"
-          OUT_DIR="${{ runner.temp }}/qnn-htp"
+          OUT_DIR="${{ runner.temp }}/voice-lib"
           mkdir -p "$OUT_DIR"
 
           for ver in 68 69 73 75 79 81; do
@@ -41,6 +41,7 @@ jobs:
             echo "Packaging $ARCHIVE..."
             WORKDIR="${{ runner.temp }}/htp_work_v${ver}"
             mkdir -p "$WORKDIR"
+            cp -v "$ONNX_RUNTIME_ROOT/libonnxruntime.so" "$WORKDIR/"
             cp -v "$QNN_LIB/libQnnHtp.so" "$WORKDIR/"
             cp -v "$QNN_LIB/libQnnHtpV${ver}Stub.so" "$WORKDIR/"
             cp -v "$HEXAGON_LIB/hexagon-v${ver}/unsigned/libQnnHtpV${ver}Skel.so" "$WORKDIR/"
@@ -49,6 +50,8 @@ jobs:
             rm -rf "$WORKDIR"
           done
 
+          tar -cjf "$OUT_DIR/libonnxruntime.tar.bz2" -C "$ONNX_RUNTIME_ROOT" libonnxruntime.so
+
           echo "Packaged archives:"
           ls -lh "$OUT_DIR"
 
@@ -56,8 +59,8 @@ jobs:
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: libQnnHtp
+          automatic_release_tag: libVoiceRuntime
           prerelease: false
-          title: "QNN HTP Libraries"
+          title: "Voice Runtime Libraries"
           files: |
-            ${{ runner.temp }}/qnn-htp/*.tar.bz2
+            ${{ runner.temp }}/voice-lib/*.tar.bz2
