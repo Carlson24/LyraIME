@@ -373,6 +373,7 @@
 ---@field select?         Select    # 键盘切换目标（如 "symbols"、"number"、".default"）
 ---@field toggle?         string    # Rime 运行时开关名称（如 "ascii_mode"、"full_shape"）
 ---@field label?          string    # 按键显示标签
+---@field popup_label?    string    # 弹窗键盘显示标签（优先于 label，不截断）
 ---@field preview?        string?   # 预览文字（nil 时使用 label）
 ---@field shift_lock?     ShiftLock # Shift 锁定模式： "long" | "click" | "ascii_long"
 ---@field commit?         string    # 直接提交的文本

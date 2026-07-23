@@ -68,6 +68,7 @@ class PopupKeyboardUi(
     private val popupHeight: Int,
     private val keys: List<String>,
     private val labels: List<String>,
+    private val spacing: Int,
 ) : PopupContainerUi(ctx, theme, outerBounds, triggerBounds, onDismissSelf) {
 
     class PopupKeyUi(override val ctx: Context, val theme: Theme, val text: String) : Ui {
@@ -257,11 +258,14 @@ class PopupKeyboardUi(
             if (label.length == 1 && label[0].code < 128) {
                 label
             } else {
-                KeyActionManager.getAction(label).getLabel(KeyboardWindow.currentKeyboard).let {
-                    when {
-                        it.isIconFont -> it
-                        it.isNotEmpty() -> String(Character.toChars(it.codePointAt(0)))
-                        else -> ""
+                val action = KeyActionManager.getAction(label)
+                action.popupLabel.ifEmpty {
+                    action.getLabel(KeyboardWindow.currentKeyboard).let {
+                        when {
+                            it.isIconFont -> it
+                            it.isNotEmpty() -> String(Character.toChars(it.codePointAt(0)))
+                            else -> ""
+                        }
                     }
                 }
             }
@@ -290,7 +294,10 @@ class PopupKeyboardUi(
                             // | 3 | 2 | 1 | 0 |(no free space)
                             gravity = if (j == 0) gravityEnd else gravityStart
                         } else {
-                            add(keyUi.root, lParams(keyWidth, keyHeight))
+                            add(keyUi.root, lParams(keyWidth, keyHeight) {
+                                leftMargin = spacing / 2
+                                rightMargin = spacing / 2
+                            })
                         }
                     }
                 },

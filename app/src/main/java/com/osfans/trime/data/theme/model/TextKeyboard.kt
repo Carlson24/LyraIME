@@ -412,7 +412,8 @@ internal object TextKeyboardSerializer : KSerializer<TextKeyboard> {
                             TextKeySerializer.deserializeKey(keyEl.jsonObject)
                         } catch (e: Exception) {
                             throw IllegalArgumentException(
-                                "${e.message}\nFailed to deserialize key at row $rowIdx, key $keyIdx: $keyEl", e,
+                                "${e.message}\nFailed to deserialize key at row $rowIdx, key $keyIdx: $keyEl",
+                                e,
                             )
                         }
                     }

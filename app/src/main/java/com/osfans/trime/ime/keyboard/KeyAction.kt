@@ -63,6 +63,8 @@ class KeyAction(
     private var shiftLabel = ""
     private var preview: String? = null
     private var states: List<String> = listOf()
+    var popupLabel: String = ""
+        private set
 
     private val hookShiftNum by AppPrefs.defaultInstance().keyboard.hookShiftNum
     private val hookShiftSymbol by AppPrefs.defaultInstance().keyboard.hookShiftSymbol
@@ -137,6 +139,7 @@ class KeyAction(
                 select = presetKey.select
                 toggle = presetKey.toggle
                 label = presetKey.label
+                popupLabel = presetKey.popupLabel
                 preview = presetKey.preview
                 shiftLock = presetKey.shiftLock
                 commit = presetKey.commit

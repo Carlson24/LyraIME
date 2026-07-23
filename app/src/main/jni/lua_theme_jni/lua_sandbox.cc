@@ -301,6 +301,11 @@ std::string LuaThemeEngine::buildSearchPath(const std::string& themes_dir) {
 namespace {
 
 std::string load_and_serialize(lua_State* L, const std::string& path) {
+  lua_getglobal(L, "package");
+  lua_newtable(L);
+  lua_setfield(L, -2, "loaded");
+  lua_pop(L, 1);
+
   int status = luaL_loadfile(L, path.c_str());
   if (status != LUA_OK) {
     std::string err = lua_tostring(L, -1);

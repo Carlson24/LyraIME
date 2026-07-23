@@ -45,6 +45,9 @@ class PopupDelegate {
     private val popupKeyHeight by lazy {
         context.dp(theme.generalStyle.popupKeyHeight)
     }
+    private val popupKeySpacing by lazy {
+        context.dp(theme.generalStyle.horizontalGap)
+    }
     private val popupRadius by lazy {
         context.dp(theme.generalStyle.roundCorner)
     }
@@ -130,6 +133,7 @@ class PopupDelegate {
             popupHeight + popupBottomMargin,
             keys,
             labels,
+            popupKeySpacing,
         )
         showPopupContainer(viewId, keyboardUi)
     }
