@@ -211,14 +211,9 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             it.registerOnChangeListener(recreateInputViewListener)
         }
         prefs.candidates.registerOnChangeListener(recreateCandidatesViewListener)
-        // ensure theme and color managers are initialized after rime is ready
-        lifecycleScope.launch {
-            rime.runOnReady {
-                ThemeManager.init(resources.configuration)
-                ThemeManager.addOnChangedListener(onThemeChangeListener)
-                ColorManager.addOnChangedListener(onColorChangeListener)
-            }
-        }
+        ThemeManager.init(resources.configuration)
+        ThemeManager.addOnChangedListener(onThemeChangeListener)
+        ColorManager.addOnChangedListener(onColorChangeListener)
         InputFeedbackManager.init(this)
         registerReceiver()
         super.onCreate()

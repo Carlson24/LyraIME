@@ -20,7 +20,7 @@ class LuaThemeEngine {
   LuaThemeEngine(LuaThemeEngine const&) = delete;
   void operator=(LuaThemeEngine const&) = delete;
 
-  bool init(const std::string& themes_dir);
+  bool init(const std::string& themes_dir, const std::string& user_themes_dir);
   void destroy();
 
   std::string loadTheme(const std::string& path);
@@ -35,7 +35,7 @@ class LuaThemeEngine {
 
   void setupSandbox(const std::string& themes_dir);
   void injectApi();
-  void buildSearchPath(const std::string& themes_dir);
+  std::string buildSearchPath(const std::string& themes_dir);
 
   lua_State* L = nullptr;
   mutable std::mutex mutex_;

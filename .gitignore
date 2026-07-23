@@ -489,3 +489,6 @@ app/onnxruntime-android-*.zip
 # kotlin
 .kotlin
 
+# native cache
+app/src/main/jni/.native-cache/
+

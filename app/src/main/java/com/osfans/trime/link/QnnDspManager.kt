@@ -78,6 +78,15 @@ object QnnDspManager {
         try {
             FileDownloader.download(entry.url, tarBz2, expectedSha256 = expectedSha256)
             extractTarBz2(tarBz2, dir)
+
+            val extractedOnnx = File(dir, "libonnxruntime.so")
+            if (extractedOnnx.exists()) {
+                val onnxDest = File(appContext.filesDir, "onnxruntime/libonnxruntime.so")
+                onnxDest.parentFile!!.mkdirs()
+                extractedOnnx.renameTo(onnxDest)
+                Timber.i("QnnDsp: onnxruntime moved to $onnxDest")
+            }
+
             tarBz2.delete()
 
             if (!stub.exists() || !skel.exists() || !htp.exists() || !system.exists()) {

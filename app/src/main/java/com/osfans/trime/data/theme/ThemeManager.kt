@@ -98,24 +98,34 @@ object ThemeManager {
         return loadThemeFromLua(sourceFile, id)
     }
 
-    private fun loadThemeFromLua(file: File, id: String): Theme? = try {
+    private fun loadThemeFromLua(file: File, id: String): Theme? {
         val cacheFile = DataManager.userThemesDir.resolve("build/$id.json")
-        val jsonStr = if (cacheFile.exists() && cacheFile.lastModified() >= file.lastModified()) {
-            cacheFile.readText()
-        } else {
-            val json = LuaThemeBridge.nativeLoadTheme(file.absolutePath)
-            cacheFile.parentFile?.mkdirs()
-            val sorted = sortJsonKeys(prettyJson.parseToJsonElement(json))
-            val formatted = prettyJson.encodeToString(sorted)
-            cacheFile.writeText(formatted)
-            json
+        return try {
+            val themesDir = file.parentFile!!
+            val latestMtime = themesDir.walkTopDown()
+                .filter { it.isFile && !it.startsWith(themesDir.resolve("build")) }
+                .maxOfOrNull { it.lastModified() } ?: 0L
+            val jsonStr = if (cacheFile.exists() && cacheFile.lastModified() >= latestMtime) {
+                cacheFile.readText()
+            } else {
+                val json = LuaThemeBridge.nativeLoadTheme(file.absolutePath)
+                cacheFile.parentFile?.mkdirs()
+                val sorted = sortJsonKeys(prettyJson.parseToJsonElement(json))
+                val formatted = prettyJson.encodeToString(sorted)
+                cacheFile.writeText(formatted)
+                json
+            }
+            Theme.json.decodeFromString<Theme>(jsonStr).also {
+                themeCache[id] = file.lastModified() to it
+            }
+        } catch (e: Exception) {
+            if (cacheFile.exists()) {
+                cacheFile.delete()
+                Timber.e(e, "Deleted stale cache for theme '$id'")
+            }
+            Timber.e(e, "Failed to load theme '$id'")
+            null
         }
-        Theme.json.decodeFromString<Theme>(jsonStr).also {
-            themeCache[id] = file.lastModified() to it
-        }
-    } catch (e: Exception) {
-        Timber.w(e, "Failed to load theme '$id'")
-        null
     }
 
     private fun getThemeById(id: String): ResolvedTheme {
@@ -159,7 +169,13 @@ object ThemeManager {
     }
 
     fun init(configuration: Configuration) {
-        LuaThemeBridge.nativeInit(DataManager.themesDir.absolutePath)
+        try {
+            LuaThemeBridge.nativeInit(DataManager.themesDir.absolutePath, DataManager.userThemesDir.absolutePath)
+            Timber.d("nativeInit succeeded")
+        } catch (e: Throwable) {
+            Timber.e(e, "nativeInit FAILED")
+            throw e
+        }
         _activeTheme = evaluateActiveTheme()
         ColorManager.init(configuration)
     }

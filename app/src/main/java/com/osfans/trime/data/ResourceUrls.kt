@@ -148,30 +148,30 @@ object ResourceUrls {
     }
 
     // ---- QNN DSP Libraries (per SoC) ----
-    // https://github.com/Carlson24/LyraIME/releases/tag/libQnnHtp
+    // https://github.com/Carlson24/LyraIME/releases/tag/libVoiceRuntime
     data class QnnDspEntry(val url: String)
 
     val QNN_DSP_MAP: Map<String, QnnDspEntry> = mapOf(
         "SM8350" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV68.tar.bz2",
+            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV68.tar.bz2",
         ),
         "SM8450" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69.tar.bz2",
+            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV69.tar.bz2",
         ),
         "SM8475" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV69.tar.bz2",
+            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV69.tar.bz2",
         ),
         "SM8550" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV73.tar.bz2",
+            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV73.tar.bz2",
         ),
         "SM8650" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV75.tar.bz2",
+            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV75.tar.bz2",
         ),
         "SM8750" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV79.tar.bz2",
+            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV79.tar.bz2",
         ),
         "SM8850" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/libQnnHtpV81.tar.bz2",
+            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV81.tar.bz2",
         ),
     )
 
@@ -202,7 +202,10 @@ object ResourceUrls {
     const val VOICE_MODEL_QNN_RELEASE_API =
         "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models-qnn-binary"
     const val QNN_DSP_RELEASE_API =
-        "$RELEASE_API_LYRAIME/libQnnHtp"
+        "$RELEASE_API_LYRAIME/libVoiceRuntime"
+
+    const val ONNX_RUNTIME_URL =
+        "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libonnxruntime.tar.bz2"
 
     // ---- SHA256 cache (fetched from GitHub release API) ----
     object GitHubAssetCache {

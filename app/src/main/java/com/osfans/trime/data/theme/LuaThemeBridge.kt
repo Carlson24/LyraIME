@@ -11,7 +11,7 @@ object LuaThemeBridge {
     }
 
     @JvmStatic
-    external fun nativeInit(themesDir: String)
+    external fun nativeInit(themesDir: String, userThemesDir: String)
 
     @JvmStatic
     external fun nativeLoadTheme(path: String): String

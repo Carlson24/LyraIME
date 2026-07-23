@@ -16,9 +16,12 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.float
@@ -47,7 +50,7 @@ data class KeyboardRow(
 }
 
 @Parcelize
-@Serializable
+@Serializable(with = TextKeyboardSerializer::class)
 data class TextKeyboard(
     val name: String = "",
     val author: String = "",
@@ -194,7 +197,15 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
     private fun strList(obj: JsonObject, key: String): List<String> = obj[key]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
 
     private fun labelSegments(obj: JsonObject, key: String): List<TextKeyboard.LabelSegment> {
-        val arr = obj[key]?.jsonArray ?: return emptyList()
+        val element = obj[key] ?: return emptyList()
+        val arr = try {
+            element.jsonArray
+        } catch (e: Exception) {
+            throw IllegalArgumentException(
+                "Failed to parse '$key': expected JSON array, got ${element::class.simpleName}: $element",
+                e,
+            )
+        }
         return arr.mapNotNull { el ->
             val o = el.jsonObject
             TextKeyboard.LabelSegment(
@@ -221,6 +232,10 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
 
     override fun serialize(encoder: Encoder, value: TextKeyboard.TextKey) {
         val jsonEncoder = encoder as JsonEncoder
+        jsonEncoder.encodeJsonElement(serializeKey(value))
+    }
+
+    internal fun serializeKey(value: TextKeyboard.TextKey): JsonObject {
         val map = linkedMapOf<String, kotlinx.serialization.json.JsonElement>()
         map["width"] = kotlinx.serialization.json.JsonPrimitive(value.width)
         map["spacer"] = kotlinx.serialization.json.JsonPrimitive(value.spacer)
@@ -258,13 +273,16 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
         for ((b, action) in value.behaviors) {
             map[behaviorKey(b)] = kotlinx.serialization.json.JsonPrimitive(action)
         }
-        jsonEncoder.encodeJsonElement(JsonObject(map))
+        return JsonObject(map)
     }
 
     override fun deserialize(decoder: Decoder): TextKeyboard.TextKey {
         val jsonDecoder = decoder as JsonDecoder
         val obj = jsonDecoder.decodeJsonElement().jsonObject
+        return deserializeKey(obj)
+    }
 
+    internal fun deserializeKey(obj: JsonObject): TextKeyboard.TextKey {
         val behaviors = mutableMapOf<KeyBehavior, String>()
         for (entry in KeyBehavior.entries) {
             val key = behaviorKey(entry)
@@ -309,6 +327,147 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
             popup = strList(obj, "popup"),
             dynamic = str(obj, "dynamic"),
             behaviors = behaviors,
+        )
+    }
+}
+
+internal object TextKeyboardSerializer : KSerializer<TextKeyboard> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("TextKeyboard", PrimitiveKind.STRING)
+
+    private fun str(obj: JsonObject, key: String, default: String = ""): String = obj[key]?.jsonPrimitive?.contentOrNull ?: default
+
+    private fun flt(obj: JsonObject, key: String, default: Float = 0f): Float = obj[key]?.jsonPrimitive?.float ?: default
+
+    private fun int(obj: JsonObject, key: String, default: Int = 0): Int = obj[key]?.jsonPrimitive?.int ?: default
+
+    private fun bool(obj: JsonObject, key: String, default: Boolean = false): Boolean = obj[key]?.jsonPrimitive?.boolean ?: default
+
+    private fun strList(obj: JsonObject, key: String): List<String> = obj[key]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+
+    override fun serialize(encoder: Encoder, value: TextKeyboard) {
+        val jsonEncoder = encoder as JsonEncoder
+        val map = linkedMapOf<String, JsonElement>()
+        map["name"] = JsonPrimitive(value.name)
+        map["author"] = JsonPrimitive(value.author)
+        map["keyboard_height"] = JsonPrimitive(value.keyboardHeight)
+        map["keyboard_height_land"] = JsonPrimitive(value.keyboardHeightLand)
+        map["auto_height_index"] = JsonPrimitive(value.autoHeightIndex)
+        map["horizontal_gap"] = JsonPrimitive(value.horizontalGap)
+        map["vertical_gap"] = JsonPrimitive(value.verticalGap)
+        map["round_corner"] = JsonPrimitive(value.roundCorner)
+        map["key_border"] = JsonPrimitive(value.keyBorder)
+        map["ascii_mode"] = JsonPrimitive(value.asciiMode)
+        map["reset_ascii_mode"] = JsonPrimitive(value.resetAsciiMode)
+        map["label_transform"] = JsonPrimitive(value.labelTransform.name.lowercase())
+        map["lock"] = JsonPrimitive(value.lock)
+        map["ascii_keyboard"] = JsonPrimitive(value.asciiKeyboard)
+        map["landscape_keyboard"] = JsonPrimitive(value.landscapeKeyboard)
+        map["landscape_split_percent"] = JsonPrimitive(value.landscapeSplitPercent)
+        map["key_text_offset_x"] = JsonPrimitive(value.keyTextOffsetX)
+        map["key_text_offset_y"] = JsonPrimitive(value.keyTextOffsetY)
+        map["key_symbol_offset_x"] = JsonPrimitive(value.keySymbolOffsetX)
+        map["key_symbol_offset_y"] = JsonPrimitive(value.keySymbolOffsetY)
+        map["key_hint_offset_x"] = JsonPrimitive(value.keyHintOffsetX)
+        map["key_hint_offset_y"] = JsonPrimitive(value.keyHintOffsetY)
+        map["key_press_offset_x"] = JsonPrimitive(value.keyPressOffsetX)
+        map["key_press_offset_y"] = JsonPrimitive(value.keyPressOffsetY)
+        map["import_preset"] = JsonPrimitive(value.importPreset)
+        map["navbar"] = JsonPrimitive(value.navbar)
+        map["t9_mode"] = JsonPrimitive(value.t9Mode)
+        map["keyboard_padding_top"] = JsonPrimitive(value.keyboardPaddingTop)
+        map["t9_sidebar_width"] = JsonPrimitive(value.t9SidebarWidth)
+        map["t9_sidebar_position"] = JsonPrimitive(value.t9SidebarPosition)
+        map["t9_sidebar_span_rows"] = JsonPrimitive(value.t9SidebarSpanRows)
+        map["t9_sidebar_show_items"] = JsonPrimitive(value.t9SidebarShowItems)
+        map["t9_sidebar_symbols"] = JsonArray(value.t9SidebarSymbols.map { JsonPrimitive(it) })
+        map["dynamic_mode"] = JsonPrimitive(value.dynamicMode)
+        map["dynamic_original"] = JsonPrimitive(value.dynamicOriginal)
+        map["rows"] = JsonArray(
+            value.rows.map { row ->
+                JsonObject(
+                    buildMap {
+                        put("height", JsonPrimitive(row.height))
+                        put("split", JsonPrimitive(row.split))
+                        put("keys", JsonArray(row.keys.map { TextKeySerializer.serializeKey(it) }))
+                    },
+                )
+            },
+        )
+        jsonEncoder.encodeJsonElement(JsonObject(map))
+    }
+
+    override fun deserialize(decoder: Decoder): TextKeyboard {
+        val jsonDecoder = decoder as JsonDecoder
+        val obj = jsonDecoder.decodeJsonElement().jsonObject
+
+        val rowsArr = obj["rows"]?.jsonArray
+        val rows = if (rowsArr != null) {
+            rowsArr.mapIndexed { rowIdx, rowEl ->
+                val rowObj = rowEl.jsonObject
+                val keysArr = rowObj["keys"]?.jsonArray
+                val keys = if (keysArr != null) {
+                    keysArr.mapIndexed { keyIdx, keyEl ->
+                        try {
+                            TextKeySerializer.deserializeKey(keyEl.jsonObject)
+                        } catch (e: Exception) {
+                            throw IllegalArgumentException(
+                                "${e.message}\nFailed to deserialize key at row $rowIdx, key $keyIdx: $keyEl", e,
+                            )
+                        }
+                    }
+                } else {
+                    emptyList<TextKeyboard.TextKey>()
+                }
+                KeyboardRow(
+                    height = flt(rowObj, "height"),
+                    split = bool(rowObj, "split"),
+                    keys = keys,
+                )
+            }
+        } else {
+            emptyList<KeyboardRow>()
+        }
+
+        return TextKeyboard(
+            name = str(obj, "name"),
+            author = str(obj, "author"),
+            keyboardHeight = int(obj, "keyboard_height"),
+            keyboardHeightLand = int(obj, "keyboard_height_land"),
+            autoHeightIndex = int(obj, "auto_height_index", -1),
+            horizontalGap = int(obj, "horizontal_gap"),
+            verticalGap = int(obj, "vertical_gap"),
+            roundCorner = flt(obj, "round_corner", -1f),
+            keyBorder = int(obj, "key_border", -1),
+            asciiMode = bool(obj, "ascii_mode", true),
+            resetAsciiMode = bool(obj, "reset_ascii_mode"),
+            labelTransform = str(obj, "label_transform", "none").let {
+                TextKeyboard.LabelTransform.valueOf(it.uppercase())
+            },
+            lock = bool(obj, "lock"),
+            asciiKeyboard = str(obj, "ascii_keyboard"),
+            landscapeKeyboard = str(obj, "landscape_keyboard"),
+            landscapeSplitPercent = int(obj, "landscape_split_percent"),
+            keyTextOffsetX = flt(obj, "key_text_offset_x"),
+            keyTextOffsetY = flt(obj, "key_text_offset_y"),
+            keySymbolOffsetX = flt(obj, "key_symbol_offset_x"),
+            keySymbolOffsetY = flt(obj, "key_symbol_offset_y"),
+            keyHintOffsetX = flt(obj, "key_hint_offset_x"),
+            keyHintOffsetY = flt(obj, "key_hint_offset_y"),
+            keyPressOffsetX = flt(obj, "key_press_offset_x"),
+            keyPressOffsetY = flt(obj, "key_press_offset_y"),
+            importPreset = str(obj, "import_preset"),
+            navbar = bool(obj, "navbar"),
+            t9Mode = bool(obj, "t9_mode"),
+            keyboardPaddingTop = int(obj, "keyboard_padding_top"),
+            t9SidebarWidth = flt(obj, "t9_sidebar_width", 0.15f),
+            t9SidebarPosition = str(obj, "t9_sidebar_position", "left"),
+            t9SidebarSpanRows = int(obj, "t9_sidebar_span_rows", 3),
+            t9SidebarShowItems = int(obj, "t9_sidebar_show_items", 4),
+            t9SidebarSymbols = strList(obj, "t9_sidebar_symbols"),
+            dynamicMode = bool(obj, "dynamic_mode"),
+            dynamicOriginal = str(obj, "dynamic_original"),
+            rows = rows,
         )
     }
 }

@@ -22,6 +22,7 @@ import com.osfans.trime.data.prefs.PreferenceDelegateFragment
 import com.osfans.trime.data.prefs.PreferenceDelegateProvider
 import com.osfans.trime.link.QnnDspManager
 import com.osfans.trime.link.VoiceModelManager
+import com.osfans.trime.link.VoiceNativeManager
 import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.common.confirmDialog
 import com.osfans.trime.ui.common.progressDialog
@@ -158,35 +159,34 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     }
 
     private fun refreshDspUi(enabled: Boolean) {
-        val selected = voiceInputPrefs.voiceModelType.getValue()
-        val isQnn = selected == AppPrefs.VoiceInput.VoiceModelType.QNN
-        dspInitPref?.isEnabled = enabled && isQnn
-        if (isQnn) {
-            val installed = QnnDspManager.isInstalled()
-            dspInitPref?.title = getString(
-                if (installed) {
-                    R.string.voice_qnn_dsp_reinitialize
-                } else {
-                    R.string.voice_qnn_dsp_initialize
-                },
-            )
-            dspInitPref?.summary = getString(
-                if (installed) {
-                    R.string.voice_qnn_dsp_installed
-                } else {
-                    R.string.voice_qnn_dsp_not_installed
-                },
-            )
-        } else {
-            dspInitPref?.title = getString(R.string.voice_qnn_dsp_initialize)
-            dspInitPref?.summary = getString(R.string.voice_qnn_dsp_require_qnn)
-        }
+        dspInitPref?.isEnabled = enabled
+
+        val onnxReady = VoiceNativeManager.isOnnxRuntimeInstalled()
+        val isQnn = voiceInputPrefs.voiceModelType.getValue() == AppPrefs.VoiceInput.VoiceModelType.QNN
+        val dspReady = if (isQnn) QnnDspManager.isInstalled() else true
+        val allReady = onnxReady && dspReady
+
+        dspInitPref?.title = getString(
+            if (allReady) {
+                R.string.voice_runtime_reinitialize
+            } else {
+                R.string.voice_runtime_initialize
+            },
+        )
+        dspInitPref?.summary = getString(
+            when {
+                !enabled -> R.string.voice_runtime_require_builtin
+                allReady -> R.string.voice_runtime_installed
+                else -> R.string.voice_runtime_not_installed
+            },
+        )
     }
 
     private fun startDspDownload() {
         dspDownloadCancelled = false
         val ctx = requireContext()
-        val taskTitle = getString(R.string.voice_qnn_dsp_initialize)
+        val taskTitle = getString(R.string.voice_runtime_initialize)
+        val isQualcomm = QnnDspManager.getHtpVariant() != null
         val dp = ctx.resources.displayMetrics.density
         fun Int.dp() = (this * dp).toInt()
 
@@ -209,7 +209,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
             addView(progressBar)
         }
 
-        val dialog = ctx.buildDialog(R.string.voice_qnn_dsp_downloading)
+        val dialog = ctx.buildDialog(R.string.voice_runtime_downloading)
             .setView(ScrollView(ctx).also { it.addView(taskContainer) })
             .setCancelable(false)
             .setNegativeButton(android.R.string.cancel) { _, _ ->
@@ -221,16 +221,20 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
 
         dspJob = lifecycleScope.launch {
             try {
-                val result = withContext(Dispatchers.IO) {
-                    QnnDspManager.ensureInstalled(ctx, force = true)
+                val success = withContext(Dispatchers.IO) {
+                    if (isQualcomm) {
+                        QnnDspManager.ensureInstalled(ctx, force = true) != null
+                    } else {
+                        VoiceNativeManager.ensureOnnxRuntime(ctx)
+                    }
                 }
 
                 progressBar.isIndeterminate = false
                 progressBar.progress = 100
-                val status = if (result != null) {
-                    getString(R.string.voice_qnn_dsp_installed)
+                val status = if (success) {
+                    getString(R.string.voice_runtime_installed)
                 } else {
-                    getString(R.string.voice_qnn_dsp_download_failed)
+                    getString(R.string.voice_runtime_download_failed)
                 }
                 taskText.text = getString(R.string.wanxiang_dl_progress_line, taskTitle, status)
 

@@ -36,7 +36,8 @@ LuaThemeEngine::~LuaThemeEngine() { destroy(); }
 // Lifecycle
 // ---------------------------------------------------------------------------
 
-bool LuaThemeEngine::init(const std::string& themes_dir) {
+bool LuaThemeEngine::init(const std::string& themes_dir,
+                          const std::string& user_themes_dir) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (L != nullptr) return true;
 
@@ -45,7 +46,20 @@ bool LuaThemeEngine::init(const std::string& themes_dir) {
 
   setupSandbox(themes_dir);
   injectApi();
-  buildSearchPath(themes_dir);
+
+  std::string user_path = buildSearchPath(user_themes_dir);
+  std::string bundled_path = buildSearchPath(themes_dir);
+  if (!bundled_path.empty()) {
+    if (!user_path.empty()) user_path += ';';
+    user_path += bundled_path;
+  }
+
+  if (!user_path.empty()) {
+    lua_getglobal(L, "package");
+    lua_pushstring(L, user_path.c_str());
+    lua_setfield(L, -2, "path");
+    lua_pop(L, 1);
+  }
   return true;
 }
 
@@ -263,7 +277,7 @@ void collect_search_paths(const std::string& abs_dir,
 
 }  // namespace
 
-void LuaThemeEngine::buildSearchPath(const std::string& themes_dir) {
+std::string LuaThemeEngine::buildSearchPath(const std::string& themes_dir) {
   std::string lib_dir = themes_dir + "/lib";
 
   std::vector<std::string> dirs;
@@ -277,12 +291,7 @@ void LuaThemeEngine::buildSearchPath(const std::string& themes_dir) {
     path += d + "/?/init.lua";
   }
 
-  if (!path.empty()) {
-    lua_getglobal(L, "package");
-    lua_pushstring(L, path.c_str());
-    lua_setfield(L, -2, "path");
-    lua_pop(L, 1);
-  }
+  return path;
 }
 
 // ---------------------------------------------------------------------------

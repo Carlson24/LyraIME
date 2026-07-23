@@ -45,9 +45,6 @@ object SherpaSpeechClient {
     @Volatile
     var onHoldingChanged: ((Boolean) -> Unit)? = null
 
-    @Volatile
-    private var adspLibraryPathSet = false
-
     private val recognizerRef = AtomicReference<OnlineRecognizer?>(null)
     private val currentStreamRef = AtomicReference<OnlineStream?>(null)
 
@@ -92,19 +89,9 @@ object SherpaSpeechClient {
     fun prewarmAsync(service: TrimeInputMethodService) {
         if (!VoiceModelManager.checkModelFiles()) return
         val currentConfig = readEngineConfig()
-        if (!currentConfig.useQnn) return
         service.lifecycleScope.launch(Dispatchers.IO) {
-            if (!adspLibraryPathSet && Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a") {
-                val dsp = QnnDspManager.getLibs()
-                if (dsp != null) {
-                    QnnDspManager.loadDsp(dsp)
-                    OnlineRecognizer.prependAdspLibraryPath(dsp.skel.parentFile!!.absolutePath)
-                    adspLibraryPathSet = true
-                }
-            }
-            if (adspLibraryPathSet) {
-                initEngineIfNeeded()
-            }
+            if (!VoiceNativeManager.loadNativeLibs(currentConfig.useQnn)) return@launch
+            initEngineIfNeeded()
         }
     }
 
@@ -215,10 +202,13 @@ object SherpaSpeechClient {
         }
 
         val cfg = readEngineConfig()
-        if (cfg.useQnn &&
-            Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a" &&
-            !QnnDspManager.isInstalled()
-        ) {
+        if (!VoiceNativeManager.isOnnxRuntimeInstalled()) {
+            service.toast(service.getString(R.string.voice_runtime_missing_toast))
+            runCatching { VoiceOverlayUiBridge.onDone?.invoke() }
+            resetStateDirectly()
+            return
+        }
+        if (cfg.useQnn && Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a" && !QnnDspManager.isInstalled()) {
             service.toast(service.getString(R.string.voice_qnn_dsp_missing_toast))
             runCatching { VoiceOverlayUiBridge.onDone?.invoke() }
             resetStateDirectly()
@@ -235,16 +225,7 @@ object SherpaSpeechClient {
 
             val startTime = System.currentTimeMillis()
             val initSuccess = withContext(Dispatchers.IO) {
-                if (!adspLibraryPathSet && currentConfig.useQnn &&
-                    Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a"
-                ) {
-                    val dsp = QnnDspManager.getLibs()
-                    if (dsp != null) {
-                        QnnDspManager.loadDsp(dsp)
-                        OnlineRecognizer.prependAdspLibraryPath(dsp.skel.parentFile!!.absolutePath)
-                        adspLibraryPathSet = true
-                    }
-                }
+                VoiceNativeManager.loadNativeLibs(currentConfig.useQnn)
                 initEngineIfNeeded()
             }
             val elapsed = System.currentTimeMillis() - startTime

@@ -20,10 +20,12 @@ static void throwRuntime(JNIEnv* env, const std::string& msg) {
 extern "C" {
 
 JNIEXPORT void JNICALL
-Java_com_osfans_trime_data_theme_LuaThemeBridge_nativeInit(JNIEnv* env, jclass,
-                                                           jstring themesDir) {
+Java_com_osfans_trime_data_theme_LuaThemeBridge_nativeInit(
+    JNIEnv* env, jclass, jstring themesDir, jstring userThemesDir) {
   const char* dir = env->GetStringUTFChars(themesDir, nullptr);
-  bool ok = lua_theme::LuaThemeEngine::instance().init(dir);
+  const char* userDir = env->GetStringUTFChars(userThemesDir, nullptr);
+  bool ok = lua_theme::LuaThemeEngine::instance().init(dir, userDir);
+  env->ReleaseStringUTFChars(userThemesDir, userDir);
   env->ReleaseStringUTFChars(themesDir, dir);
   if (!ok) {
     throwRuntime(env, "Failed to initialize Lua sandbox");
