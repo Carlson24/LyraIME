@@ -66,7 +66,11 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
             val base = taskName
                 .removePrefix("externalNativeBuild")
                 .removePrefix("buildCMake")
-            return base.substringBefore("[").replaceFirstChar { it.lowercaseChar() }
+            val raw = base.substringBefore("[").lowercase()
+            return when (raw) {
+                "relwithdebinfo", "minsizerel" -> "release"
+                else -> raw
+            }
         }
 
         val prepareTasks = listOf("debug", "release").associate { bt ->
