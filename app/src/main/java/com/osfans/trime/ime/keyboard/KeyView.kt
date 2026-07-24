@@ -423,15 +423,29 @@ class KeyView(
                     currentSegs = mutableListOf()
                 }
                 if (parts[i].isEmpty()) continue
-                currentSegs.add(
-                    StyledSegment(
-                        text = parts[i],
-                        colorKey = seg.color,
-                        scale = seg.scale,
-                        bold = seg.bold,
-                        horizontalAlign = seg.align ?: TextKeyboard.Align.CENTER,
-                    ),
-                )
+                if (seg.align == TextKeyboard.Align.JUSTIFY && parts[i].length > 1) {
+                    for (ch in parts[i]) {
+                        currentSegs.add(
+                            StyledSegment(
+                                text = ch.toString(),
+                                colorKey = seg.color,
+                                scale = seg.scale,
+                                bold = seg.bold,
+                                horizontalAlign = TextKeyboard.Align.JUSTIFY,
+                            ),
+                        )
+                    }
+                } else {
+                    currentSegs.add(
+                        StyledSegment(
+                            text = parts[i],
+                            colorKey = seg.color,
+                            scale = seg.scale,
+                            bold = seg.bold,
+                            horizontalAlign = seg.align ?: TextKeyboard.Align.CENTER,
+                        ),
+                    )
+                }
             }
         }
         lines.add(buildLine())
@@ -578,10 +592,12 @@ class KeyView(
         val leftGroup = mutableListOf<StyledSegment>()
         val centerGroup = mutableListOf<StyledSegment>()
         val rightGroup = mutableListOf<StyledSegment>()
+        val justifyGroup = mutableListOf<StyledSegment>()
         for (seg in line.segments) {
             when (seg.horizontalAlign) {
                 TextKeyboard.Align.LEFT -> leftGroup.add(seg)
                 TextKeyboard.Align.RIGHT -> rightGroup.add(seg)
+                TextKeyboard.Align.JUSTIFY -> justifyGroup.add(seg)
                 else -> centerGroup.add(seg)
             }
         }
@@ -602,12 +618,13 @@ class KeyView(
         val leftWidth = measureSegments(leftGroup)
         val centerWidth = measureSegments(centerGroup)
         val rightWidth = measureSegments(rightGroup)
+        val justifyWidth = measureSegments(justifyGroup)
 
         val roundCornerPx = (key.roundCorner ?: keyboard.roundCorner)
             .takeIf { it > 0f }?.let { dp(it) } ?: 0f
 
-        val paddedLeft = paddingLeft.toFloat() + sp(offsetX) + roundCornerPx
-        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX) - roundCornerPx
+        val paddedLeft = paddingLeft.toFloat() + sp(offsetX) + roundCornerPx * 2 / 3f
+        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX) - roundCornerPx * 2 / 3f
 
         val leftStart = paddedLeft
         val rightStart = paddedRight - rightWidth
@@ -617,7 +634,7 @@ class KeyView(
             paddedLeft + leftWidth + (paddedRight - paddedLeft - leftWidth - centerWidth) / 2f
         }
 
-        fun drawGroup(group: List<StyledSegment>, startX: Float) {
+        fun drawGroup(group: List<StyledSegment>, startX: Float, gap: Float = 0f) {
             var currentX = startX
             group.forEach { seg ->
                 if (isIcon(seg)) {
@@ -625,7 +642,7 @@ class KeyView(
                     val halfIcon = iconSize / 2f
                     val centerY = y + (baseAscent + baseDescent) / 2f - (iconSize / 4f)
                     drawIconAt(canvas, cmdName, iconSize, textColor, currentX + halfIcon, centerY + iconVerticalOffset)
-                    currentX += iconSize
+                    currentX += iconSize + gap
                 } else {
                     richTextPaint.color = basePaint.color
                     richTextPaint.textSize = baseTextSize
@@ -646,9 +663,17 @@ class KeyView(
                     }
 
                     canvas.drawText(UnicodeVariantUtils.toDisplay(seg.text), currentX, adjustedY, richTextPaint)
-                    currentX += richTextPaint.measureText(seg.text)
+                    currentX += richTextPaint.measureText(seg.text) + gap
                 }
             }
+        }
+
+        val spareStart = paddedLeft + leftWidth
+        val spareEnd = paddedRight - rightWidth
+        if (justifyGroup.isNotEmpty()) {
+            val available = (spareEnd - spareStart - justifyWidth).coerceAtLeast(0f)
+            val gap = if (justifyGroup.size > 1) available / (justifyGroup.size - 1) else 0f
+            drawGroup(justifyGroup, spareStart, gap)
         }
 
         drawGroup(leftGroup, leftStart)

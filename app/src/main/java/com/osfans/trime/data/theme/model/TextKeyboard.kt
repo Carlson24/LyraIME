@@ -123,6 +123,7 @@ data class TextKeyboard(
         LEFT,
         CENTER,
         RIGHT,
+        JUSTIFY,
     }
 
     @Parcelize
