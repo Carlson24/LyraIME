@@ -168,7 +168,7 @@ object ThemeManager {
         return newTheme
     }
 
-    fun init(configuration: Configuration) {
+    fun initNative() {
         try {
             LuaThemeBridge.nativeInit(DataManager.themesDir.absolutePath, DataManager.userThemesDir.absolutePath)
             Timber.d("nativeInit succeeded")
@@ -177,6 +177,10 @@ object ThemeManager {
             throw e
         }
         _activeTheme = evaluateActiveTheme()
+    }
+
+    fun init(configuration: Configuration) {
+        initNative()
         ColorManager.init(configuration)
     }
 

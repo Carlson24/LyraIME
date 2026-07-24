@@ -41,14 +41,12 @@ if(NOT SKIP_RIME_TARGETS OR NOT SKIP_LUA_THEME_TARGETS)
   add_subdirectory(yaml-cpp)
 endif()
 
-# ---- lua55 (lua theme only) ----
+# ---- lua54 (lua theme) ----
 if(NOT SKIP_LUA_THEME_TARGETS)
-  include(Lua55)
-
-  file(GLOB LUA55_SOURCES "${CMAKE_SOURCE_DIR}/lua55/src/*.c")
-  list(FILTER LUA55_SOURCES EXCLUDE REGEX "/(lua|luac|ltests)\\.c$")
-  add_library(lua55 STATIC ${LUA55_SOURCES})
-  target_include_directories(lua55 PUBLIC "${CMAKE_SOURCE_DIR}/lua55/src")
+  file(GLOB LUA54_SOURCES "${CMAKE_SOURCE_DIR}/lua54/*.c")
+  list(FILTER LUA54_SOURCES EXCLUDE REGEX "/(lua|luac)\\.c$")
+  add_library(lua54 STATIC ${LUA54_SOURCES})
+  target_include_directories(lua54 PUBLIC "${CMAKE_SOURCE_DIR}/lua54")
 endif()
 
 # ---- rime (glog, snappy, leveldb, marisa, opencc, boost, rime, librime_jni) ----

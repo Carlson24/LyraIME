@@ -169,7 +169,7 @@ int l_merge(lua_State* L) {
     lua_pushvalue(L, -2);
     if (both_tables) {
       lua_getglobal(L, "merge");
-      lua_pushvalue(L, -3);
+      lua_pushvalue(L, -2);
       lua_gettable(L, 3);
       lua_pushvalue(L, -4);
       lua_call(L, 2, 1);
@@ -300,11 +300,28 @@ std::string LuaThemeEngine::buildSearchPath(const std::string& themes_dir) {
 
 namespace {
 
+int traceback_handler(lua_State* L) {
+  const char* msg = lua_tostring(L, 1);
+  if (msg == nullptr) msg = "(error object is not a string)";
+  luaL_traceback(L, L, msg, 2);
+  return 1;
+}
+
 std::string load_and_serialize(lua_State* L, const std::string& path) {
+  lua_getfield(L, LUA_REGISTRYINDEX, LUA_LOADED_TABLE);
+  if (lua_istable(L, -1)) {
+    lua_pushnil(L);
+    while (lua_next(L, -2)) {
+      lua_pop(L, 1);
+      lua_pushvalue(L, -1);
+      lua_pushnil(L);
+      lua_settable(L, -4);
+    }
+  }
   lua_getglobal(L, "package");
-  lua_newtable(L);
+  lua_pushvalue(L, -2);
   lua_setfield(L, -2, "loaded");
-  lua_pop(L, 1);
+  lua_pop(L, 2);
 
   int status = luaL_loadfile(L, path.c_str());
   if (status != LUA_OK) {
@@ -313,12 +330,38 @@ std::string load_and_serialize(lua_State* L, const std::string& path) {
     return "{\"error\":\"load: " + err + "\"}";
   }
 
-  status = lua_pcall(L, 0, 1, 0);
+  int func = lua_gettop(L);
+  lua_pushcfunction(L, traceback_handler);
+  lua_insert(L, func);
+  status = lua_pcall(L, 0, 1, func);
   if (status != LUA_OK) {
-    std::string err = lua_tostring(L, -1);
+    std::string trace = lua_tostring(L, -1);
     lua_pop(L, 1);
-    return "{\"error\":\"exec: " + err + "\"}";
+
+    std::string modules;
+    lua_getglobal(L, "package");
+    if (lua_istable(L, -1)) {
+      lua_getfield(L, -1, "loaded");
+      if (lua_istable(L, -1)) {
+        modules = "\nloaded modules:";
+        lua_pushnil(L);
+        while (lua_next(L, -2)) {
+          modules += "\n  '";
+          if (lua_type(L, -2) == LUA_TSTRING) {
+            modules += lua_tostring(L, -2);
+          }
+          modules += "' -> ";
+          modules += lua_typename(L, lua_type(L, -1));
+          lua_pop(L, 1);
+        }
+      }
+      lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+
+    return "{\"error\":\"exec: " + trace + modules + "\"}";
   }
+  lua_remove(L, func);
 
   if (lua_gettop(L) < 1 || lua_isnil(L, -1)) {
     return "{}";

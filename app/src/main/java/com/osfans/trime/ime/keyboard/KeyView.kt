@@ -416,13 +416,16 @@ class KeyView(
         }
 
         for (seg in segments) {
-            if (seg.text == "\n") {
-                lines.add(buildLine())
-                currentSegs = mutableListOf()
-            } else {
+            val parts = seg.text.split("\n")
+            for (i in parts.indices) {
+                if (i > 0) {
+                    lines.add(buildLine())
+                    currentSegs = mutableListOf()
+                }
+                if (parts[i].isEmpty()) continue
                 currentSegs.add(
                     StyledSegment(
-                        text = seg.text,
+                        text = parts[i],
                         colorKey = seg.color,
                         scale = seg.scale,
                         bold = seg.bold,
@@ -600,8 +603,11 @@ class KeyView(
         val centerWidth = measureSegments(centerGroup)
         val rightWidth = measureSegments(rightGroup)
 
-        val paddedLeft = paddingLeft.toFloat() + sp(offsetX)
-        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX)
+        val roundCornerPx = (key.roundCorner ?: keyboard.roundCorner)
+            .takeIf { it > 0f }?.let { dp(it) } ?: 0f
+
+        val paddedLeft = paddingLeft.toFloat() + sp(offsetX) + roundCornerPx
+        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX) - roundCornerPx
 
         val leftStart = paddedLeft
         val rightStart = paddedRight - rightWidth

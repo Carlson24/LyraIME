@@ -480,9 +480,6 @@ app/src/main/assets/shared
 app/boost-*.tar.xz
 app/src/main/jni/boost/
 
-# lua55
-app/src/main/jni/lua55/
-
 # onnx-runtime
 app/onnxruntime-android-*.zip
 
