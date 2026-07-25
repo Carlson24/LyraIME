@@ -379,9 +379,7 @@ class Key(
         isOn && hasAction(KeyBehavior.LAZY_DOUBLE_CLICK) ->
             keyActions[KeyBehavior.LAZY_DOUBLE_CLICK]!!.getLabel(parent)
         label.isNotEmpty() && label.any { it.text.isNotEmpty() } &&
-            keyAction == click &&
-            !keyActions.containsKey(KeyBehavior.ASCII) &&
-            !rime.run { statusCached }.let { it.isAsciiMode || it.isAsciiPunct } -> label.firstOrNull()?.text ?: ""
+            checkKeyAction() == null -> label.firstOrNull()?.text ?: ""
         else -> keyAction!!.getLabel(parent)
     }
 
