@@ -24,7 +24,7 @@ object ColorPickerDialog {
         return context.pickSingle(
             scope = scope,
             title = R.string.normal_mode_color,
-            items = presetSchemes.map { it.colors["name"] ?: "" }.toTypedArray(),
+            items = presetSchemes.map { it.colors["name"] ?: it.id }.toTypedArray(),
             selectedIndex = currentIndex,
             emptyMessage = R.string.no_color_to_select,
             onSelect = { index ->

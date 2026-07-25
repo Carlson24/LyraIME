@@ -83,8 +83,9 @@ abstract class BaseInputView(
         candidateActionMenu?.dismiss()
         candidateActionMenu = null
         val tool = theme.candidatesTool
+        val typeConfig = tool?.popupByType?.get(type)
+        val popupWidthDp = typeConfig?.popupWidth?.takeIf { it > 0 } ?: (tool?.popupWidth ?: 0)
         val highlightColor = ColorManager.getColor("hilited_candidate_text_color")
-        val popupWidthDp = tool?.popupWidth ?: 0
         val density = resources.displayMetrics.density
         val textPaint =
             TextPaint().apply {
@@ -98,7 +99,7 @@ abstract class BaseInputView(
                 }
             }
         }
-        val popupActions = tool?.popupByType?.get(type) ?: tool?.popup
+        val popupActions = typeConfig?.popup ?: tool?.popup
         val popupTextSize = tool?.popupTextSize ?: 0f
         val popupTextColorKey = tool?.popupTextColor?.takeIf { it.isNotEmpty() } ?: "candidate_text_color"
         val popupTextColor = ColorManager.getColor(popupTextColorKey)

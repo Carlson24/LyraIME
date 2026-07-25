@@ -355,6 +355,7 @@
 ---@field t9_side_spacing_color?                  Color        # T9 侧栏间距颜色（回退至 key_border_color）
 ---@field light_scheme?                           string       # 亮色模式切换目标配色 ID
 ---@field dark_scheme?                            string       # 暗色模式切换目标配色 ID
+---@field name?                                   string       # 配色显示名称（用于配色选择弹窗，不填则显示 id）
 
 --- 配色方案
 ---@class ColorScheme
@@ -555,6 +556,12 @@
 ---@field action KeyName # 弹窗动作
 ---@field label  string  # 弹窗标签
 
+--- 按候选类型的弹窗菜单配置。
+--- 每个类型可覆写弹窗宽度，不设置则沿用顶层 `popup_width`。
+---@class TypePopupConfig
+---@field popup_width? integer          # 弹窗宽度（0 = 使用顶层 popup_width）
+---@field popup?       PopupAction[]    # 弹窗动作列表
+
 --- 候选工具栏。
 --- 此表为可选——不配置时工具栏隐藏。
 ---
@@ -562,6 +569,7 @@
 ---   - 未配置 `popup` 时，默认显示"忘记该词"（DeleteCandidate）
 ---   - 可通过 `popup_by_type` 按候选类型（cand.type）设置不同菜单
 ---   - `popup_by_type[type]` 优先匹配，未匹配时回退到 `popup`
+---   - 每个类型可单独设置 `popup_width`，不设则沿用顶层 `popup_width`
 ---
 --- 常见 cand.type 值：
 ---   "phrase"       — 系统词库词 (script_translator)
@@ -585,7 +593,7 @@
 ---@field button_font?             string[]                                   # 按钮字体文件列表
 ---@field buttons?                 ToolBarButton[]                            # 工具栏按钮列表
 ---@field popup?                   PopupAction[]                              # 弹窗动作列表（默认菜单）
----@field popup_by_type?           { [string]: PopupAction[] }                # 按候选类型的弹窗菜单
+---@field popup_by_type?           { [string]: TypePopupConfig }              # 按候选类型的弹窗菜单
 
 -- ============================================================================
 -- 液态键盘 (LiquidKeyboard)
