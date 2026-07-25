@@ -100,9 +100,9 @@ class CandidatesView(
             ctx,
             theme,
             onCandidateClick = { index -> rime.launchOnReady { it.selectCandidate(index, global = false) } },
-            onCandidateAction = { index, text, view ->
+            onCandidateAction = { index, text, type, view ->
                 rime.launchOnReady { it.highlightCandidate(index, global = false) }
-                showCandidateActionMenu(index, text, view, global = false)
+                showCandidateActionMenu(index, text, view, global = false, type = type)
             },
             onPrevPage = { rime.launchOnReady { it.changeCandidatePage(true) } },
             onNextPage = { rime.launchOnReady { it.changeCandidatePage(false) } },

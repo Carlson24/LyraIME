@@ -79,11 +79,12 @@ abstract class BaseInputView(
 
     private var candidateActionMenu: ListPopupWindow? = null
 
-    fun showCandidateActionMenu(idx: Int, text: String, view: View, global: Boolean) {
+    fun showCandidateActionMenu(idx: Int, text: String, view: View, global: Boolean, type: String = "") {
         candidateActionMenu?.dismiss()
         candidateActionMenu = null
+        val tool = theme.candidatesTool
         val highlightColor = ColorManager.getColor("hilited_candidate_text_color")
-        val popupWidthDp = theme.candidatesTool?.popupWidth ?: 0
+        val popupWidthDp = tool?.popupWidth ?: 0
         val density = resources.displayMetrics.density
         val textPaint =
             TextPaint().apply {
@@ -97,11 +98,11 @@ abstract class BaseInputView(
                 }
             }
         }
-        val popupActions = theme.candidatesTool?.popup
-        val popupTextSize = theme.candidatesTool?.popupTextSize ?: 0f
-        val popupTextColorKey = theme.candidatesTool?.popupTextColor?.takeIf { it.isNotEmpty() } ?: "candidate_text_color"
+        val popupActions = tool?.popupByType?.get(type) ?: tool?.popup
+        val popupTextSize = tool?.popupTextSize ?: 0f
+        val popupTextColorKey = tool?.popupTextColor?.takeIf { it.isNotEmpty() } ?: "candidate_text_color"
         val popupTextColor = ColorManager.getColor(popupTextColorKey)
-        val popupBackgroundColorKey = theme.candidatesTool?.popupBackgroundColor?.takeIf { it.isNotEmpty() } ?: "candidate_background"
+        val popupBackgroundColorKey = tool?.popupBackgroundColor?.takeIf { it.isNotEmpty() } ?: "candidate_background"
         val popupBackgroundColor = ColorManager.getColor(popupBackgroundColorKey)
         val popupTypeface = FontManager.getTypeface("candidates_tool_popup_font")
             .takeIf { it != Typeface.DEFAULT }

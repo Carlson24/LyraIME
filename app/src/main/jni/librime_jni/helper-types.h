@@ -41,11 +41,14 @@ class CandidateProto {
  public:
   std::string text;
   std::string comment;
+  std::string type;
   std::string label;
 
   CandidateProto() = default;
   explicit CandidateProto(const RimeCandidate& c)
-      : text(c.text), comment(c.comment ? c.comment : "") {}
+      : text(c.text),
+        comment(c.comment ? c.comment : ""),
+        type(c.type ? c.type : "") {}
 };
 
 class CompositionProto {
@@ -122,6 +125,9 @@ class ContextProto {
         destCandidates.back().text = candidate.text;
         if (candidate.comment) {
           destCandidates.back().comment = candidate.comment;
+        }
+        if (candidate.type) {
+          destCandidates.back().type = candidate.type;
         }
         destCandidates.back().label = label;
       }

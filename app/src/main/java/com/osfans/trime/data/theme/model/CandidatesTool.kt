@@ -23,6 +23,7 @@ data class CandidatesTool(
     val buttonFont: List<String> = emptyList(),
     val buttons: List<ToolBar.Button> = emptyList(),
     val popup: List<PopupAction> = emptyList(),
+    val popupByType: Map<String, List<PopupAction>> = emptyMap(),
 ) : Parcelable {
 
     @Parcelize

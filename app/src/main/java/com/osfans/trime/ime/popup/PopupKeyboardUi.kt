@@ -294,10 +294,13 @@ class PopupKeyboardUi(
                             // | 3 | 2 | 1 | 0 |(no free space)
                             gravity = if (j == 0) gravityEnd else gravityStart
                         } else {
-                            add(keyUi.root, lParams(keyWidth, keyHeight) {
-                                leftMargin = spacing / 2
-                                rightMargin = spacing / 2
-                            })
+                            add(
+                                keyUi.root,
+                                lParams(keyWidth, keyHeight) {
+                                    leftMargin = spacing / 2
+                                    rightMargin = spacing / 2
+                                },
+                            )
                         }
                     }
                 },

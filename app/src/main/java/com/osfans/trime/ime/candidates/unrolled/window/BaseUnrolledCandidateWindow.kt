@@ -140,7 +140,7 @@ abstract class BaseUnrolledCandidateWindow :
             }
             setOnLongClickListener { view ->
                 rime.launchOnReady { it.highlightCandidate(holder.idx, global = true) }
-                inputView.showCandidateActionMenu(holder.idx, holder.text, view, global = true)
+                inputView.showCandidateActionMenu(holder.idx, holder.text, view, global = true, type = holder.type)
                 true
             }
         }

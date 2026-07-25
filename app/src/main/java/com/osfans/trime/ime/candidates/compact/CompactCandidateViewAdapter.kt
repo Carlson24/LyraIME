@@ -77,6 +77,7 @@ open class CompactCandidateViewAdapter(
         holder.ui.update(item, isHighlighted)
         holder.text = item.text
         holder.comment = item.comment
+        holder.type = item.type
         holder.idx = position // unused
         holder.ui.root.updateLayoutParams<FlexboxLayoutManager.LayoutParams> {
             minWidth = this@CompactCandidateViewAdapter.layoutMinWidth

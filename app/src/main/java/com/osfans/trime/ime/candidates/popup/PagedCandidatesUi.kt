@@ -25,7 +25,7 @@ class PagedCandidatesUi(
     override val ctx: Context,
     val theme: Theme,
     private val onCandidateClick: (Int) -> Unit,
-    private val onCandidateAction: (Int, String, View) -> Unit,
+    private val onCandidateAction: (Int, String, String, View) -> Unit,
     private val onPrevPage: () -> Unit,
     private val onNextPage: () -> Unit,
 ) : Ui {
@@ -91,7 +91,7 @@ class PagedCandidatesUi(
                             onCandidateClick.invoke(position)
                         }
                         holder.ui.root.setOnLongClickListener { v ->
-                            onCandidateAction.invoke(position, candidate.text, v)
+                            onCandidateAction.invoke(position, candidate.text, candidate.type, v)
                             true
                         }
                     }

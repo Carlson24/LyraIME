@@ -313,7 +313,13 @@ class KeyView(
         val labelSegments = if (actionLabel == "enter_labels") {
             listOf(TextKeyboard.LabelSegment(text = keyboardView.labelEnter))
         } else if (key.label.isNotEmpty()) {
-            key.label
+            if (key.label.any { it.text.isNotEmpty() }) {
+                key.label
+            } else if (actionLabel.isNotEmpty()) {
+                key.label.map { it.copy(text = it.text.ifEmpty { actionLabel }) }
+            } else {
+                emptyList()
+            }
         } else if (actionLabel.isNotEmpty()) {
             listOf(TextKeyboard.LabelSegment(text = actionLabel))
         } else {
@@ -628,11 +634,7 @@ class KeyView(
 
         val leftStart = paddedLeft
         val rightStart = paddedRight - rightWidth
-        val centerStart = if (rightGroup.isNotEmpty()) {
-            (leftStart + leftWidth + rightStart - centerWidth) / 2f
-        } else {
-            paddedLeft + leftWidth + (paddedRight - paddedLeft - leftWidth - centerWidth) / 2f
-        }
+        val centerStart = paddedLeft + (paddedRight - paddedLeft - centerWidth) / 2f
 
         fun drawGroup(group: List<StyledSegment>, startX: Float, gap: Float = 0f) {
             var currentX = startX

@@ -12,4 +12,5 @@ class CandidateViewHolder(
     var idx = -1
     var text = ""
     var comment = ""
+    var type = ""
 }

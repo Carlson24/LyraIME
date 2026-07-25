@@ -121,3 +121,57 @@ index 4e644b0e..dbabd1ef 100644
  }
  
  RIME_DLL void SetupLogging(const char* app_name,
+diff --git a/src/rime_api.h b/src/rime_api.h
+index 2fccde0f..92db29c9 100644
+--- a/src/rime_api.h
++++ b/src/rime_api.h
+@@ -127,6 +127,7 @@ typedef struct {
+ typedef struct rime_candidate_t {
+   char* text;
+   char* comment;
++  char* type;
+   void* reserved;
+ } RimeCandidate;
+ 
+diff --git a/src/rime_api_impl.h b/src/rime_api_impl.h
+index 30f4514f..f1f8f385 100644
+--- a/src/rime_api_impl.h
++++ b/src/rime_api_impl.h
+@@ -203,6 +203,13 @@ static void rime_candidate_copy(RimeCandidate* dest, const an<Candidate>& src) {
+   } else {
+     dest->comment = nullptr;
+   }
++  string type(src->type());
++  if (!type.empty()) {
++    dest->type = new char[type.length() + 1];
++    std::strcpy(dest->type, type.c_str());
++  } else {
++    dest->type = nullptr;
++  }
+   dest->reserved = nullptr;
+ }
+ 
+@@ -289,6 +296,7 @@ RIME_DEPRECATED Bool RimeFreeContext(RIME_FLAVORED(RimeContext) * context) {
+   for (int i = 0; i < context->menu.num_candidates; ++i) {
+     delete[] context->menu.candidates[i].text;
+     delete[] context->menu.candidates[i].comment;
++    delete[] context->menu.candidates[i].type;
+   }
+   delete[] context->menu.candidates;
+   delete[] context->menu.select_keys;
+@@ -404,6 +412,7 @@ RimeCandidateListNext(RimeCandidateListIterator* iterator) {
+   if (auto cand = menu->GetCandidateAt((size_t)iterator->index)) {
+     delete[] iterator->candidate.text;
+     delete[] iterator->candidate.comment;
++    delete[] iterator->candidate.type;
+     rime_candidate_copy(&iterator->candidate, cand);
+     return True;
+   }
+@@ -415,6 +424,7 @@ RIME_DEPRECATED void RimeCandidateListEnd(RimeCandidateListIterator* iterator) {
+     return;
+   delete[] iterator->candidate.text;
+   delete[] iterator->candidate.comment;
++  delete[] iterator->candidate.type;
+   memset(iterator, 0, sizeof(RimeCandidateListIterator));
+ }
+ 

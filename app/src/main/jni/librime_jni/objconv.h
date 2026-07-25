@@ -62,7 +62,7 @@ inline jobject rimeCandidateToJObject(JNIEnv* env,
   return env->NewObject(
       GlobalRef->CandidateProto, GlobalRef->CandidateProtoInit,
       *JString(env, candidate.text), *JString(env, candidate.comment),
-      *JString(env, candidate.label));
+      *JString(env, candidate.type), *JString(env, candidate.label));
 }
 
 inline jobjectArray rimeCandidateListToJObjectArray(

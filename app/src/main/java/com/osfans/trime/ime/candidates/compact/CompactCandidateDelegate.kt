@@ -96,7 +96,7 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
             }
             setOnItemLongClickListener { _, view, position ->
                 rime.launchOnReady { it.highlightCandidate(position, global = true) }
-                inputView.showCandidateActionMenu(position, items[position].text, view, global = true)
+                inputView.showCandidateActionMenu(position, items[position].text, view, global = true, type = items[position].type)
                 true
             }
         }

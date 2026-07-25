@@ -199,24 +199,77 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
 
     private fun labelSegments(obj: JsonObject, key: String): List<TextKeyboard.LabelSegment> {
         val element = obj[key] ?: return emptyList()
+
+        if (element is JsonObject) {
+            val o = element.jsonObject
+            val textEl = o["text"] ?: return emptyList()
+            val hasArrayStyles = listOf(o["color"], o["align"], o["bold"], o["scale"]).any { it is JsonArray }
+
+            val texts: List<String> = when (textEl) {
+                is JsonPrimitive -> {
+                    if (hasArrayStyles) {
+                        throw IllegalArgumentException(
+                            "label object: 'text' must be an array when style arrays (color/align/bold/scale) are used",
+                        )
+                    }
+                    textEl.content.map { it.toString() }
+                }
+                is JsonArray -> textEl.mapNotNull { it.jsonPrimitive.contentOrNull }
+                else -> return emptyList()
+            }
+            if (texts.isEmpty()) return emptyList()
+
+            return segmentList(o, texts)
+        }
+
         val arr = try {
             element.jsonArray
         } catch (e: Exception) {
             throw IllegalArgumentException(
-                "Failed to parse '$key': expected JSON array, got ${element::class.simpleName}: $element",
+                "Failed to parse '$key': expected JSON array or object, got ${element::class.simpleName}: $element",
                 e,
             )
         }
-        return arr.mapNotNull { el ->
-            val o = el.jsonObject
-            TextKeyboard.LabelSegment(
-                text = o["text"]?.jsonPrimitive?.contentOrNull ?: "",
-                bold = o["bold"]?.jsonPrimitive?.boolean ?: false,
-                color = o["color"]?.jsonPrimitive?.contentOrNull,
-                scale = o["scale"]?.jsonPrimitive?.float,
-                align = o["align"]?.jsonPrimitive?.contentOrNull?.let { TextKeyboard.Align.valueOf(it.uppercase()) },
-            )
+        return arr.flatMap { el -> expandSegment(el.jsonObject) }
+    }
+
+    private fun expandSegment(o: JsonObject): List<TextKeyboard.LabelSegment> {
+        val textEl = o["text"]
+        val hasArrayStyles = listOf(o["color"], o["align"], o["bold"], o["scale"]).any { it is JsonArray }
+
+        val texts: List<String> = when (textEl) {
+            null -> listOf("")
+            is JsonPrimitive -> {
+                if (hasArrayStyles) {
+                    throw IllegalArgumentException(
+                        "label segment entry: 'text' must be an array when style arrays are used",
+                    )
+                }
+                listOf(textEl.contentOrNull ?: "")
+            }
+            is JsonArray -> textEl.mapNotNull { it.jsonPrimitive.contentOrNull }
+            else -> listOf("")
         }
+        if (texts.isEmpty()) return emptyList()
+
+        return segmentList(o, texts)
+    }
+
+    private fun segmentList(o: JsonObject, texts: List<String>): List<TextKeyboard.LabelSegment> = texts.mapIndexed { i, txt ->
+        TextKeyboard.LabelSegment(
+            text = txt,
+            bold = styleAt(o["bold"], i) { it.boolean } ?: false,
+            color = styleAt(o["color"], i) { it.contentOrNull },
+            scale = styleAt(o["scale"], i) { it.float },
+            align = styleAt(o["align"], i) { it.contentOrNull }
+                ?.let { TextKeyboard.Align.valueOf(it.uppercase()) },
+        )
+    }
+
+    private inline fun <T> styleAt(el: JsonElement?, i: Int, extract: (JsonPrimitive) -> T): T? = when (el) {
+        is JsonArray -> el.getOrNull(i)?.jsonPrimitive?.let(extract)
+        is JsonPrimitive -> el.let(extract)
+        else -> null
     }
 
     private fun labelSegmentsToJson(segs: List<TextKeyboard.LabelSegment>): kotlinx.serialization.json.JsonElement = kotlinx.serialization.json.JsonArray(

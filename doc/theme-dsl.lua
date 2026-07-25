@@ -557,18 +557,35 @@
 
 --- 候选工具栏。
 --- 此表为可选——不配置时工具栏隐藏。
+---
+--- 长按候选词弹窗菜单：
+---   - 未配置 `popup` 时，默认显示"忘记该词"（DeleteCandidate）
+---   - 可通过 `popup_by_type` 按候选类型（cand.type）设置不同菜单
+---   - `popup_by_type[type]` 优先匹配，未匹配时回退到 `popup`
+---
+--- 常见 cand.type 值：
+---   "phrase"       — 系统词库词 (script_translator)
+---   "user_phrase"  — 用户词库词 (script_translator)
+---   "table"        — 码表系统词 (table_translator)
+---   "user_table"   — 码表用户词 (table_translator)
+---   "completion"   — 补全/联想候选
+---   "sentence"     — 整句候选
+---   "punct"        — 标点符号
+---   "raw"          — 原始输入
+---
 ---@class CandidatesTool
----@field nav_width?               integer           # 导航区域宽度（默认 44）
----@field popup_width?             integer           # 弹窗宽度
----@field popup_text_size?         number            # 弹窗文字字号
----@field popup_text_color?        Color             # 弹窗文字颜色
----@field popup_background_color?  Color             # 弹窗背景颜色
----@field popup_font?              string[]          # 弹窗字体文件列表
----@field background?              Color             # 工具栏背景
----@field separator_color?         Color             # 分隔线颜色
----@field button_font?             string[]          # 按钮字体文件列表
----@field buttons?                 ToolBarButton[]   # 工具栏按钮列表
----@field popup?                   PopupAction[]     # 弹窗动作列表
+---@field nav_width?               integer                                    # 导航区域宽度（默认 44）
+---@field popup_width?             integer                                    # 弹窗宽度
+---@field popup_text_size?         number                                     # 弹窗文字字号
+---@field popup_text_color?        Color                                      # 弹窗文字颜色
+---@field popup_background_color?  Color                                      # 弹窗背景颜色
+---@field popup_font?              string[]                                   # 弹窗字体文件列表
+---@field background?              Color                                      # 工具栏背景
+---@field separator_color?         Color                                      # 分隔线颜色
+---@field button_font?             string[]                                   # 按钮字体文件列表
+---@field buttons?                 ToolBarButton[]                            # 工具栏按钮列表
+---@field popup?                   PopupAction[]                              # 弹窗动作列表（默认菜单）
+---@field popup_by_type?           { [string]: PopupAction[] }                # 按候选类型的弹窗菜单
 
 -- ============================================================================
 -- 液态键盘 (LiquidKeyboard)
@@ -641,11 +658,20 @@
 ---     { text = "@", align = "right" },
 ---   },
 ---@class LabelSegment
----@field text?   string  # 文本内容（"ic@" 前缀表示图标；"\n" 表示换行）
----@field bold?   boolean # 粗体
----@field color?  Color   # 颜色键名或 hex
----@field scale?  number  # 字号缩放因子（如 0.6 表示 60%）
----@field align?  Align   # 水平对齐
+---@field text?   string | string[]       # 文本内容（"ic@" 前缀表示图标；"\n" 表示换行）
+---@field bold?   boolean | boolean[]     # 粗体
+---@field color?  string | string[]       # 颜色键名或 hex
+---@field scale?  number | number[]       # 字号缩放因子（如 0.6 表示 60%）
+---@field align?  Align | Align[]         # 水平对齐
+
+--- 按键标签。支持三种格式：
+---  1. 分段数组：`{ { text = "A", bold = true }, { text = "1", color = "red" } }`
+---     每个段内 text/style 也可为数组，按索引展开为多个 LabelSegment
+---  2. 字符串 text + 单值样式：`{ text = "ab", color = "red", bold = true }`
+---  3. 数组 text + 并行样式：`{ text = {"a", "bc"}, color = {"red", "green"}, align = {"left", "right"} }`
+---@alias LabelSpec
+---| LabelSegment[]                # 分段数组
+---| LabelSegment                  # 字符串/数组 text + 样式
 
 --- 按键定义。
 ---@class TextKey
@@ -658,9 +684,9 @@
 ---@field round_corner_bottom_right?  number?         # 右下角圆角半径
 ---@field key_border?                 integer         # 按键边框（-1 = 使用全局值）
 ---@field key_border_color?           Color           # 按键边框颜色
----@field label?                      LabelSegment[]  # 按键标签（结构化分段）
----@field label_symbol?               LabelSegment[]  # 按键副标签（右上角，结构化分段）
----@field hint?                       LabelSegment[]  # 提示文字（底部，结构化分段）
+---@field label?                      LabelSpec       # 按键标签
+---@field label_symbol?               LabelSpec       # 按键副标签（右上角）
+---@field hint?                       LabelSpec       # 提示文字（底部）
 ---@field click?                      KeyName         # 点击动作（预设按键名或键码）
 ---@field send_bindings?              boolean         # 是否发送按键绑定（默认 true）
 ---@field key_text_size?              number          # 按键文字字号（0 = 使用全局值）
@@ -898,7 +924,7 @@ function scheme(id, colors)
   return { id = id, colors = colors }
 end
 
---- 声明预设按键。返回第二个参数（颜色表）。
+--- 声明预设按键。返回第二个参数（预设按键定义）。
 --- 注意：当前实现中，第一个参数（id）不嵌入返回值，
 ---       预设按键通过 preset_keys 表中的键名查找。
 --- 用法：
