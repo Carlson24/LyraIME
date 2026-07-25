@@ -42,6 +42,7 @@ option(BUILD_TEST "" OFF)
 option(BUILD_STATIC "" ON)
 set(BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 add_compile_definitions(KENLM_MAX_ORDER=16)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 add_subdirectory(librime)
 target_compile_options(
   rime-static PRIVATE "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=." "-Wno-error=deprecated-declarations")
