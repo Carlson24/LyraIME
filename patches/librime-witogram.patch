@@ -1,0 +1,38 @@
+diff --git a/src/witogram.cc b/src/witogram.cc
+index 4644952..61ded3e 100644
+--- a/src/witogram.cc
++++ b/src/witogram.cc
+@@ -182,22 +182,21 @@ Witogram::Witogram(Config* config, WitogramComponent* component)
+     }
+   }
+   if (!language.empty()) {
+-    try {
+-      model_ = component->GetModel(language);
+-      if (model_) {
+-        LOG(INFO) << "successfully loaded KenLM model: " << language;
+-      }
+-    } catch (const std::exception& e) {
+-      LOG(ERROR) << "failed to load KenLM model: " << language << ": " << e.what();
+-    }
+-
+-    // Try loading GramDb (.gram file) as well
++    // Try loading GramDb (.gram file) first
+     gram_db_ = component->GetGramDb(language);
+     if (gram_db_) {
+       LOG(INFO) << "successfully loaded GramDb for: " << language;
+     } else {
+-      LOG(INFO) << "GramDb not available for: " << language
+-                << " (resolver may not find .gram file)";
++      LOG(INFO) << "GramDb not available for: " << language;
++      // Fallback to KenLM (.klm) only if GramDb is unavailable
++      try {
++        model_ = component->GetModel(language);
++        if (model_) {
++          LOG(INFO) << "successfully loaded KenLM model: " << language;
++        }
++      } catch (const std::exception& e) {
++        LOG(INFO) << "KenLM model not available: " << language;
++      }
+     }
+   }
+ }

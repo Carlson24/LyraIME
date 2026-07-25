@@ -136,7 +136,15 @@ class TrimeApplication : Application() {
                             t: Throwable?,
                         ) {
                             if (priority < Log.INFO) return
-                            Log.println(priority, "[${Thread.currentThread().name}]", message)
+                            if (t != null) {
+                                Log.println(
+                                    priority,
+                                    "[${Thread.currentThread().name}]",
+                                    "$message\n${Log.getStackTraceString(t)}",
+                                )
+                            } else {
+                                Log.println(priority, "[${Thread.currentThread().name}]", message)
+                            }
                         }
                     },
                 )

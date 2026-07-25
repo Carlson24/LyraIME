@@ -51,6 +51,7 @@ patch-apply:
 	-git apply --directory=$(jniDir)/librime patches/librime-custom.patch
 	-git apply --directory=$(jniDir)/librime-plugins/librime-lua patches/librime-lua-utf8.patch
 	-git apply --directory=$(jniDir)/librime-plugins/librime-lua-deps patches/lua.patch
+	-git apply --directory=$(jniDir)/librime-plugins/librime-witogram patches/librime-witogram.patch
 
 # QNN (Qualcomm NPU) build requires QNN_SDK_ROOT environment variable:
 #   export QNN_SDK_ROOT=$(HOME)/.local/share/Android/qairt/2.48.40.260702

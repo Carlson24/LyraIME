@@ -121,6 +121,10 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
 
         project.tasks.withType(ExternalNativeBuildTask::class.java).configureEach {
             val bt = buildTypeFromNativeBuild(name)
+            val cmakeBuildType = name
+                .removePrefix("externalNativeBuild")
+                .removePrefix("buildCMake")
+                .substringBefore("[")
             val cacheDir = NativeCacheManager.cacheDir(project, bt)
             val stateFile = File(cacheDir, "NativeCacheState.cmake")
             val cachePropFile = File(project.layout.buildDirectory.get().asFile, "nativeCacheState-$bt.properties")
@@ -138,13 +142,12 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                 val objRoot = objDirs.firstOrNull()
                     ?: run {
                         val cxxBuild = project.file(".cxx")
-                        val capitalizedBt = bt.replaceFirstChar { it.uppercaseChar() }
-                        val btDir = File(cxxBuild, capitalizedBt)
+                        val btDir = File(cxxBuild, cmakeBuildType)
                         val hashDir = btDir.listFiles()
                             ?.filter { it.isDirectory }
                             ?.maxByOrNull { it.lastModified() }
                         if (hashDir != null) {
-                            File(cxxBase, "$capitalizedBt/${hashDir.name}/obj").also { it.mkdirs() }
+                            File(cxxBase, "$cmakeBuildType/${hashDir.name}/obj").also { it.mkdirs() }
                         } else {
                             null
                         }
@@ -203,10 +206,11 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
         val deployerH = project.file("src/main/jni/librime/src/rime/deployer.h")
         val luaCmake = project.file("src/main/jni/librime-plugins/librime-lua/CMakeLists.txt")
         val luaLiolib = project.file("src/main/jni/librime-plugins/librime-lua-deps/lua5.4/liolib.c")
+        val witogramCc = project.file("src/main/jni/librime-plugins/librime-witogram/src/witogram.cc")
         val applyPatches =
             project.tasks.register("applyNativePatches") {
                 group = "native"
-                description = "Apply patches required for native build (lua + sherpa-onnx-qnn + librime-custom + librime-lua-utf8)"
+                description = "Apply patches required for native build (sherpa-onnx-qnn + librime-custom + librime-plugins)"
                 doLast {
                     ProcessBuilder(
                         "git",
@@ -232,12 +236,19 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                         "--directory=$jniDir/librime-plugins/librime-lua-deps",
                         "patches/lua.patch",
                     ).directory(rootDir).inheritIO().start().waitFor()
+                    ProcessBuilder(
+                        "git",
+                        "apply",
+                        "--directory=$jniDir/librime-plugins/librime-witogram",
+                        "patches/librime-witogram.patch",
+                    ).directory(rootDir).inheritIO().start().waitFor()
                 }
                 outputs.upToDateWhen {
                     (macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")) &&
                         (deployerH.exists() && deployerH.readText().contains("path common_data_dir")) &&
                         (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)")) &&
-                        (luaCmake.exists() && luaCmake.readText().contains("lua-utf8"))
+                        (luaCmake.exists() && luaCmake.readText().contains("lua-utf8")) &&
+                        (witogramCc.exists() && witogramCc.readText().contains("Fallback to KenLM"))
                 }
             }
 

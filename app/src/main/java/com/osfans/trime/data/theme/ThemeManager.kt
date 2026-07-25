@@ -6,11 +6,15 @@
 package com.osfans.trime.data.theme
 
 import android.content.res.Configuration
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.model.GeneralStyle
 import com.osfans.trime.ime.symbol.LiquidData
 import com.osfans.trime.util.WeakHashSet
+import com.osfans.trime.util.appContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -124,6 +128,15 @@ object ThemeManager {
                 Timber.e(e, "Deleted stale cache for theme '$id'")
             }
             Timber.e(e, "Failed to load theme '$id'")
+            if (id != "trime") {
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(
+                        appContext,
+                        "Failed to load theme '$id': ${e.message}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
             null
         }
     }

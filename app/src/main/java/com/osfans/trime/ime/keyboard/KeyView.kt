@@ -429,29 +429,15 @@ class KeyView(
                     currentSegs = mutableListOf()
                 }
                 if (parts[i].isEmpty()) continue
-                if (seg.align == TextKeyboard.Align.JUSTIFY && parts[i].length > 1) {
-                    for (ch in parts[i]) {
-                        currentSegs.add(
-                            StyledSegment(
-                                text = ch.toString(),
-                                colorKey = seg.color,
-                                scale = seg.scale,
-                                bold = seg.bold,
-                                horizontalAlign = TextKeyboard.Align.JUSTIFY,
-                            ),
-                        )
-                    }
-                } else {
-                    currentSegs.add(
-                        StyledSegment(
-                            text = parts[i],
-                            colorKey = seg.color,
-                            scale = seg.scale,
-                            bold = seg.bold,
-                            horizontalAlign = seg.align ?: TextKeyboard.Align.CENTER,
-                        ),
-                    )
-                }
+                currentSegs.add(
+                    StyledSegment(
+                        text = parts[i],
+                        colorKey = seg.color,
+                        scale = seg.scale,
+                        bold = seg.bold,
+                        horizontalAlign = seg.align ?: TextKeyboard.Align.CENTER,
+                    ),
+                )
             }
         }
         lines.add(buildLine())
