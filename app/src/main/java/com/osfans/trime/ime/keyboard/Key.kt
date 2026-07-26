@@ -379,7 +379,11 @@ class Key(
         isOn && hasAction(KeyBehavior.LAZY_DOUBLE_CLICK) ->
             keyActions[KeyBehavior.LAZY_DOUBLE_CLICK]!!.getLabel(parent)
         label.isNotEmpty() && label.any { it.text.isNotEmpty() } &&
-            checkKeyAction() == null -> label.firstOrNull()?.text ?: ""
+            checkKeyAction() == null &&
+            (
+                label.firstOrNull()?.text == "enter_labels" ||
+                    !rime.run { statusCached }.isAsciiMode
+                ) -> label.firstOrNull()?.text ?: ""
         else -> keyAction!!.getLabel(parent)
     }
 

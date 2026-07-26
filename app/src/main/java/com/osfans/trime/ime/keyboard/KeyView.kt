@@ -314,7 +314,11 @@ class KeyView(
             listOf(TextKeyboard.LabelSegment(text = keyboardView.labelEnter))
         } else if (key.label.isNotEmpty()) {
             if (key.label.any { it.text.isNotEmpty() }) {
-                key.label
+                if (actionLabel.isNotEmpty() && key.label.none { it.text == actionLabel }) {
+                    listOf(key.label.first().copy(text = actionLabel))
+                } else {
+                    key.label
+                }
             } else if (actionLabel.isNotEmpty()) {
                 key.label.map { it.copy(text = it.text.ifEmpty { actionLabel }) }
             } else {
@@ -558,6 +562,23 @@ class KeyView(
         }
     }
 
+    private fun String.isCjkPunctuation(): Boolean {
+        if (length != 1) return false
+        val c = this[0]
+        return c in '\u3000'..'\u303F' ||
+            c in '\uFF00'..'\uFF0F' ||
+            c in '\uFF1A'..'\uFF1F' ||
+            c == '\u00B7'
+    }
+
+    private fun visualCenterCorrect(paint: Paint, text: String): Float {
+        val bounds = Rect()
+        paint.getTextBounds(text, 0, text.length, bounds)
+        val glyphCenter = paint.measureText(text) / 2f
+        val visualCenter = bounds.width() / 2f + bounds.left.toFloat()
+        return glyphCenter - visualCenter
+    }
+
     private fun drawRichTextLine(
         canvas: Canvas,
         line: RichTextLine,
@@ -571,7 +592,13 @@ class KeyView(
     ) {
         if (line.segments.isEmpty()) {
             basePaint.textAlign = Paint.Align.CENTER
-            canvas.drawText(UnicodeVariantUtils.toDisplay(line.text), x, y, basePaint)
+            val displayText = UnicodeVariantUtils.toDisplay(line.text)
+            val cx = if (displayText.isCjkPunctuation()) {
+                x + visualCenterCorrect(basePaint, displayText)
+            } else {
+                x
+            }
+            canvas.drawText(displayText, cx, y, basePaint)
             return
         }
 
@@ -620,7 +647,13 @@ class KeyView(
 
         val leftStart = paddedLeft
         val rightStart = paddedRight - rightWidth
-        val centerStart = paddedLeft + (paddedRight - paddedLeft - centerWidth) / 2f
+        val centerCjkCorrect = if (centerGroup.size == 1) {
+            val displayText = UnicodeVariantUtils.toDisplay(centerGroup[0].text)
+            if (displayText.isCjkPunctuation()) visualCenterCorrect(basePaint, displayText) else 0f
+        } else {
+            0f
+        }
+        val centerStart = paddedLeft + (paddedRight - paddedLeft - centerWidth) / 2f + centerCjkCorrect
 
         fun drawGroup(group: List<StyledSegment>, startX: Float, gap: Float = 0f) {
             var currentX = startX
