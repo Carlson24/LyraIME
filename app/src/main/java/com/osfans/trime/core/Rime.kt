@@ -301,16 +301,18 @@ class Rime :
         val sharedDataDir = DataManager.sharedDataDir.absolutePath
         val userDataDir = DataManager.userDataDir.absolutePath
         val commonDataDir = DataManager.commonDataDir.absolutePath
+        val userCommonDataDir = DataManager.userCommonDataDir.absolutePath
         Timber.d(
             """
             Starting rime with:
             sharedDataDir: $sharedDataDir
             userDataDir: $userDataDir
             commonDataDir: $commonDataDir
+            userCommonDataDir: $userCommonDataDir
             fullCheck: $needsDeploy
             """.trimIndent(),
         )
-        startupRime(sharedDataDir, userDataDir, BuildConfig.BUILD_VERSION_NAME, commonDataDir, needsDeploy)
+        startupRime(sharedDataDir, userDataDir, BuildConfig.BUILD_VERSION_NAME, commonDataDir, userCommonDataDir, needsDeploy)
     }
 
     private fun processKeyInner(value: Int, modifiers: Int, isVirtual: Boolean): Boolean {
@@ -501,6 +503,7 @@ class Rime :
             userDir: String,
             versionName: String,
             commonDir: String,
+            userCommonDir: String,
             fullCheck: Boolean,
         )
 

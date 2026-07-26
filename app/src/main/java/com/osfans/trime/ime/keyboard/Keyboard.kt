@@ -148,7 +148,7 @@ class Keyboard(
         ).firstOrNull { it > 0 } ?: 0
 
     // Variables for pre-computing nearest keys.
-    private val labelTransform = selfConfig?.labelTransform ?: TextKeyboard.LabelTransform.NONE
+    private var labelTransform = selfConfig?.labelTransform ?: TextKeyboard.LabelTransform.NONE
     private var mCellWidth = 0
     private var mCellHeight = 0
     private var gridNeighbors: Array<IntArray?>? = null
@@ -488,6 +488,7 @@ class Keyboard(
     }
 
     fun refreshKeyBehaviors(newConfig: TextKeyboard) {
+        labelTransform = newConfig.labelTransform
         val allNewKeys = newConfig.rows.flatMap { it.keys }.filter { !it.spacer }
         for ((keyIndex, newTextKey) in allNewKeys.withIndex()) {
             mKeys.getOrNull(keyIndex)?.refreshFromConfig(newTextKey, newConfig, theme.generalStyle)

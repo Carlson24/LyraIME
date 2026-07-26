@@ -69,6 +69,9 @@ object DataManager {
     val commonDataDir
         get() = File(externalFilesDir, "shared").also { it.mkdirs() }
 
+    val userCommonDataDir
+        get() = File(userDataBaseDir, "shared").also { it.mkdirs() }
+
     val voiceDataDir = File(externalFilesDir, "voice").also { it.mkdirs() }
 
     val userDataBaseDir
