@@ -30,6 +30,7 @@ import com.osfans.trime.core.RimeKeyMapping
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.daemon.launchOnReady
+import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.KeyActionManager
@@ -43,6 +44,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import splitties.dimensions.dp
 import splitties.views.dsl.core.withTheme
+import kotlin.math.max
 
 abstract class BaseInputView(
     val service: TrimeInputMethodService,
@@ -204,21 +206,20 @@ abstract class BaseInputView(
             }
         }
 
+    private val ignoreSystemGestureInsets by AppPrefs.defaultInstance().advanced.ignoreSystemGestureInsets
+
     protected fun getNavBarBottomInset(windowInsets: WindowInsets): Int {
         if (navBarBackground != ThemePrefs.NavbarBackground.FULL) {
             return 0
         }
         val insets = WindowInsetsCompat.toWindowInsetsCompat(windowInsets)
-        val insetsBottom = insets.getInsets(
-            WindowInsetsCompat.Type.navigationBars() or
-                WindowInsetsCompat.Type.mandatorySystemGestures() or
-                WindowInsetsCompat.Type.systemGestures(),
-        ).bottom
-        return if (insetsBottom <= 0) {
-            navBarFrameHeight
-        } else {
-            insetsBottom
+        var mask = WindowInsetsCompat.Type.navigationBars()
+        if (!ignoreSystemGestureInsets) {
+            mask = mask or WindowInsetsCompat.Type.mandatorySystemGestures() or
+                WindowInsetsCompat.Type.systemGestures()
         }
+        val insetsBottom = insets.getInsets(mask).bottom
+        return if (insetsBottom > 0) max(insetsBottom, navBarFrameHeight) else insetsBottom
     }
 
     override fun onAttachedToWindow() {

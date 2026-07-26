@@ -391,6 +391,7 @@
     <string name="share">分享</string>
     <string name="word_segment">分词</string>
     <string name="star_success">收藏成功</string>
+    <string name="ignore_system_gesture_insets">忽略系統手勢插邊</string>
     <string name="wanxiang_updater">萬象更新</string>
     <string name="wanxiang_auto_check">自動檢查更新</string>
     <string name="wanxiang_check_interval">檢查間隔</string>

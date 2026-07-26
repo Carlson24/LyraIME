@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.osfans.trime.R
 import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.theme.Theme
+import com.osfans.trime.util.DeviceUtils
 import com.osfans.trime.util.item
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -155,6 +156,7 @@ abstract class ClipboardAdapter(
                     )
                     true
                 }
+
             }
         }
     }
