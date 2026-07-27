@@ -60,6 +60,7 @@ class KeyAction(
 
     private var text: String = ""
     private var label: String = ""
+    private var asciiLabel = ""
     private var shiftLabel = ""
     private var preview: String? = null
     private var states: List<String> = listOf()
@@ -94,6 +95,9 @@ class KeyAction(
     fun getLabel(keyboard: Keyboard): String {
         if (states.isNotEmpty() && toggle.isNotEmpty()) {
             return states[if (rime.run { getRuntimeOption(toggle) }) 1 else 0]
+        }
+        if (asciiLabel.isNotEmpty() && rime.run { statusCached }.isAsciiMode) {
+            return asciiLabel
         }
         if (keyboard.isOnlyShiftOn) {
             val asciiMode = rime.run { statusCached }.isAsciiMode
@@ -139,6 +143,7 @@ class KeyAction(
                 select = presetKey.select
                 toggle = presetKey.toggle
                 label = presetKey.label
+                asciiLabel = presetKey.asciiLabel
                 popupLabel = presetKey.popupLabel
                 preview = presetKey.preview
                 shiftLock = presetKey.shiftLock

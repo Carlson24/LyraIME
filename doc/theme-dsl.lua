@@ -66,8 +66,11 @@
 --- 颜色值。支持 0xAARRGGBB、0xRRGGBB、#RRGGBB、颜色名、图片路径
 ---@alias Color string
 
---- 已知按键名。包含 Android KeyEvent 键码、Rime 功能键、预设按键名。
+--- 已知按键名。基于 Keycode.kt 枚举（Keycode.fromString() 能解析的键名集合）。
 --- 直接字符键（如 "a"、"1"）和 preset_keys 中自定义的键名可任意使用。
+---
+--- 注意：Control+x 格式仅在 PresetKey.send 字段中有效（通过 parseSend 解析），
+--- 不能用于 click 等字段。
 ---@alias KeyName
 ---| '"a"'
 ---| '"b"'
@@ -134,11 +137,20 @@
 ---| '"\'"'
 ---| '"|"'
 ---| '"^"'
+---| '"'
 ---| '"Return"'
 ---| '"BackSpace"'
 ---| '"space"'
 ---| '"Shift_L"'
 ---| '"Shift_R"'
+---| '"Alt_L"'
+---| '"Alt_R"'
+---| '"Control_L"'
+---| '"Control_R"'
+---| '"Meta_L"'
+---| '"Meta_R"'
+---| '"Caps_Lock"'
+---| '"Scroll_Lock"'
 ---| '"Left"'
 ---| '"Right"'
 ---| '"Up"'
@@ -148,10 +160,11 @@
 ---| '"Delete"'
 ---| '"Escape"'
 ---| '"Tab"'
+---| '"Insert"'
 ---| '"Page_Up"'
 ---| '"Page_Down"'
----| '"Insert"'
 ---| '"Num_Lock"'
+---| '"Pause"'
 ---| '"F1"'
 ---| '"F2"'
 ---| '"F3"'
@@ -164,12 +177,38 @@
 ---| '"F10"'
 ---| '"F11"'
 ---| '"F12"'
----| '"Cut"'
----| '"Copy"'
----| '"Paste"'
----| '"SelectAll"'
----| '"Undo"'
----| '"Redo"'
+---| '"CUT"'
+---| '"COPY"'
+---| '"PASTE"'
+---| '"Eisu_toggle"'
+---| '"Mode_switch"'
+---| '"Menu"'
+---| '"BACK"'
+---| '"HOME"'
+---| '"CALL"'
+---| '"ENDCALL"'
+---| '"POWER"'
+---| '"CAMERA"'
+---| '"Clear"'
+---| '"Find"'
+---| '"Help"'
+---| '"Next"'
+---| '"function"'
+---| '"VOICE_ASSIST"'
+---| '"MEDIA_PLAY_PAUSE"'
+---| '"MEDIA_STOP"'
+---| '"MEDIA_NEXT"'
+---| '"MEDIA_PREVIOUS"'
+---| '"MEDIA_REWIND"'
+---| '"MEDIA_FAST_FORWARD"'
+---| '"MEDIA_PLAY"'
+---| '"MEDIA_PAUSE"'
+---| '"MEDIA_CLOSE"'
+---| '"MEDIA_EJECT"'
+---| '"MEDIA_RECORD"'
+---| '"MUTE"'
+---| '"VOLUME_UP"'
+---| '"VOLUME_DOWN"'
 ---| '"Control+x"'
 ---| '"Control+c"'
 ---| '"Control+v"'
@@ -177,25 +216,6 @@
 ---| '"Control+z"'
 ---| '"Control+y"'
 ---| '"Control+d"'
----| '"Keyboard_symbols"'
----| '"Keyboard_number"'
----| '"Keyboard_default"'
----| '"liquid_keyboard_switch"'
----| '"liquid_keyboard_exit"'
----| '"Eisu_toggle"'
----| '"Mode_switch"'
----| '"BACK"'
----| '"Menu"'
----| '"ContextMenu"'
----| '"MediaPlayPause"'
----| '"MediaStop"'
----| '"MediaNext"'
----| '"MediaPrevious"'
----| '"VOICE_ASSIST"'
----| '"VolumeUp"'
----| '"VolumeDown"'
----| '"VolumeMute"'
----| '"function"'
 ---| string
 
 -- ============================================================================
@@ -374,6 +394,7 @@
 ---@field select?         Select    # 键盘切换目标（如 "symbols"、"number"、".default"）
 ---@field toggle?         string    # Rime 运行时开关名称（如 "ascii_mode"、"full_shape"）
 ---@field label?          string    # 按键显示标签
+---@field ascii_label?    string    # 英文模式下替换标签（为 nil 则沿用 label）
 ---@field popup_label?    string    # 弹窗键盘显示标签（优先于 label，不截断）
 ---@field preview?        string?   # 预览文字（nil 时使用 label）
 ---@field shift_lock?     ShiftLock # Shift 锁定模式： "long" | "click" | "ascii_long"

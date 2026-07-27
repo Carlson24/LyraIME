@@ -17,6 +17,7 @@ data class PresetKey(
     val select: String = "",
     val toggle: String = "",
     val label: String = "",
+    val asciiLabel: String = "",
     val popupLabel: String = "",
     val preview: String? = null,
     val shiftLock: String = "",
