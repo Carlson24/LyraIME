@@ -395,7 +395,6 @@ class Key(
             val isAscii = rime.run { statusCached }.isAsciiMode
             if (isAscii) {
                 val alt = asciiLabel.firstOrNull()?.text?.takeIf { it.isNotEmpty() }
-                    ?: label.firstOrNull()?.text?.takeIf { label.any { it.text.isNotEmpty() } }
                 if (!alt.isNullOrEmpty()) return alt
             } else {
                 if (label.any { it.text.isNotEmpty() }) {
