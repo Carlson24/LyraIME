@@ -149,6 +149,7 @@ data class TextKeyboard(
         val keyBorder: Int = -1,
         val keyBorderColor: String = "",
         val label: List<LabelSegment> = emptyList(),
+        val asciiLabel: List<LabelSegment> = emptyList(),
         val labelSymbol: List<LabelSegment> = emptyList(),
         val hint: List<LabelSegment> = emptyList(),
         val click: String = "",

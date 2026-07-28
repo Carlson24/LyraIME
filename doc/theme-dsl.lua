@@ -714,6 +714,7 @@
 ---@field key_border?                 integer         # 按键边框（-1 = 使用全局值）
 ---@field key_border_color?           Color           # 按键边框颜色
 ---@field label?                      LabelSpec       # 按键标签
+---@field ascii_label?                LabelSpec       # 英文模式下替换标签（nil 则沿用 label）
 ---@field label_symbol?               LabelSpec       # 按键副标签（右上角）
 ---@field hint?                       LabelSpec       # 提示文字（底部）
 ---@field click?                      KeyName         # 点击动作（预设按键名或键码）

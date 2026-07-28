@@ -60,6 +60,8 @@ class Key(
 
     var label = selfConfig?.label ?: emptyList()
         private set
+    var asciiLabel = selfConfig?.asciiLabel ?: emptyList()
+        private set
     var labelSymbol = selfConfig?.labelSymbol ?: emptyList()
         private set
     var hint: List<TextKeyboard.LabelSegment> = selfConfig?.hint ?: emptyList()
@@ -210,6 +212,7 @@ class Key(
     ) {
         selfConfig = newConfig
         label = newConfig.label
+        asciiLabel = newConfig.asciiLabel
         labelSymbol = newConfig.labelSymbol
         hint = newConfig.hint
         dynamicTarget = newConfig.dynamic.takeIf { it.isNotEmpty() }
@@ -373,18 +376,36 @@ class Key(
 
     fun getCode(behavior: KeyBehavior): Int = getAction(behavior)!!.code
 
-    fun getLabel(): String = when {
-        isOn && hasAction(KeyBehavior.DOUBLE_CLICK) ->
-            keyActions[KeyBehavior.DOUBLE_CLICK]!!.getLabel(parent)
-        isOn && hasAction(KeyBehavior.LAZY_DOUBLE_CLICK) ->
-            keyActions[KeyBehavior.LAZY_DOUBLE_CLICK]!!.getLabel(parent)
-        label.isNotEmpty() && label.any { it.text.isNotEmpty() } &&
-            checkKeyAction() == null &&
-            (
-                label.firstOrNull()?.text == "enter_labels" ||
-                    !rime.run { statusCached }.isAsciiMode
-                ) -> label.firstOrNull()?.text ?: ""
-        else -> keyAction!!.getLabel(parent)
+    fun getLabel(): String {
+        // 1) Double-click on-state labels
+        if (isOn && hasAction(KeyBehavior.DOUBLE_CLICK)) {
+            return keyActions[KeyBehavior.DOUBLE_CLICK]!!.getLabel(parent)
+        }
+        if (isOn && hasAction(KeyBehavior.LAZY_DOUBLE_CLICK)) {
+            return keyActions[KeyBehavior.LAZY_DOUBLE_CLICK]!!.getLabel(parent)
+        }
+
+        // 2) "enter_labels" special label — always shown regardless of mode
+        if (checkKeyAction() == null && label.firstOrNull()?.text == "enter_labels") {
+            return label.firstOrNull()?.text ?: ""
+        }
+
+        // 3) Layout-level label: use ascii_label in ASCII mode, label otherwise
+        if (checkKeyAction() == null) {
+            val isAscii = rime.run { statusCached }.isAsciiMode
+            if (isAscii) {
+                val alt = asciiLabel.firstOrNull()?.text?.takeIf { it.isNotEmpty() }
+                    ?: label.firstOrNull()?.text?.takeIf { label.any { it.text.isNotEmpty() } }
+                if (!alt.isNullOrEmpty()) return alt
+            } else {
+                if (label.any { it.text.isNotEmpty() }) {
+                    return label.firstOrNull()?.text ?: ""
+                }
+            }
+        }
+
+        // 4) Fallback to PresetKey label
+        return keyAction!!.getLabel(parent)
     }
 
     fun getPreviewText(behavior: KeyBehavior): String = when (behavior) {
