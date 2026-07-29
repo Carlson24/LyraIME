@@ -274,7 +274,7 @@ class CommonKeyboardActionListener {
                 }
                 val liquidTagList = LiquidData.getTagList()
                 val index = liquidTagList.indexOfFirst { tag ->
-                    tag.label == arg || runCatching {
+                    tag.id == arg || runCatching {
                         LiquidData.Type.valueOf(arg.uppercase())
                     }.getOrNull() == tag.type
                 }

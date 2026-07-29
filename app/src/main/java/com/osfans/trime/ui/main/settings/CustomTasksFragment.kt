@@ -41,7 +41,9 @@ import com.osfans.trime.data.wanxiang.loadCustomTasks
 import com.osfans.trime.data.wanxiang.saveCustomTasks
 import com.osfans.trime.data.wanxiang.updateDownloadProgressItem
 import com.osfans.trime.ui.common.confirmDialog
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class CustomTasksFragment : Fragment() {
@@ -49,13 +51,14 @@ class CustomTasksFragment : Fragment() {
     private val sharedPref by lazy { requireContext().getSharedPreferences("WanxiangPrefs", 0) }
     private var customTasks = mutableListOf<CustomTask>()
     private var isDownloading = false
+    private var downloadJob: Job? = null
     private var pendingPathTaskId: String? = null
 
     private val dirPickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree(),
     ) { uri ->
         if (uri != null) {
-            requireContext().contentResolver.takePersistableUriPermission(
+            context?.contentResolver?.takePersistableUriPermission(
                 uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
             )
@@ -107,6 +110,12 @@ class CustomTasksFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         customTasks = loadCustomTasks(sharedPref.getString("custom_tasks_data", "[]") ?: "[]")
         refreshTaskList()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        isDownloading = false
+        downloadJob?.cancel()
     }
 
     // ---- Build UI ----
@@ -558,6 +567,7 @@ class CustomTasksFragment : Fragment() {
         if (targets.isEmpty()) return
 
         isDownloading = true
+        val cancelledIndices = mutableSetOf<Int>()
         btnBatchExecute.isClickable = false
         btnBatchExecute.alpha = 0.5f
         llCustomProgress.removeAllViews()
@@ -571,22 +581,43 @@ class CustomTasksFragment : Fragment() {
             )
         }
 
-        for (task in tasks) {
-            addDownloadProgressItem(llCustomProgress, task, requireContext())
+        val ctx = requireContext()
+        val containers = mutableListOf<LinearLayout>()
+        for ((i, task) in tasks.withIndex()) {
+            val container = addDownloadProgressItem(llCustomProgress, task, ctx)
+            containers.add(container)
+            addCancelButtonToProgress(container) {
+                cancelledIndices.add(i)
+                llCustomProgress.removeView(container)
+            }
         }
 
-        lifecycleScope.launch {
-            for ((tData, uiState) in targets.zip(tasks)) {
-                DownloadManager.downloadAndDeploy(
-                    task = uiState,
-                    token = "",
-                    context = requireContext(),
-                    rules = emptyList(),
-                    targetPaths = tData.boundPaths,
-                    onProgress = { t ->
-                        lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red) }
-                    },
-                )
+        downloadJob = lifecycleScope.launch {
+            val c = context ?: return@launch
+            try {
+                for ((i, pair) in targets.zip(tasks).withIndex()) {
+                    if (i in cancelledIndices) continue
+                    val (tData, uiState) = pair
+                    DownloadManager.downloadAndDeploy(
+                        task = uiState,
+                        token = "",
+                        context = c,
+                        rules = emptyList(),
+                        targetPaths = tData.boundPaths,
+                        onProgress = { t ->
+                            context?.let { ctx2 ->
+                                lifecycleScope.launch(Dispatchers.Main) {
+                                    updateDownloadProgressItem(llCustomProgress, t, ctx2, R.color.red)
+                                }
+                            }
+                        },
+                        isCancelled = { i in cancelledIndices },
+                    )
+                    if (uiState.isFinished) {
+                        removeCancelButtonFrom(containers[i])
+                    }
+                }
+            } catch (_: CancellationException) {
             }
             isDownloading = false
             btnBatchExecute.isClickable = true
@@ -609,6 +640,7 @@ class CustomTasksFragment : Fragment() {
     private fun executeSingleTask(task: CustomTask) {
         if (isDownloading) return
         isDownloading = true
+        var isCancelled = false
         btnBatchExecute.isClickable = false
         btnBatchExecute.alpha = 0.5f
         llCustomProgress.removeAllViews()
@@ -618,22 +650,72 @@ class CustomTasksFragment : Fragment() {
             task.url,
             needsDecompress = task.needsDecompress,
         )
-        addDownloadProgressItem(llCustomProgress, uiState, requireContext())
+        val ctx = requireContext()
+        val container = addDownloadProgressItem(llCustomProgress, uiState, ctx)
+        addCancelButtonToProgress(container) {
+            isCancelled = true
+            llCustomProgress.removeView(container)
+        }
 
-        lifecycleScope.launch {
-            DownloadManager.downloadAndDeploy(
-                task = uiState,
-                token = "",
-                context = requireContext(),
-                rules = emptyList(),
-                targetPaths = task.boundPaths,
-                onProgress = { t ->
-                    lifecycleScope.launch(Dispatchers.Main) { updateDownloadProgressItem(llCustomProgress, t, requireContext(), R.color.red) }
-                },
-            )
+        downloadJob = lifecycleScope.launch {
+            val c = context ?: return@launch
+            try {
+                DownloadManager.downloadAndDeploy(
+                    task = uiState,
+                    token = "",
+                    context = c,
+                    rules = emptyList(),
+                    targetPaths = task.boundPaths,
+                    onProgress = { t ->
+                        context?.let { ctx2 ->
+                            lifecycleScope.launch(Dispatchers.Main) {
+                                updateDownloadProgressItem(llCustomProgress, t, ctx2, R.color.red)
+                            }
+                        }
+                    },
+                    isCancelled = { isCancelled },
+                )
+                if (uiState.isFinished) {
+                    removeCancelButtonFrom(container)
+                }
+            } catch (_: CancellationException) {
+            }
             isDownloading = false
             btnBatchExecute.isClickable = true
             btnBatchExecute.alpha = 1f
+        }
+    }
+
+    private fun addCancelButtonToProgress(container: LinearLayout, onCancel: () -> Unit) {
+        val ctx = container.context
+        val density = ctx.resources.displayMetrics.density
+        val header = container.getChildAt(0) as? LinearLayout ?: return
+        val btn = AppCompatImageButton(ctx).apply {
+            val d = DrawableCompat.wrap(
+                ContextCompat.getDrawable(ctx, R.drawable.ic_baseline_outline_cancel_24)!!.mutate(),
+            )
+            DrawableCompat.setTint(d, ContextCompat.getColor(ctx, R.color.red))
+            setImageDrawable(d)
+            minimumWidth = 0
+            minimumHeight = 0
+            val bg = android.util.TypedValue()
+            ctx.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, bg, true)
+            setBackgroundResource(bg.resourceId)
+            val pad = (2 * density).toInt()
+            setPadding(pad, pad, pad, pad)
+            layoutParams =
+                LinearLayout.LayoutParams((20 * density).toInt(), (20 * density).toInt()).apply {
+                    marginStart = (4 * density).toInt()
+                }
+            setOnClickListener { onCancel() }
+        }
+        header.addView(btn)
+    }
+
+    private fun removeCancelButtonFrom(container: LinearLayout) {
+        val header = container.getChildAt(0) as? LinearLayout ?: return
+        if (header.childCount > 2) {
+            header.removeViewAt(header.childCount - 1)
         }
     }
 

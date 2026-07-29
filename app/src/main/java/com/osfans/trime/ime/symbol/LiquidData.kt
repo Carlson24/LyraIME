@@ -19,7 +19,7 @@ object LiquidData {
         VAR_LENGTH,
     }
 
-    data class Tag(val label: String = "", val type: Type)
+    data class Tag(val id: String = "", val label: String = "", val type: Type)
 
     private val data = arrayListOf<Pair<Tag, Array<LiquidKeyboard.KeyItem>>>()
 
@@ -27,7 +27,7 @@ object LiquidData {
         data.clear()
 
         val transformed = theme.liquidKeyboard.keyboards.map {
-            Tag(it.name, it.type) to
+            Tag(id = it.id, label = it.name, type = it.type) to
                 it.keys.toTypedArray()
         }
         data.addAll(transformed)

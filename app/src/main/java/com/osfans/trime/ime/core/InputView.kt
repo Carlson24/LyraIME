@@ -193,6 +193,7 @@ class InputView(
 
     private var floatingResizeStartWidth = 0
     private var floatingResizeStartHeight = 0
+    private var floatingResizeStartTranslationX = 0f
     private var lastResizeTouchX = 0f
     private var lastResizeTouchY = 0f
 
@@ -274,18 +275,61 @@ class InputView(
 
     private fun handleColor(): Int {
         val base = ContextCompat.getColor(context, R.color.lavender)
-        return (base and 0x00FFFFFF) or (0x40 shl 24)
+        return (base and 0x00FFFFFF) or (0xA0 shl 24)
     }
 
-    private fun createHandleDrawable(radius: Float? = null, color: Int = handleColor()): GradientDrawable {
+    private fun createHandleDrawable(
+        radius: Float? = null,
+        color: Int = handleColor(),
+        shape: Int = GradientDrawable.OVAL,
+    ): GradientDrawable {
         val r = radius ?: dp(3).toFloat()
         return GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
+            this.shape = shape
             setSize(dp(6), dp(6))
             cornerRadius = r
             setColor(color)
         }
     }
+
+    private val floatingLeftHandle =
+        view(::View) {
+            visibility = View.GONE
+            setOnTouchListener { v, event ->
+                if (!isFloating) return@setOnTouchListener false
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        floatingResizeStartWidth = resolveFloatingWidth()
+                        floatingResizeStartTranslationX = keyboardView.translationX
+                        lastResizeTouchX = event.rawX
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                        v.isPressed = true
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val delta = (event.rawX - lastResizeTouchX).toInt()
+                        val newWidth =
+                            (floatingResizeStartWidth - delta).coerceIn(minFloatingWidthPx, maxFloatingWidthPx)
+                        floatingWidthPx = newWidth
+                        keyboardView.translationX =
+                            (floatingResizeStartTranslationX + floatingResizeStartWidth) - newWidth
+                        preedit.ui.root.translationX = keyboardView.translationX
+                        applyFloatingWidth()
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                        v.isPressed = false
+                        saveFloatingPosition(
+                            keyboardView.translationX.toInt(),
+                            keyboardView.translationY.toInt(),
+                        )
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }
 
     private val floatingRightHandle =
         view(::View) {
@@ -514,7 +558,7 @@ class InputView(
 
     private fun updateOneHandHandleAppearance() {
         val color = handleColor()
-        val background = createHandleDrawable(dp(10).toFloat(), color)
+        val background = createHandleDrawable(dp(10).toFloat(), color, GradientDrawable.RECTANGLE)
         val iconRes = if (oneHandOnRight) {
             R.drawable.ic_baseline_keyboard_arrow_left_24
         } else {
@@ -684,6 +728,13 @@ class InputView(
         keyboardView.clipToOutline = true
         keyboardView.outlineProvider = keyboardOutlineProvider
 
+        add(
+            floatingLeftHandle,
+            lParams(dp(10), dp(10)) {
+                startOfParent()
+                topOfParent()
+            },
+        )
         add(
             floatingRightHandle,
             lParams(dp(10), dp(10)) {
@@ -1116,10 +1167,12 @@ class InputView(
 
     private fun updateFloatingHandlesVisibility() {
         if (isEffectiveFloating) {
+            floatingLeftHandle.visibility = View.VISIBLE
             floatingRightHandle.visibility = View.VISIBLE
             floatingBottomHandle.visibility = View.VISIBLE
             adjustableHandle.visibility = View.VISIBLE
         } else {
+            floatingLeftHandle.visibility = View.GONE
             floatingRightHandle.visibility = View.GONE
             floatingBottomHandle.visibility = View.GONE
             adjustableHandle.visibility = View.GONE
@@ -1131,7 +1184,7 @@ class InputView(
 
         val kX = keyboardView.translationX
         val kY = keyboardView.translationY
-        val kWidth = if (keyboardView.width > 0) keyboardView.width else resolveFloatingWidth()
+        val kWidth = resolveFloatingWidth()
         val kHeight = if (keyboardView.height > 0) {
             keyboardView.height
         } else {
@@ -1144,9 +1197,24 @@ class InputView(
         val viewThickness = handleThickness + touchPadding * 2
         val viewLength = handleLength + touchPadding * 2
 
+        floatingLeftHandle.translationX = kX - viewThickness / 2
+        floatingLeftHandle.translationY = kY + (kHeight - viewLength) / 2
+        val leftDrawable = createHandleDrawable(shape = GradientDrawable.RECTANGLE)
+        floatingLeftHandle.background = InsetDrawable(
+            leftDrawable,
+            touchPadding,
+            touchPadding,
+            touchPadding,
+            touchPadding,
+        )
+        floatingLeftHandle.updateLayoutParams {
+            width = viewThickness
+            height = viewLength
+        }
+
         floatingRightHandle.translationX = kX + kWidth - viewThickness / 2
         floatingRightHandle.translationY = kY + (kHeight - viewLength) / 2
-        val rightDrawable = createHandleDrawable()
+        val rightDrawable = createHandleDrawable(shape = GradientDrawable.RECTANGLE)
         floatingRightHandle.background = InsetDrawable(
             rightDrawable,
             touchPadding,
@@ -1161,7 +1229,7 @@ class InputView(
 
         floatingBottomHandle.translationX = kX + (kWidth - viewLength) / 2
         floatingBottomHandle.translationY = kY + kHeight - viewThickness / 2
-        val bottomDrawable = createHandleDrawable()
+        val bottomDrawable = createHandleDrawable(shape = GradientDrawable.RECTANGLE)
         floatingBottomHandle.background = InsetDrawable(
             bottomDrawable,
             touchPadding,
