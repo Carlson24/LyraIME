@@ -47,7 +47,9 @@ object SchemaPackageManager {
     private fun buildPackage(dir: File): SchemaPackage {
         val id = dir.name
         val schemas = discoverSchemasInDir(dir)
-        return SchemaPackage(id = id, name = id, schemas = schemas, path = dir)
+        val customName = PackageStateManager.getCustomName(dir.name)
+        val name = customName ?: dir.name
+        return SchemaPackage(id = id, name = name, schemas = schemas, path = dir)
     }
 
     fun discoverPackages(): List<SchemaPackage> {
@@ -147,18 +149,18 @@ object SchemaPackageManager {
             Timber.w("Cannot delete active package")
             return false
         }
-        val pkgDir = File(DataManager.externalFilesDir, packageId)
-        return if (pkgDir.exists()) {
-            pkgDir.deleteRecursively()
-        } else {
-            false
+        var deleted = false
+        File(DataManager.userDataBaseDir, packageId).let {
+            if (it.exists()) deleted = it.deleteRecursively() || deleted
         }
+        PackageStateManager.removeState(packageId)
+        return deleted
     }
 
     fun installPackage(source: File): Boolean {
         if (!source.isDirectory) return false
         val id = source.name
-        val dest = File(DataManager.externalFilesDir, id)
+        val dest = File(DataManager.userDataBaseDir, id)
         if (dest.exists()) {
             Timber.w("Package '$id' already installed")
             return false

@@ -189,7 +189,10 @@
     <string name="enable_schemata">啓用方案</string>
     <string name="no_schema_to_select">當前沒有方案可選擇。請前往啟用方案。</string>
     <string name="select_schemata">選擇方案</string>
-    <string name="packages_title">方案包</string>
+    <string name="packages_title">方案包管理</string>
+    <string name="package_rename">重命名</string>
+    <string name="package_confirm_delete">確定刪除方案包「%1$s」？這將同時清除其所有資料。</string>
+    <string name="package_deleted">已刪除</string>
     <string name="no_schema_to_enable">沒有方案可啟用。請確保您已在使用者資料夾中放入了前置檔案和方案檔案。</string>
     <string name="no_items">暫無可用選項。</string>
     <string name="schemata">方案</string>

@@ -245,7 +245,7 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                 }
                 outputs.upToDateWhen {
                     (macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")) &&
-                        (deployerH.exists() && deployerH.readText().contains("path common_data_dir")) &&
+                        (deployerH.exists() && deployerH.readText().contains("path user_common_data_dir")) &&
                         (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)")) &&
                         (luaCmake.exists() && luaCmake.readText().contains("lua-utf8")) &&
                         (witogramCc.exists() && witogramCc.readText().contains("Fallback to KenLM"))

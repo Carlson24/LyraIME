@@ -119,7 +119,7 @@ PRs target `develop`, not `master`.
 
 ## Rime schemas / data
 
-`app/data/rime/` contains submodules for Rime schema data (prelude, luna-pinyin, stroke, essay).
+Rime schemas are no longer bundled. Users must import schema packages externally. See `SchemaPackageManager` for the package discovery and installation flow.
 
 ## Keystore for release builds
 

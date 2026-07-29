@@ -190,6 +190,9 @@
     <string name="no_schema_to_select">Currently there is no schema to select. Please go to enable schemata from the available list.</string>
     <string name="select_schemata">Select schemata</string>
     <string name="packages_title">Packages</string>
+    <string name="package_rename">Rename</string>
+    <string name="package_confirm_delete">Delete package \"%1$s\"? This will also remove all its data.</string>
+    <string name="package_deleted">Deleted</string>
     <string name="no_schema_to_enable">No schema to enable. Make sure you have prelude and schema files in the user directory.</string>
     <string name="no_items">No items available.</string>
     <string name="schemata">Schemata</string>

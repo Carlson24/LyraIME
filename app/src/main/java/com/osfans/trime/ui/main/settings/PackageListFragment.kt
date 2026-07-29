@@ -4,10 +4,15 @@ import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.osfans.trime.R
+import com.osfans.trime.data.packaging.PackageStateManager
 import com.osfans.trime.data.packaging.SchemaPackageManager
 import com.osfans.trime.ui.common.buildDialog
 import kotlinx.coroutines.launch
@@ -17,6 +22,15 @@ import splitties.views.dsl.recyclerview.recyclerView
 import splitties.views.recyclerview.verticalLayoutManager
 
 class PackageListFragment : ProgressFragment() {
+    private lateinit var adapter: PackageAdapter
+    private var currentDialog: AlertDialog? = null
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        currentDialog?.dismiss()
+        currentDialog = null
+    }
+
     override suspend fun initialize(): View {
         val packages = SchemaPackageManager.discoverPackages()
         val enabledIds = SchemaPackageManager.getAllEnabledSchemaIds()
@@ -25,10 +39,62 @@ class PackageListFragment : ProgressFragment() {
             layoutManager = verticalLayoutManager()
             backgroundColor = styledColor(android.R.attr.colorBackground)
             clipToPadding = false
-            adapter = PackageAdapter(packages, enabledIds) { pkg ->
-                showSchemaMultiSelectDialog(pkg, enabledIds[pkg.id] ?: emptySet())
-            }
+            adapter = PackageAdapter(
+                packages,
+                enabledIds,
+                onItemClick = { pkg ->
+                    showSchemaMultiSelectDialog(pkg, enabledIds[pkg.id] ?: emptySet())
+                },
+                onRename = { pkg ->
+                    showRenameDialog(pkg)
+                },
+                onDelete = { pkg ->
+                    showDeleteDialog(pkg)
+                },
+            )
+            this@recyclerView.adapter = adapter
         }
+    }
+
+    private fun refreshPackages() {
+        if (!::adapter.isInitialized) return
+        val packages = SchemaPackageManager.discoverPackages()
+        val enabledIds = SchemaPackageManager.getAllEnabledSchemaIds()
+        adapter.updateData(packages, enabledIds)
+    }
+
+    private fun showRenameDialog(pkg: com.osfans.trime.data.packaging.SchemaPackage) {
+        val editText = EditText(requireContext())
+        editText.setText(pkg.name)
+
+        val layout = LinearLayout(requireContext())
+        layout.orientation = LinearLayout.VERTICAL
+        layout.setPadding(48, 24, 48, 0)
+        layout.addView(editText)
+
+        currentDialog = requireContext().buildDialog(R.string.package_rename)
+            .setView(layout)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val newName = editText.text.toString().trim()
+                if (newName.isNotEmpty()) {
+                    PackageStateManager.setCustomName(pkg.id, newName)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+            .also { it.setOnDismissListener { refreshPackages() } }
+    }
+
+    private fun showDeleteDialog(pkg: com.osfans.trime.data.packaging.SchemaPackage) {
+        val message = getString(R.string.package_confirm_delete, pkg.name)
+        currentDialog = requireContext().buildDialog(R.string.delete)
+            .setMessage(message)
+            .setPositiveButton(R.string.delete) { _, _ ->
+                SchemaPackageManager.deletePackage(pkg.id)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+            .also { it.setOnDismissListener { refreshPackages() } }
     }
 
     private fun showSchemaMultiSelectDialog(
@@ -40,7 +106,7 @@ class PackageListFragment : ProgressFragment() {
         val ids = schemas.map { it.id }
         val checked = BooleanArray(schemas.size) { enabledIdsForPkg.contains(ids[it]) }
 
-        requireContext().buildDialog(R.string.select_schemata)
+        currentDialog = requireContext().buildDialog(R.string.select_schemata)
             .apply { setTitle("${pkg.name} — ${getString(R.string.select_schemata)}") }
             .setMultiChoiceItems(names, checked) { _, which, isChecked ->
                 checked[which] = isChecked
@@ -61,10 +127,21 @@ class PackageListFragment : ProgressFragment() {
     }
 
     private class PackageAdapter(
-        private val packages: List<com.osfans.trime.data.packaging.SchemaPackage>,
-        private val enabledIds: Map<String, Set<String>>,
+        private var packages: List<com.osfans.trime.data.packaging.SchemaPackage>,
+        private var enabledIds: Map<String, Set<String>>,
         private val onItemClick: (com.osfans.trime.data.packaging.SchemaPackage) -> Unit,
+        private val onRename: (com.osfans.trime.data.packaging.SchemaPackage) -> Unit,
+        private val onDelete: (com.osfans.trime.data.packaging.SchemaPackage) -> Unit,
     ) : RecyclerView.Adapter<PackageAdapter.ViewHolder>() {
+
+        fun updateData(
+            newPackages: List<com.osfans.trime.data.packaging.SchemaPackage>,
+            newEnabledIds: Map<String, Set<String>>,
+        ) {
+            packages = newPackages
+            enabledIds = newEnabledIds
+            notifyDataSetChanged()
+        }
 
         override fun onCreateViewHolder(
             parent: ViewGroup,
@@ -73,7 +150,7 @@ class PackageListFragment : ProgressFragment() {
             val view =
                 LayoutInflater
                     .from(parent.context)
-                    .inflate(android.R.layout.simple_list_item_1, parent, false)
+                    .inflate(R.layout.item_package_entry, parent, false)
             return ViewHolder(view)
         }
 
@@ -87,6 +164,8 @@ class PackageListFragment : ProgressFragment() {
             val selectedCount = pkg.schemas.count { it.id in pkgEnabled }
             holder.textView.text = "${pkg.name} ($selectedCount/${pkg.schemas.size})"
             holder.itemView.setOnClickListener { onItemClick(pkg) }
+            holder.renameBtn.setOnClickListener { onRename(pkg) }
+            holder.deleteBtn.setOnClickListener { onDelete(pkg) }
         }
 
         override fun getItemCount(): Int = packages.size
@@ -94,7 +173,9 @@ class PackageListFragment : ProgressFragment() {
         class ViewHolder(
             itemView: View,
         ) : RecyclerView.ViewHolder(itemView) {
-            val textView: TextView = itemView as TextView
+            val textView: TextView = itemView.findViewById(R.id.package_name)
+            val renameBtn: Button = itemView.findViewById(R.id.rename_btn)
+            val deleteBtn: Button = itemView.findViewById(R.id.delete_btn)
         }
     }
 }

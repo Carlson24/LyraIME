@@ -14,6 +14,7 @@ object PackageStateManager {
     data class PackageState(
         val lastSchemaId: String = "",
         val lastThemeId: String = "trime",
+        val customName: String = "",
     )
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -30,6 +31,20 @@ object PackageStateManager {
 
     fun saveState(packageId: String, state: PackageState) {
         prefs.edit().putString(KEY_PREFIX + packageId, json.encodeToString(PackageState.serializer(), state)).apply()
+    }
+
+    fun getCustomName(packageId: String): String? {
+        val name = getState(packageId).customName
+        return name.ifEmpty { null }
+    }
+
+    fun setCustomName(packageId: String, name: String) {
+        val current = getState(packageId)
+        saveState(packageId, current.copy(customName = name))
+    }
+
+    fun removeState(packageId: String) {
+        prefs.edit().remove(KEY_PREFIX + packageId).apply()
     }
 
     fun getAllStates(): Map<String, PackageState> {

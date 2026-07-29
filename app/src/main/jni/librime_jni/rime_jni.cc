@@ -253,15 +253,12 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* jvm, void* reserved) {
 
 extern "C" JNIEXPORT void JNICALL Java_com_osfans_trime_core_Rime_startupRime(
     JNIEnv* env, jclass clazz, jstring shared_dir, jstring user_dir,
-    jstring version_name, jstring common_dir, jstring user_common_dir,
-    jboolean full_check) {
+    jstring version_name, jstring user_common_dir, jboolean full_check) {
   // for rime shared data dir
   setenv("RIME_SHARED_DATA_DIR", CString(env, shared_dir), 1);
   // for rime user data dir
   setenv("RIME_USER_DATA_DIR", CString(env, user_dir), 1);
   setenv("RIME_DISTRIBUTION_VERSION", CString(env, version_name), 1);
-  // for common shared data dir (OpenCC etc.)
-  setenv("RIME_COMMON_DATA_DIR", CString(env, common_dir), 1);
   // for user-level cross-package shared data dir
   setenv("RIME_USER_COMMON_DATA_DIR", CString(env, user_common_dir), 1);
 

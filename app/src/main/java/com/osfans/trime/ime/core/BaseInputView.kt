@@ -45,6 +45,7 @@ import kotlinx.coroutines.launch
 import splitties.dimensions.dp
 import splitties.views.dsl.core.withTheme
 import kotlin.math.max
+import androidx.core.graphics.drawable.toDrawable
 
 abstract class BaseInputView(
     val service: TrimeInputMethodService,
@@ -128,7 +129,7 @@ abstract class BaseInputView(
             candidateActionMenu = ListPopupWindow(themedContext).apply {
                 anchorView = view
                 if (popupBackgroundColor != 0) {
-                    setBackgroundDrawable(android.graphics.drawable.ColorDrawable(popupBackgroundColor))
+                    setBackgroundDrawable(popupBackgroundColor.toDrawable())
                 }
                 if (popupWidthDp > 0) setContentWidth(dp(popupWidthDp))
                 setAdapter(object : ArrayAdapter<CharSequence>(

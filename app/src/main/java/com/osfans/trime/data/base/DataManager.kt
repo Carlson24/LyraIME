@@ -20,15 +20,14 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 object DataManager {
+
     private const val DEFAULT_CUSTOM_FILE_NAME = "default.custom.yaml"
 
     private const val DATA_CHECKSUMS_NAME = "checksums.json"
 
     private const val SCHEMA_LIST_CUSTOM_PATCH = """
       patch:
-        schema_list:
-          - schema: luna_pinyin
-          - schema: luna_pinyin_simp
+        schema_list: []
     """
 
     private val lock = ReentrantLock()
@@ -64,9 +63,6 @@ object DataManager {
     val userThemesDir get() = File(userDataBaseDir, "themes").also { it.mkdirs() }
 
     val sharedDataDir
-        get() = File(externalFilesDir, SchemaPackageManager.activePackageId).also { it.mkdirs() }
-
-    val commonDataDir
         get() = File(externalFilesDir, "shared").also { it.mkdirs() }
 
     val userCommonDataDir
@@ -77,8 +73,12 @@ object DataManager {
     val userDataBaseDir
         get() = File(prefs.profile.userDataDir.getValue()).also { it.mkdirs() }
 
-    val userDataDir
-        get() = File(userDataBaseDir, SchemaPackageManager.activePackageId).also { it.mkdirs() }
+    val userDataDir: File
+        get() {
+            val pkgId = SchemaPackageManager.activePackageId
+            if (pkgId.isEmpty()) return userCommonDataDir
+            return File(userDataBaseDir, pkgId).also { it.mkdirs() }
+        }
 
     val prebuiltDataDir get() = File(sharedDataDir, "build")
     val stagingDir get() = File(userDataDir, "build")
@@ -113,7 +113,7 @@ object DataManager {
 
         ResourceUtils.copyFile(DATA_CHECKSUMS_NAME, dataDir.resolve(DATA_CHECKSUMS_NAME).absolutePath)
 
-        Timber.d("DataManager.sync: sharedDataDir=$sharedDataDir, commonDataDir=$commonDataDir")
+        Timber.d("DataManager.sync: sharedDataDir=$sharedDataDir")
         sharedDataDir.listFiles()?.forEach { f ->
             Timber.d("DataManager.sync: sharedDataDir file: ${f.name} (dir=${f.isDirectory})")
         }

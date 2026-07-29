@@ -531,7 +531,7 @@ class AppPrefs(
         }
 
         val userDataDir = string(USER_DATA_DIR, DataManager.defaultDataDir.path)
-        val activePackageId = string(ACTIVE_PACKAGE_ID, "luna_pinyin")
+        val activePackageId = string(ACTIVE_PACKAGE_ID, "")
         val periodicBackgroundSync = bool(PERIODIC_BACKGROUND_SYNC, false)
         val periodicBackgroundSyncTime = string(PERIODIC_BACKGROUND_SYNC_TIME, "02:00")
         val lastBackgroundSyncStatus = bool(LAST_BACKGROUND_SYNC_STATUS, false)
