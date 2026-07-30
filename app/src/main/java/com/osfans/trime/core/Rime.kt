@@ -107,12 +107,10 @@ class Rime :
             if (oldId == packageId) return@withRimeContext false
 
             if (oldId.isNotEmpty()) {
-                PackageStateManager.saveState(
+                PackageStateManager.updateSchemaAndTheme(
                     oldId,
-                    PackageStateManager.PackageState(
-                        lastSchemaId = getCurrentRimeSchema(),
-                        lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
-                    ),
+                    lastSchemaId = getCurrentRimeSchema(),
+                    lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
                 )
             }
 
@@ -226,12 +224,10 @@ class Rime :
                 selectRimeSchema(schemaId)
             } else {
                 if (currentPkg.isNotEmpty()) {
-                    PackageStateManager.saveState(
+                    PackageStateManager.updateSchemaAndTheme(
                         currentPkg,
-                        PackageStateManager.PackageState(
-                            lastSchemaId = getCurrentRimeSchema(),
-                            lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
-                        ),
+                        lastSchemaId = getCurrentRimeSchema(),
+                        lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
                     )
                 }
 
@@ -242,12 +238,10 @@ class Rime :
                 selectRimeSchema(schemaId)
             }
 
-            PackageStateManager.saveState(
+            PackageStateManager.updateSchemaAndTheme(
                 pkgId,
-                PackageStateManager.PackageState(
-                    lastSchemaId = schemaId,
-                    lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
-                ),
+                lastSchemaId = schemaId,
+                lastThemeId = ThemeManager.prefs.selectedTheme.getValue(),
             )
             true
         } catch (e: Exception) {

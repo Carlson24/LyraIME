@@ -18,6 +18,7 @@ import android.widget.ArrayAdapter
 import android.widget.ListPopupWindow
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.text.bold
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
@@ -45,7 +46,6 @@ import kotlinx.coroutines.launch
 import splitties.dimensions.dp
 import splitties.views.dsl.core.withTheme
 import kotlin.math.max
-import androidx.core.graphics.drawable.toDrawable
 
 abstract class BaseInputView(
     val service: TrimeInputMethodService,

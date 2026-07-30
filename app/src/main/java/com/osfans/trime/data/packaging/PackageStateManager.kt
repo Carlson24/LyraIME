@@ -33,6 +33,11 @@ object PackageStateManager {
         prefs.edit().putString(KEY_PREFIX + packageId, json.encodeToString(PackageState.serializer(), state)).apply()
     }
 
+    fun updateSchemaAndTheme(packageId: String, lastSchemaId: String, lastThemeId: String) {
+        val current = getState(packageId)
+        saveState(packageId, current.copy(lastSchemaId = lastSchemaId, lastThemeId = lastThemeId))
+    }
+
     fun getCustomName(packageId: String): String? {
         val name = getState(packageId).customName
         return name.ifEmpty { null }

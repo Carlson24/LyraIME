@@ -41,10 +41,10 @@ import com.osfans.trime.data.wanxiang.loadCustomTasks
 import com.osfans.trime.data.wanxiang.saveCustomTasks
 import com.osfans.trime.data.wanxiang.updateDownloadProgressItem
 import com.osfans.trime.ui.common.confirmDialog
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 class CustomTasksFragment : Fragment() {
 

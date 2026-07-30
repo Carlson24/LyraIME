@@ -238,6 +238,7 @@ class CommonKeyboardActionListener {
                     "clipboard_window" -> handleClipboardWindow(arg)
                     "set_color_scheme" -> handleColorScheme(arg)
                     "set_theme" -> handleTheme(arg)
+                    "set_schema" -> handleSetSchema(arg)
                     "broadcast" -> service.sendBroadcast(Intent(arg))
                     "clipboard" -> handleClipboard()
                     "commit" -> service.commitText(arg)
@@ -300,6 +301,12 @@ class CommonKeyboardActionListener {
                 ThemeManager.activeTheme.colorSchemes
                     .find { it.id == arg }
                     ?.let { ColorManager.setColorScheme(it) }
+            }
+
+            private fun handleSetSchema(arg: String) {
+                rime.launchOnReady { api ->
+                    api.selectSchemaCrossPackage(arg)
+                }
             }
 
             private fun handleTheme(arg: String) {

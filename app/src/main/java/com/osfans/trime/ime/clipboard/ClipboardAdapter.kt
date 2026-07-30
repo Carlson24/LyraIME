@@ -156,7 +156,6 @@ abstract class ClipboardAdapter(
                     )
                     true
                 }
-
             }
         }
     }

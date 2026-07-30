@@ -126,6 +126,14 @@ data class TextKeyboard(
         JUSTIFY,
     }
 
+    @Serializable
+    enum class VerticalAlign {
+        TOP,
+        CENTER,
+        BOTTOM,
+        JUSTIFY,
+    }
+
     @Parcelize
     @Serializable
     data class LabelSegment(
@@ -134,6 +142,7 @@ data class TextKeyboard(
         val color: String? = null,
         val scale: Float? = null,
         val align: Align? = null,
+        val valign: VerticalAlign? = null,
     ) : Parcelable
 
     @Parcelize
@@ -204,13 +213,13 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
         if (element is JsonObject) {
             val o = element.jsonObject
             val textEl = o["text"] ?: return emptyList()
-            val hasArrayStyles = listOf(o["color"], o["align"], o["bold"], o["scale"]).any { it is JsonArray }
+            val hasArrayStyles = listOf(o["color"], o["align"], o["bold"], o["scale"], o["valign"]).any { it is JsonArray }
 
             val texts: List<String> = when (textEl) {
                 is JsonPrimitive -> {
                     if (hasArrayStyles) {
                         throw IllegalArgumentException(
-                            "label object: 'text' must be an array when style arrays (color/align/bold/scale) are used",
+                            "label object: 'text' must be an array when style arrays (color/align/bold/scale/valign) are used",
                         )
                     }
                     textEl.content.map { it.toString() }
@@ -236,7 +245,7 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
 
     private fun expandSegment(o: JsonObject): List<TextKeyboard.LabelSegment> {
         val textEl = o["text"]
-        val hasArrayStyles = listOf(o["color"], o["align"], o["bold"], o["scale"]).any { it is JsonArray }
+        val hasArrayStyles = listOf(o["color"], o["align"], o["bold"], o["scale"], o["valign"]).any { it is JsonArray }
 
         val texts: List<String> = when (textEl) {
             null -> listOf("")
@@ -264,6 +273,8 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
             scale = styleAt(o["scale"], i) { it.float },
             align = styleAt(o["align"], i) { it.contentOrNull }
                 ?.let { TextKeyboard.Align.valueOf(it.uppercase()) },
+            valign = styleAt(o["valign"], i) { it.contentOrNull }
+                ?.let { TextKeyboard.VerticalAlign.valueOf(it.uppercase()) },
         )
     }
 
@@ -281,6 +292,7 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
             seg.color?.let { m["color"] = kotlinx.serialization.json.JsonPrimitive(it) }
             seg.scale?.let { m["scale"] = kotlinx.serialization.json.JsonPrimitive(it) }
             seg.align?.let { m["align"] = kotlinx.serialization.json.JsonPrimitive(it.name.lowercase()) }
+            seg.valign?.let { m["valign"] = kotlinx.serialization.json.JsonPrimitive(it.name.lowercase()) }
             kotlinx.serialization.json.JsonObject(m)
         },
     )

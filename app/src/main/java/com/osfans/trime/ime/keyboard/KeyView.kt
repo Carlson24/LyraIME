@@ -80,7 +80,6 @@ class KeyView(
     }
 
     private val iconCache = object : LruCache<String, IconicsDrawable>(4) {}
-    private val iconVerticalOffset = dp(2).toFloat()
 
     private val cachedLocation = intArrayOf(0, 0)
     private val cachedBounds = Rect()
@@ -335,18 +334,19 @@ class KeyView(
         }
 
         if (key.symbolLabel.isNotEmpty()) {
-            drawSymbolSegments(canvas, key.symbolLabel, isTop = true)
+            drawSymbolSegments(canvas, key.symbolLabel, TextKeyboard.VerticalAlign.TOP)
         }
 
         if (key.hint.isNotEmpty()) {
-            drawSymbolSegments(canvas, key.hint, isTop = false)
+            drawSymbolSegments(canvas, key.hint, TextKeyboard.VerticalAlign.BOTTOM)
         }
     }
 
-    private fun drawSymbolSegments(canvas: Canvas, segments: List<TextKeyboard.LabelSegment>, isTop: Boolean) {
-        if (isTop && !keyboardView.showKeySymbols) return
-        if (!isTop && !keyboardView.showKeyHints) return
+    private fun drawSymbolSegments(canvas: Canvas, segments: List<TextKeyboard.LabelSegment>, defaultVerticalAlign: TextKeyboard.VerticalAlign) {
+        if (defaultVerticalAlign == TextKeyboard.VerticalAlign.TOP && !keyboardView.showKeySymbols) return
+        if (defaultVerticalAlign == TextKeyboard.VerticalAlign.BOTTOM && !keyboardView.showKeyHints) return
 
+        val isTop = defaultVerticalAlign == TextKeyboard.VerticalAlign.TOP
         val textColor = key.getSymbolColor()
         val textSize = sp(
             if (isTop) {
@@ -359,9 +359,8 @@ class KeyView(
         val fontKey = if (isTop) "symbol_font" else "hint_font"
         val offsetX = if (isTop) key.keySymbolOffsetX else key.keyHintOffsetX
         val offsetY = if (isTop) key.keySymbolOffsetY else key.keyHintOffsetY
-        val mode = if (isTop) PositionMode.TOP else PositionMode.BOTTOM
 
-        drawSegmentsImpl(canvas, segments, textSize, iconSize, textColor, offsetX, offsetY, mode, fontKey, symbolPaint)
+        drawSegmentsImpl(canvas, segments, textSize, iconSize, textColor, offsetX, offsetY, defaultVerticalAlign, fontKey, symbolPaint)
     }
 
     private fun drawLabelSegments(canvas: Canvas, segments: List<TextKeyboard.LabelSegment>) {
@@ -375,7 +374,7 @@ class KeyView(
 
         drawSegmentsImpl(
             canvas, segments, textSize, iconSize, textColor,
-            key.keyTextOffsetX, key.keyTextOffsetY, PositionMode.CENTER, "key_font", textPaint,
+            key.keyTextOffsetX, key.keyTextOffsetY, TextKeyboard.VerticalAlign.CENTER, "key_font", textPaint,
         )
     }
 
@@ -387,7 +386,7 @@ class KeyView(
         textColor: Int,
         offsetX: Float,
         offsetY: Float,
-        mode: PositionMode,
+        defaultVerticalAlign: TextKeyboard.VerticalAlign,
         fontKey: String,
         paint: Paint,
     ) {
@@ -403,16 +402,27 @@ class KeyView(
             clearShadowLayer()
         }
 
+        val positionMode = when (defaultVerticalAlign) {
+            TextKeyboard.VerticalAlign.TOP -> PositionMode.TOP
+            TextKeyboard.VerticalAlign.BOTTOM -> PositionMode.BOTTOM
+            TextKeyboard.VerticalAlign.JUSTIFY -> PositionMode.CENTER
+            else -> PositionMode.CENTER
+        }
+
+        val vRoundCornerInset = ((key.roundCorner ?: keyboard.roundCorner)
+            .takeIf { it > 0f }?.let { dp(it) } ?: 0f) * 2 / 3f
+
         val (centerX, linePositions) = calculateTextPosition(
             richTextLines,
             offsetX,
             offsetY,
-            mode,
+            positionMode,
             paint.fontMetrics,
+            vRoundCornerInset,
             isDynamic = true,
         )
 
-        drawRichText(canvas, richTextLines, centerX, linePositions, paint, offsetX, textSize, iconSize, textColor)
+        drawRichText(canvas, richTextLines, centerX, linePositions, paint, offsetX, offsetY, defaultVerticalAlign, vRoundCornerInset, textSize, iconSize, textColor)
     }
 
     private fun segmentsToRichTextLines(segments: List<TextKeyboard.LabelSegment>): List<RichTextLine> {
@@ -440,6 +450,7 @@ class KeyView(
                         scale = seg.scale,
                         bold = seg.bold,
                         horizontalAlign = seg.align ?: TextKeyboard.Align.CENTER,
+                        verticalAlign = seg.valign,
                     ),
                 )
             }
@@ -507,35 +518,48 @@ class KeyView(
         offsetY: Float,
         mode: PositionMode,
         fontMetrics: Paint.FontMetrics,
+        vRoundCornerInset: Float = 0f,
         isDynamic: Boolean = false,
     ): Pair<Float, List<Pair<Float, Float>>> {
         val baseLineHeight = fontMetrics.descent - fontMetrics.ascent
 
-        var totalHeight: Float
         val linePositions = mutableListOf<Pair<Float, Float>>()
 
-        var currentY = when (mode) {
-            PositionMode.TOP -> paddingTop - fontMetrics.top + sp(offsetY)
-            PositionMode.BOTTOM -> height - paddingBottom - fontMetrics.bottom + sp(offsetY)
-            PositionMode.CENTER -> {
-                val centerY = (height - paddingTop - paddingBottom) / 2f + paddingTop
-                val adjustmentY = -(fontMetrics.ascent + fontMetrics.descent) / 2f
-                centerY + adjustmentY + sp(offsetY)
+        when (mode) {
+            PositionMode.TOP -> {
+                var currentY = paddingTop - fontMetrics.top + sp(offsetY)
+                lines.forEach { line ->
+                    val height = baseLineHeight * line.maxScale
+                    linePositions.add(Pair(currentY, height))
+                    currentY += height
+                }
             }
-        }
+            PositionMode.BOTTOM -> {
+                var currentY = height - paddingBottom - fontMetrics.bottom + sp(offsetY)
+                for (i in lines.indices.reversed()) {
+                    val line = lines[i]
+                    val lineHeight = baseLineHeight * line.maxScale
+                    linePositions.add(Pair(currentY, lineHeight))
+                    currentY -= lineHeight
+                }
+                linePositions.reverse()
+            }
+            PositionMode.CENTER -> {
+                lines.map { baseLineHeight * it.maxScale }.sum().let { totalHeight ->
+                    val centerY = (height - paddingTop - paddingBottom) / 2f + paddingTop
+                    val adjustmentY = -(fontMetrics.ascent + fontMetrics.descent) / 2f
+                    var currentY = centerY + adjustmentY + sp(offsetY)
+                    currentY -= (totalHeight - baseLineHeight) / 2
 
-        val scaleHeights = lines.map { line ->
-            baseLineHeight * line.maxScale
-        }
-        totalHeight = scaleHeights.sum()
-        currentY -= (totalHeight - baseLineHeight) / 2
-
-        lines.forEach { line ->
-            val scale = line.maxScale
-            val height = baseLineHeight * scale
-            val lineY = currentY + (height - baseLineHeight) / 2
-            linePositions.add(Pair(lineY, height))
-            currentY += height
+                    lines.forEach { line ->
+                        val scale = line.maxScale
+                        val height = baseLineHeight * scale
+                        val lineY = currentY + (height - baseLineHeight) / 2
+                        linePositions.add(Pair(lineY, height))
+                        currentY += height
+                    }
+                }
+            }
         }
 
         val centerX = (width - paddingLeft - paddingRight) / 2f + paddingLeft + sp(offsetX)
@@ -550,6 +574,9 @@ class KeyView(
         linePositions: List<Pair<Float, Float>>,
         paint: Paint,
         offsetX: Float,
+        offsetY: Float,
+        defaultVerticalAlign: TextKeyboard.VerticalAlign,
+        vRoundCornerInset: Float,
         baseTextSize: Float,
         iconSize: Int,
         textColor: Int,
@@ -558,7 +585,7 @@ class KeyView(
 
         lines.forEachIndexed { index, line ->
             val (lineY, _) = linePositions[index]
-            drawRichTextLine(canvas, line, x, lineY, paint, offsetX, baseTextSize, iconSize, textColor)
+            drawRichTextLine(canvas, line, x, lineY, paint, offsetX, offsetY, defaultVerticalAlign, vRoundCornerInset, baseTextSize, iconSize, textColor)
         }
     }
 
@@ -586,6 +613,9 @@ class KeyView(
         y: Float,
         basePaint: Paint,
         offsetX: Float,
+        offsetY: Float,
+        defaultVerticalAlign: TextKeyboard.VerticalAlign,
+        vRoundCornerInset: Float,
         baseTextSize: Float,
         iconSize: Int,
         textColor: Int,
@@ -637,13 +667,9 @@ class KeyView(
         val leftWidth = measureSegments(leftGroup)
         val centerWidth = measureSegments(centerGroup)
         val rightWidth = measureSegments(rightGroup)
-        val justifyWidth = measureSegments(justifyGroup)
 
-        val roundCornerPx = (key.roundCorner ?: keyboard.roundCorner)
-            .takeIf { it > 0f }?.let { dp(it) } ?: 0f
-
-        val paddedLeft = paddingLeft.toFloat() + sp(offsetX) + roundCornerPx * 2 / 3f
-        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX) - roundCornerPx * 2 / 3f
+        val paddedLeft = paddingLeft.toFloat() + sp(offsetX) + vRoundCornerInset
+        val paddedRight = (width - paddingRight).toFloat() + sp(offsetX) - vRoundCornerInset
 
         val leftStart = paddedLeft
         val rightStart = paddedRight - rightWidth
@@ -657,12 +683,31 @@ class KeyView(
 
         fun drawGroup(group: List<StyledSegment>, startX: Float, gap: Float = 0f) {
             var currentX = startX
+            val justifyCount = group.count {
+                (it.verticalAlign ?: defaultVerticalAlign) == TextKeyboard.VerticalAlign.JUSTIFY
+            }
+            var justifyIndex = 0
             group.forEach { seg ->
+                val effectiveValign = seg.verticalAlign ?: defaultVerticalAlign
+
                 if (isIcon(seg)) {
                     val cmdName = seg.text.replace("ic@", "cmd_")
                     val halfIcon = iconSize / 2f
-                    val centerY = y + (baseAscent + baseDescent) / 2f - (iconSize / 4f)
-                    drawIconAt(canvas, cmdName, iconSize, textColor, currentX + halfIcon, centerY + iconVerticalOffset)
+                    val centerY = when (effectiveValign) {
+                        TextKeyboard.VerticalAlign.TOP -> paddingTop + vRoundCornerInset + iconSize / 2f + sp(offsetY)
+                        TextKeyboard.VerticalAlign.BOTTOM -> height - paddingBottom - vRoundCornerInset - iconSize / 2f + sp(offsetY)
+                        TextKeyboard.VerticalAlign.JUSTIFY -> {
+                            val top = paddingTop + vRoundCornerInset
+                            val bottom = height - paddingBottom - vRoundCornerInset
+                            val available = (bottom - top).coerceAtLeast(0f)
+                            val portion = available / justifyCount
+                            top + portion * justifyIndex + portion / 2f + sp(offsetY)
+                        }
+                        TextKeyboard.VerticalAlign.CENTER ->
+                            (height - paddingTop - paddingBottom) / 2f + paddingTop + sp(offsetY)
+                    }
+                    if (effectiveValign == TextKeyboard.VerticalAlign.JUSTIFY) justifyIndex++
+                    drawIconAt(canvas, cmdName, iconSize, textColor, currentX + halfIcon, centerY)
                     currentX += iconSize + gap
                 } else {
                     richTextPaint.color = basePaint.color
@@ -672,13 +717,47 @@ class KeyView(
 
                     seg.colorKey?.let { richTextPaint.color = resolveColor(it, basePaint.color) }
 
-                    var adjustedY = y
-                    seg.scale?.let { scale ->
-                        richTextPaint.textSize = baseTextSize * scale
-                        val scaledAscent = baseAscent * scale
-                        val scaledDescent = baseDescent * scale
-                        adjustedY = y + (baseAscent + baseDescent - scaledAscent - scaledDescent) / 2
+                    val scale = seg.scale ?: 1f
+                    richTextPaint.textSize = baseTextSize * scale
+                    val sa = baseAscent * scale
+                    val sd = baseDescent * scale
+
+                    val adjustedY = when (seg.verticalAlign) {
+                        null -> when (defaultVerticalAlign) {
+                            TextKeyboard.VerticalAlign.TOP -> y + vRoundCornerInset + fontMetrics.top - sa
+                            TextKeyboard.VerticalAlign.BOTTOM -> y - vRoundCornerInset + fontMetrics.bottom - sd
+                            TextKeyboard.VerticalAlign.JUSTIFY -> {
+                                val top = paddingTop + vRoundCornerInset
+                                val bottom = height - paddingBottom - vRoundCornerInset
+                                val available = (bottom - top).coerceAtLeast(0f)
+                                val portion = available / justifyCount
+                                val segHeight = sd - sa
+                                val centerY = top + portion * justifyIndex + (portion - segHeight) / 2f
+                                centerY - (sa + sd) / 2f + sp(offsetY)
+                            }
+                            else -> y + (baseAscent + baseDescent - sa - sd) / 2
+                        }
+                        TextKeyboard.VerticalAlign.TOP -> paddingTop + vRoundCornerInset - sa + sp(offsetY)
+                        TextKeyboard.VerticalAlign.BOTTOM -> height - paddingBottom - vRoundCornerInset - sd + sp(offsetY)
+                        TextKeyboard.VerticalAlign.JUSTIFY -> {
+                            val top = paddingTop + vRoundCornerInset
+                            val bottom = height - paddingBottom - vRoundCornerInset
+                            val available = (bottom - top).coerceAtLeast(0f)
+                            val portion = available / justifyCount
+                            val segHeight = sd - sa
+                            val centerY = top + portion * justifyIndex + (portion - segHeight) / 2f
+                            centerY - (sa + sd) / 2f + sp(offsetY)
+                        }
+                        TextKeyboard.VerticalAlign.CENTER ->
+                            (height - paddingTop - paddingBottom) / 2f + paddingTop - (sa + sd) / 2f + sp(offsetY)
                     }
+
+                    if (seg.verticalAlign == TextKeyboard.VerticalAlign.JUSTIFY ||
+                        (seg.verticalAlign == null && defaultVerticalAlign == TextKeyboard.VerticalAlign.JUSTIFY)
+                    ) {
+                        justifyIndex++
+                    }
+
                     if (seg.bold) {
                         richTextPaint.typeface = boldTypeface
                     }
@@ -692,9 +771,20 @@ class KeyView(
         val spareStart = paddedLeft + leftWidth
         val spareEnd = paddedRight - rightWidth
         if (justifyGroup.isNotEmpty()) {
-            val available = (spareEnd - spareStart - justifyWidth).coerceAtLeast(0f)
-            val gap = if (justifyGroup.size > 1) available / (justifyGroup.size - 1) else 0f
-            drawGroup(justifyGroup, spareStart, gap)
+            val available = spareEnd - spareStart
+            val portion = available / justifyGroup.size
+            justifyGroup.forEachIndexed { i, seg ->
+                val segWidth = if (isIcon(seg)) {
+                    iconSize.toFloat()
+                } else {
+                    val sz = seg.scale?.let { baseTextSize * it } ?: baseTextSize
+                    richTextPaint.textSize = sz
+                    richTextPaint.typeface = if (seg.bold) boldTypeface else baseTypeface
+                    richTextPaint.measureText(seg.text)
+                }
+                val segStartX = spareStart + portion * i + (portion - segWidth) / 2f
+                drawGroup(listOf(seg), segStartX)
+            }
         }
 
         drawGroup(leftGroup, leftStart)
@@ -738,6 +828,7 @@ private data class StyledSegment(
     val scale: Float?,
     val bold: Boolean,
     val horizontalAlign: com.osfans.trime.data.theme.model.TextKeyboard.Align = com.osfans.trime.data.theme.model.TextKeyboard.Align.CENTER,
+    val verticalAlign: com.osfans.trime.data.theme.model.TextKeyboard.VerticalAlign? = null,
 )
 
 private data class RichTextLine(

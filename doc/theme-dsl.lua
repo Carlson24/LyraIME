@@ -98,6 +98,32 @@
 ---| '"x"'
 ---| '"y"'
 ---| '"z"'
+---| '"A"'
+---| '"B"'
+---| '"C"'
+---| '"D"'
+---| '"E"'
+---| '"F"'
+---| '"G"'
+---| '"H"'
+---| '"I"'
+---| '"J"'
+---| '"K"'
+---| '"L"'
+---| '"M"'
+---| '"N"'
+---| '"O"'
+---| '"P"'
+---| '"Q"'
+---| '"R"'
+---| '"S"'
+---| '"T"'
+---| '"U"'
+---| '"V"'
+---| '"W"'
+---| '"X"'
+---| '"Y"'
+---| '"Z"'
 ---| '"0"'
 ---| '"1"'
 ---| '"2"'
@@ -137,7 +163,38 @@
 ---| '"\'"'
 ---| '"|"'
 ---| '"^"'
----| '"'
+---| '"asterisk"'          # *
+---| '"numbersign"'        # #
+---| '"comma"'             # ,
+---| '"period"'            # .
+---| '"grave"'             # `
+---| '"minus"'             # -
+---| '"equal"'             # =
+---| '"bracketleft"'       # [
+---| '"bracketright"'      # ]
+---| '"backslash"'         # \
+---| '"semicolon"'         # ;
+---| '"apostrophe"'        # '
+---| '"slash"'             # /
+---| '"at"'                # @
+---| '"plus"'              # +
+---| '"parenleft"'         # (
+---| '"parenright"'        # )
+---| '"exclam"'            # !
+---| '"quotedbl"'          # "
+---| '"dollar"'            # $
+---| '"percent"'           # %
+---| '"ampersand"'         # &
+---| '"colon"'             # :
+---| '"less"'              # <
+---| '"greater"'           # >
+---| '"question"'          # ?
+---| '"asciicircum"'       # ^
+---| '"underscore"'        # _
+---| '"braceleft"'         # {
+---| '"bar"'               # |
+---| '"braceright"'        # }
+---| '"asciitilde"'        # ~
 ---| '"Return"'
 ---| '"BackSpace"'
 ---| '"space"'
@@ -165,6 +222,25 @@
 ---| '"Page_Down"'
 ---| '"Num_Lock"'
 ---| '"Pause"'
+---| '"KP_Begin"'
+---| '"KP_0"'
+---| '"KP_1"'
+---| '"KP_2"'
+---| '"KP_3"'
+---| '"KP_4"'
+---| '"KP_5"'
+---| '"KP_6"'
+---| '"KP_7"'
+---| '"KP_8"'
+---| '"KP_9"'
+---| '"KP_Divide"'
+---| '"KP_Multiply"'
+---| '"KP_Subtract"'
+---| '"KP_Add"'
+---| '"KP_Decimal"'
+---| '"KP_Separator"'
+---| '"KP_Enter"'
+---| '"KP_Equal"'
 ---| '"F1"'
 ---| '"F2"'
 ---| '"F3"'
@@ -195,6 +271,12 @@
 ---| '"Next"'
 ---| '"function"'
 ---| '"VOICE_ASSIST"'
+---| '"SETTINGS"'            # handleSettings
+---| '"PROG_RED"'            # showColorPicker
+---| '"PROG_GREEN"'          # (同族)
+---| '"PROG_YELLOW"'         # (同族)
+---| '"PROG_BLUE"'           # (同族)
+---| '"LANGUAGE_SWITCH"'     # handleLanguageSwitch
 ---| '"MEDIA_PLAY_PAUSE"'
 ---| '"MEDIA_STOP"'
 ---| '"MEDIA_NEXT"'
@@ -265,6 +347,7 @@
 ---| '"clipboard_window"'   # 打开剪贴板窗口 (option: "0"=全部 "1"=收藏)
 ---| '"set_color_scheme"'   # 切换配色方案 (option: 方案ID)
 ---| '"set_theme"'          # 切换主题 (option: 主题名) 或刷新 (option: "$reload")
+---| '"set_schema"'         # 切换方案 (option: 方案ID)
 ---| '"broadcast"'          # 发送广播 (option: Intent action)
 ---| '"clipboard"'          # 剪贴板操作
 ---| '"commit"'             # 直接提交文本 (option: 提交内容)
@@ -673,6 +756,13 @@
 ---| '"right"'   # 右对齐
 ---| '"justify"' # 分散居中
 
+--- 垂直对齐方向（单行内分段级别，等价于水平 justify 的语义）
+---@alias VerticalAlign
+---| '"top"'     # 顶部对齐
+---| '"center"'  # 居中（默认）
+---| '"bottom"'  # 底部对齐
+---| '"justify"' # 段内分散对齐——同组垂直均匀分布
+
 --- 按键标签分段。每个分段可独立设置粗体、颜色、缩放和对齐。
 --- 文本前缀 "ic@" 表示图标，如 "ic@arrow-left"。
 --- 文本 "\n" 表示换行。
@@ -681,10 +771,12 @@
 ---   label = {
 ---     { text = "A", bold = true },
 ---     { text = "1", scale = 0.6, color = "red", align = "right" },
+---     { text = "7", scale = 0.6, valign = "bottom" },
 ---   },
 ---   label_symbol = {
 ---     { text = "ic@arrow-left", scale = 0.7 },
 ---     { text = "@", align = "right" },
+---     { text = "#", valign = "top" },
 ---   },
 ---@class LabelSegment
 ---@field text?   string | string[]       # 文本内容（"ic@" 前缀表示图标；"\n" 表示换行）
@@ -692,6 +784,7 @@
 ---@field color?  string | string[]       # 颜色键名或 hex
 ---@field scale?  number | number[]       # 字号缩放因子（如 0.6 表示 60%）
 ---@field align?  Align | Align[]         # 水平对齐
+---@field valign? VerticalAlign | VerticalAlign[]  # 垂直对齐
 
 --- 按键标签。支持三种格式：
 ---  1. 分段数组：`{ { text = "A", bold = true }, { text = "1", color = "red" } }`

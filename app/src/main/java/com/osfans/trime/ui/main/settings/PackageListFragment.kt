@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.osfans.trime.R
 import com.osfans.trime.data.packaging.PackageStateManager
+import com.osfans.trime.data.packaging.SchemaPackage
 import com.osfans.trime.data.packaging.SchemaPackageManager
 import com.osfans.trime.ui.common.buildDialog
 import kotlinx.coroutines.launch
@@ -72,17 +73,28 @@ class PackageListFragment : ProgressFragment() {
         layout.setPadding(48, 24, 48, 0)
         layout.addView(editText)
 
+        var pendingNewName: String? = null
+
         currentDialog = requireContext().buildDialog(R.string.package_rename)
             .setView(layout)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val newName = editText.text.toString().trim()
                 if (newName.isNotEmpty()) {
                     PackageStateManager.setCustomName(pkg.id, newName)
+                    pendingNewName = newName
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
-            .also { it.setOnDismissListener { refreshPackages() } }
+            .also {
+                it.setOnDismissListener {
+                    pendingNewName?.let { name ->
+                        if (::adapter.isInitialized) {
+                            adapter.renamePackage(pkg.id, name)
+                        }
+                    }
+                }
+            }
     }
 
     private fun showDeleteDialog(pkg: com.osfans.trime.data.packaging.SchemaPackage) {
@@ -140,6 +152,13 @@ class PackageListFragment : ProgressFragment() {
         ) {
             packages = newPackages
             enabledIds = newEnabledIds
+            notifyDataSetChanged()
+        }
+
+        fun renamePackage(packageId: String, newName: String) {
+            packages = packages.map {
+                if (it.id == packageId) it.copy(name = newName) else it
+            }.sortedBy { it.name }
             notifyDataSetChanged()
         }
 
