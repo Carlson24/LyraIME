@@ -228,7 +228,7 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                         "git",
                         "apply",
                         "--directory=$jniDir/librime-plugins/librime-lua",
-                        "patches/librime-lua-utf8.patch",
+                        "patches/librime-lua.patch",
                     ).directory(rootDir).inheritIO().start().waitFor()
                     ProcessBuilder(
                         "git",

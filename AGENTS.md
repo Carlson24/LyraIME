@@ -50,7 +50,7 @@ The DSP packages (`libQnnHtpV{n}.tar.bz2`) are hosted at `https://github.com/Car
 - `patches/lua.patch` → `librime-plugins/librime-lua-deps`
 - `patches/sherpa-onnx-qnn.patch` → `sherpa-onnx`
 - `patches/librime-custom.patch` → `librime`
-- `patches/librime-lua-utf8.patch` → `librime-plugins/librime-lua`
+- `patches/librime-lua.patch` → `librime-plugins/librime-lua`
 The Makefile `patch-apply` target is idempotent and can still be used standalone. Building via Gradle directly (e.g. from Android Studio) also works because the plugin handles it.
 
 ## sherpa-onnx (native, submodule)

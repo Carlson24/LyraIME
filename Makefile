@@ -49,7 +49,7 @@ style-apply: spotlessApply clang-format
 patch-apply:
 	-git apply --directory=$(jniDir)/sherpa-onnx patches/sherpa-onnx-qnn.patch
 	-git apply --directory=$(jniDir)/librime patches/librime-custom.patch
-	-git apply --directory=$(jniDir)/librime-plugins/librime-lua patches/librime-lua-utf8.patch
+	-git apply --directory=$(jniDir)/librime-plugins/librime-lua patches/librime-lua.patch
 	-git apply --directory=$(jniDir)/librime-plugins/librime-lua-deps patches/lua.patch
 	-git apply --directory=$(jniDir)/librime-plugins/librime-witogram patches/librime-witogram.patch
 

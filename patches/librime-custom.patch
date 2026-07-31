@@ -45,13 +45,25 @@ index 7057ed4b..78ee5d65 100644
    the<UnityTableEncoder> encoder_;
  };
 diff --git a/src/rime/resource.cc b/src/rime/resource.cc
-index 045e047f..ee4f6559 100644
+index 045e047f..c0de8075 100644
 --- a/src/rime/resource.cc
 +++ b/src/rime/resource.cc
-@@ -39,6 +39,14 @@ path FallbackResourceResolver::ResolvePath(const string& resource_id) {
-     if (std::filesystem::exists(fallback_path)) {
-       return fallback_path;
-     }
+@@ -34,10 +34,21 @@ path ResourceResolver::ResolvePath(const string& resource_id) {
+ path FallbackResourceResolver::ResolvePath(const string& resource_id) {
+   auto default_path = ResourceResolver::ResolvePath(resource_id);
+   if (!std::filesystem::exists(default_path)) {
+-    auto fallback_path = std::filesystem::absolute(
+-        fallback_root_path_ / (type_.prefix + resource_id + type_.suffix));
+-    if (std::filesystem::exists(fallback_path)) {
+-      return fallback_path;
++    if (!fallback_root_path_.empty()) {
++      auto fallback_path = std::filesystem::absolute(
++          fallback_root_path_ /
++          (type_.prefix + resource_id + type_.suffix));
++      if (std::filesystem::exists(fallback_path)) {
++        return fallback_path;
++      }
++    }
 +    if (!second_fallback_root_path_.empty()) {
 +      auto second_fallback_path = std::filesystem::absolute(
 +          second_fallback_root_path_ /
@@ -59,10 +71,9 @@ index 045e047f..ee4f6559 100644
 +      if (std::filesystem::exists(second_fallback_path)) {
 +        return second_fallback_path;
 +      }
-+    }
+     }
    }
    return default_path;
- }
 diff --git a/src/rime/resource.h b/src/rime/resource.h
 index 7ffa2ef4..2f1537a6 100644
 --- a/src/rime/resource.h
@@ -82,27 +93,31 @@ index 7ffa2ef4..2f1537a6 100644
  
  }  // namespace rime
 diff --git a/src/rime/service.cc b/src/rime/service.cc
-index d30f991e..cef946fa 100644
+index d30f991e..3e6d60d9 100644
 --- a/src/rime/service.cc
 +++ b/src/rime/service.cc
-@@ -168,6 +168,9 @@ ResourceResolver* Service::CreateResourceResolver(const ResourceType& type) {
+@@ -167,7 +167,10 @@ void Service::Notify(SessionId session_id,
+ ResourceResolver* Service::CreateResourceResolver(const ResourceType& type) {
    the<FallbackResourceResolver> resolver(new FallbackResourceResolver(type));
    resolver->set_root_path(deployer().user_data_dir);
-   resolver->set_fallback_root_path(deployer().shared_data_dir);
+-  resolver->set_fallback_root_path(deployer().shared_data_dir);
 +  if (!deployer().user_common_data_dir.empty()) {
-+    resolver->set_second_fallback_root_path(deployer().user_common_data_dir);
++    resolver->set_fallback_root_path(deployer().user_common_data_dir);
 +  }
++  resolver->set_second_fallback_root_path(deployer().shared_data_dir);
    return resolver.release();
  }
  
-@@ -183,6 +186,10 @@ ResourceResolver* Service::CreateDeployedResourceResolver(
+@@ -182,7 +185,11 @@ ResourceResolver* Service::CreateDeployedResourceResolver(
+     const ResourceType& type) {
    the<FallbackResourceResolver> resolver(new FallbackResourceResolver(type));
    resolver->set_root_path(deployer().staging_dir);
-   resolver->set_fallback_root_path(deployer().prebuilt_data_dir);
+-  resolver->set_fallback_root_path(deployer().prebuilt_data_dir);
 +  if (!deployer().user_common_data_dir.empty()) {
-+    resolver->set_second_fallback_root_path(deployer().user_common_data_dir /
-+                                            "build");
++    resolver->set_fallback_root_path(deployer().user_common_data_dir /
++                                     "build");
 +  }
++  resolver->set_second_fallback_root_path(deployer().prebuilt_data_dir);
    return resolver.release();
  }
  

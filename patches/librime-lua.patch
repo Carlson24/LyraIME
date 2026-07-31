@@ -1,0 +1,97 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 42f2ebb..6686548 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -19,7 +19,12 @@ else()
+   message(STATUS "Using in-tree lua source")
+   include_directories(thirdparty/lua5.4)
+   aux_source_directory(thirdparty/lua5.4 LUA_SRC)
++  if(NOT WIN32)
++    # Standard utf8 source replaced by lua-utf8 (provides super-set API)
++    list(FILTER LUA_SRC EXCLUDE REGEX "lutf8lib\\.c$")
++  endif()
+   add_definitions(-DLUA_COMPAT_5_3)
++
+   if(WIN32)
+     set_property(SOURCE ${LUA_SRC} PROPERTY COMPILE_DEFINITIONS LUA_BUILD_AS_DLL)
+   else()
+@@ -36,10 +41,14 @@ else()
+   endif()
+ endif()
+ 
++# lua-utf8: enhanced UTF-8 module (sub, find, gsub, width, upper/lower, etc.)
++include_directories("${CMAKE_SOURCE_DIR}/librime-plugins/lua-utf8")
++set(LUA_UTF8_SRC "${CMAKE_SOURCE_DIR}/librime-plugins/lua-utf8/lutf8lib.c")
++
+ aux_source_directory(src RIME_LUA_SRC)
+ aux_source_directory(src/lib RIME_LUA_LIB_SRC)
+ 
+-add_library(rime-lua-objs OBJECT ${RIME_LUA_SRC} ${RIME_LUA_LIB_SRC} ${LUA_SRC})
++add_library(rime-lua-objs OBJECT ${RIME_LUA_SRC} ${RIME_LUA_LIB_SRC} ${LUA_SRC} ${LUA_UTF8_SRC})
+ if(BUILD_SHARED_LIBS)
+   set_target_properties(rime-lua-objs PROPERTIES POSITION_INDEPENDENT_CODE ON)
+ endif()
+diff --git a/src/modules.cc b/src/modules.cc
+index 6ca704e..2cf6697 100644
+--- a/src/modules.cc
++++ b/src/modules.cc
+@@ -49,16 +49,22 @@ struct COMPAT<T, void_t<decltype(std::declval<T>().user_data_dir.string())>> {
+ static void lua_init(lua_State *L) {
+ 
+   const auto user_dir = COMPAT<rime::Deployer>::get_user_data_dir();
++  const auto user_common_dir =
++      rime::Service::instance().deployer().user_common_data_dir.string();
+   const auto shared_dir = COMPAT<rime::Deployer>::get_shared_data_dir();
+ 
+   types_init(L);
+   lua_getglobal(L, "package");
+   lua_pushfstring(L, "%s%slua%s?.lua;"
++                  "%s%slua%s?%sinit.lua;"
++                  "%s%slua%s?.lua;"
+                   "%s%slua%s?%sinit.lua;"
+                   "%s%slua%s?.lua;"
+                   "%s%slua%s?%sinit.lua;",
+                   user_dir.c_str(), LUA_DIRSEP, LUA_DIRSEP,
+                   user_dir.c_str(), LUA_DIRSEP, LUA_DIRSEP, LUA_DIRSEP,
++                  user_common_dir.c_str(), LUA_DIRSEP, LUA_DIRSEP,
++                  user_common_dir.c_str(), LUA_DIRSEP, LUA_DIRSEP, LUA_DIRSEP,
+                   shared_dir.c_str(), LUA_DIRSEP, LUA_DIRSEP,
+                   shared_dir.c_str(), LUA_DIRSEP, LUA_DIRSEP, LUA_DIRSEP);
+   lua_getfield(L, -2, "path");
+@@ -67,16 +73,24 @@ static void lua_init(lua_State *L) {
+   lua_pop(L, 1);
+ 
+   const auto user_file = user_dir + LUA_DIRSEP "rime.lua";
++  const auto user_common_file = user_common_dir + LUA_DIRSEP "rime.lua";
+   const auto shared_file = shared_dir + LUA_DIRSEP "rime.lua";
+ 
+   // use the user_file first
+-  // use the shared_file if the user_file doesn't exist
++  // use the user_common_file if the user_file doesn't exist
++  // use the shared_file if the user_common_file doesn't exist
+   if (file_exists(user_file.c_str())) {
+     if (luaL_dofile(L, user_file.c_str())) {
+       const char *e = lua_tostring(L, -1);
+       LOG(ERROR) << "rime.lua error: " << e;
+       lua_pop(L, 1);
+     }
++  } else if (file_exists(user_common_file.c_str())) {
++    if (luaL_dofile(L, user_common_file.c_str())) {
++      const char *e = lua_tostring(L, -1);
++      LOG(ERROR) << "rime.lua error: " << e;
++      lua_pop(L, 1);
++    }
+   } else if (file_exists(shared_file.c_str())) {
+     if (luaL_dofile(L, shared_file.c_str())) {
+       const char *e = lua_tostring(L, -1);
+@@ -85,8 +99,8 @@ static void lua_init(lua_State *L) {
+     }
+   } else {
+     LOG(INFO) << "rime.lua info: rime.lua should be either in the "
+-                 "rime user data directory or in the rime shared "
+-                 "data directory";
++                 "rime user data directory, rime user common data directory, "
++                 "or in the rime shared data directory";
+   }
+ }
+ 
