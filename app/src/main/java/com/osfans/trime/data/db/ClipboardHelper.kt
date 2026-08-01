@@ -30,7 +30,7 @@ import timber.log.Timber
 object ClipboardHelper :
     ClipboardManager.OnPrimaryClipChangedListener,
     CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.Default) {
-    private lateinit var clbDb: Database
+    internal lateinit var clbDb: Database
     private lateinit var clbDao: DatabaseDao
     val clipboardSyncDao: ClipboardSyncDao by lazy { clbDb.clipboardSyncDao() }
 

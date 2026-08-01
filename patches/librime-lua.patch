@@ -32,7 +32,7 @@ index 42f2ebb..6686548 100644
    set_target_properties(rime-lua-objs PROPERTIES POSITION_INDEPENDENT_CODE ON)
  endif()
 diff --git a/src/modules.cc b/src/modules.cc
-index 6ca704e..2cf6697 100644
+index 6ca704e..41d1784 100644
 --- a/src/modules.cc
 +++ b/src/modules.cc
 @@ -49,16 +49,22 @@ struct COMPAT<T, void_t<decltype(std::declval<T>().user_data_dir.string())>> {
@@ -84,7 +84,7 @@ index 6ca704e..2cf6697 100644
    } else if (file_exists(shared_file.c_str())) {
      if (luaL_dofile(L, shared_file.c_str())) {
        const char *e = lua_tostring(L, -1);
-@@ -85,8 +99,8 @@ static void lua_init(lua_State *L) {
+@@ -85,9 +99,22 @@ static void lua_init(lua_State *L) {
      }
    } else {
      LOG(INFO) << "rime.lua info: rime.lua should be either in the "
@@ -92,6 +92,20 @@ index 6ca704e..2cf6697 100644
 -                 "data directory";
 +                 "rime user data directory, rime user common data directory, "
 +                 "or in the rime shared data directory";
++  }
++
++  lua_getglobal(L, "rime_api");
++  if (lua_istable(L, -1)) {
++    lua_pushcfunction(L, [](lua_State* L) -> int {
++      const auto dir = rime::Service::instance()
++                           .deployer()
++                           .user_common_data_dir.string();
++      lua_pushstring(L, dir.c_str());
++      return 1;
++    });
++    lua_setfield(L, -2, "get_user_common_data_dir");
    }
++  lua_pop(L, 1);
  }
  
+ static void rime_lua_initialize() {

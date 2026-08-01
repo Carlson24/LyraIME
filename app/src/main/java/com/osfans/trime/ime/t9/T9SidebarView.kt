@@ -3,6 +3,8 @@ package com.osfans.trime.ime.t9
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
@@ -85,6 +87,37 @@ class T9SidebarView(
 
     private val itemViewPool = ArrayDeque<FrameLayout>(8)
     private val dividerPool = ArrayDeque<View>(8)
+
+    private inner class CjkCorrectedTextView(context: Context) : TextView(context) {
+        override fun onDraw(canvas: Canvas) {
+            val t = text?.toString() ?: ""
+            if (t.isCjkPunctuation()) {
+                canvas.save()
+                canvas.translate(visualCenterCorrect(t, paint), 0f)
+                super.onDraw(canvas)
+                canvas.restore()
+            } else {
+                super.onDraw(canvas)
+            }
+        }
+    }
+
+    private fun String.isCjkPunctuation(): Boolean {
+        if (length != 1) return false
+        val c = this[0]
+        return c in '\u3000'..'\u303F' ||
+            c in '\uFF00'..'\uFF0F' ||
+            c in '\uFF1A'..'\uFF1F' ||
+            c == '\u00B7'
+    }
+
+    private fun visualCenterCorrect(text: String, paint: Paint): Float {
+        val bounds = Rect()
+        paint.getTextBounds(text, 0, text.length, bounds)
+        val glyphCenter = paint.measureText(text) / 2f
+        val visualCenter = bounds.width() / 2f + bounds.left.toFloat()
+        return glyphCenter - visualCenter
+    }
 
     private companion object {
         private const val MODE_EMPTY = 0
@@ -257,7 +290,7 @@ class T9SidebarView(
     private fun obtainDivider(): View = if (dividerPool.isNotEmpty()) dividerPool.removeLast() else createDivider()
 
     private fun createSymbolItemView(symbol: String, itemHeight: Int): FrameLayout {
-        val label = TextView(context).apply {
+        val label = CjkCorrectedTextView(context).apply {
             text = UnicodeVariantUtils.toDisplay(symbol)
             setTextColor(sideTextColor)
             textSize = sideTextSizeSp
@@ -322,7 +355,7 @@ class T9SidebarView(
         token: T9InputController.PinYinToken,
         itemHeight: Int,
     ): FrameLayout {
-        val label = TextView(context).apply {
+        val label = CjkCorrectedTextView(context).apply {
             text = UnicodeVariantUtils.toDisplay(token.display)
             setTextColor(sideTextColor)
             textSize = sideTextSizeSp

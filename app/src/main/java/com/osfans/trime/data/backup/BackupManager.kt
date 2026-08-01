@@ -11,8 +11,8 @@ import android.util.Base64
 import androidx.core.content.edit
 import androidx.paging.PagingSource
 import androidx.preference.PreferenceManager
-import androidx.room.Room
 import androidx.room.withTransaction
+import com.osfans.trime.data.db.ClipboardHelper
 import com.osfans.trime.data.db.Database
 import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.prefs.AppPrefs
@@ -352,16 +352,13 @@ object BackupManager {
     }
 
     private suspend fun exportClipboard(onlyPinned: Boolean = false): List<BackupBean> = withRetry(operation = "export clipboard data") {
-        val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
-            .fallbackToDestructiveMigration(true)
-            .build()
+        val db = ClipboardHelper.clbDb
         val dao = db.databaseDao()
         val pagingSource = if (onlyPinned) dao.favoriteEntries() else dao.allEntries()
         val beans = mutableListOf<DatabaseBean>()
         val params = PagingSource.LoadParams.Refresh<Int>(null, Int.MAX_VALUE, false)
         val result = pagingSource.load(params) as PagingSource.LoadResult.Page
         beans.addAll(result.data)
-        db.close()
         Timber.d("Successfully exported clipboard data with ${beans.size} items (onlyPinned=$onlyPinned)")
         beans.map { bean ->
             BackupBean(
@@ -375,9 +372,7 @@ object BackupManager {
 
     private suspend fun importClipboard(beans: List<BackupBean>) {
         withRetry(operation = "import clipboard data") {
-            val db = Room.databaseBuilder(appContext, Database::class.java, "clipboard.db")
-                .fallbackToDestructiveMigration(true)
-                .build()
+            val db = ClipboardHelper.clbDb
             val dao = db.databaseDao()
             db.withTransaction {
                 dao.deleteAll()
@@ -391,7 +386,6 @@ object BackupManager {
                     dao.insert(bean)
                 }
             }
-            db.close()
             Timber.d("Successfully imported clipboard data with ${beans.size} items")
         }
     }

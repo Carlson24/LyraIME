@@ -328,6 +328,7 @@ class InputBarDelegate : InputBroadcastReceiver {
                     override fun onViewAttachedToWindow(v: View) {}
 
                     override fun onViewDetachedFromWindow(v: View) {
+                        ClipboardHelper.removeOnUpdateListener(onClipboardUpdateListener)
                     }
                 },
             )

@@ -51,7 +51,6 @@ object FontManager {
 
     fun resetCache(theme: Theme) {
         typefaceCache.clear()
-        fontFamilyCache.clear()
         this.theme = theme
         fontFeatureSettings = theme.generalStyle.fonts.variations
             .filter { (key, value) -> value && key != "cpct" }
@@ -60,8 +59,8 @@ object FontManager {
             variants = theme.generalStyle.fonts.display,
             enabled = theme.generalStyle.fonts.variations["cpct"] == true,
         )
-        hanBFont = getTypefaceOrDefault(FontKey.HANB_FONT.name)
-        latinFont = getTypefaceOrDefault(FontKey.LATIN_FONT.name)
+        hanBFont = getTypeface(FontKey.HANB_FONT.name)
+        latinFont = getTypeface(FontKey.LATIN_FONT.name)
     }
 
     @JvmStatic

@@ -79,6 +79,13 @@ class KeyView(
         textAlign = Paint.Align.LEFT
     }
 
+    private var cachedTextBoldTypeface: Typeface? = null
+    private var cachedTextBoldBase: Typeface? = null
+    private var cachedSymbolBoldTypeface: Typeface? = null
+    private var cachedSymbolBoldBase: Typeface? = null
+    private var cachedRichTextBoldTypeface: Typeface? = null
+    private var cachedRichTextBoldBase: Typeface? = null
+
     private val iconCache = object : LruCache<String, IconicsDrawable>(4) {}
 
     private val cachedLocation = intArrayOf(0, 0)
@@ -409,8 +416,10 @@ class KeyView(
             else -> PositionMode.CENTER
         }
 
-        val vRoundCornerInset = ((key.roundCorner ?: keyboard.roundCorner)
-            .takeIf { it > 0f }?.let { dp(it) } ?: 0f) * 2 / 3f
+        val vRoundCornerInset = (
+            (key.roundCorner ?: keyboard.roundCorner)
+                .takeIf { it > 0f }?.let { dp(it) } ?: 0f
+            ) * 2 / 3f
 
         val (centerX, linePositions) = calculateTextPosition(
             richTextLines,
@@ -636,7 +645,23 @@ class KeyView(
         val baseAscent = fontMetrics.ascent
         val baseDescent = fontMetrics.descent
         val baseTypeface = basePaint.typeface ?: Typeface.DEFAULT
-        val boldTypeface = Typeface.create(baseTypeface, Typeface.BOLD)
+        val boldTypeface = when (basePaint) {
+            textPaint -> {
+                if (cachedTextBoldBase !== baseTypeface) {
+                    cachedTextBoldTypeface = Typeface.create(baseTypeface, Typeface.BOLD)
+                    cachedTextBoldBase = baseTypeface
+                }
+                cachedTextBoldTypeface ?: Typeface.create(baseTypeface, Typeface.BOLD)
+            }
+            symbolPaint -> {
+                if (cachedSymbolBoldBase !== baseTypeface) {
+                    cachedSymbolBoldTypeface = Typeface.create(baseTypeface, Typeface.BOLD)
+                    cachedSymbolBoldBase = baseTypeface
+                }
+                cachedSymbolBoldTypeface ?: Typeface.create(baseTypeface, Typeface.BOLD)
+            }
+            else -> Typeface.create(baseTypeface, Typeface.BOLD)
+        }
 
         val leftGroup = mutableListOf<StyledSegment>()
         val centerGroup = mutableListOf<StyledSegment>()
