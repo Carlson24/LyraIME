@@ -46,10 +46,12 @@ class Rime {
     const char* userDir = getenv("RIME_USER_DATA_DIR");
     const char* sharedDir = getenv("RIME_SHARED_DATA_DIR");
     const char* versionName = getenv("RIME_DISTRIBUTION_VERSION");
+    const char* userCommonDir = getenv("RIME_USER_COMMON_DATA_DIR");
 
     RIME_STRUCT(RimeTraits, trime_traits)
     trime_traits.shared_data_dir = sharedDir;
     trime_traits.user_data_dir = userDir;
+    trime_traits.user_common_data_dir = userCommonDir;
     trime_traits.log_dir = "";  // set empty log_dir to log to logcat only
     trime_traits.app_name = "rime.lyraime";
     trime_traits.distribution_name = "LyraIme";

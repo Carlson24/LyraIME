@@ -45,10 +45,10 @@ index 7057ed4b..78ee5d65 100644
    the<UnityTableEncoder> encoder_;
  };
 diff --git a/src/rime/resource.cc b/src/rime/resource.cc
-index 045e047f..c0de8075 100644
+index 045e047f..92b7d282 100644
 --- a/src/rime/resource.cc
 +++ b/src/rime/resource.cc
-@@ -34,10 +34,21 @@ path ResourceResolver::ResolvePath(const string& resource_id) {
+@@ -34,10 +34,19 @@ path ResourceResolver::ResolvePath(const string& resource_id) {
  path FallbackResourceResolver::ResolvePath(const string& resource_id) {
    auto default_path = ResourceResolver::ResolvePath(resource_id);
    if (!std::filesystem::exists(default_path)) {
@@ -58,16 +58,14 @@ index 045e047f..c0de8075 100644
 -      return fallback_path;
 +    if (!fallback_root_path_.empty()) {
 +      auto fallback_path = std::filesystem::absolute(
-+          fallback_root_path_ /
-+          (type_.prefix + resource_id + type_.suffix));
++          fallback_root_path_ / (type_.prefix + resource_id + type_.suffix));
 +      if (std::filesystem::exists(fallback_path)) {
 +        return fallback_path;
 +      }
 +    }
 +    if (!second_fallback_root_path_.empty()) {
 +      auto second_fallback_path = std::filesystem::absolute(
-+          second_fallback_root_path_ /
-+          (type_.prefix + resource_id + type_.suffix));
++          second_fallback_root_path_ / (type_.prefix + resource_id + type_.suffix));
 +      if (std::filesystem::exists(second_fallback_path)) {
 +        return second_fallback_path;
 +      }
@@ -93,7 +91,7 @@ index 7ffa2ef4..2f1537a6 100644
  
  }  // namespace rime
 diff --git a/src/rime/service.cc b/src/rime/service.cc
-index d30f991e..3e6d60d9 100644
+index d30f991e..0014905a 100644
 --- a/src/rime/service.cc
 +++ b/src/rime/service.cc
 @@ -167,7 +167,10 @@ void Service::Notify(SessionId session_id,
@@ -108,39 +106,33 @@ index d30f991e..3e6d60d9 100644
    return resolver.release();
  }
  
-@@ -182,7 +185,11 @@ ResourceResolver* Service::CreateDeployedResourceResolver(
-     const ResourceType& type) {
-   the<FallbackResourceResolver> resolver(new FallbackResourceResolver(type));
-   resolver->set_root_path(deployer().staging_dir);
--  resolver->set_fallback_root_path(deployer().prebuilt_data_dir);
-+  if (!deployer().user_common_data_dir.empty()) {
-+    resolver->set_fallback_root_path(deployer().user_common_data_dir /
-+                                     "build");
-+  }
-+  resolver->set_second_fallback_root_path(deployer().prebuilt_data_dir);
-   return resolver.release();
- }
- 
 diff --git a/src/rime/setup.cc b/src/rime/setup.cc
-index 4e644b0e..2c52d703 100644
+index 4e644b0e..930dfb80 100644
 --- a/src/rime/setup.cc
 +++ b/src/rime/setup.cc
-@@ -78,6 +78,10 @@ RIME_DLL void SetupDeployer(RimeTraits* traits) {
-     deployer.staging_dir = path(traits->staging_dir);
-   else
-     deployer.staging_dir = deployer.user_data_dir / "build";
-+  const char* user_common_data_dir = getenv("RIME_USER_COMMON_DATA_DIR");
-+  if (user_common_data_dir) {
-+    deployer.user_common_data_dir = path(user_common_data_dir);
-+  }
- }
- 
- RIME_DLL void SetupLogging(const char* app_name,
+@@ -62,6 +62,8 @@ RIME_DLL void SetupDeployer(RimeTraits* traits) {
+     deployer.shared_data_dir = path(traits->shared_data_dir);
+   if (RIME_PROVIDED(traits, user_data_dir))
+     deployer.user_data_dir = path(traits->user_data_dir);
++  if (RIME_PROVIDED(traits, user_common_data_dir))
++    deployer.user_common_data_dir = path(traits->user_common_data_dir);
+   if (RIME_PROVIDED(traits, distribution_name))
+     deployer.distribution_name = traits->distribution_name;
+   if (RIME_PROVIDED(traits, distribution_code_name))
 diff --git a/src/rime_api.h b/src/rime_api.h
-index 2fccde0f..92db29c9 100644
+index 2fccde0f..a1785b62 100644
 --- a/src/rime_api.h
 +++ b/src/rime_api.h
-@@ -127,6 +127,7 @@ typedef struct {
+@@ -114,6 +114,8 @@ typedef struct rime_traits_t {
+   const char* prebuilt_data_dir;
+   //! staging directory. defaults to ${user_data_dir}/build
+   const char* staging_dir;
++  //! user-level cross-package shared data directory
++  const char* user_common_data_dir;
+ } RimeTraits;
+ 
+ typedef struct {
+@@ -127,6 +129,7 @@ typedef struct {
  typedef struct rime_candidate_t {
    char* text;
    char* comment;
