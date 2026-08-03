@@ -21,7 +21,7 @@ import com.osfans.trime.ime.candidates.CandidateViewHolder
 import com.osfans.trime.ime.candidates.unrolled.PagingCandidateViewAdapter
 import com.osfans.trime.ime.candidates.unrolled.UnrolledCandidateLayout
 import com.osfans.trime.ime.candidates.unrolled.decoration.FlexboxHorizontalDecoration
-import com.osfans.trime.ime.enums.Keycode
+import com.osfans.trime.ime.keyboard.KeyCode
 import com.osfans.trime.ime.keyboard.InputFeedbackManager
 import com.osfans.trime.ime.window.BoardWindow
 import splitties.dimensions.dp
@@ -77,7 +77,7 @@ class FlexboxUnrolledCandidateWindow : BaseUnrolledCandidateWindow() {
             val rimeKeyVal = RimeKeyMapping
                 .keyCodeToVal(keyAction.code)
                 .takeIf { it != RimeKeyMapping.RimeKey_VoidSymbol }
-                ?: RimeKeyEvent.getKeycodeByName(Keycode.keyNameOf(keyAction.code))
+                ?: RimeKeyEvent.getKeycodeByName(KeyCode.codeToKeyName(keyAction.code) ?: "VoidSymbol")
             val rimeMods = KeyModifiers.fromMetaState(keyAction.modifier)
             rime.launchOnReady { rimeApi ->
                 rimeApi.processKey(rimeKeyVal, rimeMods.modifiers)

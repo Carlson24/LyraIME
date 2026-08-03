@@ -456,8 +456,8 @@ return theme {
     Keyboard_default = { label = "返", send = "Eisu_toggle", select = ".default" },
 
     -- 模式切换
-    Mode_switch = { label = "中/En", toggle = "ascii_mode", send = "Mode_switch", states = { "中文", "西文" } },
-    Zenkaku_Hankaku = { toggle = "full_shape", send = "Mode_switch", states = { "半角", "全角" } },
+   Mode_switch = { label = "中/En", toggle = "ascii_mode", send = "SWITCH_CHARSET", states = { "中文", "西文" } },
+   Zenkaku_Hankaku = { toggle = "full_shape", send = "SWITCH_CHARSET", states = { "半角", "全角" } },
 
     -- 文本操作
     Left = { label = "←", send = "Left" },
@@ -473,11 +473,11 @@ return theme {
 
     -- Rime 专用
     F4 = { label = "⚙", send = "F4" },
-    Menu = { label = "☰", send = "Menu" },
+    Menu = { label = "☰", send = "MENU" },
 
     -- 液态键盘
-    liquid_keyboard_switch = { label = "…", command = "function", option = "liquid_keyboard" },
-    liquid_keyboard_exit = { label = "返", command = "function", option = "liquid_keyboard" }
+   liquid_keyboard_switch = { label = "…", send = "FUNCTION", command = "liquid_keyboard", option = "更多" },
+   liquid_keyboard_exit = { label = "返", send = "FUNCTION", command = "liquid_keyboard", option = "-1" }
   },
 
   -- ========================================================================

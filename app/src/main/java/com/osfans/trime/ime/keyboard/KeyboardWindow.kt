@@ -539,6 +539,14 @@ class KeyboardWindow :
             KeyboardWindow.dynamicController = newController
             Timber.d("dynamic controller recreated in onAttached: original=${newController.originalKeyboard}, mode=${newController.isDynamicMode}")
         }
+        val config = getKeyboardConfig(currentKeyboardId)
+        if (config?.navbar == true) {
+            inputBarDelegate.navBar.attach(
+                title = config.name,
+                onCloseClick = { service.requestHideSelf(0) },
+                onBackClick = { switchKeyboard(".previous") },
+            )
+        }
     }
 
     override fun onDetached() {

@@ -38,7 +38,7 @@ import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.data.theme.ThemePrefs
-import com.osfans.trime.ime.enums.Keycode
+import com.osfans.trime.ime.keyboard.KeyCode
 import com.osfans.trime.ime.keyboard.InputFeedbackManager
 import com.osfans.trime.ime.keyboard.KeyboardWindow
 import kotlinx.coroutines.Job
@@ -187,7 +187,7 @@ abstract class BaseInputView(
         val rimeKeyVal = RimeKeyMapping
             .keyCodeToVal(keyAction.code)
             .takeIf { it != RimeKeyMapping.RimeKey_VoidSymbol }
-            ?: RimeKeyEvent.getKeycodeByName(Keycode.keyNameOf(keyAction.code))
+            ?: RimeKeyEvent.getKeycodeByName(KeyCode.codeToKeyName(keyAction.code) ?: "VoidSymbol")
         val rimeMods = KeyModifiers.fromMetaState(keyAction.modifier)
         rime.launchOnReady { rimeApi ->
             rimeApi.processKey(rimeKeyVal, rimeMods.modifiers)
