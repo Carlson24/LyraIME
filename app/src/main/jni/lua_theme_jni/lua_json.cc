@@ -5,6 +5,7 @@
 #include "lua_json.h"
 
 #include <sstream>
+#include <unordered_set>
 
 extern "C" {
 #include <lauxlib.h>
@@ -14,6 +15,8 @@ extern "C" {
 namespace lua_theme {
 
 namespace {
+
+constexpr int kMaxDepth = 128;
 
 void json_escape(std::ostream& os, const std::string& s) {
   os << '"';
@@ -52,7 +55,14 @@ void json_escape(std::ostream& os, const std::string& s) {
   os << '"';
 }
 
-void lua_value_to_json(lua_State* L, int index, std::ostream& os) {
+void lua_value_to_json(lua_State* L, int index, std::ostream& os,
+                       int depth,
+                       std::unordered_set<const void*>& visited) {
+  if (depth > kMaxDepth) {
+    os << "null";
+    return;
+  }
+
   int t = lua_type(L, index);
   switch (t) {
     case LUA_TNIL:
@@ -79,6 +89,12 @@ void lua_value_to_json(lua_State* L, int index, std::ostream& os) {
     }
 
     case LUA_TTABLE: {
+      const void* ptr = lua_topointer(L, index);
+      if (!visited.insert(ptr).second) {
+        os << "null";
+        return;
+      }
+
       bool is_array = true;
       int max_key = 0;
 
@@ -109,7 +125,7 @@ void lua_value_to_json(lua_State* L, int index, std::ostream& os) {
         for (int i = 1; i <= max_key; i++) {
           if (i > 1) os << ',';
           lua_geti(L, index, i);
-          lua_value_to_json(L, -1, os);
+          lua_value_to_json(L, -1, os, depth + 1, visited);
           lua_pop(L, 1);
         }
         os << ']';
@@ -129,11 +145,13 @@ void lua_value_to_json(lua_State* L, int index, std::ostream& os) {
             os << "\"\"";
           }
           os << ':';
-          lua_value_to_json(L, -1, os);
+          lua_value_to_json(L, -1, os, depth + 1, visited);
           lua_pop(L, 1);
         }
         os << '}';
       }
+
+      visited.erase(ptr);
       break;
     }
 
@@ -143,7 +161,13 @@ void lua_value_to_json(lua_State* L, int index, std::ostream& os) {
   }
 }
 
-void yaml_node_to_json(const YAML::Node& node, std::ostream& os) {
+void yaml_node_to_json(const YAML::Node& node, std::ostream& os,
+                       int depth = 0) {
+  if (depth > kMaxDepth) {
+    os << "null";
+    return;
+  }
+
   switch (node.Type()) {
     case YAML::NodeType::Null:
       os << "null";
@@ -183,7 +207,7 @@ void yaml_node_to_json(const YAML::Node& node, std::ostream& os) {
       for (const auto& item : node) {
         if (!first) os << ',';
         first = false;
-        yaml_node_to_json(item, os);
+        yaml_node_to_json(item, os, depth + 1);
       }
       os << ']';
       break;
@@ -197,7 +221,7 @@ void yaml_node_to_json(const YAML::Node& node, std::ostream& os) {
         first = false;
         json_escape(os, kv.first.as<std::string>());
         os << ':';
-        yaml_node_to_json(kv.second, os);
+        yaml_node_to_json(kv.second, os, depth + 1);
       }
       os << '}';
       break;
@@ -208,13 +232,13 @@ void yaml_node_to_json(const YAML::Node& node, std::ostream& os) {
       break;
   }
 }
-
 }  // namespace
 
 std::string lua_to_json(lua_State* L, int index) {
   std::ostringstream os;
   os << std::fixed;
-  lua_value_to_json(L, index, os);
+  std::unordered_set<const void*> visited;
+  lua_value_to_json(L, index, os, 0, visited);
   return os.str();
 }
 
