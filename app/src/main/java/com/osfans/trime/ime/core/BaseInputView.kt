@@ -38,8 +38,8 @@ import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.data.theme.ThemePrefs
-import com.osfans.trime.ime.keyboard.KeyCode
 import com.osfans.trime.ime.keyboard.InputFeedbackManager
+import com.osfans.trime.ime.keyboard.KeyCode
 import com.osfans.trime.ime.keyboard.KeyboardWindow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

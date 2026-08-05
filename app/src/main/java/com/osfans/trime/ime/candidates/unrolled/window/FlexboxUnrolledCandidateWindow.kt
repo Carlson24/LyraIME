@@ -21,8 +21,8 @@ import com.osfans.trime.ime.candidates.CandidateViewHolder
 import com.osfans.trime.ime.candidates.unrolled.PagingCandidateViewAdapter
 import com.osfans.trime.ime.candidates.unrolled.UnrolledCandidateLayout
 import com.osfans.trime.ime.candidates.unrolled.decoration.FlexboxHorizontalDecoration
-import com.osfans.trime.ime.keyboard.KeyCode
 import com.osfans.trime.ime.keyboard.InputFeedbackManager
+import com.osfans.trime.ime.keyboard.KeyCode
 import com.osfans.trime.ime.window.BoardWindow
 import splitties.dimensions.dp
 import splitties.views.dsl.core.wrapContent

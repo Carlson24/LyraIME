@@ -55,8 +55,7 @@ void json_escape(std::ostream& os, const std::string& s) {
   os << '"';
 }
 
-void lua_value_to_json(lua_State* L, int index, std::ostream& os,
-                       int depth,
+void lua_value_to_json(lua_State* L, int index, std::ostream& os, int depth,
                        std::unordered_set<const void*>& visited) {
   if (depth > kMaxDepth) {
     os << "null";

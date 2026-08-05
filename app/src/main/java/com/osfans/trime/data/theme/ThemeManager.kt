@@ -16,7 +16,6 @@ import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.ime.symbol.LiquidData
 import com.osfans.trime.util.WeakHashSet
 import com.osfans.trime.util.appContext
-import kotlin.concurrent.thread
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -24,6 +23,7 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import timber.log.Timber
 import java.io.File
+import kotlin.concurrent.thread
 
 object ThemeManager {
     fun interface OnThemeChangeListener {
@@ -146,9 +146,11 @@ object ThemeManager {
                 }
             }
             keyboardJsonStore[id] = keyboardJsons.toMap()
-            val strippedObj = JsonObject(sortedObj.toMutableMap().apply {
-                this["preset_keyboards"] = JsonObject(emptyMap())
-            })
+            val strippedObj = JsonObject(
+                sortedObj.toMutableMap().apply {
+                    this["preset_keyboards"] = JsonObject(emptyMap())
+                },
+            )
 
             if (!cacheFile.exists() || cacheFile.lastModified() < latestMtime) {
                 val cacheContent = Theme.json.encodeToString(sorted)
