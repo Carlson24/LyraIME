@@ -19,6 +19,7 @@ import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegate
 import com.osfans.trime.data.theme.KeyActionManager
 import com.osfans.trime.data.theme.Theme
+import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.ime.bar.InputBarDelegate
 import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
@@ -91,7 +92,7 @@ class KeyboardWindow :
     private val appPrefs = AppPrefs.defaultInstance()
     private val internalPrefs = appPrefs.internal
     private val expandKeypressAreaPref = appPrefs.keyboard.expandKeypressArea
-    private val presetKeyboardIds = theme.presetKeyboards.keys.toList()
+    private val presetKeyboardIds get() = ThemeManager.keyboardNames
     private var initializeKeyboardId = internalPrefs.initializeKeyboardId.getValue()
     private val keyboardSourceMap = mutableMapOf<String, String>()
     private var currentKeyboardId = ""
@@ -137,7 +138,7 @@ class KeyboardWindow :
     }
 
     private fun selectKeyboardConfig(name: String): TextKeyboard? {
-        val config = theme.presetKeyboards[name] ?: theme.presetKeyboards["default"]
+        val config = ThemeManager.getKeyboard(name) ?: ThemeManager.getKeyboard("default")
         val importPreset = config?.importPreset
         if (!importPreset.isNullOrEmpty()) {
             return selectKeyboardConfig(importPreset)
@@ -321,7 +322,7 @@ class KeyboardWindow :
         // 切换到横屏布局
         if (service.isLandscapeMode()) {
             val landscape =
-                theme.presetKeyboards[final]?.landscapeKeyboard ?: ""
+                ThemeManager.getKeyboard(final)?.landscapeKeyboard ?: ""
             if (landscape.isNotEmpty() && presetKeyboardIds.contains(landscape)) final = landscape
         }
         return final

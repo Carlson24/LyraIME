@@ -12,13 +12,16 @@ import android.widget.Toast
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.model.GeneralStyle
+import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.ime.symbol.LiquidData
 import com.osfans.trime.util.WeakHashSet
 import com.osfans.trime.util.appContext
-import kotlinx.serialization.json.Json
+import kotlin.concurrent.thread
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonObject
 import timber.log.Timber
 import java.io.File
 
@@ -71,9 +74,17 @@ object ThemeManager {
 
     private val themeCache = mutableMapOf<String, Pair<Long, Theme>>()
 
-    private val prettyJson = Json(from = Theme.json) {
-        prettyPrint = true
-        prettyPrintIndent = "\t"
+    private val keyboardJsons = mutableMapOf<String, String>()
+    private val keyboardCache = mutableMapOf<String, TextKeyboard>()
+    private val keyboardJsonStore = mutableMapOf<String, Map<String, String>>()
+    val keyboardNames: List<String> get() = keyboardJsons.keys.toList()
+
+    fun getKeyboard(name: String): TextKeyboard? {
+        keyboardCache[name]?.let { return it }
+        val json = keyboardJsons[name] ?: return null
+        return Theme.json.decodeFromString<TextKeyboard>(json).also {
+            keyboardCache[name] = it
+        }
     }
 
     private fun sortJsonKeys(element: JsonElement): JsonElement = when (element) {
@@ -96,7 +107,14 @@ object ThemeManager {
 
         val lastModified = sourceFile.lastModified()
         themeCache[id]?.let { (cachedTime, cachedTheme) ->
-            if (cachedTime == lastModified) return cachedTheme
+            if (cachedTime == lastModified) {
+                keyboardJsonStore[id]?.let { store ->
+                    keyboardJsons.clear()
+                    keyboardJsons.putAll(store)
+                    keyboardCache.clear()
+                }
+                return cachedTheme
+            }
         }
 
         return loadThemeFromLua(sourceFile, id)
@@ -109,17 +127,40 @@ object ThemeManager {
             val latestMtime = themesDir.walkTopDown()
                 .filter { it.isFile && !it.startsWith(themesDir.resolve("build")) }
                 .maxOfOrNull { it.lastModified() } ?: 0L
-            val jsonStr = if (cacheFile.exists() && cacheFile.lastModified() >= latestMtime) {
-                cacheFile.readText()
-            } else {
-                val json = LuaThemeBridge.nativeLoadTheme(file.absolutePath)
-                cacheFile.parentFile?.mkdirs()
-                val sorted = sortJsonKeys(prettyJson.parseToJsonElement(json))
-                val formatted = prettyJson.encodeToString(sorted)
-                cacheFile.writeText(formatted)
-                json
+            val sorted = run {
+                val jsonStr = if (cacheFile.exists() && cacheFile.lastModified() >= latestMtime) {
+                    cacheFile.readText()
+                } else {
+                    LuaThemeBridge.nativeLoadTheme(file.absolutePath)
+                }
+                sortJsonKeys(Theme.json.parseToJsonElement(jsonStr))
             }
-            Theme.json.decodeFromString<Theme>(jsonStr).also {
+            val sortedObj = sorted.jsonObject
+
+            keyboardJsons.clear()
+            keyboardCache.clear()
+            val keyboardsObj = sortedObj["preset_keyboards"]?.jsonObject
+            if (keyboardsObj != null) {
+                for ((name, kbElement) in keyboardsObj.toSortedMap()) {
+                    keyboardJsons[name] = Theme.json.encodeToString(kbElement)
+                }
+            }
+            keyboardJsonStore[id] = keyboardJsons.toMap()
+            val strippedObj = JsonObject(sortedObj.toMutableMap().apply {
+                this["preset_keyboards"] = JsonObject(emptyMap())
+            })
+
+            if (!cacheFile.exists() || cacheFile.lastModified() < latestMtime) {
+                val cacheContent = Theme.json.encodeToString(sorted)
+                thread(name = "theme-cache-write", priority = Thread.MIN_PRIORITY) {
+                    runCatching {
+                        cacheFile.parentFile?.mkdirs()
+                        cacheFile.writeText(cacheContent)
+                    }
+                }
+            }
+
+            Theme.json.decodeFromJsonElement<Theme>(strippedObj).also {
                 themeCache[id] = file.lastModified() to it
             }
         } catch (e: Exception) {
@@ -200,10 +241,12 @@ object ThemeManager {
     fun selectTheme(configId: String, forceReload: Boolean = false) {
         if (forceReload) {
             themeCache.remove(configId)
+            keyboardJsonStore.remove(configId)
         }
         val resolvedTheme = getThemeById(configId)
         val theme = resolvedTheme.theme
         KeyActionManager.resetCache()
+        keyboardCache.clear()
         FontManager.resetCache(theme)
         ColorManager.switchTheme(theme, suppressFireChange = true)
         LiquidData.init(theme)
