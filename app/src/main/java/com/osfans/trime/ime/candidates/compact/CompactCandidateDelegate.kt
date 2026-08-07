@@ -152,7 +152,8 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
         object : RecyclerView(context) {
             override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
                 super.onSizeChanged(w, h, oldw, oldh)
-                val maxSpanCount = maxSpanCountPref.getValue()
+        val maxSpanCount = maxSpanCountPref.getValue()
+        val halfSpanCount = (maxSpanCount + 1) / 2
                 layoutMinWidth = w / maxSpanCount - separatorDrawable.intrinsicWidth
             }
         }
@@ -168,29 +169,28 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
         val (total, highlighted, candidates) = data
 
         val maxSpanCount = maxSpanCountPref.getValue()
+        val halfSpanCount = (maxSpanCount + 1) / 2
 
         when (fillStyle) {
             CompactCandidateMode.NEVER_FILL -> {
                 layoutMinWidth = view.width / maxSpanCount - separatorDrawable.intrinsicWidth
-                layoutFlexGrow = if (candidates.size < maxSpanCount) 0f else 1f
-                // [^1] total candidates count < maxSpanCount
-                secondLayoutPassNeeded = candidates.size < maxSpanCount
-                secondLayoutPassDone = false
+                layoutFlexGrow = 0f
+                secondLayoutPassNeeded = false
                 adapter.contentGravity = Gravity.START or Gravity.CENTER_VERTICAL
             }
             CompactCandidateMode.AUTO_FILL -> {
                 layoutMinWidth = view.width / maxSpanCount - separatorDrawable.intrinsicWidth
                 layoutFlexGrow = if (candidates.size < maxSpanCount) 0f else 1f
                 // [^1] total candidates count < maxSpanCount
-                secondLayoutPassNeeded = candidates.size < maxSpanCount
+                secondLayoutPassNeeded = candidates.size in halfSpanCount until maxSpanCount
                 secondLayoutPassDone = false
-                adapter.contentGravity = Gravity.CENTER
+                adapter.contentGravity = Gravity.START or Gravity.CENTER_VERTICAL
             }
             CompactCandidateMode.ALWAYS_FILL -> {
                 layoutMinWidth = view.width / maxSpanCount - separatorDrawable.intrinsicWidth
                 layoutFlexGrow = 1f
                 secondLayoutPassNeeded = false
-                adapter.contentGravity = Gravity.START or Gravity.CENTER_VERTICAL
+                adapter.contentGravity = Gravity.CENTER
             }
         }
 
