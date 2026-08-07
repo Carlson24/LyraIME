@@ -465,10 +465,6 @@ class AppPrefs(
             5,
             1,
             10,
-            enableUiOn = {
-                shared.getString(HORIZONTAL_CANDIDATE_MODE, null) ==
-                    CompactCandidateMode.AUTO_FILL.name
-            },
         )
 
         val maxSpanCountLandscape = int(
@@ -477,10 +473,6 @@ class AppPrefs(
             5,
             4,
             12,
-            enableUiOn = {
-                shared.getString(HORIZONTAL_CANDIDATE_MODE, null) ==
-                    CompactCandidateMode.AUTO_FILL.name
-            },
         )
 
         val hookCtrlA = switch(R.string.hook_ctrl_a, HOOK_CTRL_A, false)

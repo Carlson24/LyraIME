@@ -8,6 +8,7 @@ package com.osfans.trime.ime.candidates
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.view.Gravity
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
@@ -46,6 +47,7 @@ import splitties.views.horizontalPadding
 class CandidateItemUi(
     override val ctx: Context,
     private val theme: Theme,
+    var contentGravity: Int = Gravity.CENTER,
 ) : Ui {
 
     private val textSize = theme.generalStyle.fonts.candidate_size
@@ -156,7 +158,7 @@ class CandidateItemUi(
         add(
             content,
             lParams(wrapContent, dp(theme.generalStyle.candidateViewHeight)) {
-                gravity = gravityCenter
+                gravity = contentGravity
             },
         )
     }

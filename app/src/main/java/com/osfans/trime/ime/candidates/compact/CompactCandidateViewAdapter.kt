@@ -6,6 +6,7 @@
 package com.osfans.trime.ime.candidates.compact
 
 import android.content.Context
+import android.view.Gravity
 import android.view.ViewGroup
 import androidx.core.view.updateLayoutParams
 import com.chad.library.adapter4.BaseQuickAdapter
@@ -39,6 +40,8 @@ open class CompactCandidateViewAdapter(
     var layoutFlexGrow: Float = 0f
         private set
 
+    var contentGravity: Int = Gravity.CENTER
+
     fun updateLayoutParams(minWidth: Int, flexGrow: Float) {
         layoutMinWidth = minWidth
         layoutFlexGrow = flexGrow
@@ -59,7 +62,7 @@ open class CompactCandidateViewAdapter(
         parent: ViewGroup,
         viewType: Int,
     ): CandidateViewHolder {
-        val ui = CandidateItemUi(context, theme)
+        val ui = CandidateItemUi(context, theme, contentGravity)
         ui.root.apply {
             minimumWidth = dp(40)
             layoutParams = FlexboxLayoutManager.LayoutParams(wrapContent, matchParent)
