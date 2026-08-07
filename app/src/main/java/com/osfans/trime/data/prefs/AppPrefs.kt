@@ -12,7 +12,6 @@ import androidx.annotation.Keep
 import com.osfans.trime.R
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.clipboard.SyncClipboardPrefs
-import com.osfans.trime.data.wanxiang.DefaultExcludeRules
 import com.osfans.trime.ime.candidates.compact.CompactCandidateMode
 import com.osfans.trime.ime.candidates.popup.PopupCandidatesLayout
 import com.osfans.trime.ime.candidates.popup.PopupCandidatesMode
@@ -864,7 +863,7 @@ class AppPrefs(
         val excludeRules = editText(
             R.string.wanxiang_exclude_rules,
             EXCLUDE_RULES,
-            DefaultExcludeRules,
+            "",
             R.string.wanxiang_exclude_hint,
             onBindEditText = {
                 it.typeface = Typeface.MONOSPACE

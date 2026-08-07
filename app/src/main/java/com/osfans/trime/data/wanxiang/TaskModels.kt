@@ -82,17 +82,6 @@ fun saveCustomTasks(tasks: List<CustomTask>, sharedPref: SharedPreferences) {
     sharedPref.edit { putString("custom_tasks_data", array.toString()) }
 }
 
-val DefaultExcludeRules = listOf(
-    """^custom_phrase\.txt$""",
-    """.*userdb$""",
-    """.*userdb\.txt""",
-    """sequence.*txt""",
-    """^(?!custom/).*\.custom\.yaml$""",
-    """^user\.yaml$""",
-    """^installation\.yaml$""",
-    """^sync/.*""",
-).joinToString("\n")
-
 data class DeployTarget(
     val path: String,
     val enabled: Boolean = true,
