@@ -1,163 +1,238 @@
 <!--
-SPDX-FileCopyrightText: 2015 - 2024 Rime community
+SPDX-FileCopyrightText: 2015 - 2026 Rime community
 
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
-# Trime
+# LyraIME — 灵韵输入法
 
-Rime IME for Android
+> Rime IME for Android
 
-![build](https://github.com/osfans/trime/actions/workflows/commit-ci.yml/badge.svg?branch=develop)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![GitHub release](https://img.shields.io/github/release/osfans/trime.svg)](https://github.com/osfans/trime/releases)
-[![F-Droid release](https://img.shields.io/f-droid/v/com.osfans.trime.svg)](https://f-droid.org/packages/com.osfans.trime)
-[![Latest build](https://img.shields.io/github/last-commit/osfans/trime.svg)](http://osfans.github.io/trime/)
+[![GitHub release](https://img.shields.io/github/release/Carlson24/LyraIME.svg)](https://github.com/Carlson24/LyraIME/releases)
+[![Latest build](https://img.shields.io/github/last-commit/Carlson24/LyraIME.svg)](https://github.com/Carlson24/LyraIME)
 
-English | [简体中文](README_sc.md) | [繁體中文](README_tc.md)
+## 关于
 
-## About
+灵韵输入法（LyraIME）是一款基于 [RIME] 输入法框架的 Android 输入法平台，使用 JNI 的 C 语言和
+Android 的 Java/Kotlin 语言开发。Fork 自[同文输入法（Trime）](https://github.com/osfans/trime)，
+旨在保护汉语各地方言母语，音码、形码通用的输入法平台。
 
-Trime is originally a frontend of open-source [Android Traditional Chinese IME], based on [RIME] input method framework and written in Java/Kotlin with JNI. It is designed to protect the native language of various local dialects of Chinese and is a universal shape-based and phonetic-based input method platform.
+[主题 DSL 文档](doc/theme-dsl.lua)
 
-[Documentation](https://github.com/osfans/trime/wiki)
+## 特色功能
 
-## Download
+### 离线语音输入
 
-- Stable Channel <br>
-  [<img alt='Get it on F-Droid' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' height='80px'/>](https://f-droid.org/packages/com.osfans.trime)
-  [<img alt='Google Play Download Now' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' height='80px'/>](https://play.google.com/store/apps/details?id=com.osfans.trime)
+基于 [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) 的本地语音识别引擎：
 
-- Nightly Channel [Download](https://github.com/osfans/trime/releases/tag/nightly)
+- 完全离线运行，无需网络连接，保护输入隐私
+- 支持中文、英文等多种语言的语音识别
+- 低延迟流式识别，边说边出字
 
-- Canary Channel [Download](https://github.com/osfans/trime/actions)
+### Qualcomm NPU 加速
 
-- Configurations [rimerc](https://github.com/Bambooin/rimerc)
+在 Qualcomm Snapdragon 平台上，自动利用 NPU（QNN DSP）硬件加速语音识别：
 
-## History
+- 运行时自动检测设备 SoC 型号，按需下载对应的 QNN HTP 运行时库
+- 支持以下平台：
 
-TRIME is the abbreviation of _Tongwen RIME_ or _ThaeRv Input Method_.
+| HTP 版本 | SoC |
+|----------|-----|
+| V81 | SM8850 (Snapdragon 8 Gen 5) |
+| V79 | SM8750 (Snapdragon 8 Gen 4) |
+| V75 | SM8650 (Snapdragon 8 Gen 3) |
+| V73 | SM8550 (Snapdragon 8 Gen 2) |
+| V69 | SM8450 / SM8475 (Snapdragon 8 Gen 1 / 8+ Gen 1) |
+| V68 | SM8350 (Snapdragon 888) |
 
-From the beginning, TRIME was written for TaeRv Pinyin, and named _TaeRv Input Method (泰如输入法)_.
+- 非高通设备或 x86_64 模拟器自动回退至 CPU 推理，无需额外配置
 
-Then, we created an input method platform with some code tables, such as Wu dialect (吴语). We renamed it to _Chinese Character Dialect Input Method (汉字方言输入法)_.
+### 强大自定义
 
-Later, it supports Wubi and Liangbi and other shape-based input method, we branded it [_Tongwen Input Method Platform 2.0 (同文输入法平台 2.0)_](https://github.com/osfans/trime-legacy), which implies that the phonetic-based and shape-based input method on one platform, while dialects and Mandrain share one kind of characters.
+- 高度可自定义的键盘布局与主题系统
+- 灵活的多点触控手势操作
+- 丰富的按键映射与快捷键支持
+- 通过外部方案包按需导入 Rime 输入方案，无需预装大量码表
 
-Benefit from the [librime](https://github.com/rime/librime) project by JNI, we are now in version 3.0 of TRIME aka _Tongwen Input Method (同文输入法)_.
+## 下载
 
-Your are now welcome to [contribution](CONTRIBUTING.md) ~ !
+> **注意**：APK 不内置 QNN DSP 库，首次使用 QNN 语音输入功能时会自动从 GitHub
+> Releases 下载对应平台的 HTP 库。
 
-## Getting Started for developer
+- 稳定版 <br>
+  [<img alt='Get it on F-Droid'
+  src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png'
+  height='80px'/>](https://f-droid.org/packages/com.carlson.lyraime)
+  [<img alt='Google Play 立即下载'
+  src='https://play.google.com/intl/en_us/badges/images/generic/zh-cn_badge_web_generic.png'
+  height='80px'/>](https://play.google.com/store/apps/details?id=com.carlson.lyraime)
 
-### Prepare
+- 每夜版 [点击下载](https://github.com/Carlson24/LyraIME/releases)
 
-#### Requirements:
+## 开发入门
 
-- Android SDK and Android NDK
-  * If you are new to Android development, please install [Android Studio](https://developer.android.com/studio).
+### 准备
 
-- JDK (OpenJDK) 17
-- Python 3 (required by OpenCC to generate dictionary text files)
+#### 开发环境要求
 
-#### Prerequisites for Windows
+- Android SDK 和 Android NDK 29.0.14206865
+  - 如果还不熟悉 Android 开发，建议安装
+    [Android Studio](https://developer.android.google.cn/studio)
+- JDK（OpenJDK）17
+- CMake 4.1.2
+- Python 3（用于 OpenCC 生成词典文本文件）
 
-Symbolic links will be created according to current build configurations, developers need:
+#### Windows 上的前提条件
 
-- Enable [Developer Mode](https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) so that symlinks can be created without administrator privilege.
+当前构建过程会创建符号链接，开发者需要：
 
-- Enable symlink support for `git`:
+- 启用[开发者模式](https://learn.microsoft.com/zh-cn/windows/apps/get-started/enable-your-device-for-development)
+- 启用 `git` 的符号链接支持：
 
   ```powershell
   git config --global core.symlinks true
   ```
 
-If you cannot or wouldn't like to enable anything, it doesn't matter. Copying will be used instead when error on creating symbolic links.
+如果无法启用上述设置，构建系统会自动使用复制替代。
 
-### Build
+#### QNN SDK（可选，用于 NPU 加速）
 
-#### 1. Clone this project and fetch all submodules:
+如需编译带 Qualcomm NPU 加速的版本，需设置 QNN SDK 路径：
+
+```bash
+export QNN_SDK_ROOT=$HOME/.local/share/Android/qairt/2.48.40.260702
+```
+
+或在 `gradle.properties` 中设置：
+
+```properties
+qnnSdkRoot=/path/to/qairt/version
+```
+
+未设置时自动回退至 CPU-only 构建。QNN 仅支持 arm64-v8a。
+
+### 构建
+
+#### 1. 克隆并拉取子模块
 
 ```sh
-git clone git@github.com:osfans/trime.git
+git clone git@github.com:Carlson24/LyraIME.git
 git submodule update --init --recursive
-# use partial clone to save time
+# 可使用部分克隆节约时间
 git submodule update --init --recursive --filter=blob:none
 ```
 
-#### 2. Debug version without signature:
+#### 2. 编译调试版本
 
 ```sh
-# On Linux or macOS
 make debug
-
-# On Windows
-.\gradlew assembleDebug
 ```
 
-#### 3. Release version with signture:
+默认仅构建 arm64-v8a。如需构建 x86_64：
 
-Create `keystore.properties` file which contains following contents for [signing information](https://developer.android.com/studio/publish/app-signing.html):
+```sh
+BUILD_ABI=x86_64 make debug
+```
 
-```gradle.properties
+#### 3. 编译正式版本
+
+创建 `keystore.properties` 文件，包含[签名信息](https://developer.android.com/studio/publish/app-signing.html)：
+
+```properties
 storePassword=myStorePassword
-keyPassword=mykeyPassword
+keyPassword=myKeyPassword
 keyAlias=myKeyAlias
 storeFile=myStoreFileLocation
+# 或使用 Base64 编码的密钥文件
+keyBase64=<base64-encoded-keystore>
 ```
 
-Then, you may run:
+然后执行：
 
 ```sh
-# On Linux or macOS
 make release
-
-# On Windows
-.\gradlew assembleRelease
 ```
 
-### Troubleshooting
+#### 4. 原生代码缓存
+
+如果 `app/prebuilt/` 目录存在，构建时会复用预编译的 `.so`
+文件，跳过原生编译。如需强制完整构建，删除该目录即可。
+
+### 代码格式化
+
+```bash
+make style-lint    # 检查格式（Spotless + clang-format）
+make style-apply   # 应用格式化
+```
+
+### 测试
+
+```bash
+./gradlew :app:test
+```
+
+### 故障排除
 
 ```
 Target "boost_log_setup" links to target "Boost::coroutine" but the target was not found.
 ```
 
-Run `make clean` on Linux or macOS, or run `.\gradlew clean` on Windows.
+执行 `make clean`。
 
-Other issues:
+其他问题：
 
-1. Try `make clean`
-2. Make sure your repo is up-to-date. If one or more submodules are modified, also make sure they are compatible with the current version.
-3. If the problem still exists(very unlikely), try to make a new clone.
-4. Check if this is there is an issue/PR related to your problem. If yes, try their solutions.
-5. If none of them works, you may make an issue to ask for help.(optional)
+1. 首先尝试 `make clean`
+2. 确保仓库与最新版本一致。修改了子模块，请确保它们兼容当前版本
+3. 如果问题依然存在，尝试一次新的克隆
+4. 检查是否有相关 issue/PR
+5. 以上方法无效，可以提 issue 寻求帮助
 
-## Acknowledgments
+## 鸣谢
 
-- Developer: [osfans](https://github.com/osfans)
-- Contributors: [boboIqiqi](https://github.com/boboIqiqi)、[Bambooin](https://github.com/Bambooin)、[senchi96](https://github.com/senchi96)、[heiher](https://github.com/heiher)、[abay](https://github.com/a342191555)、[iovxw](https://github.com/iovxw)、[huyz-git](https://github.com/huyz-git)、[tumuyan](https://github.com/tumuyan)、[WhiredPlanck](https://github.com/WhiredPlanck)、[nopdan](https://github.com/nopdan)...
-- [Wiki Editors](https://github.com/osfans/trime/wiki): [xiaoqun2016](https://github.com/xiaoqun2016)、[boboIqiqi](https://github.com/boboIqiqi)...
-- Translators: 天真可爱的满满 (Chinese Traditional), 点解 (English) ...
-- Keyboard Designers: 天真可爱的满满、皛筱晓小笨鱼、吴琛 11、熊猫阿 Bo、默默ㄇㄛ ˋ...
-- Donations: See QR Code in [Releases](https://github.com/osfans/trime/releases)
-- Community: Netizens who feedback in [Issues](https://github.com/osfans/trime/issues)、[QQ Group (811142286)](https://jq.qq.com/?_wv=1027&k=AXdR80HN)、[QQ Group (224230445)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=pg_q7UVumWYLq1Rk8kIAqkK1xGt64VnX&authKey=04m9l7OBO5H5vgrEL8IbpsmtnptWM60xy%2FUwYCfyvw9VcRhe8zRzAS1ezoemZdFr&noverify=0&group_code=224230445)、[Tieba](http://tieba.baidu.com/f?kw=rime)、[Google Play](https://play.google.com/store/apps/details?id=com.osfans.trime)、[Telegram](https://t.me/trime_dev)...
-- Projects: [RIME]、[OpenCC]、[Android Traditional Chinese IME] and so on.
+本项目 Fork 自[同文输入法（Trime）](https://github.com/osfans/trime)，感谢上游项目的所有贡献者。
 
-## Third Party Libraries
+- 原项目开发：[osfans](https://github.com/osfans)
+- 原项目贡献：
+  [boboIqiqi](https://github.com/boboIqiqi)、
+  [Bambooin](https://github.com/Bambooin)、
+  [senchi96](https://github.com/senchi96)、
+  [heiher](https://github.com/heiher)、
+  [abay](https://github.com/a342191555)、
+  [iovxw](https://github.com/iovxw)、
+  [huyz-git](https://github.com/huyz-git)、
+  [tumuyan](https://github.com/tumuyan)、
+  [WhiredPlanck](https://github.com/WhiredPlanck)、
+  [nopdan](https://github.com/nopdan)……
+- [维基](https://github.com/osfans/trime/wiki)：
+  [xiaoqun2016](https://github.com/xiaoqun2016)、
+  [boboIqiqi](https://github.com/boboIqiqi)……
+- 翻译：天真可爱的满满（繁体中文）、点解（英文）……
+- 键盘设计：天真可爱的满满、皛筱晓小笨鱼、吴琛 11、熊猫阿 Bo、默默ㄇㄛ ˋ……
+- 社区：在 [Issues](https://github.com/osfans/trime/issues)、
+  [QQ 群 (811142286)](https://jq.qq.com/?_wv=1027&k=AXdR80HN)、
+  [贴吧](http://tieba.baidu.com/f?kw=rime)、
+  [Telegram](https://t.me/trime_dev)
+  中反馈意见的网友
+- 项目：[RIME]、[OpenCC]、
+  [靓企鹅输入法](https://github.com/fxliang/fcitx5-android)（参考了文本编辑、悬浮键盘）、
+  [简意输入法](https://github.com/danjian/fcitx5-android)（参考了 T9 输入、语音动画）
+  等开源项目
 
-- [Boost C++ Libraries](https://www.boost.org/) (Boost Software License)
-- [darts-clone](https://github.com/s-yata/darts-clone) (New BSD License)
-- [LevelDB](https://github.com/google/leveldb) (New BSD License)
-- [libiconv](https://www.gnu.org/software/libiconv/) (LGPL License)
-- [marisa-trie](https://github.com/s-yata/marisa-trie) (BSD License)
-- [glog](https://github.com/google/glog) (New BSD License)
-- [OpenCC](https://github.com/BYVoid/OpenCC) (Apache License 2.0)
+## 第三方库
+
 - [RIME](https://rime.im) (BSD License)
-- [snappy](https://github.com/google/snappy)(BSD License)
-- [utfcpp](https://github.com/nemtrif/utfcpp) (Boost Software License)
+- [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Apache License 2.0)
+- [onnxruntime](https://github.com/microsoft/onnxruntime) (MIT License)
+- [OpenCC](https://github.com/BYVoid/OpenCC) (Apache License 2.0)
+- [Boost C++ Libraries](https://www.boost.org/) (Boost Software License)
+- [LevelDB](https://github.com/google/leveldb) (New BSD License)
+- [marisa-trie](https://github.com/s-yata/marisa-trie) (BSD License)
+- [snappy](https://github.com/google/snappy) (BSD License)
 - [yaml-cpp](https://github.com/jbeder/yaml-cpp) (MIT License)
-- [Android Traditional Chinese IME](https://code.google.com/p/android-traditional-chinese-ime/) (Apache License 2.0)
+- [darts-clone](https://github.com/s-yata/darts-clone) (New BSD License)
+- [glog](https://github.com/google/glog) (New BSD License)
+- [utfcpp](https://github.com/nemtrif/utfcpp) (Boost Software License)
 
-[Android Traditional Chinese IME]: https://code.google.com/p/android-traditional-chinese-ime/
-[RIME]: http://rime.im
+[RIME]: https://rime.im
 [OpenCC]: https://github.com/BYVoid/OpenCC
