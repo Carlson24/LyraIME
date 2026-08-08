@@ -273,6 +273,14 @@ object SherpaSpeechClient {
         }
     }
 
+    fun forceStop() {
+        if (!isHolding.compareAndSet(true, false)) return
+        invokeHoldingChanged(false)
+        audioJob?.cancel()
+        audioJob = null
+        clearServiceRef()
+    }
+
     private fun startAudioStreaming(service: TrimeInputMethodService) {
         if (
             ContextCompat.checkSelfPermission(

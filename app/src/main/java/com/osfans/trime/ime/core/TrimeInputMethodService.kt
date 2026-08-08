@@ -634,6 +634,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         postRimeJob {
             clearComposition()
         }
+        SherpaSpeechClient.forceStop()
         inputView?.stopVoiceRecognition()
         InputFeedbackManager.finishInput()
     }

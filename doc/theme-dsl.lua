@@ -398,6 +398,7 @@
 ---@field back_color                              Color        # 候选区背景（必须定义）
 ---@field border_color?                           Color        # 边框颜色（回退至 back_color）
 ---@field candidate_separator_color?              Color        # 候选分割线（回退至 border_color）
+---@field candidate_separator_color_unrolled?     Color        # 展开候选分割线（回退至 candidate_separator_color）
 ---@field candidate_text_color?                   Color        # 候选文字（回退至 text_color）
 ---@field comment_text_color?                     Color        # 编码注释（回退至 candidate_text_color）
 ---@field label_color?                            Color        # 候选序号/标签（回退至 candidate_text_color）
