@@ -243,7 +243,6 @@
     <string name="horizontal_candidate_auto_fill">Fill width on demand</string>
     <string name="horizontal_candidate_always_fill">Always fill width</string>
     <string name="max_span_count">Maximum candidates per row</string>
-    <string name="max_span_count_landscape">Maximum candidates per row (landscape)</string>
     <string name="user_dictionary">User dictionary</string>
     <string name="import_">Import</string>
     <string name="import_error">Import error</string>

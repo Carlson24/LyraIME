@@ -242,7 +242,6 @@
     <string name="horizontal_candidate_auto_fill">按需填充宽度</string>
     <string name="horizontal_candidate_always_fill">总是填充宽度</string>
     <string name="max_span_count">每行最大候选词数</string>
-    <string name="max_span_count_landscape">每行最大候选词数(横屏)</string>
     <string name="user_dictionary">用户词典</string>
     <string name="exported_n_entries">已导出 %1$d 个词条</string>
     <string name="backed_up_x_to_sync_dir">已备份 %1$s 到同步目录</string>

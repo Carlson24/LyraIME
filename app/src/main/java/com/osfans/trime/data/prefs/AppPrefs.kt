@@ -309,7 +309,6 @@ class AppPrefs(
             const val HOOK_SHIFT_ARROW = "hook_shift_arrow"
 
             const val MAX_SPAN_COUNT = "max_span_count"
-            const val MAX_SPAN_COUNT_LANDSCAPE = "max_span_count_landscape"
             const val HORIZONTAL_CANDIDATE_MODE = "horizontal_candidate_mode"
             const val AUTO_FLOAT_LANDSCAPE = "auto_float_landscape"
         }
@@ -464,14 +463,6 @@ class AppPrefs(
             5,
             1,
             10,
-        )
-
-        val maxSpanCountLandscape = int(
-            R.string.max_span_count_landscape,
-            MAX_SPAN_COUNT_LANDSCAPE,
-            5,
-            4,
-            12,
         )
 
         val hookCtrlA = switch(R.string.hook_ctrl_a, HOOK_CTRL_A, false)

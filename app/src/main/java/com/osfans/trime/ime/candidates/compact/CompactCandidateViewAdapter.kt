@@ -57,12 +57,16 @@ open class CompactCandidateViewAdapter(
         this.highlightedIdx = highlightedIndex
     }
 
+    private val showLabel by lazy {
+        theme.generalStyle.candidateLabel
+    }
+
     override fun onCreateViewHolder(
         context: Context,
         parent: ViewGroup,
         viewType: Int,
     ): CandidateViewHolder {
-        val ui = CandidateItemUi(context, theme, contentGravity)
+        val ui = CandidateItemUi(context, theme, contentGravity, showLabel)
         ui.root.apply {
             minimumWidth = dp(40)
             layoutParams = FlexboxLayoutManager.LayoutParams(wrapContent, matchParent)

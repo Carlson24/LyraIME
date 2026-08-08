@@ -6,7 +6,6 @@
 package com.osfans.trime.ime.candidates.compact
 
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
 import android.view.Gravity
@@ -14,6 +13,7 @@ import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.osfans.trime.R
+import com.osfans.trime.core.RimeConfig
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.daemon.launchOnReady
@@ -46,13 +46,25 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
 
     private val fillStyle by AppPrefs.defaultInstance().keyboard.horizontalCandidateMode
 
-    private val maxSpanCountPref by lazy {
-        AppPrefs.defaultInstance().keyboard.run {
-            if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-                maxSpanCount
-            } else {
-                maxSpanCountLandscape
-            }
+    private val fallbackPageSize by lazy {
+        AppPrefs.defaultInstance().keyboard.maxSpanCount.getValue()
+    }
+
+    private fun getPageSize(): Int {
+        val schemaId = rime.run { schemaCached.schemaId }
+        if (schemaId.isEmpty() || schemaId == ".default") return fallbackPageSize
+        val configId = if (schemaId.startsWith('.')) schemaId.substring(1) else schemaId
+        return RimeConfig.openSchema(configId).use {
+            it.getInt("menu/page_size") ?: fallbackPageSize
+        }
+    }
+
+    private fun getSelectLabels(): List<String> {
+        val schemaId = rime.run { schemaCached.schemaId }
+        if (schemaId.isEmpty() || schemaId == ".default") return emptyList()
+        val configId = if (schemaId.startsWith('.')) schemaId.substring(1) else schemaId
+        return RimeConfig.openSchema(configId).use {
+            it.getList("menu/alternative_select_labels") { path -> getString(path) ?: "" }
         }
     }
 
@@ -152,8 +164,7 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
         object : RecyclerView(context) {
             override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
                 super.onSizeChanged(w, h, oldw, oldh)
-        val maxSpanCount = maxSpanCountPref.getValue()
-        val halfSpanCount = (maxSpanCount + 1) / 2
+                val maxSpanCount = getPageSize()
                 layoutMinWidth = w / maxSpanCount - separatorDrawable.intrinsicWidth
             }
         }
@@ -168,7 +179,7 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
     override fun onCandidateListUpdate(data: RimeMessage.CandidateListMessage.Data) {
         val (total, highlighted, candidates) = data
 
-        val maxSpanCount = maxSpanCountPref.getValue()
+        val maxSpanCount = getPageSize()
         val halfSpanCount = (maxSpanCount + 1) / 2
 
         when (fillStyle) {
@@ -194,8 +205,18 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
             }
         }
 
+        val selectLabels = getSelectLabels()
+        val labeledCandidates = candidates.mapIndexed { i, c ->
+            val label = if (selectLabels.isNotEmpty()) {
+                selectLabels[i % selectLabels.size]
+            } else {
+                ((i % 10) + 1).toString()
+            }
+            c.copy(label = "$label.")
+        }.toTypedArray()
+
         adapter.updateLayoutParams(layoutMinWidth, layoutFlexGrow)
-        adapter.updateCandidates(candidates, total, highlighted)
+        adapter.updateCandidates(labeledCandidates, total, highlighted)
 
         if (candidates.isEmpty()) {
             refreshUnrolled(0)

@@ -48,19 +48,25 @@ class CandidateItemUi(
     override val ctx: Context,
     private val theme: Theme,
     var contentGravity: Int = Gravity.CENTER,
+    showLabel: Boolean = true,
 ) : Ui {
+
+    private val showLabel = showLabel
 
     private val textSize = theme.generalStyle.fonts.candidate_size
     private val commentSize = theme.generalStyle.fonts.comment_size
 
     private val textFont = FontManager.getTypeface("candidate_font")
     private val commentFont = FontManager.getTypeface("comment_font")
+    private val labelFont = FontManager.getTypeface("label_font")
 
     private val textColor = ColorManager.getColor("candidate_text_color")
     private val commentColor = ColorManager.getColor("comment_text_color")
+    private val labelColor = ColorManager.getColor("label_color")
 
     private val hlCommentColor = ColorManager.getColor("hilited_comment_text_color")
     private val hlTextColor = ColorManager.getColor("hilited_candidate_text_color")
+    private val hlLabelColor = ColorManager.getColor("hilited_label_color")
     private val hlBackColor = ColorManager.getColor("hilited_candidate_back_color")
 
     private val commentPosition = theme.generalStyle.commentPosition
@@ -89,16 +95,38 @@ class CandidateItemUi(
             scaleMode = AutoScaleTextView.Mode.Proportional
         }
 
+    private val label =
+        view(::AutoScaleTextView) {
+            id = View.generateViewId()
+            this.textSize = this@CandidateItemUi.theme.generalStyle.fonts.candidate_label_size
+            typeface = labelFont
+            fontFeatureSettings = FontManager.fontFeatureSettings
+            isSingleLine = true
+            gravity = gravityCenter
+            scaleMode = AutoScaleTextView.Mode.Proportional
+            visibility = if (showLabel) View.VISIBLE else View.GONE
+        }
+
     private val content = constraintLayout {
         horizontalPadding = dp(theme.generalStyle.candidatePadding)
         when (commentPosition) {
             GeneralStyle.CommentPosition.RIGHT -> {
                 add(
-                    text,
+                    label,
                     lParams(wrapContent, wrapContent) {
                         centerVertically()
                         startOfParent()
+                        endToStartOf(text)
+                        horizontalChainStyle = ConstraintLayout.LayoutParams.CHAIN_PACKED
+                    },
+                )
+                add(
+                    text,
+                    lParams(wrapContent, wrapContent) {
+                        centerVertically()
+                        startToEndOf(label, ctx.dp(1))
                         endToStartOf(comment)
+                        constrainedWidth = true
                         horizontalChainStyle = ConstraintLayout.LayoutParams.CHAIN_PACKED
                     },
                 )
@@ -114,24 +142,45 @@ class CandidateItemUi(
             }
             GeneralStyle.CommentPosition.TOP -> {
                 add(
-                    text,
-                    lParams(wrapContent, matchConstraints) {
-                        centerHorizontally()
-                        bottomOfParent()
-                        topToBottomOf(comment)
-                    },
-                )
-                add(
                     comment,
                     lParams(wrapContent, matchConstraints) {
                         matchConstraintPercentHeight = 0.4f
                         topOfParent()
                         centerHorizontally()
-                        bottomToTopOf(text)
+                        bottomToTopOf(label)
+                    },
+                )
+                add(
+                    label,
+                    lParams(wrapContent, wrapContent) {
+                        bottomOfParent()
+                        topToBottomOf(comment)
+                        centerVertically()
+                        startOfParent()
+                        endToStartOf(text)
+                        horizontalChainStyle = ConstraintLayout.LayoutParams.CHAIN_PACKED
+                    },
+                )
+                add(
+                    text,
+                    lParams(wrapContent, wrapContent) {
+                        bottomOfParent()
+                        topToBottomOf(comment)
+                        centerVertically()
+                        startToEndOf(label, ctx.dp(1))
+                        endOfParent()
+                        horizontalChainStyle = ConstraintLayout.LayoutParams.CHAIN_PACKED
                     },
                 )
             }
             GeneralStyle.CommentPosition.OVERLAY -> {
+                add(
+                    label,
+                    lParams(wrapContent, wrapContent) {
+                        centerInParent()
+                        verticalBias = candidateTextVerticalBias
+                    },
+                )
                 add(
                     text,
                     lParams(wrapContent, wrapContent) {
@@ -170,10 +219,17 @@ class CandidateItemUi(
     ) {
         val tColor = if (highlighted) hlTextColor else textColor
         val cColor = if (highlighted) hlCommentColor else commentColor
+        val lColor = if (highlighted) hlLabelColor else labelColor
         val cornerRadius = ctx.dp(theme.generalStyle.candidateCornerRadius)
         val contentColor = if (highlighted) hlBackColor else Color.TRANSPARENT
 
         content.background = roundedRippleDrawable(hlBackColor, cornerRadius, contentColor)
+
+        if (showLabel) {
+            label.text = item.label
+            label.setTextColor(lColor)
+        }
+
         text.text = item.text
         text.setTextColor(tColor)
 

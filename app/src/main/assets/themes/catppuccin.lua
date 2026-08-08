@@ -174,6 +174,7 @@ return theme {
       symbol_size = 10,
       hint_size = 12,
       candidate_size = 22,
+      candidate_label_size = 14,
       comment_size = 10,
       popup_size = 0,
       clipboard_category_size = 13,
@@ -222,6 +223,7 @@ return theme {
     comment_height = 12,                     -- [int] 编码提示区高度
     comment_vertical_bias = 0.0,             -- [float] 注释垂直偏移 (overlay 模式)
     comment_position = "RIGHT",              -- [CommentPosition] 位置: RIGHT | TOP | OVERLAY
+    candidate_label = false,                 -- [bool] 候選序號顯示
 
     -- 悬浮提示
     popup_bottom_margin = 0,                 -- [int] 底部边距

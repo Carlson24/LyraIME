@@ -46,7 +46,7 @@ open class PagingCandidateViewAdapter(
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int,
-    ): CandidateViewHolder = CandidateViewHolder(CandidateItemUi(parent.context, theme))
+    ): CandidateViewHolder = CandidateViewHolder(CandidateItemUi(parent.context, theme, showLabel = false))
 
     override fun onBindViewHolder(
         holder: CandidateViewHolder,

@@ -517,6 +517,7 @@
 ---@field symbol_size?             number                # 符号字号（默认 0）
 ---@field hint_size?               number                # 提示字号（默认 0）
 ---@field candidate_size?          number                # 候选字号（默认 15）
+---@field candidate_label_size?    number                # 候选序号字号（默认 14）
 ---@field comment_size?            number                # 注释字号（默认 10）
 ---@field popup_size?              number                # 弹窗字号（默认 0）
 ---@field clipboard_category_size? number                # 剪贴板标签字号（默认 13）
@@ -568,6 +569,7 @@
 ---@field comment_height?                     integer         # 编码注释区高度
 ---@field comment_vertical_bias?              number          # 注释垂直偏移(overlay 模式)
 ---@field comment_position?                   CommentPosition # 注释位置（RIGHT / TOP / OVERLAY）
+---@field candidate_label?                    boolean         # 候选序号显示（默认 false）
 ---@field popup_bottom_margin?                integer         # 悬浮提示底部边距
 ---@field popup_width?                        integer         # 悬浮提示宽度
 ---@field popup_height?                       integer         # 悬浮提示高度
