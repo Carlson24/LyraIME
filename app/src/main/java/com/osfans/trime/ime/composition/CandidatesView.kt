@@ -116,7 +116,8 @@ class CandidatesView(
         when (it) {
             is RimeMessage.CompositionMessage -> {
                 composition = it.data
-                updateUi()
+                preeditUi.update(composition)
+                preeditUi.root.visibility = if (preeditUi.visible) VISIBLE else GONE
             }
             is RimeMessage.CandidateMenuMessage -> {
                 menu = it.data

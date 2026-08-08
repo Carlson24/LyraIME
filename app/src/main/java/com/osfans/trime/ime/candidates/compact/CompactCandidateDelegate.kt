@@ -46,16 +46,18 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
 
     private val fillStyle by AppPrefs.defaultInstance().keyboard.horizontalCandidateMode
 
-    private val fallbackPageSize by lazy {
-        AppPrefs.defaultInstance().keyboard.maxSpanCount.getValue()
+    private val maxSpanCountPref by lazy {
+        AppPrefs.defaultInstance().keyboard.maxSpanCount
     }
 
     private fun getPageSize(): Int {
+        val userValue = maxSpanCountPref.getValue()
+        if (userValue != maxSpanCountPref.defaultValue) return userValue
         val schemaId = rime.run { schemaCached.schemaId }
-        if (schemaId.isEmpty() || schemaId == ".default") return fallbackPageSize
+        if (schemaId.isEmpty() || schemaId == ".default") return userValue
         val configId = if (schemaId.startsWith('.')) schemaId.substring(1) else schemaId
         return RimeConfig.openSchema(configId).use {
-            it.getInt("menu/page_size") ?: fallbackPageSize
+            it.getInt("menu/page_size") ?: userValue
         }
     }
 
@@ -166,6 +168,7 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
                 super.onSizeChanged(w, h, oldw, oldh)
                 val maxSpanCount = getPageSize()
                 layoutMinWidth = w / maxSpanCount - separatorDrawable.intrinsicWidth
+                this@CompactCandidateDelegate.adapter.updateLayoutParams(layoutMinWidth, layoutFlexGrow)
             }
         }
         context.recyclerView(R.id.candidate_view) {
