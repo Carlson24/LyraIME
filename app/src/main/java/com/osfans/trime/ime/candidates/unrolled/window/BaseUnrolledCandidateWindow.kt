@@ -61,7 +61,7 @@ abstract class BaseUnrolledCandidateWindow :
             val intrinsicSize = max(spacing, context.dp(spacing)).toInt()
             intrinsicWidth = intrinsicSize
             intrinsicHeight = intrinsicSize
-            paint.color = ColorManager.getColor("candidate_separator_color")
+            paint.color = ColorManager.getColor("candidate_separator_color_unrolled")
         }
     }
 

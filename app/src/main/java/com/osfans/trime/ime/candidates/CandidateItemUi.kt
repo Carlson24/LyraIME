@@ -25,15 +25,16 @@ import splitties.views.dsl.constraintlayout.baselineToBaselineOf
 import splitties.views.dsl.constraintlayout.bottomOfParent
 import splitties.views.dsl.constraintlayout.bottomToTopOf
 import splitties.views.dsl.constraintlayout.centerHorizontally
-import splitties.views.dsl.constraintlayout.centerInParent
 import splitties.views.dsl.constraintlayout.centerVertically
 import splitties.views.dsl.constraintlayout.constraintLayout
 import splitties.views.dsl.constraintlayout.endOfParent
+import splitties.views.dsl.constraintlayout.endToEndOf
 import splitties.views.dsl.constraintlayout.endToStartOf
 import splitties.views.dsl.constraintlayout.lParams
 import splitties.views.dsl.constraintlayout.matchConstraints
 import splitties.views.dsl.constraintlayout.startOfParent
 import splitties.views.dsl.constraintlayout.startToEndOf
+import splitties.views.dsl.constraintlayout.startToStartOf
 import splitties.views.dsl.constraintlayout.topOfParent
 import splitties.views.dsl.constraintlayout.topToBottomOf
 import splitties.views.dsl.core.Ui
@@ -177,21 +178,38 @@ class CandidateItemUi(
                 add(
                     label,
                     lParams(wrapContent, wrapContent) {
-                        centerInParent()
+                        if (showLabel) {
+                            startOfParent()
+                        }
+                        topOfParent()
+                        bottomOfParent()
                         verticalBias = candidateTextVerticalBias
                     },
                 )
                 add(
                     text,
                     lParams(wrapContent, wrapContent) {
-                        centerInParent()
+                        if (showLabel) {
+                            startToEndOf(label, ctx.dp(1))
+                        } else {
+                            centerHorizontally()
+                        }
+                        topOfParent()
+                        bottomOfParent()
                         verticalBias = candidateTextVerticalBias
                     },
                 )
                 add(
                     comment,
                     lParams(wrapContent, wrapContent) {
-                        centerInParent()
+                        if (showLabel) {
+                            startToStartOf(text)
+                            endToEndOf(text)
+                        } else {
+                            centerHorizontally()
+                        }
+                        topOfParent()
+                        bottomOfParent()
                         verticalBias = commentVerticalBias
                     },
                 )

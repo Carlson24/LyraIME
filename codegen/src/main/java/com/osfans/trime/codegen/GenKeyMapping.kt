@@ -63,10 +63,12 @@ internal class GenKeyMappingProcessor(
 //            0x0026 to KeyEvent.KEYCODE_AMPERSAND, /* U+0026 AMPERSAND */
             "apostrophe" to 0x0027 to "KEYCODE_APOSTROPHE", // U+0027 APOSTROPHE
 //            0x0027 to KeyEvent.KEYCODE_QUOTERIGHT, /* deprecated */
-//            0x0028 to KeyEvent.KEYCODE_PARENLEFT, /* U+0028 LEFT PARENTHESIS */
-//            0x0029 to KeyEvent.KEYCODE_PARENRIGHT, /* U+0029 RIGHT PARENTHESIS */
+            "parenleft" to 0x0028 to "KEYCODE_NUMPAD_LEFT_PAREN", // U+0028 LEFT PARENTHESIS
+            "parenright" to 0x0029 to "KEYCODE_NUMPAD_RIGHT_PAREN", // U+0029 RIGHT PARENTHESIS
             "asterisk" to 0x002a to "KEYCODE_STAR", // U+002A ASTERISK
             "plus" to 0x002b to "KEYCODE_PLUS", // U+002B PLUS SIGN
+            "multiply" to 0x00d7 to "KEYCODE_NUMPAD_MULTIPLY", // U+00D7 MULTIPLICATION SIGN
+            "division" to 0x00f7 to "KEYCODE_NUMPAD_DIVIDE", // U+00F7 DIVISION SIGN
             "comma" to 0x002c to "KEYCODE_COMMA", // U+002C COMMA
             "minus" to 0x002d to "KEYCODE_MINUS", // U+002D HYPHEN-MINUS
             "period" to 0x002e to "KEYCODE_PERIOD", // U+002E FULL STOP
@@ -248,6 +250,10 @@ internal class GenKeyMappingProcessor(
             "#" to "KEYCODE_POUND",
             "*" to "KEYCODE_STAR",
             "+" to "KEYCODE_PLUS",
+            "(" to "KEYCODE_NUMPAD_LEFT_PAREN",
+            ")" to "KEYCODE_NUMPAD_RIGHT_PAREN",
+            "×" to "KEYCODE_NUMPAD_MULTIPLY",
+            "÷" to "KEYCODE_NUMPAD_DIVIDE",
         )
 
     override fun process(resolver: Resolver): List<KSAnnotated> {

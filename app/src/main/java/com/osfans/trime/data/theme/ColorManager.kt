@@ -58,6 +58,7 @@ object ColorManager {
             "comment_text_color" to "candidate_text_color",
             "border_color" to "back_color",
             "candidate_separator_color" to "border_color",
+            "candidate_separator_color_unrolled" to "candidate_separator_color",
             "hilited_text_color" to "text_color",
             "hilited_back_color" to "back_color",
             "hilited_candidate_text_color" to "hilited_text_color",

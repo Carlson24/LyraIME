@@ -74,6 +74,9 @@ object KeyCode {
             if (found == -1) break
 
             val token = repr.substring(start, found)
+            if (token.isEmpty()) {
+                break
+            }
             val modifier =
                 when (token) {
                     "Shift" -> KeyEvent.META_SHIFT_ON
