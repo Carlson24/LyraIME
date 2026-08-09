@@ -136,13 +136,13 @@ class KeyView(
                         dismissPopupPreview()
                     }
                     setPressedState(false)
-            } else if (isRepeatable) {
-                if (!keyboardActionListener.shouldContinueRepeat()) {
-                    cancelRepeat()
-                } else {
-                    key.getAction(KeyBehavior.CLICK)?.let { processKeyAction(it, KeyBehavior.CLICK) }
+                } else if (isRepeatable) {
+                    if (!keyboardActionListener.shouldContinueRepeat()) {
+                        cancelRepeat()
+                    } else {
+                        key.getAction(KeyBehavior.CLICK)?.let { processKeyAction(it, KeyBehavior.CLICK) }
+                    }
                 }
-            }
             } else {
                 when (behavior) {
                     KeyBehavior.CLICK -> {

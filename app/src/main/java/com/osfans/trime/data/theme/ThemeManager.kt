@@ -122,19 +122,37 @@ object ThemeManager {
 
     private fun loadThemeFromLua(file: File, id: String): Theme? {
         val cacheFile = DataManager.userThemesDir.resolve("build/$id.json")
-        return try {
-            val themesDir = file.parentFile!!
-            val latestMtime = themesDir.walkTopDown()
-                .filter { it.isFile && !it.startsWith(themesDir.resolve("build")) }
-                .maxOfOrNull { it.lastModified() } ?: 0L
-            val sorted = run {
-                val jsonStr = if (cacheFile.exists() && cacheFile.lastModified() >= latestMtime) {
+        val themesDir = file.parentFile!!
+        val latestMtime = themesDir.walkTopDown()
+            .filter { it.isFile && !it.startsWith(themesDir.resolve("build")) }
+            .maxOfOrNull { it.lastModified() } ?: 0L
+
+        val jsonStr = if (cacheFile.exists() && cacheFile.lastModified() >= latestMtime) {
+            cacheFile.readText()
+        } else {
+            try {
+                LuaThemeBridge.nativeLoadTheme(file.absolutePath)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load theme '$id'")
+                if (id != "catppuccin") {
+                    Handler(Looper.getMainLooper()).post {
+                        Toast.makeText(
+                            appContext,
+                            "Failed to load theme '$id': ${e.message}",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }
+                if (cacheFile.exists()) {
                     cacheFile.readText()
                 } else {
-                    LuaThemeBridge.nativeLoadTheme(file.absolutePath)
+                    return null
                 }
-                sortJsonKeys(Theme.json.parseToJsonElement(jsonStr))
             }
+        }
+
+        return try {
+            val sorted = sortJsonKeys(Theme.json.parseToJsonElement(jsonStr))
             val sortedObj = sorted.jsonObject
 
             keyboardJsons.clear()
@@ -166,20 +184,7 @@ object ThemeManager {
                 themeCache[id] = file.lastModified() to it
             }
         } catch (e: Exception) {
-            if (cacheFile.exists()) {
-                cacheFile.delete()
-                Timber.e(e, "Deleted stale cache for theme '$id'")
-            }
-            Timber.e(e, "Failed to load theme '$id'")
-            if (id != "trime") {
-                Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(
-                        appContext,
-                        "Failed to load theme '$id': ${e.message}",
-                        Toast.LENGTH_LONG,
-                    ).show()
-                }
-            }
+            Timber.e(e, "Failed to parse theme JSON for '$id'")
             null
         }
     }
@@ -187,10 +192,10 @@ object ThemeManager {
     private fun getThemeById(id: String): ResolvedTheme {
         loadThemeByIdOrNull(id)?.let { return ResolvedTheme(id, it) }
 
-        if (id != "trime") {
-            loadThemeByIdOrNull("trime")?.let {
-                Timber.w("Theme '$id' is unavailable, fallback to default theme 'trime'")
-                return ResolvedTheme("trime", it)
+        if (id != "catppuccin") {
+            loadThemeByIdOrNull("catppuccin")?.let {
+                Timber.w("Theme '$id' is unavailable, fallback to default theme 'catppuccin'")
+                return ResolvedTheme("catppuccin", it)
             }
         }
 

@@ -13,7 +13,7 @@ object PackageStateManager {
     @Serializable
     data class PackageState(
         val lastSchemaId: String = "",
-        val lastThemeId: String = "trime",
+        val lastThemeId: String = "catppuccin",
         val customName: String = "",
     )
 

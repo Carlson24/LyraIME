@@ -109,7 +109,10 @@ void lua_value_to_json(lua_State* L, int index, std::ostream& os, int depth,
         }
         lua_pop(L, 1);
 
-        if (!is_array && max_key > 0) break;
+        if (!is_array && max_key > 0) {
+          lua_pop(L, 1);
+          break;
+        }
       }
 
       int count = 0;
