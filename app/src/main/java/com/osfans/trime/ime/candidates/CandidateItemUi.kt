@@ -49,10 +49,8 @@ class CandidateItemUi(
     override val ctx: Context,
     private val theme: Theme,
     var contentGravity: Int = Gravity.CENTER,
-    showLabel: Boolean = true,
+    private val showLabel: Boolean = true,
 ) : Ui {
-
-    private val showLabel = showLabel
 
     private val textSize = theme.generalStyle.fonts.candidate_size
     private val commentSize = theme.generalStyle.fonts.comment_size
@@ -194,6 +192,8 @@ class CandidateItemUi(
                         } else {
                             centerHorizontally()
                         }
+                        endOfParent()
+                        constrainedWidth = true
                         topOfParent()
                         bottomOfParent()
                         verticalBias = candidateTextVerticalBias
@@ -207,7 +207,9 @@ class CandidateItemUi(
                             endToEndOf(text)
                         } else {
                             centerHorizontally()
+                            endOfParent()
                         }
+                        constrainedWidth = true
                         topOfParent()
                         bottomOfParent()
                         verticalBias = commentVerticalBias
