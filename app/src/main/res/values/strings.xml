@@ -198,6 +198,9 @@
     <string name="schemata">Schemata</string>
     <string name="navbar_background">Navigation bar background</string>
     <string name="no_theme_to_select">Currently there is no theme to select.</string>
+    <string name="keyboard_layout">Layout (Preview)</string>
+    <string name="keyboard_layout_summary">Browse and switch layouts</string>
+    <string name="no_keyboard_to_select">No layouts available.</string>
     <string name="no_color_to_select">Currently there is no color scheme to select.</string>
     <string name="no_effect_to_select">Currently there is no key sound effect to select.</string>
     <string name="setup_channel">Setup Wizard</string>

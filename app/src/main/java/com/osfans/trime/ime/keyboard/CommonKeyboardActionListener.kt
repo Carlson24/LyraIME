@@ -35,6 +35,7 @@ import com.osfans.trime.ime.symbol.LiquidData
 import com.osfans.trime.ime.symbol.LiquidWindow
 import com.osfans.trime.ime.window.BoardWindowManager
 import com.osfans.trime.ui.main.settings.ColorPickerDialog
+import com.osfans.trime.ui.main.settings.KeyboardPickerDialog
 import com.osfans.trime.ui.main.settings.SoundEffectPickerDialog
 import com.osfans.trime.ui.main.settings.ThemePickerDialog
 import com.osfans.trime.util.AppUtils
@@ -62,6 +63,9 @@ class CommonKeyboardActionListener {
 
     private val prefs = AppPrefs.defaultInstance()
 
+    @Volatile
+    var shouldCancelRepeat: Boolean = false
+
     private var shouldReleaseKey: Boolean = false
 
     private fun showDialog(dialog: suspend (RimeApi) -> Dialog) {
@@ -77,6 +81,17 @@ class CommonKeyboardActionListener {
             ThemePickerDialog.build(service.lifecycleScope, context) {
                 api.commitComposition()
             }
+        }
+    }
+
+    private fun showKeyboardPicker() {
+        showDialog { api ->
+            KeyboardPickerDialog.build(
+                scope = service.lifecycleScope,
+                context = context,
+                afterConfirm = { api.commitComposition() },
+                onSelectKeyboard = { id -> keyboardWindow.switchKeyboard(id) },
+            )
         }
     }
 
@@ -114,6 +129,7 @@ class CommonKeyboardActionListener {
     val listener by lazy {
         object : KeyboardActionListener {
             override fun onPress(keyEventCode: Int) {
+                shouldCancelRepeat = false
                 InputFeedbackManager.run {
                     keyPressSound(keyEventCode)
                     keyPressSpeak(keyEventCode)
@@ -162,6 +178,7 @@ class CommonKeyboardActionListener {
                         KeyEvent.KEYCODE_LANGUAGE_SWITCH -> handleLanguageSwitch(action)
                         KeyEvent.KEYCODE_FUNCTION -> handleFunctionCommand(action)
                         KeyEvent.KEYCODE_SETTINGS -> handleSettings(action)
+                        KeyEvent.KEYCODE_PROG_GREEN -> showKeyboardPicker()
                         KeyEvent.KEYCODE_PROG_RED -> showColorPicker()
                         KeyEvent.KEYCODE_MENU -> showEnabledSchemaPicker()
                         KeyEvent.KEYCODE_VOICE_ASSIST -> switchToVoiceInputMethod()
@@ -181,6 +198,7 @@ class CommonKeyboardActionListener {
                         KeyEvent.KEYCODE_LANGUAGE_SWITCH,
                         KeyEvent.KEYCODE_FUNCTION,
                         KeyEvent.KEYCODE_SETTINGS,
+                        KeyEvent.KEYCODE_PROG_GREEN,
                         KeyEvent.KEYCODE_PROG_RED,
                         KeyEvent.KEYCODE_MENU,
                         KeyEvent.KEYCODE_VOICE_ASSIST,
@@ -473,10 +491,13 @@ class CommonKeyboardActionListener {
                         KeyEvent.KEYCODE_MOVE_END,
                     )
                     val lenBefore = getRawInput().length
+
                     dc?.isKeyProcessing = true
 
                     val handled = processKey(value, modifiers)
                     val lenAfter = getRawInput().length
+
+                    shouldCancelRepeat = isDel && lenBefore > 0 && lenAfter == 0
 
                     dc?.isKeyProcessing = false
 
@@ -549,6 +570,8 @@ class CommonKeyboardActionListener {
                 }
                 shouldReleaseKey = false
             }
+
+            override fun shouldContinueRepeat(): Boolean = !shouldCancelRepeat
         }
     }
 

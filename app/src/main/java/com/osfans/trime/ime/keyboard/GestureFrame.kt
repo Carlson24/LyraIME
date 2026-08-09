@@ -298,6 +298,11 @@ open class GestureFrame(context: Context) : FrameLayout(context) {
         }
     }
 
+    fun cancelRepeat() {
+        repeatJob?.cancel()
+        repeatJob = null
+    }
+
     private fun cancelJobs() {
         longPressJob?.cancel()
         repeatJob?.cancel()

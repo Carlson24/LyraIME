@@ -11,6 +11,7 @@ import androidx.preference.Preference
 import com.osfans.trime.data.prefs.PreferenceDelegateFragment
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.ui.main.settings.ColorPickerDialog
+import com.osfans.trime.ui.main.settings.KeyboardPickerDialog
 import com.osfans.trime.ui.main.settings.ThemePickerDialog
 import kotlinx.coroutines.launch
 
@@ -20,6 +21,10 @@ class ThemeSettingsFragment : PreferenceDelegateFragment(ThemeManager.prefs) {
         rootKey: String?,
     ) {
         super.onCreatePreferences(savedInstanceState, rootKey)
+        findPreference<Preference>("keyboard_layout")?.setOnPreferenceClickListener {
+            lifecycleScope.launch { KeyboardPickerDialog.build(lifecycleScope, requireContext()).show() }
+            true
+        }
         findPreference<Preference>("selected_theme")?.setOnPreferenceClickListener {
             lifecycleScope.launch { ThemePickerDialog.build(lifecycleScope, requireContext()).show() }
             true

@@ -273,7 +273,7 @@
 ---| '"VOICE_ASSIST"'
 ---| '"SETTINGS"'            # handleSettings
 ---| '"PROG_RED"'            # showColorPicker
----| '"PROG_GREEN"'          # (同族)
+---| '"PROG_GREEN"'          # showKeyboardPicker
 ---| '"PROG_YELLOW"'         # (同族)
 ---| '"PROG_BLUE"'           # (同族)
 ---| '"LANGUAGE_SWITCH"'     # handleLanguageSwitch

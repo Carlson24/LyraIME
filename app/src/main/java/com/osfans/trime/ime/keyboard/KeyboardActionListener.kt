@@ -46,4 +46,6 @@ interface KeyboardActionListener {
      * @param input the sequence of characters to be displayed.
      */
     fun onText(input: String)
+
+    fun shouldContinueRepeat(): Boolean = true
 }
