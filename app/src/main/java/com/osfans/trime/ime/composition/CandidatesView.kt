@@ -34,6 +34,7 @@ import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.below
 import splitties.views.dsl.constraintlayout.bottomOfParent
 import splitties.views.dsl.constraintlayout.centerHorizontally
+import splitties.views.dsl.constraintlayout.endOfParent
 import splitties.views.dsl.constraintlayout.lParams
 import splitties.views.dsl.constraintlayout.matchConstraints
 import splitties.views.dsl.constraintlayout.startOfParent
@@ -216,6 +217,20 @@ class CandidatesView(
         updatePosition()
     }
 
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        // cap the window's width so that long preedit/candidates
+        // can never push the window beyond the screen edge
+        val parentWidth = parentSize[0].takeIf { it > 0f }
+            ?: resources.displayMetrics.widthPixels.toFloat()
+        val maxWidth = (parentWidth - 2 * dp(SPACING)).roundToInt().coerceAtLeast(0)
+        val cappedWidthMeasureSpec =
+            MeasureSpec.makeMeasureSpec(
+                minOf(MeasureSpec.getSize(widthMeasureSpec), maxWidth),
+                MeasureSpec.AT_MOST,
+            )
+        super.onMeasure(cappedWidthMeasureSpec, heightMeasureSpec)
+    }
+
     init {
         visibility = INVISIBLE
 
@@ -238,6 +253,11 @@ class CandidatesView(
             lParams(wrapContent, wrapContent) {
                 topOfParent()
                 startOfParent()
+                endOfParent()
+                // let long preedit wrap within the window instead of widening it
+                constrainedWidth = true
+                // keep left-aligned when preedit is narrower than the window
+                horizontalBias = 0f
             },
         )
         add(
@@ -279,6 +299,6 @@ class CandidatesView(
          * Minimum spacing in density-independent pixels (dp) between the candidate window
          * and the screen edges.
          */
-        private const val SPACING = 5f
+        internal const val SPACING = 5f
     }
 }

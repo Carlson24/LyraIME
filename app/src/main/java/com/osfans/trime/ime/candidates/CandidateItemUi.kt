@@ -189,6 +189,9 @@ class CandidateItemUi(
                     lParams(wrapContent, wrapContent) {
                         if (showLabel) {
                             startToEndOf(label, ctx.dp(1))
+                            // default bias 0.5 would center text in the available space,
+                            // creating a gap between label and text
+                            horizontalBias = 0f
                         } else {
                             centerHorizontally()
                         }
@@ -208,8 +211,8 @@ class CandidateItemUi(
                         } else {
                             centerHorizontally()
                             endOfParent()
+                            constrainedWidth = true
                         }
-                        constrainedWidth = true
                         topOfParent()
                         bottomOfParent()
                         verticalBias = commentVerticalBias

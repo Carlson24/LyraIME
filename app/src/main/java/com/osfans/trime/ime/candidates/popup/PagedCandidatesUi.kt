@@ -18,8 +18,11 @@ import com.google.android.flexbox.FlexboxLayoutManager
 import com.osfans.trime.core.CandidateProto
 import com.osfans.trime.core.MenuProto
 import com.osfans.trime.data.theme.Theme
+import com.osfans.trime.ime.composition.CandidatesView
+import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.recyclerview.recyclerView
+import kotlin.math.roundToInt
 
 class PagedCandidatesUi(
     override val ctx: Context,
@@ -32,6 +35,13 @@ class PagedCandidatesUi(
     private var menu = MenuProto()
 
     private var isHorizontal = true
+
+    /**
+     * Maximum width in pixels of a candidate item.
+     * Only limited in vertical layout, so that a long candidate wraps
+     * to multiple lines instead of making the window wider than the screen.
+     */
+    private var maxItemWidth = Int.MAX_VALUE
 
     sealed class UiHolder(
         open val ui: Ui,
@@ -86,6 +96,7 @@ class PagedCandidatesUi(
                 when (holder) {
                     is UiHolder.Candidate -> {
                         val candidate = item ?: return
+                        holder.ui.root.maxWidth = maxItemWidth
                         holder.ui.update(candidate, position == menu.highlightedCandidateIndex)
                         holder.ui.root.setOnClickListener {
                             onCandidateClick.invoke(position)
@@ -135,6 +146,13 @@ class PagedCandidatesUi(
         this.isHorizontal = when (layout) {
             PopupCandidatesLayout.AUTOMATIC -> horizontal
             else -> layout == PopupCandidatesLayout.HORIZONTAL
+        }
+        maxItemWidth = if (isHorizontal) {
+            Int.MAX_VALUE
+        } else {
+            // window's horizontal margins: spacing to the screen edges + window insets
+            val margins = 2 * (ctx.dp(CandidatesView.SPACING) + ctx.dp(theme.window.insets.horizontal))
+            (ctx.resources.displayMetrics.widthPixels - margins).roundToInt().coerceAtLeast(0)
         }
         candidatesLayoutManager.apply {
             if (isHorizontal) {
