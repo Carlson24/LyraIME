@@ -102,6 +102,14 @@ constructor(
         else -> calculatedSize
     }
 
+    /**
+     * measure the width of the current text content, consistent with [onMeasure]
+     */
+    fun measureContentWidth(): Int {
+        if (!::text.isInitialized) return 0
+        return measureTextBounds().width() + paddingLeft + paddingRight
+    }
+
     private fun measureTextBounds(): Rect {
         if (needsMeasureText) {
             val paint = paint

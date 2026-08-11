@@ -107,6 +107,8 @@ class CandidateItemUi(
         }
 
     private val content = constraintLayout {
+        // allow the comment to extend beyond the text bounds in OVERLAY mode
+        clipChildren = false
         horizontalPadding = dp(theme.generalStyle.candidatePadding)
         when (commentPosition) {
             GeneralStyle.CommentPosition.RIGHT -> {
@@ -224,6 +226,9 @@ class CandidateItemUi(
 
     override val root = view(::GestureFrame) {
         foreground = null
+        // allow the comment to extend beyond the content bounds in OVERLAY mode
+        clipChildren = false
+        clipToPadding = false
         /**
          * candidate long press feedback is handled by `showCandidateActionMenu`
          */
@@ -260,5 +265,32 @@ class CandidateItemUi(
         comment.text = commentText
         comment.setTextColor(cColor)
         comment.isVisible = commentText.isNotEmpty()
+
+        // reset state possibly left over from a recycled binding
+        comment.translationX = 0f
+        // ConstraintLayout only respects its own setMinWidth, View.minimumWidth has no effect
+        content.setMinWidth(0)
+
+        if (commentPosition == GeneralStyle.CommentPosition.OVERLAY
+            && showLabel
+            && commentText.isNotEmpty()
+        ) {
+            val paddingH = content.paddingStart
+            // geometry model matching the OVERLAY constraints above:
+            // label starts at paddingStart, text follows label with a 1dp margin
+            // and stays left-aligned (bias = 0), comment centers relative to text
+            val textLeft = paddingH + label.measureContentWidth() + ctx.dp(1)
+            val textWidth = text.measureContentWidth()
+            val commentWidth = comment.measureContentWidth()
+            val commentLeft = textLeft + (textWidth - commentWidth) / 2
+            // clamp on the left: comment must not cross the start padding of content
+            val shift = (paddingH - commentLeft).coerceAtLeast(0)
+            // grow the item to the end side so that a comment much longer than
+            // the text is fully contained instead of being clipped by ancestors
+            val naturalWidth = textLeft + textWidth + paddingH
+            val neededWidth = maxOf(naturalWidth, commentLeft + shift + commentWidth + paddingH)
+            comment.translationX = shift.toFloat()
+            content.setMinWidth(neededWidth)
+        }
     }
 }

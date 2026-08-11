@@ -35,6 +35,7 @@ object NinePatchBitmapFactory {
             trimedBitmap,
             rangeLists.rangeListX,
             rangeLists.rangeListY,
+            rangeLists.padding,
             null,
         )
     }
@@ -44,39 +45,35 @@ object NinePatchBitmapFactory {
         bitmap: Bitmap,
         rangeListX: List<Range>,
         rangeListY: List<Range>,
+        padding: Rect,
         srcName: String?,
     ): NinePatchDrawable {
         val buffer =
-            getByteBuffer(rangeListX, rangeListY)
-        return NinePatchDrawable(res, bitmap, buffer.array(), Rect(), srcName)
+            getByteBuffer(rangeListX, rangeListY, padding)
+        return NinePatchDrawable(res, bitmap, buffer.array(), null, srcName)
     }
 
     private fun getByteBuffer(
         rangeListX: List<Range>,
         rangeListY: List<Range>,
+        padding: Rect,
     ): ByteBuffer {
+        val numXDivs = rangeListX.size * 2
+        val numYDivs = rangeListY.size * 2
+        val numColors = 9
         val buffer =
             ByteBuffer
-                .allocate(4 + 4 * 7 + 4 * 2 * rangeListX.size + 4 * 2 * rangeListY.size + 4 * 9)
+                .allocate(32 + numXDivs * 4 + numYDivs * 4 + numColors * 4)
                 .order(
                     ByteOrder.nativeOrder(),
                 )
         buffer.put(0x01.toByte()) // was serialised
-        buffer.put((rangeListX.size * 2).toByte()) // x div
-        buffer.put((rangeListY.size * 2).toByte()) // y div
-        buffer.put(0x09.toByte()) // color
+        buffer.put(numXDivs.toByte()) // x div
+        buffer.put(numYDivs.toByte()) // y div
+        buffer.put(numColors.toByte()) // color
 
-        // skip
+        // skip 8 bytes (formerly padding area in old format)
         buffer.putInt(0)
-        buffer.putInt(0)
-
-        // padding
-        buffer.putInt(0)
-        buffer.putInt(0)
-        buffer.putInt(0)
-        buffer.putInt(0)
-
-        // skip 4 bytes
         buffer.putInt(0)
         for (range in rangeListX) {
             buffer.putInt(range.start)
@@ -95,6 +92,12 @@ object NinePatchBitmapFactory {
         buffer.putInt(NO_COLOR)
         buffer.putInt(NO_COLOR)
         buffer.putInt(NO_COLOR)
+
+        // padding (left, top, right, bottom)
+        buffer.putInt(padding.left)
+        buffer.putInt(padding.top)
+        buffer.putInt(padding.right)
+        buffer.putInt(padding.bottom)
         return buffer
     }
 
@@ -109,7 +112,6 @@ object NinePatchBitmapFactory {
             val red = Color.red(color)
             val green = Color.green(color)
             val blue = Color.blue(color)
-            // 			System.out.println( String.valueOf(alpha) + "," + String.valueOf(red) + "," + String.valueOf(green) + "," + String.valueOf(blue) );
             if (alpha == 255 && red == 0 && green == 0 && blue == 0) {
                 if (pos == -1) {
                     pos = i - 1
@@ -125,7 +127,7 @@ object NinePatchBitmapFactory {
             rangeListX.add(Range(pos, width - 2))
         }
         for (range in rangeListX) {
-            Timber.v("(" + range.start + "," + range.end + ")")
+            Timber.v("(${range.start},${range.end})")
         }
         val rangeListY: MutableList<Range> = ArrayList()
         pos = -1
@@ -150,9 +152,51 @@ object NinePatchBitmapFactory {
             rangeListY.add(Range(pos, height - 2))
         }
         for (range in rangeListY) {
-            Timber.v("(" + range.start + "," + range.end + ")")
+            Timber.v("(${range.start},${range.end})")
         }
-        return RangeLists(rangeListX, rangeListY)
+
+        // parse content padding from bottom row and right column
+        var paddingLeft = 0
+        var paddingRight = 0
+        var foundPaddingStart = -1
+        for (i in 1 until width - 1) {
+            val color = bitmap.getPixel(i, height - 1)
+            val alpha = Color.alpha(color)
+            val red = Color.red(color)
+            val green = Color.green(color)
+            val blue = Color.blue(color)
+            if (alpha == 255 && red == 0 && green == 0 && blue == 0) {
+                if (foundPaddingStart == -1) {
+                    foundPaddingStart = i - 1
+                }
+            }
+        }
+        if (foundPaddingStart != -1) {
+            paddingLeft = foundPaddingStart
+            paddingRight = width - 2 - foundPaddingStart
+        }
+
+        var paddingTop = 0
+        var paddingBottom = 0
+        foundPaddingStart = -1
+        for (i in 1 until height - 1) {
+            val color = bitmap.getPixel(width - 1, i)
+            val alpha = Color.alpha(color)
+            val red = Color.red(color)
+            val green = Color.green(color)
+            val blue = Color.blue(color)
+            if (alpha == 255 && red == 0 && green == 0 && blue == 0) {
+                if (foundPaddingStart == -1) {
+                    foundPaddingStart = i - 1
+                }
+            }
+        }
+        if (foundPaddingStart != -1) {
+            paddingTop = foundPaddingStart
+            paddingBottom = height - 2 - foundPaddingStart
+        }
+
+        return RangeLists(rangeListX, rangeListY, Rect(paddingLeft, paddingTop, paddingRight, paddingBottom))
     }
 
     private fun trimBitmap(bitmap: Bitmap): Bitmap {
@@ -180,6 +224,7 @@ object NinePatchBitmapFactory {
     class RangeLists(
         val rangeListX: List<Range>,
         val rangeListY: List<Range>,
+        val padding: Rect,
     )
 
     data class Range(

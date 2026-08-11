@@ -296,7 +296,7 @@ object ColorManager {
                 val chunk = bitmap.ninePatchChunk
                 return if (NinePatch.isNinePatchChunk(chunk)) {
                     // for compiled nine patch image
-                    NinePatchDrawable(Resources.getSystem(), bitmap, chunk, Rect(), null)
+                    NinePatchDrawable(Resources.getSystem(), bitmap, chunk, null, null)
                 } else {
                     // for source nine patch image
                     NinePatchBitmapFactory.createNinePatchDrawable(Resources.getSystem(), bitmap)

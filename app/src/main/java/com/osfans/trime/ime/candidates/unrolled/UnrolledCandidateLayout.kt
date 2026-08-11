@@ -29,6 +29,8 @@ class UnrolledCandidateLayout(
     val recyclerView =
         recyclerView {
             isVerticalScrollBarEnabled = false
+            clipChildren = false
+            clipToPadding = false
         }
 
     val navBar: CandidatesToolView? =
@@ -40,6 +42,7 @@ class UnrolledCandidateLayout(
 
     init {
         id = R.id.unrolled_candidate_view
+        clipChildren = false
         background =
             ColorManager.getDecorDrawable(
                 "candidate_background",
