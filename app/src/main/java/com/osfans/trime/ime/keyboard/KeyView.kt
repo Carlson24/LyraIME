@@ -423,7 +423,7 @@ class KeyView(
         val vRoundCornerInset = (
             (key.roundCorner ?: keyboard.roundCorner)
                 .takeIf { it > 0f }?.let { dp(it) } ?: 0f
-            ) * 2 / 3f
+            ) * 1 / 2f
 
         val (centerX, linePositions) = calculateTextPosition(
             richTextLines,
@@ -832,7 +832,9 @@ class KeyView(
         val halfSize = size / 2
 
         val icon = iconCache[cmdName] ?: IconicsDrawable(context, cmdName).apply {
+            respectFontBounds = false
             sizePx = size
+            iconOffsetYPx = 2
         }.also { iconCache.put(cmdName, it) }
 
         icon.colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
