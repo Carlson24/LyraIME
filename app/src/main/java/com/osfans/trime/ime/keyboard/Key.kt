@@ -21,7 +21,6 @@ class Key(
     initialConfig: TextKeyboard.TextKey? = null,
 ) {
     private var selfConfig: TextKeyboard.TextKey? = initialConfig
-    private val rime get() = RimeDaemon.getFirstSessionOrNull()!!
 
     var index: Int = -1
 
@@ -358,11 +357,10 @@ class Key(
     fun getAction(behavior: KeyBehavior): KeyAction? = keyActions[behavior]?.takeIf { behavior != KeyBehavior.CLICK } ?: checkKeyAction(sendBindings) ?: click
 
     private fun checkKeyAction(): KeyAction? {
-        val rime = rime
-        val asciiMode = rime.run { statusCached }.isAsciiMode
-        val paging = rime.run { paging }
-        val hasMenu = rime.run { hasMenu }
-        val composing = rime.run { statusCached }.isComposing
+        val asciiMode = RimeDaemon.isAsciiMode
+        val paging = RimeDaemon.isPaging
+        val hasMenu = RimeDaemon.hasMenu
+        val composing = RimeDaemon.isComposing
         return keyActions[KeyBehavior.ASCII].takeIf { asciiMode }
             ?: keyActions[KeyBehavior.PAGING]?.takeIf { paging }
             ?: keyActions[KeyBehavior.HAS_MENU]?.takeIf { hasMenu }
@@ -392,7 +390,7 @@ class Key(
 
         // 3) Layout-level label: use ascii_label in ASCII mode, label otherwise
         if (checkKeyAction() == null) {
-            val isAscii = rime.run { statusCached }.isAsciiMode
+            val isAscii = RimeDaemon.isAsciiMode
             if (isAscii) {
                 val alt = asciiLabel.firstOrNull()?.text?.takeIf { it.isNotEmpty() }
                 if (!alt.isNullOrEmpty()) return alt

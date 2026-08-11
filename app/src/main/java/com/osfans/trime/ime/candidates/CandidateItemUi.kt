@@ -12,6 +12,7 @@ import android.view.Gravity
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import com.osfans.trime.core.CandidateProto
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
@@ -71,6 +72,13 @@ class CandidateItemUi(
     private val commentPosition = theme.generalStyle.commentPosition
     private val commentVerticalBias = theme.generalStyle.commentVerticalBias
     private val candidateTextVerticalBias = theme.generalStyle.candidateTextVerticalBias
+
+    /**
+     * the maximum width the item content is allowed to occupy, set by the hosting adapter.
+     * only used to cap the item growth in OVERLAY + label mode, where a comment much
+     * longer than the text would otherwise push the item out of the candidate bar
+     */
+    var maxContentWidth: Int = Int.MAX_VALUE
 
     private val text =
         view(::AutoScaleTextView) {
@@ -270,6 +278,11 @@ class CandidateItemUi(
         comment.translationX = 0f
         // ConstraintLayout only respects its own setMinWidth, View.minimumWidth has no effect
         content.setMinWidth(0)
+        if (comment.layoutParams.width != ConstraintLayout.LayoutParams.WRAP_CONTENT) {
+            comment.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                width = ConstraintLayout.LayoutParams.WRAP_CONTENT
+            }
+        }
 
         if (commentPosition == GeneralStyle.CommentPosition.OVERLAY
             && showLabel
@@ -283,14 +296,33 @@ class CandidateItemUi(
             val textWidth = text.measureContentWidth()
             val commentWidth = comment.measureContentWidth()
             val commentLeft = textLeft + (textWidth - commentWidth) / 2
-            // clamp on the left: comment must not cross the start padding of content
-            val shift = (paddingH - commentLeft).coerceAtLeast(0)
+            // the desired left edge of the comment, clamped so that
+            // it does not cross the start padding of content
+            val desiredLeft = maxOf(paddingH, commentLeft)
             // grow the item to the end side so that a comment much longer than
             // the text is fully contained instead of being clipped by ancestors
             val naturalWidth = textLeft + textWidth + paddingH
-            val neededWidth = maxOf(naturalWidth, commentLeft + shift + commentWidth + paddingH)
-            comment.translationX = shift.toFloat()
-            content.setMinWidth(neededWidth)
+            val unboundedWidth = maxOf(naturalWidth, desiredLeft + commentWidth + paddingH)
+            // cap the growth so the item never extends beyond the candidate bar
+            val cappedWidth = minOf(unboundedWidth, maxContentWidth)
+            val effectiveWidth = if (unboundedWidth > maxContentWidth) {
+                // not enough room: shrink the comment proportionally via
+                // AutoScaleTextView instead of growing the item out of the bar
+                (cappedWidth - paddingH - desiredLeft).coerceAtLeast(0).also { w ->
+                    if (comment.layoutParams.width != w) {
+                        comment.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                            width = w
+                        }
+                    }
+                }
+            } else {
+                commentWidth
+            }
+            // the solver centers the comment on the text with effectiveWidth,
+            // translationX compensates the difference to the desired position
+            val effectiveLeft = textLeft + (textWidth - effectiveWidth) / 2
+            comment.translationX = (desiredLeft - effectiveLeft).toFloat()
+            content.setMinWidth(cappedWidth)
         }
     }
 }

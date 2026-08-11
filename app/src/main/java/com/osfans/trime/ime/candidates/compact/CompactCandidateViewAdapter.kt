@@ -40,11 +40,19 @@ open class CompactCandidateViewAdapter(
     var layoutFlexGrow: Float = 0f
         private set
 
+    var layoutMaxWidth: Int = Int.MAX_VALUE
+        private set
+
     var contentGravity: Int = Gravity.CENTER
 
-    fun updateLayoutParams(minWidth: Int, flexGrow: Float) {
+    fun updateLayoutParams(
+        minWidth: Int,
+        flexGrow: Float,
+        maxWidth: Int = layoutMaxWidth,
+    ) {
         layoutMinWidth = minWidth
         layoutFlexGrow = flexGrow
+        layoutMaxWidth = maxWidth
     }
 
     fun updateCandidates(
@@ -81,6 +89,7 @@ open class CompactCandidateViewAdapter(
     ) {
         item ?: return
         val isHighlighted = position == highlightedIdx
+        holder.ui.maxContentWidth = layoutMaxWidth
         holder.ui.update(item, isHighlighted)
         holder.text = item.text
         holder.comment = item.comment

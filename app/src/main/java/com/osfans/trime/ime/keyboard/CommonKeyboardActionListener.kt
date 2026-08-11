@@ -44,11 +44,13 @@ import com.osfans.trime.util.buildIntentFromArgument
 import com.osfans.trime.util.customFormatDateTime
 import com.osfans.trime.util.isAsciiPrintable
 import com.osfans.trime.util.toast
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.kodein.di.instance
 import splitties.systemservices.clipboardManager
 import splitties.systemservices.inputMethodManager
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 
 class CommonKeyboardActionListener {
     private val di = InputDependencyManager.getInstance().di
@@ -62,6 +64,8 @@ class CommonKeyboardActionListener {
     private val inputBarDelegate: InputBarDelegate by di.instance()
 
     private val prefs = AppPrefs.defaultInstance()
+
+    private val keycodeCache = ConcurrentHashMap<String, Int>()
 
     @Volatile
     var shouldCancelRepeat: Boolean = false
@@ -132,19 +136,18 @@ class CommonKeyboardActionListener {
                 shouldCancelRepeat = false
                 InputFeedbackManager.run {
                     keyPressSound(keyEventCode)
-                    keyPressSpeak(keyEventCode)
+                }
+                service.lifecycleScope.launch(Dispatchers.Default) {
+                    InputFeedbackManager.keyPressSpeak(keyEventCode)
                 }
             }
 
             override fun onRelease(keyEventCode: Int) {
                 if (shouldReleaseKey) {
-                    // FIXME: 释放按键可能不对
-                    val value = RimeKeyMapping
-                        .keyCodeToVal(keyEventCode)
-                        .takeIf { it != RimeKeyMapping.RimeKey_VoidSymbol }
-                        ?: RimeKeyEvent.getKeycodeByName(KeyCode.codeToKeyName(keyEventCode) ?: "VoidSymbol")
+                    val name = KeyCode.codeToKeyName(keyEventCode) ?: "VoidSymbol"
+                    val value = keycodeCache.getOrPut(name) { RimeKeyEvent.getKeycodeByName(name) }
                     if (value != RimeKeyMapping.RimeKey_VoidSymbol) {
-                        service.postRimeJob {
+                        service.postKeyJob {
                             processKey(value, KeyModifier.Release.modifier)
                         }
                     }
@@ -469,17 +472,17 @@ class CommonKeyboardActionListener {
                 val dc = KeyboardWindow.dynamicController
 
                 val name = KeyCode.codeToKeyName(keyEventCode) ?: "VoidSymbol"
-                val value = RimeKeyEvent.getKeycodeByName(name)
+                val value = keycodeCache.getOrPut(name) { RimeKeyEvent.getKeycodeByName(name) }
                 val m = if (keyEventCode in KeyEvent.KEYCODE_NUMPAD_0..KeyEvent.KEYCODE_NUMPAD_EQUALS) {
                     metaState or KeyEvent.META_NUM_LOCK_ON
                 } else {
                     metaState
                 }
                 val modifiers = KeyModifiers.fromMetaState(m).modifiers
-                service.postRimeJob {
+                service.postKeyJob {
                     if (service.hookKeyboard(keyEventCode, m)) {
                         Timber.d("handleKey: hook")
-                        return@postRimeJob
+                        return@postKeyJob
                     }
 
                     val isDel = keyEventCode == KeyEvent.KEYCODE_DEL
@@ -525,11 +528,11 @@ class CommonKeyboardActionListener {
                     if (handled) {
                         shouldReleaseKey = true
                         Timber.d("handleKey: processKey")
-                        return@postRimeJob
+                        return@postKeyJob
                     }
                     if (AppUtils.launchKeyCategory(service, keyEventCode)) {
                         Timber.d("handleKey: openCategory")
-                        return@postRimeJob
+                        return@postKeyJob
                     }
                     // other special cases
                     if (keyEventCode == KeyEvent.KEYCODE_BACK) {
@@ -542,9 +545,8 @@ class CommonKeyboardActionListener {
             override fun onText(input: String) {
                 if (input.isEmpty()) return
                 Timber.d("onText: $input")
-                val status = rime.run { statusCached }
-                if (!input[0].isAsciiPrintable() && status.isComposing) {
-                    service.postRimeJob { commitComposition() }
+                if (!input[0].isAsciiPrintable() && RimeDaemon.isComposing) {
+                    service.postKeyJob { commitComposition() }
                 }
 
                 val escaped = input.replace("{}", "{braceleft}{braceright}")
@@ -555,7 +557,7 @@ class CommonKeyboardActionListener {
                         else -> escaped[i].toString()
                     }
 
-                    service.postRimeJob {
+                    service.postKeyJob {
                         if (value.run { startsWith('{') && endsWith('}') }) {
                             val token = value.removeSurrounding("{", "}")
                             onAction(KeyActionManager.getAction(token))

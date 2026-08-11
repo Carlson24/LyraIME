@@ -470,3 +470,34 @@ Java_com_osfans_trime_core_Rime_getRimeBulkCandidates(JNIEnv* env,
   env->SetObjectArrayElement(params, 2, jList);
   return params;
 }
+
+extern "C" JNIEXPORT jobjectArray JNICALL
+Java_com_osfans_trime_core_Rime_getRimeResponse(JNIEnv* env, jclass clazz) {
+  auto& rime = Rime::Instance();
+
+  auto commit = rime.commit();
+  auto context = rime.context();
+  auto [size, highlighted, bulkList] = rime.getBulkCandidates();
+  auto status = rime.status();
+
+  auto jCommit = JRef(env, rimeCommitToJObject(env, *commit));
+  auto jContext = JRef(env, rimeContextToJObject(env, *context));
+
+  auto jSize = JRef(
+      env, env->NewObject(GlobalRef->Integer, GlobalRef->IntegerInit, size));
+  auto jHighlighted = JRef(
+      env,
+      env->NewObject(GlobalRef->Integer, GlobalRef->IntegerInit, highlighted));
+  auto jList =
+      JRef<jobjectArray>(env, rimeCandidateListToJObjectArray(env, bulkList));
+  auto jStatus = JRef(env, rimeStatusToJObject(env, *status));
+
+  auto result = env->NewObjectArray(6, GlobalRef->Object, nullptr);
+  env->SetObjectArrayElement(result, 0, jCommit);
+  env->SetObjectArrayElement(result, 1, jContext);
+  env->SetObjectArrayElement(result, 2, jSize);
+  env->SetObjectArrayElement(result, 3, jHighlighted);
+  env->SetObjectArrayElement(result, 4, jList);
+  env->SetObjectArrayElement(result, 5, jStatus);
+  return result;
+}

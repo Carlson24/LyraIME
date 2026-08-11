@@ -177,6 +177,10 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
      */
     fun postRimeJob(block: suspend RimeApi.() -> Unit) = postJob(rime.lifecycleScope) { rime.runOnReady(block) }
 
+    fun postKeyJob(block: suspend RimeApi.() -> Unit) {
+        rime.lifecycleScope.launch { rime.runOnReady(block) }
+    }
+
     private suspend fun updateRimeOption(api: RimeApi) {
         try {
             api.setRuntimeOption("soft_cursor", prefs.keyboard.useSoftCursor.getValue()) // 軟光標

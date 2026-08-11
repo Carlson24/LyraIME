@@ -321,7 +321,7 @@ class Rime :
     private fun processKeyInner(value: Int, modifiers: Int, isVirtual: Boolean): Boolean {
         lastAsciiTipsText = asciiTipsText
         val handled = processRimeKey(value, modifiers)
-        emitResponse()
+        emitResponseFast()
         if (!handled) {
             handleRimeMessage(
                 10, // RimeMessage.MessageType.Key,
@@ -331,19 +331,40 @@ class Rime :
         return handled
     }
 
-    private val asciiTipsText: String
-        get() {
-            val status = getRimeStatus()
-            return if (status.isAsciiMode) {
-                "En"
-            } else if (status.schemaName.isNotEmpty() &&
-                !status.schemaName.startsWith('.')
-            ) {
-                status.schemaName.take(2)
-            } else {
-                ""
-            }
+    private fun emitResponseFast() {
+        val response = getRimeResponse()
+        val commit = response[0] as CommitProto
+        handleRimeMessage(4, arrayOf(commit))
+        val context = response[1] as ContextProto
+        handlePreedit(context.composition)
+        val status = response[5] as StatusProto
+        val newTips = computeAsciiTips(status)
+        if (context.composition.length <= 0 && lastAsciiTipsText != newTips) {
+            asciiTipsTextCached = newTips
+            showAsciiSwitchTips()
+        } else {
+            asciiTipsTextCached = newTips
         }
+        if (pagingMode) {
+            handleRimeMessage(7, arrayOf(context.menu))
+        } else {
+            val bulk = arrayOf(response[2], response[3], response[4])
+            handleRimeMessage(9, bulk)
+        }
+        handleRimeMessage(8, arrayOf(status))
+    }
+
+    private fun computeAsciiTips(status: StatusProto): String {
+        return if (status.isAsciiMode) {
+            "En"
+        } else if (status.schemaName.isNotEmpty() &&
+            !status.schemaName.startsWith('.')
+        ) {
+            status.schemaName.take(2)
+        } else {
+            ""
+        }
+    }
 
     private fun emitResponse(
         commit: (() -> CommitProto) = { getRimeCommit() },
@@ -362,6 +383,11 @@ class Rime :
         }
         handleRimeMessage(8, arrayOf(getRimeStatus()))
     }
+
+    private val asciiTipsText: String
+        get() = asciiTipsTextCached
+
+    private var asciiTipsTextCached: String = ""
 
     private fun handlePreedit(composition: CompositionProto) {
         val mode = if (isNullInputType) {
@@ -396,6 +422,7 @@ class Rime :
                 statusCached = status
                 updateSchemaCached(status)
                 if (it.data.option == "ascii_mode") {
+                    asciiTipsTextCached = computeAsciiTips(status)
                     showAsciiSwitchTips()
                 }
             }
@@ -611,6 +638,9 @@ class Rime :
 
         @JvmStatic
         external fun getRimeBulkCandidates(): Array<Any>
+
+        @JvmStatic
+        external fun getRimeResponse(): Array<Any>
 
         @JvmStatic
         fun handleRimeMessage(

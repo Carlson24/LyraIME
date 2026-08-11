@@ -168,7 +168,11 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
                 super.onSizeChanged(w, h, oldw, oldh)
                 val maxSpanCount = getPageSize()
                 layoutMinWidth = w / maxSpanCount - separatorDrawable.intrinsicWidth
-                this@CompactCandidateDelegate.adapter.updateLayoutParams(layoutMinWidth, layoutFlexGrow)
+                this@CompactCandidateDelegate.adapter.updateLayoutParams(
+                    layoutMinWidth,
+                    layoutFlexGrow,
+                    (w - separatorDrawable.intrinsicWidth).coerceAtLeast(0),
+                )
             }
         }
         context.recyclerView(R.id.candidate_view) {
@@ -218,7 +222,11 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
             c.copy(label = "$label.")
         }.toTypedArray()
 
-        adapter.updateLayoutParams(layoutMinWidth, layoutFlexGrow)
+        adapter.updateLayoutParams(
+            layoutMinWidth,
+            layoutFlexGrow,
+            (view.width - separatorDrawable.intrinsicWidth).coerceAtLeast(0),
+        )
         adapter.updateCandidates(labeledCandidates, total, highlighted)
 
         if (candidates.isEmpty()) {

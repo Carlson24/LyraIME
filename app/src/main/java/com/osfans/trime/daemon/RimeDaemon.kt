@@ -111,6 +111,11 @@ object RimeDaemon {
      */
     fun getFirstSessionOrNull() = sessions.firstNotNullOfOrNull { it.value }
 
+    val isAsciiMode: Boolean get() = realRime.statusCached.isAsciiMode
+    val isComposing: Boolean get() = realRime.statusCached.isComposing
+    val hasMenu: Boolean get() = realRime.hasMenu
+    val isPaging: Boolean get() = realRime.paging
+
     private const val CHANNEL_ID = "rime-daemon"
     private const val MESSAGE_ID = 2331
     private var restartId = 0
