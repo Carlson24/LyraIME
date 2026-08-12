@@ -284,9 +284,9 @@ class CandidateItemUi(
             }
         }
 
-        if (commentPosition == GeneralStyle.CommentPosition.OVERLAY
-            && showLabel
-            && commentText.isNotEmpty()
+        if (commentPosition == GeneralStyle.CommentPosition.OVERLAY &&
+            showLabel &&
+            commentText.isNotEmpty()
         ) {
             val paddingH = content.paddingStart
             // geometry model matching the OVERLAY constraints above:

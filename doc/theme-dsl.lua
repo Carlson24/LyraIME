@@ -437,6 +437,7 @@
 ---@field hilited_popup_back_color?               Color        # 标明弹窗背景（回退至 hilited_key_back_color）
 ---@field hilited_popup_text_color?               Color        # 标明弹窗文字（回退至 hilited_key_text_color）
 ---@field shadow_color?                           Color        # 阴影颜色（回退至 border_color）
+---@field key_shadow_color?                       Color        # 按键阴影颜色（回退至 shadow_color）
 ---@field root_background?                        Color        # 全局/根背景（回退至 back_color）
 ---@field candidate_background?                   Color        # 候选区背景（回退至 back_color）
 ---@field candidate_border_color?                 Color        # 候选边框（回退至 border_color）
@@ -545,7 +546,8 @@
 ---@field horizontal_gap?                     integer         # 键水平间距 (px)
 ---@field vertical_gap?                       integer         # 键盘行距 (px)
 ---@field round_corner?                       number          # 按键圆角半径
----@field shadow_radius?                      number          # 按键阴影半径
+---@field key_shadow_radius?                  number          # 按键阴影模糊半径（0=无阴影）
+---@field key_shadow_direction?               string[]        # 按键阴影方向（"left"/"up"/"right"/"down" 组合，如 {"down","right"}）
 ---@field key_border?                         integer         # 按键边框宽度
 ---@field keyboard_padding?                   integer         # 键盘左右边距 (px)
 ---@field keyboard_padding_bottom?            integer         # 键盘底部边距（避免触发全面屏手势）
@@ -809,6 +811,8 @@
 ---@field round_corner_bottom_right?  number?         # 右下角圆角半径
 ---@field key_border?                 integer         # 按键边框（-1 = 使用全局值）
 ---@field key_border_color?           Color           # 按键边框颜色
+---@field key_shadow_radius?          number          # 按键阴影模糊半径（-1=使用键盘/全局值）
+---@field key_shadow_direction?       string[]        # 按键阴影方向（nil=使用键盘/全局值）
 ---@field label?                      LabelSpec       # 按键标签
 ---@field ascii_label?                LabelSpec       # 英文模式下替换标签（nil 则沿用 label）
 ---@field label_symbol?               LabelSpec       # 按键副标签（右上角）
@@ -865,6 +869,8 @@
 ---@field vertical_gap?             integer        # 键垂直间距（0 = 使用全局值）
 ---@field round_corner?             number         # 圆角半径（-1 = 使用全局值）
 ---@field key_border?               integer        # 按键边框（-1 = 使用全局值）
+---@field key_shadow_radius?        number         # 按键阴影模糊半径（-1=使用全局值）
+---@field key_shadow_direction?     string[]       # 按键阴影方向（nil=使用全局值）
 ---@field ascii_mode?               boolean        # 是否为英文输入模式（默认 true）
 ---@field reset_ascii_mode?         boolean        # 是否在激活时重置英文模式
 ---@field label_transform?          LabelTransform # 标签转换（NONE / UPPERCASE）

@@ -24,6 +24,8 @@ class GeneralStyleTest :
                     generalStyle.candidateViewHeight shouldBe 28
                     generalStyle.commentPosition shouldBe GeneralStyle.CommentPosition.RIGHT
                     generalStyle.enterLabel.go shouldBe "前往"
+                    generalStyle.keyShadowRadius shouldBe 4f
+                    generalStyle.keyShadowDirection shouldBe listOf("down", "right")
                 }
             }
         }

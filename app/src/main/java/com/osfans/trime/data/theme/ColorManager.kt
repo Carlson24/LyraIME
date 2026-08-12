@@ -75,6 +75,7 @@ object ColorManager {
             "hilited_on_key_text_color" to "hilited_key_text_color",
             "key_back_color" to "back_color",
             "key_border_color" to "border_color",
+            "key_shadow_color" to "shadow_color",
             "key_text_color" to "candidate_text_color",
             "key_symbol_color" to "comment_text_color",
             "label_color" to "candidate_text_color",

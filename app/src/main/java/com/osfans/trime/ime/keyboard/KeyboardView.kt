@@ -27,6 +27,7 @@ import com.osfans.trime.ime.voice.WaveformView
 import com.osfans.trime.link.AsrkbSpeechClient
 import com.osfans.trime.link.SherpaSpeechClient
 import com.osfans.trime.link.VoiceOverlayUiBridge
+import splitties.dimensions.dp
 import timber.log.Timber
 import androidx.core.graphics.ColorUtils as AndroidColorUtils
 
@@ -63,6 +64,7 @@ class KeyboardView(
 
     init {
         setWillNotDraw(false)
+        clipChildren = false
         buildKeyViews()
         if (keyboard.isT9Mode && t9Controller != null) {
             createT9Sidebar()
@@ -147,34 +149,75 @@ class KeyboardView(
     ).apply {
         id = index
 
-        val totalWidth = key.width + key.extraWidthLeft + key.extraWidthRight
-        layoutParams = LayoutParams(totalWidth, key.height)
+        val shadowRadius = key.keyShadowRadius ?: keyboard.keyShadowRadius
+        var sLeft = 0
+        var sTop = 0
+        var sRight = 0
+        var sBottom = 0
+        if (shadowRadius > 0f) {
+            val dir = key.keyShadowDirection ?: keyboard.keyShadowDirection
+            if (!dir.isNullOrEmpty()) {
+                val shadowDp = dp(shadowRadius)
+                val (dx, dy) = Keyboard.shadowDirectionToOffset(dir, shadowDp)
+                if (key.edgeFlags and Keyboard.EDGE_LEFT != 0) {
+                    sLeft = (shadowDp - dx).coerceAtLeast(0f).toInt()
+                }
+                if (key.edgeFlags and Keyboard.EDGE_TOP != 0) {
+                    sTop = (shadowDp - dy).coerceAtLeast(0f).toInt()
+                }
+                if (key.edgeFlags and Keyboard.EDGE_RIGHT != 0) {
+                    sRight = (shadowDp + dx).coerceAtLeast(0f).toInt()
+                }
+                if (key.edgeFlags and Keyboard.EDGE_BOTTOM != 0) {
+                    sBottom = (shadowDp + dy).coerceAtLeast(0f).toInt()
+                }
+            }
+        }
 
-        translationX = (key.x - key.extraWidthLeft).toFloat()
-        translationY = key.y.toFloat()
+        val totalWidth = key.width + key.extraWidthLeft + key.extraWidthRight
+        layoutParams = LayoutParams(totalWidth + sLeft + sRight, key.height + sTop + sBottom)
+
+        translationX = (key.x - key.extraWidthLeft - sLeft).toFloat()
+        translationY = (key.y - sTop).toFloat()
 
         setPadding(
-            (keyboard.horizontalGap * keyboard.horizontalGapScale / 2f).toInt() + key.extraWidthLeft,
+            (keyboard.horizontalGap * keyboard.horizontalGapScale / 2f).toInt() + key.extraWidthLeft + sLeft,
             if (key.edgeFlags and Keyboard.EDGE_TOP != 0) {
-                maxOf(keyboard.keyboardPaddingTop, keyboard.verticalGap / 2)
+                maxOf(keyboard.keyboardPaddingTop, keyboard.verticalGap / 2) + sTop
             } else {
                 keyboard.verticalGap / 2
             },
-            (keyboard.horizontalGap * keyboard.horizontalGapScale / 2f).toInt() + key.extraWidthRight,
-            if (key.edgeFlags and Keyboard.EDGE_BOTTOM == 0) keyboard.verticalGap / 2 else 0,
+            (keyboard.horizontalGap * keyboard.horizontalGapScale / 2f).toInt() + key.extraWidthRight + sRight,
+            if (key.edgeFlags and Keyboard.EDGE_BOTTOM == 0) keyboard.verticalGap / 2 else sBottom,
         )
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val fullWidth = keyboard.minWidth + paddingLeft + paddingRight
-        val fullHeight = keyboard.height + paddingTop + paddingBottom
 
         val measuredWidth =
             minOf(MeasureSpec.getSize(widthMeasureSpec), fullWidth)
 
         measureChildren(widthMeasureSpec, heightMeasureSpec)
-        setMeasuredDimension(measuredWidth, fullHeight)
+        setMeasuredDimension(measuredWidth, keyboard.height + paddingTop + paddingBottom + bottomShadowExtent)
     }
+
+    val bottomShadowExtent: Int
+        get() {
+            var maxBottom = 0
+            for (key in keyboard.keys) {
+                if (key.edgeFlags and Keyboard.EDGE_BOTTOM == 0) continue
+                val r = key.keyShadowRadius ?: keyboard.keyShadowRadius
+                if (r <= 0f) continue
+                val dir = key.keyShadowDirection ?: keyboard.keyShadowDirection ?: continue
+                if (dir.isEmpty()) continue
+                val shadowDp = dp(r)
+                val (_, dy) = Keyboard.shadowDirectionToOffset(dir, shadowDp)
+                val extent = (shadowDp + dy).coerceAtLeast(0f).toInt()
+                if (extent > maxBottom) maxBottom = extent
+            }
+            return maxBottom
+        }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)

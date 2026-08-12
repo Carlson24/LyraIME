@@ -87,6 +87,8 @@ data class TextKeyboard(
     val t9SidebarSymbols: List<String> = emptyList(),
     val dynamicMode: Boolean = false,
     val dynamicOriginal: String = "",
+    val keyShadowRadius: Float = -1f,
+    val keyShadowDirection: List<String>? = null,
     val rows: List<KeyboardRow> = emptyList(),
 ) : Parcelable {
     fun isStructurallyIdenticalTo(other: TextKeyboard): Boolean {
@@ -183,6 +185,8 @@ data class TextKeyboard(
         val hlKeyBackColor: String = "",
         @SerialName("hilited_key_symbol_color")
         val hlKeySymbolColor: String = "",
+        val keyShadowRadius: Float = -1f,
+        val keyShadowDirection: List<String>? = null,
         val popup: List<String> = emptyList(),
         val dynamic: String = "",
         val behaviors: Map<KeyBehavior, String> = emptyMap(),
@@ -206,6 +210,18 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
     private fun bool(obj: JsonObject, key: String, default: Boolean = false): Boolean = obj[key]?.jsonPrimitive?.boolean ?: default
 
     private fun strList(obj: JsonObject, key: String): List<String> = obj[key]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+
+    internal fun parseStringOrList(obj: JsonObject, key: String): List<String>? {
+        val el = obj[key] ?: return null
+        return when (el) {
+            is JsonPrimitive -> {
+                val v = el.contentOrNull
+                if (!v.isNullOrEmpty()) listOf(v) else null
+            }
+            is JsonArray -> el.mapNotNull { it.jsonPrimitive.contentOrNull }.takeIf { it.isNotEmpty() }
+            else -> null
+        }
+    }
 
     private fun labelSegments(obj: JsonObject, key: String): List<TextKeyboard.LabelSegment> {
         val element = obj[key] ?: return emptyList()
@@ -335,6 +351,8 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
         map["hilited_key_text_color"] = kotlinx.serialization.json.JsonPrimitive(value.hlKeyTextColor)
         map["hilited_key_back_color"] = kotlinx.serialization.json.JsonPrimitive(value.hlKeyBackColor)
         map["hilited_key_symbol_color"] = kotlinx.serialization.json.JsonPrimitive(value.hlKeySymbolColor)
+        map["key_shadow_radius"] = kotlinx.serialization.json.JsonPrimitive(value.keyShadowRadius)
+        value.keyShadowDirection?.let { map["key_shadow_direction"] = kotlinx.serialization.json.JsonArray(it.map { d -> kotlinx.serialization.json.JsonPrimitive(d) }) }
         map["popup"] = kotlinx.serialization.json.JsonArray(value.popup.map { kotlinx.serialization.json.JsonPrimitive(it) })
         map["dynamic"] = kotlinx.serialization.json.JsonPrimitive(value.dynamic)
         for ((b, action) in value.behaviors) {
@@ -391,6 +409,8 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
             hlKeyTextColor = str(obj, "hilited_key_text_color"),
             hlKeyBackColor = str(obj, "hilited_key_back_color"),
             hlKeySymbolColor = str(obj, "hilited_key_symbol_color"),
+            keyShadowRadius = flt(obj, "key_shadow_radius", -1f),
+            keyShadowDirection = parseStringOrList(obj, "key_shadow_direction"),
             popup = strList(obj, "popup"),
             dynamic = str(obj, "dynamic"),
             behaviors = behaviors,
@@ -450,6 +470,8 @@ internal object TextKeyboardSerializer : KSerializer<TextKeyboard> {
         map["t9_sidebar_symbols"] = JsonArray(value.t9SidebarSymbols.map { JsonPrimitive(it) })
         map["dynamic_mode"] = JsonPrimitive(value.dynamicMode)
         map["dynamic_original"] = JsonPrimitive(value.dynamicOriginal)
+        map["key_shadow_radius"] = JsonPrimitive(value.keyShadowRadius)
+        value.keyShadowDirection?.let { map["key_shadow_direction"] = JsonArray(it.map { d -> JsonPrimitive(d) }) }
         map["rows"] = JsonArray(
             value.rows.map { row ->
                 JsonObject(
@@ -535,6 +557,8 @@ internal object TextKeyboardSerializer : KSerializer<TextKeyboard> {
             t9SidebarSymbols = strList(obj, "t9_sidebar_symbols"),
             dynamicMode = bool(obj, "dynamic_mode"),
             dynamicOriginal = str(obj, "dynamic_original"),
+            keyShadowRadius = flt(obj, "key_shadow_radius", -1f),
+            keyShadowDirection = TextKeySerializer.parseStringOrList(obj, "key_shadow_direction"),
             rows = rows,
         )
     }

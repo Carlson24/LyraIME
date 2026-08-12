@@ -21,6 +21,7 @@ import splitties.systemservices.windowManager
 import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.pow
+import kotlin.math.sqrt
 
 internal object KeyboardPending {
     var lastIsPortrait: Boolean? = null
@@ -67,6 +68,11 @@ class Keyboard(
     /** 默認按鍵邊框寬度  */
     val keyBorder: Int =
         selfConfig?.keyBorder?.takeIf { it >= 0 } ?: theme.generalStyle.keyBorder
+
+    val keyShadowRadius: Float =
+        selfConfig?.keyShadowRadius?.takeIf { it >= 0f } ?: theme.generalStyle.keyShadowRadius
+    val keyShadowDirection: List<String>? =
+        selfConfig?.keyShadowDirection ?: theme.generalStyle.keyShadowDirection.takeIf { it.isNotEmpty() }
 
     /** 鍵盤的Shift鍵  */
     var mShiftKey: Key? = null
@@ -641,5 +647,24 @@ class Keyboard(
 
         /** Number of key widths from current touch point to search for nearest keys.  */
         const val SEARCH_DISTANCE = 1.4f
+
+        fun shadowDirectionToOffset(dir: List<String>, offset: Float): Pair<Float, Float> {
+            var dx = 0f
+            var dy = 0f
+            for (d in dir) {
+                when (d.lowercase()) {
+                    "left" -> dx -= 1f
+                    "right" -> dx += 1f
+                    "up" -> dy -= 1f
+                    "down" -> dy += 1f
+                }
+            }
+            val mag = sqrt(dx * dx + dy * dy)
+            if (mag > 0f) {
+                dx = dx / mag * offset
+                dy = dy / mag * offset
+            }
+            return Pair(dx, dy)
+        }
     }
 }

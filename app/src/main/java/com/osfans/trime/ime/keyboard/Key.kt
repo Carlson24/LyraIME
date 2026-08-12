@@ -90,6 +90,10 @@ class Key(
         private set
     var keyBorderColor: String? = selfConfig?.keyBorderColor?.takeIf { it.isNotEmpty() }
         private set
+    var keyShadowRadius: Float? = selfConfig?.keyShadowRadius?.takeIf { it >= 0f }
+        private set
+    var keyShadowDirection: List<String>? = selfConfig?.keyShadowDirection
+        private set
     var keyTextOffsetX = 0f
         get() = field + keyOffsetX
     var keyTextOffsetY = 0f
@@ -226,6 +230,8 @@ class Key(
         roundedCornerBottomRight = newConfig.roundedCornerBottomRight
         keyBorder = newConfig.keyBorder.takeIf { it >= 0 }
         keyBorderColor = newConfig.keyBorderColor.takeIf { it.isNotEmpty() }
+        keyShadowRadius = newConfig.keyShadowRadius.takeIf { it >= 0f }
+        keyShadowDirection = newConfig.keyShadowDirection
         keyActions = buildMap {
             newConfig.behaviors.forEach {
                 put(it.key, KeyActionManager.getAction(it.value))

@@ -354,16 +354,14 @@ class Rime :
         handleRimeMessage(8, arrayOf(status))
     }
 
-    private fun computeAsciiTips(status: StatusProto): String {
-        return if (status.isAsciiMode) {
-            "En"
-        } else if (status.schemaName.isNotEmpty() &&
-            !status.schemaName.startsWith('.')
-        ) {
-            status.schemaName.take(2)
-        } else {
-            ""
-        }
+    private fun computeAsciiTips(status: StatusProto): String = if (status.isAsciiMode) {
+        "En"
+    } else if (status.schemaName.isNotEmpty() &&
+        !status.schemaName.startsWith('.')
+    ) {
+        status.schemaName.take(2)
+    } else {
+        ""
     }
 
     private fun emitResponse(

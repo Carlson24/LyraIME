@@ -213,7 +213,7 @@ class KeyboardWindow :
         }
 
         keyboard.also {
-            _currentKeyboardHeight.tryEmit(it.keyboardHeight)
+            _currentKeyboardHeight.tryEmit(it.keyboardHeight + view.bottomShadowExtent)
             if (it.isLock) lastLockKeyboardId = target
             dispatchCapsState(it::setShifted)
 

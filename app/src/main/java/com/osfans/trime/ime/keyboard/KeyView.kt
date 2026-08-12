@@ -10,9 +10,11 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.util.LruCache
@@ -492,13 +494,23 @@ class KeyView(
     private fun drawBackground(canvas: Canvas, k: Key) {
         val bg = k.getBackgroundDrawable() ?: return
 
+        val uniform = k.roundCorner ?: keyboard.roundCorner
+        fun r(value: Float?): Float = (value ?: uniform).takeIf { it > 0f } ?: 0f
+        val tl = r(k.roundedCornerTopLeft)
+        val tr = r(k.roundedCornerTopRight)
+        val bl = r(k.roundedCornerBottomLeft)
+        val br = r(k.roundedCornerBottomRight)
+
+        val bounds = Rect(
+            paddingLeft,
+            paddingTop,
+            width - paddingRight,
+            height - paddingBottom,
+        )
+
+        drawKeyShadow(canvas, k, bounds, tl, tr, bl, br, uniform)
+
         if (bg is GradientDrawable) {
-            val uniform = k.roundCorner ?: keyboard.roundCorner
-            fun r(value: Float?): Float = (value ?: uniform).takeIf { it > 0f } ?: 0f
-            val tl = r(k.roundedCornerTopLeft)
-            val tr = r(k.roundedCornerTopRight)
-            val bl = r(k.roundedCornerBottomLeft)
-            val br = r(k.roundedCornerBottomRight)
             if (tl == tr && tl == bl && tl == br && tl == uniform) {
                 uniform.takeIf { it > 0f }?.let { bg.cornerRadius = dp(it) }
             } else {
@@ -516,13 +528,43 @@ class KeyView(
             (k.keyBorder ?: keyboard.keyBorder).takeIf { it > 0 }?.let { bg.setStroke(dp(it), k.keyBorderColorValue) }
         }
 
-        bg.setBounds(
-            paddingLeft,
-            paddingTop,
-            width - paddingRight,
-            height - paddingBottom,
-        )
+        bg.bounds = bounds
         bg.draw(canvas)
+    }
+
+    private fun drawKeyShadow(
+        canvas: Canvas,
+        k: Key,
+        bounds: Rect,
+        tl: Float,
+        tr: Float,
+        bl: Float,
+        br: Float,
+        uniform: Float,
+    ) {
+        val radius = k.keyShadowRadius ?: keyboard.keyShadowRadius
+        if (radius <= 0f) return
+        val dir = k.keyShadowDirection ?: keyboard.keyShadowDirection ?: return
+        if (dir.isEmpty()) return
+
+        val color = ColorManager.getColor("key_shadow_color")
+        val shadowDp = dp(radius)
+        val (dx, dy) = Keyboard.shadowDirectionToOffset(dir, shadowDp)
+
+        val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).also {
+            it.setShadowLayer(shadowDp, dx, dy, color)
+            it.color = Color.argb(1, 0, 0, 0)
+        }
+
+        val shadowRect = RectF(bounds)
+
+        if (tl == tr && tl == bl && tl == br && tl == uniform && uniform > 0f) {
+            canvas.drawRoundRect(shadowRect, dp(uniform), dp(uniform), shadowPaint)
+        } else {
+            val radii = floatArrayOf(dp(tl), dp(tl), dp(tr), dp(tr), dp(br), dp(br), dp(bl), dp(bl))
+            val path = Path().apply { addRoundRect(shadowRect, radii, Path.Direction.CW) }
+            canvas.drawPath(path, shadowPaint)
+        }
     }
 
     private fun calculateTextPosition(
