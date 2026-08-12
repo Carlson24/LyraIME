@@ -53,10 +53,6 @@ class ClipboardEntryUi(ctx: Context, private val theme: Theme) : Ui {
         visibility = View.GONE
         scaleType = ImageView.ScaleType.CENTER_INSIDE
         minimumHeight = dp(72)
-        background = GradientDrawable().apply {
-            cornerRadius = theme.generalStyle.roundCorner
-            setColor(ColorManager.getColor("clipboard_entry_back_color"))
-        }
     }
 
     private val imagePlaceholder = imageView {
@@ -64,10 +60,6 @@ class ClipboardEntryUi(ctx: Context, private val theme: Theme) : Ui {
         scaleType = ImageView.ScaleType.CENTER_INSIDE
         minimumHeight = dp(72)
         setPaddingDp(16, 8, 16, 8)
-        background = GradientDrawable().apply {
-            cornerRadius = theme.generalStyle.roundCorner
-            setColor(ColorManager.getColor("clipboard_entry_back_color"))
-        }
         imageDrawable = drawable(R.drawable.ic_baseline_image_24)?.apply {
             setTint(ColorManager.getColor("key_symbol_color"))
         }

@@ -6,7 +6,6 @@
 package com.osfans.trime.ime.clipboard
 
 import android.content.Context
-import android.graphics.drawable.GradientDrawable
 import android.widget.LinearLayout
 import android.widget.ViewAnimator
 import com.osfans.trime.R
@@ -81,16 +80,10 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
         fontFeatureSettings = FontManager.fontFeatureSettings
     }
 
-    private fun categoryBackground(selected: Boolean) = GradientDrawable().apply {
-        cornerRadius = ctx.dp(15).toFloat()
-        setColor(
-            if (selected) {
-                ColorManager.getColor("clipboard_category_selected_back_color")
-            } else {
-                ColorManager.getColor("clipboard_category_back_color")
-            },
-        )
-    }
+    private fun categoryBackground(selected: Boolean) = ColorManager.getDecorDrawable(
+        if (selected) "clipboard_category_selected_back_color" else "clipboard_category_back_color",
+        cornerRadius = ctx.dp(15).toFloat(),
+    )
 
     fun setOnCategorySelectedListener(listener: (ClipboardCategory) -> Unit) {
         categoryButtons.forEach { (category, button) ->

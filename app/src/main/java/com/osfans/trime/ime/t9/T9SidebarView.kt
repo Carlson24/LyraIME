@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
@@ -43,11 +44,19 @@ class T9SidebarView(
     private var tokens: List<T9InputController.PinYinToken> = emptyList()
     private val defaultSymbols: List<String> = keyboard.t9SidebarSymbols
 
-    private val sideBackColor: Int by lazy {
-        resolveColor("t9_side_back_color", "key_back_color")
-    }
-    private val sideHilitedBackColor: Int by lazy {
-        resolveColor("t9_side_hilited_back_color", "hilited_key_back_color")
+    private val sidebarBg by lazy {
+        ColorManager.getDecorDrawable(
+            "t9_side_back_color",
+            "t9_side_border_color",
+            borderWidthPx,
+            sideCornerRadiusPx,
+        ) ?: GradientDrawable().apply {
+            setColor(Color.TRANSPARENT)
+            if (borderWidthPx > 0) {
+                setStroke(borderWidthPx, sideBorderColor)
+            }
+            cornerRadius = sideCornerRadiusPx
+        }
     }
     private val sideTextColor: Int by lazy {
         resolveColor("t9_side_text_color", "key_text_color")
@@ -57,6 +66,13 @@ class T9SidebarView(
     }
     private val sideSpacingColor: Int by lazy {
         resolveColor("t9_side_spacing_color", "key_border_color")
+    }
+
+    private val sideHilitedBg by lazy {
+        ColorManager.getDecorDrawable(
+            "t9_side_hilited_back_color",
+            cornerRadius = sideCornerRadiusPx,
+        )
     }
 
     private fun resolveColor(primaryKey: String, fallbackKey: String): Int {
@@ -74,16 +90,6 @@ class T9SidebarView(
 
     private val sideTextSizeSp: Float get() = sp(keyboard.t9SideTextSize)
     private val sideTypeface by lazy { FontManager.getTypeface("t9_side_font") }
-
-    private val sidebarBg: GradientDrawable by lazy {
-        GradientDrawable().apply {
-            setColor(sideBackColor)
-            if (borderWidthPx > 0) {
-                setStroke(borderWidthPx, sideBorderColor)
-            }
-            cornerRadius = sideCornerRadiusPx
-        }
-    }
 
     private val itemViewPool = ArrayDeque<FrameLayout>(8)
     private val dividerPool = ArrayDeque<View>(8)
@@ -133,7 +139,7 @@ class T9SidebarView(
         val hGap = horizontalGap
         setPadding(
             hGap / 2,
-            vGap,
+            vGap / 2,
             hGap / 2,
             vGap / 2,
         )
@@ -392,8 +398,8 @@ class T9SidebarView(
     }
 
     private fun createPressStateDrawable(): StateListDrawable {
-        val pressed = GradientDrawable().apply {
-            setColor(sideHilitedBackColor)
+        val pressed = sideHilitedBg ?: GradientDrawable().apply {
+            setColor(Color.TRANSPARENT)
             cornerRadius = sideCornerRadiusPx
         }
         val normal = GradientDrawable().apply {
