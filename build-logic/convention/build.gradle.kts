@@ -37,9 +37,5 @@ gradlePlugin {
             id = "com.osfans.trime.opencc-data"
             implementationClass = "OpenCCDataPlugin"
         }
-        register("typoData") {
-            id = "com.osfans.trime.typo-data"
-            implementationClass = "TypoDataPlugin"
-        }
     }
 }
