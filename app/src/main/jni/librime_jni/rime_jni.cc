@@ -44,12 +44,10 @@ class Rime {
     const char* userDir = getenv("RIME_USER_DATA_DIR");
     const char* sharedDir = getenv("RIME_SHARED_DATA_DIR");
     const char* versionName = getenv("RIME_DISTRIBUTION_VERSION");
-    const char* userCommonDir = getenv("RIME_USER_COMMON_DATA_DIR");
 
     RIME_STRUCT(RimeTraits, trime_traits)
     trime_traits.shared_data_dir = sharedDir;
     trime_traits.user_data_dir = userDir;
-    trime_traits.user_common_data_dir = userCommonDir;
     trime_traits.log_dir = "";  // set empty log_dir to log to logcat only
     trime_traits.app_name = "rime.lyraime";
     trime_traits.distribution_name = "LyraIme";
@@ -253,14 +251,12 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* jvm, void* reserved) {
 
 extern "C" JNIEXPORT void JNICALL Java_com_osfans_trime_core_Rime_startupRime(
     JNIEnv* env, jclass clazz, jstring shared_dir, jstring user_dir,
-    jstring version_name, jstring user_common_dir, jboolean full_check) {
+    jstring version_name, jboolean full_check) {
   // for rime shared data dir
   setenv("RIME_SHARED_DATA_DIR", CString(env, shared_dir), 1);
   // for rime user data dir
   setenv("RIME_USER_DATA_DIR", CString(env, user_dir), 1);
   setenv("RIME_DISTRIBUTION_VERSION", CString(env, version_name), 1);
-  // for user-level cross-package shared data dir
-  setenv("RIME_USER_COMMON_DATA_DIR", CString(env, user_common_dir), 1);
 
   auto notificationHandler = [](void* context_object, RimeSessionId session_id,
                                 const char* message_type,

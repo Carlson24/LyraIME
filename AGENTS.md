@@ -79,7 +79,6 @@ build-logic/     — included build with custom Gradle convention plugins
 Custom convention plugins (in `build-logic/convention/`):
 - `native-app-convention` — NDK/CMake/ABI config, version tags for native libs
 - `native-base-convention` — shared NDK/CMake/ABI config, auto-patch application
-- `opencc-data` — copies OpenCC dicts from JNI submodule into assets
 - `data-checksums` — generates `checksums.json` for asset integrity
 - `native-cache-hash` — computes hash for CI native library caching
 

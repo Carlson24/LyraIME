@@ -63,9 +63,6 @@ object DataManager {
     val userThemesDir get() = File(userDataBaseDir, "themes").also { it.mkdirs() }
 
     val sharedDataDir
-        get() = File(externalFilesDir, "shared").also { it.mkdirs() }
-
-    val userCommonDataDir
         get() = File(userDataBaseDir, "shared").also { it.mkdirs() }
 
     val voiceDataDir = File(externalFilesDir, "voice").also { it.mkdirs() }
@@ -76,7 +73,7 @@ object DataManager {
     val userDataDir: File
         get() {
             val pkgId = SchemaPackageManager.activePackageId
-            if (pkgId.isEmpty()) return userCommonDataDir
+            if (pkgId.isEmpty()) return sharedDataDir
             return File(userDataBaseDir, pkgId).also { it.mkdirs() }
         }
 
