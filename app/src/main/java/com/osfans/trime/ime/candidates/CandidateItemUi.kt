@@ -295,7 +295,13 @@ class CandidateItemUi(
             // label starts at paddingStart, text follows label with a 1dp margin
             // and stays left-aligned (bias = 0), comment centers relative to text
             val textLeft = paddingH + label.measureContentWidth() + ctx.dp(1)
-            val textWidth = text.measureContentWidth()
+            // text is end-constrained and auto-scaled: when it overflows the bar,
+            // the comment must center on the laid-out width, not the unscaled content width
+            val textWidth =
+                minOf(
+                    text.measureContentWidth(),
+                    (maxContentWidth - paddingH - textLeft).coerceAtLeast(0),
+                )
             val commentWidth = comment.measureContentWidth()
             val commentLeft = textLeft + (textWidth - commentWidth) / 2
             // the desired left edge of the comment, clamped so that
