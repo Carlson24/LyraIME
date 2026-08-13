@@ -160,31 +160,42 @@ class CommonKeyboardActionListener {
                         service.commitText(action.commit)
                         false
                     }
+
                     KeyboardWindow.currentKeyboard.let { keyboard ->
                         action.getText(keyboard).isNotEmpty()
                     } -> {
                         onText(action.getText(KeyboardWindow.currentKeyboard))
                         false
                     }
+
                     else -> true
                 }
 
                 if (shouldHandle) {
                     when (action.code) {
                         KeyEvent.KEYCODE_SWITCH_CHARSET -> handleSwitchCharset(action)
+
                         KeyEvent.KEYCODE_EISU -> {
                             if (KeyboardWindow.currentKeyboard.isDynamicMode) {
                                 KeyboardWindow.dynamicController?.reset()
                             }
                             keyboardWindow.switchKeyboard(action.select)
                         }
+
                         KeyEvent.KEYCODE_LANGUAGE_SWITCH -> handleLanguageSwitch(action)
+
                         KeyEvent.KEYCODE_FUNCTION -> handleFunctionCommand(action)
+
                         KeyEvent.KEYCODE_SETTINGS -> handleSettings(action)
+
                         KeyEvent.KEYCODE_PROG_GREEN -> showKeyboardPicker()
+
                         KeyEvent.KEYCODE_PROG_RED -> showColorPicker()
+
                         KeyEvent.KEYCODE_MENU -> showEnabledSchemaPicker()
+
                         KeyEvent.KEYCODE_VOICE_ASSIST -> switchToVoiceInputMethod()
+
                         else -> handleDefaultKeyAction(action)
                     }
                 }
@@ -257,19 +268,33 @@ class CommonKeyboardActionListener {
 
                 when (action.command) {
                     "liquid_keyboard" -> handleLiquidKeyboard(arg)
+
                     "menu_keyboard" -> windowManager.attachWindow(SwitchOptionWindow())
+
                     "clipboard_window" -> handleClipboardWindow(arg)
+
                     "set_color_scheme" -> handleColorScheme(arg)
+
                     "set_theme" -> handleTheme(arg)
+
                     "set_schema" -> handleSetSchema(arg)
+
                     "broadcast" -> service.sendBroadcast(Intent(arg))
+
                     "clipboard" -> handleClipboard()
+
                     "commit" -> service.commitText(arg)
+
                     "date" -> service.commitText(customFormatDateTime(arg))
+
                     "run" -> handleRunCommand(arg)
+
                     "apply" -> handleApplyCommand(arg)
+
                     "share_text" -> service.shareText()
+
                     "select_candidate" -> handleSelectCandidate(arg)
+
                     "t9_clear" -> {
                         KeyboardWindow.t9Controller?.clear()
                         rime.launchOnReady { api ->
@@ -278,6 +303,7 @@ class CommonKeyboardActionListener {
                             }
                         }
                     }
+
                     "dynamic_clear" -> {
                         KeyboardWindow.dynamicController?.clear()
                         rime.launchOnReady { api ->
@@ -286,6 +312,7 @@ class CommonKeyboardActionListener {
                             }
                         }
                     }
+
                     else -> handleIntentAction(action.command, arg)
                 }
             }
@@ -363,14 +390,17 @@ class CommonKeyboardActionListener {
                         Timber.i("try to start maintenance via command ...")
                         rime.launchOnReady { api -> api.deploy() }
                     }
+
                     "RESTART_RIME" -> {
                         Timber.i("try to restart rime via command ...")
                         RimeDaemon.restartRime()
                     }
+
                     "SYNC_USER_DATA" -> {
                         Timber.i("try to sync rime user data via command ...")
                         rime.launchOnReady { api -> api.syncUserData() }
                     }
+
                     "UPDATE_CONFIG" -> {
                         Timber.i("try to update rime config via command ...")
                         rime.launchOnReady { api ->
@@ -380,6 +410,7 @@ class CommonKeyboardActionListener {
                             }
                         }
                     }
+
                     else -> Timber.w("Unknown apply method: $arg")
                 }
             }
@@ -430,8 +461,10 @@ class CommonKeyboardActionListener {
 
                 val modifier = when {
                     action.modifier == 0 -> KeyboardWindow.currentKeyboard.modifier
+
                     (action.modifier and KeyEvent.META_CTRL_ON) != 0 && isNavigationKey(action.code) ->
                         action.modifier or KeyboardWindow.currentKeyboard.modifier
+
                     else -> action.modifier
                 }
 
@@ -455,12 +488,14 @@ class CommonKeyboardActionListener {
                             val digit = (keyEventCode - KeyEvent.KEYCODE_0).toString()
                             t9c.onDigitKey(digit)
                         }
+
                         keyEventCode == KeyEvent.KEYCODE_DEL -> {
                             if (t9c.onBackspace()) {
                                 t9c.updateRimeInput()
                                 return
                             }
                         }
+
                         t9c.isSegmentKeyCode(keyEventCode) -> {
                             if (t9c.onSegmentKey()) {
                                 return

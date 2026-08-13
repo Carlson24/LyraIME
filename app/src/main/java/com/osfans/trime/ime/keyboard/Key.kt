@@ -318,10 +318,10 @@ class Key(
         val topEdge = edgeFlags and Keyboard.EDGE_TOP > 0
         val bottomEdge = edgeFlags and Keyboard.EDGE_BOTTOM > 0
         return (
-            (x >= this.x || leftEdge && x <= this.x + width) &&
-                (x < this.x + width || rightEdge && x >= this.x) &&
-                (y >= this.y || topEdge && y <= this.y + height) &&
-                (y < this.y + height || bottomEdge && y >= this.y)
+            (x >= this.x || (leftEdge && x <= this.x + width)) &&
+                (x < this.x + width || (rightEdge && x >= this.x)) &&
+                (y >= this.y || (topEdge && y <= this.y + height)) &&
+                (y < this.y + height || (bottomEdge && y >= this.y))
             )
     }
 
@@ -428,7 +428,7 @@ class Key(
     private val appearanceType: Int
         get() {
             return when {
-                click?.isModifierKey == true && parent.modifier.hasFlag(click!!.modifierKeyOnMask) || isOn -> 2
+                (click?.isModifierKey == true && parent.modifier.hasFlag(click!!.modifierKeyOnMask)) || isOn -> 2
                 click?.isSticky == true || click?.isFunctional == true -> 1
                 else -> 0
             }
@@ -436,6 +436,7 @@ class Key(
 
     fun getBackgroundDrawable(): Drawable? = when (appearanceType) {
         2 -> if (isPressed) hlOnKeyBackground else onKeyBackground
+
         1 -> {
             if (isPressed) {
                 hlOffKeyBackground ?: hlKeyBackground
@@ -444,6 +445,7 @@ class Key(
                     ?: (offKeyBackground ?: keyBackground)
             }
         }
+
         else -> if (isPressed) hlKeyBackground else keyBackground
     }
 

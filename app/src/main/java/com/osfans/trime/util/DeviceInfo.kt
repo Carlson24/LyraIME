@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-/**
+/*
  * Adapted from [fcitx5-android/DeviceInfo.kt](https://github.com/fcitx5-android/fcitx5-android/blob/e44c1c7/app/src/main/java/org/fcitx/fcitx5/android/utils/DeviceInfo.kt)
  */
 package com.osfans.trime.util

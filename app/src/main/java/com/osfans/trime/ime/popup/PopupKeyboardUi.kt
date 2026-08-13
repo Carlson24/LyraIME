@@ -118,6 +118,7 @@ class PopupKeyboardUi(
                             imageViews.add(iv)
                             add(iv, lParams { gravity = gravityCenter })
                         }
+
                         is LabelSegment.Text -> {
                             val tv = view(::AutoScaleTextView) {
                                 scaleMode = AutoScaleTextView.Mode.Proportional
@@ -149,6 +150,7 @@ class PopupKeyboardUi(
                         textView.isVisible = false
                         imageViews.add(imageView)
                     }
+
                     is LabelSegment.Text -> {
                         textView.text = seg.content
                         textView.isVisible = true

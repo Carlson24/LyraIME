@@ -120,10 +120,12 @@ class CandidatesView(
                 preeditUi.update(composition)
                 preeditUi.root.visibility = if (preeditUi.visible) VISIBLE else GONE
             }
+
             is RimeMessage.CandidateMenuMessage -> {
                 menu = it.data
                 updateUi()
             }
+
             else -> {}
         }
     }
@@ -175,18 +177,22 @@ class CandidatesView(
                 x = maxX
                 y = minY
             }
+
             PopupPosition.TOP_LEFT -> {
                 x = minX
                 y = minY
             }
+
             PopupPosition.BOTTOM_RIGHT -> {
                 x = maxX
                 y = maxY
             }
+
             PopupPosition.BOTTOM_LEFT -> {
                 x = minX
                 y = maxY
             }
+
             PopupPosition.FOLLOW -> {
                 x =
                     if (layoutDirection == LAYOUT_DIRECTION_RTL) {

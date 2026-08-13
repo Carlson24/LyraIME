@@ -301,6 +301,7 @@ class S3Backend(
 
         when (method.uppercase()) {
             "GET" -> builder.get()
+
             "PUT" -> {
                 builder.header("Content-Type", contentType)
                 if (payload.isNotEmpty()) {
@@ -309,8 +310,11 @@ class S3Backend(
                     builder.put(ByteArray(0).toRequestBody(contentType.toMediaType()))
                 }
             }
+
             "HEAD" -> builder.head()
+
             "DELETE" -> builder.delete()
+
             else -> builder.method(method, null)
         }
 

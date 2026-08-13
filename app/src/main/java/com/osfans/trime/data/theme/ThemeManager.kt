@@ -91,7 +91,9 @@ object ThemeManager {
         is JsonObject -> JsonObject(
             element.toSortedMap().mapValues { (_, v) -> sortJsonKeys(v) },
         )
+
         is JsonArray -> JsonArray(element.map { sortJsonKeys(it) })
+
         else -> element
     }
 

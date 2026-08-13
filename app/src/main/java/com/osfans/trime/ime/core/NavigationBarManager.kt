@@ -32,7 +32,7 @@ class NavigationBarManager {
     private fun Window.setNavbarBackgroundColor(
         @ColorInt color: Int,
     ) {
-        /**
+        /*
          * Why on earth does it deprecated? It says
          * https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-15.0.0_r3/core/java/android/view/Window.java#2720
          * "If the app targets VANILLA_ICE_CREAM or above, the color will be transparent and cannot be changed"
@@ -56,12 +56,14 @@ class NavigationBarManager {
                 window.useSystemNavbarBackground(true)
                 window.enforceNavbarContrast(true)
             }
+
             ThemePrefs.NavbarBackground.COLOR_ONLY -> {
                 shouldUpdateNavbarForeground = true
                 shouldUpdateNavbarBackground = true
                 window.useSystemNavbarBackground(true)
                 window.enforceNavbarContrast(false)
             }
+
             ThemePrefs.NavbarBackground.FULL -> {
                 shouldUpdateNavbarForeground = true
                 shouldUpdateNavbarBackground = false

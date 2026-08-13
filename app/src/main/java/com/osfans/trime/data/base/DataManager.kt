@@ -102,6 +102,7 @@ object DataManager {
                     val destPath = externalFilesDir.resolve(it.path).absolutePath
                     ResourceUtils.copyFile(it.path, destPath)
                 }
+
                 is DataDiff.DeleteDir,
                 is DataDiff.DeleteFile,
                 -> FileUtils.delete(externalFilesDir.resolve(it.path)).getOrThrow()

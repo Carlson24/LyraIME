@@ -69,7 +69,9 @@ class NavBarButton(
                         setColor(color)
                         cornerRadius = dp(bg.cornerRadius.toInt()).toFloat()
                     }
+
                     "circle" -> ShapeDrawable(OvalShape()).apply { paint.color = color }
+
                     else -> return@forEach
                 }
                 addState(state, LayerDrawable(arrayOf(shape)).apply { setLayerInset(0, hInset, vInset, hInset, vInset) })
@@ -98,6 +100,7 @@ class NavBarButton(
                     add(image, lParams(wrapContent, wrapContent, gravityCenter))
                 }
             }
+
             style.isNotEmpty() -> {
                 if (style.isIconFont) {
                     val segments = style.parseLabelSegments()
@@ -162,6 +165,7 @@ class NavBarButton(
                         ViewGroup.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT),
                     )
                 }
+
                 is LabelSegment.Text -> {
                     val tv = textView {
                         text = seg.content

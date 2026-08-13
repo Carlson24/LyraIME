@@ -237,14 +237,17 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
                     commitText(it.data.text)
                 }
             }
+
             is RimeMessage.InlinePreeditMessage -> {
                 updateComposingText(it.data, it.cursorPos)
             }
+
             is RimeMessage.KeyMessage ->
                 it.data.let msg@{
                     if (it.isVirtual) {
                         when (it.value.value) {
                             RimeKeyMapping.RimeKey_Return -> handleReturnKey()
+
                             else -> {
                                 val keyCode = it.value.keyCode
                                 if (keyCode != KeyEvent.KEYCODE_UNKNOWN) {
@@ -291,12 +294,14 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
                         }
                     }
                 }
+
             is RimeMessage.DeployMessage -> {
                 if (it.data == RimeMessage.DeployMessage.State.Success) {
                     ThemeManager.selectTheme(ThemeManager.prefs.selectedTheme.getValue(), forceReload = true)
                     inputDeviceManager.reapplyWindowMode(this)
                 }
             }
+
             else -> {}
         }
     }

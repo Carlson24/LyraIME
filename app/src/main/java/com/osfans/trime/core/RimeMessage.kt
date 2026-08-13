@@ -169,6 +169,7 @@ sealed class RimeMessage<T>(
                 val (id, name) = (params[0] as String).split('/', limit = 2)
                 SchemaMessage(SchemaItem(id, name))
             }
+
             MessageType.Option -> {
                 val value = params[0] as String
                 OptionMessage(
@@ -178,20 +179,27 @@ sealed class RimeMessage<T>(
                     ),
                 )
             }
+
             MessageType.Deploy ->
                 DeployMessage(
                     DeployMessage.State.valueOf((params[0] as String).replaceFirstChar { it.titlecase() }),
                 )
+
             MessageType.Commit ->
                 CommitTextMessage(params[0] as CommitProto)
+
             MessageType.InlinePreedit ->
                 InlinePreeditMessage(params[0] as String, params[1] as? Int ?: 0)
+
             MessageType.Composition ->
                 CompositionMessage(params[0] as CompositionProto)
+
             MessageType.Menu ->
                 CandidateMenuMessage(params[0] as MenuProto)
+
             MessageType.Status ->
                 StatusMessage(params[0] as StatusProto)
+
             MessageType.Candidate ->
                 CandidateListMessage(
                     CandidateListMessage.Data(
@@ -200,6 +208,7 @@ sealed class RimeMessage<T>(
                         params[2] as Array<CandidateProto>,
                     ),
                 )
+
             MessageType.Key ->
                 KeyMessage(
                     KeyMessage.Data(
@@ -208,6 +217,7 @@ sealed class RimeMessage<T>(
                         params[2] as Boolean,
                     ),
                 )
+
             else -> UnknownMessage(params)
         }
 

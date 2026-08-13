@@ -169,9 +169,11 @@ object BackupManager {
         backupData.version > BackupData.CURRENT_VERSION -> {
             throw Exception("Backup version ${backupData.version} is newer than current version ${BackupData.CURRENT_VERSION}")
         }
+
         backupData.version < BackupData.CURRENT_VERSION -> {
             backupData.copy(version = BackupData.CURRENT_VERSION)
         }
+
         else -> backupData
     }
 
@@ -227,11 +229,17 @@ object BackupManager {
 
     private fun valueToBackupPreference(key: String, value: Any?): BackupPreference = when (value) {
         null -> BackupPreference(JsonNull, PreferenceType.STRING)
+
         is Int -> BackupPreference(JsonPrimitive(value), PreferenceType.INT)
+
         is Long -> BackupPreference(JsonPrimitive(value), PreferenceType.LONG)
+
         is Float -> BackupPreference(JsonPrimitive(value), PreferenceType.FLOAT)
+
         is Double -> BackupPreference(JsonPrimitive(value), PreferenceType.FLOAT)
+
         is Boolean -> BackupPreference(JsonPrimitive(value), PreferenceType.BOOLEAN)
+
         is String -> {
             if (key in passwordKeys && value.isNotEmpty()) {
                 val encoded = Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP)
@@ -245,10 +253,12 @@ object BackupManager {
                 BackupPreference(tryParseJsonValue(value), PreferenceType.STRING)
             }
         }
+
         is Set<*> -> {
             val jsonArray = JsonArray(value.map { JsonPrimitive(it.toString()) })
             BackupPreference(jsonArray, PreferenceType.STRING_SET)
         }
+
         else -> BackupPreference(JsonPrimitive(value.toString()), PreferenceType.STRING)
     }
 
@@ -328,13 +338,16 @@ object BackupManager {
                             val stringSet = value.map { (it as JsonPrimitive).content }.toSet()
                             putStringSet(key, stringSet)
                         }
+
                         PreferenceType.STRING -> {
                             val joined = value.joinToString("\n") { (it as JsonPrimitive).content }
                             putString(key, joined)
                         }
+
                         else -> putString(key, value.toString())
                     }
                 }
+
                 is JsonPrimitive -> {
                     val content = value.content
                     when (type) {
@@ -346,6 +359,7 @@ object BackupManager {
                         else -> putString(key, content)
                     }
                 }
+
                 else -> putString(key, value.toString())
             }
         }

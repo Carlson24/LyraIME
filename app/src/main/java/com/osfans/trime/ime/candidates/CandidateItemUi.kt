@@ -149,6 +149,7 @@ class CandidateItemUi(
                     },
                 )
             }
+
             GeneralStyle.CommentPosition.TOP -> {
                 add(
                     comment,
@@ -182,6 +183,7 @@ class CandidateItemUi(
                     },
                 )
             }
+
             GeneralStyle.CommentPosition.OVERLAY -> {
                 add(
                     label,
@@ -237,7 +239,7 @@ class CandidateItemUi(
         // allow the comment to extend beyond the content bounds in OVERLAY mode
         clipChildren = false
         clipToPadding = false
-        /**
+        /*
          * candidate long press feedback is handled by `showCandidateActionMenu`
          */
         add(

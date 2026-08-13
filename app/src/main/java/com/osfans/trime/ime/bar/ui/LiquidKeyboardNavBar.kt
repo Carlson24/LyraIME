@@ -109,7 +109,9 @@ class LiquidKeyboardNavBar(
                             endEdgeMargin
                         }
                     }
+
                     keyItem.isStringFormat -> space
+
                     else -> keyItem.margin?.right?.let { context.dp(it).toInt() } ?: 0
                 }
 

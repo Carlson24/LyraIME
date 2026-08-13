@@ -49,6 +49,7 @@ class LiquidWindow :
         LiquidAdapter(theme) {
             when (currentDataType) {
                 LiquidData.Type.SYMBOL -> triggerSymbolInput(this.text)
+
                 LiquidData.Type.VAR_LENGTH -> {
                     // VAR_LENGTH类型：如果altText和text不同，说明是键值对，像SYMBOL一样处理
                     // 如果altText和text相同，说明是纯文本，像SINGLE一样直接上屏
@@ -60,11 +61,13 @@ class LiquidWindow :
                         symbolHistory.save()
                     }
                 }
+
                 LiquidData.Type.TABS -> {
                     val realPosition = LiquidData.getTagList()
                         .indexOfFirst { it.label == this.text }
                     setDataByIndex(realPosition)
                 }
+
                 else -> {
                     service.commitText(this.text)
                     if (currentDataType != LiquidData.Type.HISTORY) {
@@ -145,6 +148,7 @@ class LiquidWindow :
                 symbolHistory.load()
                 symbolHistory.toOrderedList().map { LiquidKeyboard.KeyItem(it) }
             }
+
             else -> {
                 LiquidData.getDataByIndex(i)
             }

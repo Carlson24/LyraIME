@@ -183,6 +183,7 @@ object RimeDaemon {
                     }
                     withContext(Dispatchers.IO) { subprocess("logcat", "--clear") }
                 }
+
                 RimeMessage.DeployMessage.State.Success -> {
                     buildNotification = {
                         setSmallIcon(R.drawable.ic_baseline_refresh_reversed_24)
@@ -194,6 +195,7 @@ object RimeDaemon {
                         setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     }
                 }
+
                 RimeMessage.DeployMessage.State.Failure -> {
                     val log =
                         subprocess("logcat", "-v", "brief", "-s", "rime.lyraime:W", "-d")

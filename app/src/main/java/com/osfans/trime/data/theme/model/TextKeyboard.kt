@@ -218,7 +218,9 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
                 val v = el.contentOrNull
                 if (!v.isNullOrEmpty()) listOf(v) else null
             }
+
             is JsonArray -> el.mapNotNull { it.jsonPrimitive.contentOrNull }.takeIf { it.isNotEmpty() }
+
             else -> null
         }
     }
@@ -240,7 +242,9 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
                     }
                     textEl.content.map { it.toString() }
                 }
+
                 is JsonArray -> textEl.mapNotNull { it.jsonPrimitive.contentOrNull }
+
                 else -> return emptyList()
             }
             if (texts.isEmpty()) return emptyList()
@@ -265,6 +269,7 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
 
         val texts: List<String> = when (textEl) {
             null -> listOf("")
+
             is JsonPrimitive -> {
                 if (hasArrayStyles) {
                     throw IllegalArgumentException(
@@ -273,7 +278,9 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
                 }
                 listOf(textEl.contentOrNull ?: "")
             }
+
             is JsonArray -> textEl.mapNotNull { it.jsonPrimitive.contentOrNull }
+
             else -> listOf("")
         }
         if (texts.isEmpty()) return emptyList()

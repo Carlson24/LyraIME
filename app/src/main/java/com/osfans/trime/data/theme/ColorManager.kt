@@ -175,16 +175,20 @@ object ColorManager {
                     lightSchemeId != null && darkSchemeId != null ->
                         // 如果两者都指定了，根据当前模式选择对应的配色
                         resolveScheme(if (isNightMode) darkSchemeId else lightSchemeId)
+
                     lightSchemeId != null ->
                         // 如果只指定了light_scheme，说明是暗色方案
                         if (isNightMode) userScheme else resolveScheme(lightSchemeId)
+
                     darkSchemeId != null ->
                         // 如果只指定了dark_scheme，说明是亮色方案
                         if (isNightMode) resolveScheme(darkSchemeId) else userScheme
+
                     else -> defaultModeScheme
                 }
             } ?: defaultModeScheme
         }
+
         else -> colorScheme(normalModeColor)
     } ?: colorScheme("default") ?: theme.colorSchemes.firstOrNull() ?: ColorScheme("default", emptyMap())
 
@@ -366,6 +370,7 @@ object ColorManager {
                     }
                 }
             }
+
         else -> drawable?.also { it.alpha = MathUtils.clamp(alpha, 0, 255) }
     }
 

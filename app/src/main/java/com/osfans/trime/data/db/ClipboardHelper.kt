@@ -257,41 +257,50 @@ object ClipboardHelper :
                     val ids = clbDao.findAllIds()
                     clbDao.markAsDeleted(*ids)
                 }
+
                 ClipboardCategory.Favorites -> {
                     val ids = clbDao.findPinnedIds()
                     clbDao.markAsDeleted(*ids)
                 }
+
                 ClipboardCategory.Local -> {
                     val ids = clbDao.findAllTextEntryIdsBySource(DatabaseBean.SOURCE_LOCAL)
                     clbDao.markAsDeleted(*ids)
                 }
+
                 ClipboardCategory.Media -> {
                     val ids = clbDao.findAllMediaEntryIds()
                     clbDao.markAsDeleted(*ids)
                 }
+
                 ClipboardCategory.Remote -> {
                     val ids = clbDao.findAllEntryIdsBySource(DatabaseBean.SOURCE_REMOTE)
                     clbDao.markAsDeleted(*ids)
                 }
             }
+
             category == ClipboardCategory.Favorites -> {
                 // already pinned-only
                 val ids = clbDao.findPinnedIds()
                 clbDao.markAsDeleted(*ids)
             }
+
             else -> when (category) {
                 ClipboardCategory.All, null -> {
                     val ids = clbDao.findUnpinnedIds()
                     clbDao.markAsDeleted(*ids)
                 }
+
                 ClipboardCategory.Local -> {
                     val ids = clbDao.findUnpinnedTextEntryIdsBySource(DatabaseBean.SOURCE_LOCAL)
                     clbDao.markAsDeleted(*ids)
                 }
+
                 ClipboardCategory.Media -> {
                     val ids = clbDao.findUnpinnedMediaEntryIds()
                     clbDao.markAsDeleted(*ids)
                 }
+
                 ClipboardCategory.Remote -> {
                     val ids = clbDao.findUnpinnedEntryIdsBySource(DatabaseBean.SOURCE_REMOTE)
                     clbDao.markAsDeleted(*ids)

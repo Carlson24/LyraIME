@@ -127,6 +127,7 @@ object ResourceUrls {
         return when (variant) {
             VoiceModelVariant.INT8 ->
                 "$VOICE_MODEL_RELEASE_BASE/sherpa-onnx-x-asr-${chunkMs}ms-streaming-zipformer-transducer-zh-en$punctSegment-int8-2026-06-05.tar.bz2"
+
             else ->
                 "$VOICE_MODEL_RELEASE_BASE/sherpa-onnx-x-asr-${chunkMs}ms-streaming-zipformer-transducer-zh-en$punctSegment-2026-06-05.tar.bz2"
         }

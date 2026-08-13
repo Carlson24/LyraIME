@@ -457,6 +457,7 @@ class FileBrowserActivity : AppCompatActivity() {
                             entry.file?.let { showRenameDialogNative(entry.name, entry.isDirectory) { newName -> renameNativeFile(it, newName) } }
                         }
                     }
+
                     1 -> {
                         if (isSafMode) {
                             entry.doc?.let { showDeleteConfirmNative(entry.name) { deleteSafFile(it) } }
@@ -668,6 +669,7 @@ class FileBrowserActivity : AppCompatActivity() {
                     info.text = ""
                     info.visibility = View.GONE
                 }
+
                 else -> {
                     val ext = entry.name.substringAfterLast('.', "").lowercase()
                     icon.setImageResource(

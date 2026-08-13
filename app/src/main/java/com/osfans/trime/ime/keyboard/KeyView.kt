@@ -152,10 +152,12 @@ class KeyView(
                         val actionBehavior = if (pressedIdx != -1 && pressedIdx != id) KeyBehavior.COMBO else behavior
                         key.getAction(actionBehavior)?.let { processKeyAction(it, actionBehavior) }
                     }
+
                     KeyBehavior.DOUBLE_CLICK, KeyBehavior.LAZY_DOUBLE_CLICK,
                     KeyBehavior.SWIPE_UP, KeyBehavior.SWIPE_DOWN, KeyBehavior.SWIPE_LEFT, KeyBehavior.SWIPE_RIGHT,
                     ->
                         key.getAction(behavior)?.let { processKeyAction(it, behavior) }
+
                     else -> {}
                 }
 
@@ -589,6 +591,7 @@ class KeyView(
                     currentY += height
                 }
             }
+
             PositionMode.BOTTOM -> {
                 var currentY = height - paddingBottom - fontMetrics.bottom + sp(offsetY)
                 for (i in lines.indices.reversed()) {
@@ -599,6 +602,7 @@ class KeyView(
                 }
                 linePositions.reverse()
             }
+
             PositionMode.CENTER -> {
                 lines.map { baseLineHeight * it.maxScale }.sum().let { totalHeight ->
                     val centerY = (height - paddingTop - paddingBottom) / 2f + paddingTop
@@ -699,6 +703,7 @@ class KeyView(
                 }
                 cachedTextBoldTypeface ?: Typeface.create(baseTypeface, Typeface.BOLD)
             }
+
             symbolPaint -> {
                 if (cachedSymbolBoldBase !== baseTypeface) {
                     cachedSymbolBoldTypeface = Typeface.create(baseTypeface, Typeface.BOLD)
@@ -706,6 +711,7 @@ class KeyView(
                 }
                 cachedSymbolBoldTypeface ?: Typeface.create(baseTypeface, Typeface.BOLD)
             }
+
             else -> Typeface.create(baseTypeface, Typeface.BOLD)
         }
 
@@ -766,7 +772,9 @@ class KeyView(
                     val halfIcon = iconSize / 2f
                     val centerY = when (effectiveValign) {
                         TextKeyboard.VerticalAlign.TOP -> paddingTop + vRoundCornerInset + iconSize / 2f + sp(offsetY)
+
                         TextKeyboard.VerticalAlign.BOTTOM -> height - paddingBottom - vRoundCornerInset - iconSize / 2f + sp(offsetY)
+
                         TextKeyboard.VerticalAlign.JUSTIFY -> {
                             val top = paddingTop + vRoundCornerInset
                             val bottom = height - paddingBottom - vRoundCornerInset
@@ -774,6 +782,7 @@ class KeyView(
                             val portion = available / justifyCount
                             top + portion * justifyIndex + portion / 2f + sp(offsetY)
                         }
+
                         TextKeyboard.VerticalAlign.CENTER ->
                             (height - paddingTop - paddingBottom) / 2f + paddingTop + sp(offsetY)
                     }
@@ -796,7 +805,9 @@ class KeyView(
                     val adjustedY = when (seg.verticalAlign) {
                         null -> when (defaultVerticalAlign) {
                             TextKeyboard.VerticalAlign.TOP -> y + vRoundCornerInset + fontMetrics.top - sa
+
                             TextKeyboard.VerticalAlign.BOTTOM -> y - vRoundCornerInset + fontMetrics.bottom - sd
+
                             TextKeyboard.VerticalAlign.JUSTIFY -> {
                                 val top = paddingTop + vRoundCornerInset
                                 val bottom = height - paddingBottom - vRoundCornerInset
@@ -806,10 +817,14 @@ class KeyView(
                                 val centerY = top + portion * justifyIndex + (portion - segHeight) / 2f
                                 centerY - (sa + sd) / 2f + sp(offsetY)
                             }
+
                             else -> y + (baseAscent + baseDescent - sa - sd) / 2
                         }
+
                         TextKeyboard.VerticalAlign.TOP -> paddingTop + vRoundCornerInset - sa + sp(offsetY)
+
                         TextKeyboard.VerticalAlign.BOTTOM -> height - paddingBottom - vRoundCornerInset - sd + sp(offsetY)
+
                         TextKeyboard.VerticalAlign.JUSTIFY -> {
                             val top = paddingTop + vRoundCornerInset
                             val bottom = height - paddingBottom - vRoundCornerInset
@@ -819,6 +834,7 @@ class KeyView(
                             val centerY = top + portion * justifyIndex + (portion - segHeight) / 2f
                             centerY - (sa + sd) / 2f + sp(offsetY)
                         }
+
                         TextKeyboard.VerticalAlign.CENTER ->
                             (height - paddingTop - paddingBottom) / 2f + paddingTop - (sa + sd) / 2f + sp(offsetY)
                     }

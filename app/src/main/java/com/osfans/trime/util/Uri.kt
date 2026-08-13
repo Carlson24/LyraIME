@@ -161,8 +161,11 @@ fun Context.getFileFromUri(uri: Uri): File? {
             val contentUri: Uri =
                 when (type) {
                     "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+
                     "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+
                     "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+
                     else -> {
                         Timber.d("$uri parse failed. -> 1_2")
                         return null
@@ -198,6 +201,7 @@ private fun Context.getFileFromUri(
                 return File(path)
             }
         }
+
         "com.tencent.mtt.fileprovider" -> {
             val path = uri.path
             if (!path.isNullOrEmpty()) {
@@ -205,6 +209,7 @@ private fun Context.getFileFromUri(
                 return File(fileDir, path.substring("/QQBrowser".length, path.length))
             }
         }
+
         "com.huawei.hidisk.fileprovider" -> {
             val path = uri.path
             if (!path.isNullOrEmpty()) {

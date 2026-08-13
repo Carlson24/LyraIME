@@ -81,6 +81,7 @@ class LiquidAdapter(
                     }
                 }
             }
+
             VIEW_TYPE_VAR_LENGTH -> {
                 holder.ui.root.apply {
                     visibility = View.VISIBLE
@@ -98,6 +99,7 @@ class LiquidAdapter(
                     forceLayout()
                 }
             }
+
             VIEW_TYPE_FIXED -> {
                 holder.ui.root.apply {
                     visibility = View.VISIBLE

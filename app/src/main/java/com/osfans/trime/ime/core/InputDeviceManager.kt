@@ -156,6 +156,7 @@ class InputDeviceManager(
         if (!startedInputView) return
         useVirtualKeyboard = when (effectiveWindowMode) {
             PopupCandidatesMode.SYSTEM_DEFAULT -> service.superEvaluateInputViewShown()
+
             PopupCandidatesMode.INPUT_DEVICE ->
                 // switch to virtual keyboard on touch screen events, otherwise preserve current mode
                 if (toolType == MotionEvent.TOOL_TYPE_FINGER || toolType == MotionEvent.TOOL_TYPE_STYLUS) {
@@ -163,7 +164,9 @@ class InputDeviceManager(
                 } else {
                     useVirtualKeyboard
                 }
+
             PopupCandidatesMode.ALWAYS_SHOW -> true
+
             PopupCandidatesMode.DISABLED -> true
         }
     }

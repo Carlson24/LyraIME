@@ -263,9 +263,15 @@ class KeyboardWindow :
         val alphabet = rime.run { schemaCached }.alphabet
         val layout =
             when {
-                alphabet.all { it.isLetter() } -> "qwerty" // 包含 26 个字母
-                alphabet.all { it.isLetter() || ",./;".any(it::equals) } -> "qwerty_" // 包含 26 个字母和,./;
-                alphabet.all { it.isLetterOrDigit() } -> "qwerty0" // 包含 26 个字母和数字键
+                alphabet.all { it.isLetter() } -> "qwerty"
+
+                // 包含 26 个字母
+                alphabet.all { it.isLetter() || ",./;".any(it::equals) } -> "qwerty_"
+
+                // 包含 26 个字母和,./;
+                alphabet.all { it.isLetterOrDigit() } -> "qwerty0"
+
+                // 包含 26 个字母和数字键
                 else -> "default"
             }
         return if (presetKeyboardIds.contains(layout)) layout else "default"
@@ -294,11 +300,17 @@ class KeyboardWindow :
         val dot =
             when (id) {
                 ".default" -> smartMatchKeyboard()
+
                 ".prior" -> presetKeyboardIds.getOrNull(currentIdx - 1) ?: currentKeyboardId
+
                 ".next" -> presetKeyboardIds.getOrNull(currentIdx + 1) ?: currentKeyboardId
+
                 ".last" -> lastKeyboardId
+
                 ".previous" -> keyboardSourceMap[currentKeyboardId] ?: currentKeyboardId
+
                 ".last_lock" -> lastLockKeyboardId
+
                 ".ascii" -> {
                     var ascii = currentKeyboard?.asciiKeyboard
                     if (ascii.isNullOrEmpty()) {
@@ -306,6 +318,7 @@ class KeyboardWindow :
                     }
                     if (presetKeyboardIds.contains(ascii)) ascii else currentKeyboardId
                 }
+
                 else -> {
                     id.ifEmpty {
                         if (currentKeyboard?.isLock == true) currentKeyboardId else lastLockKeyboardId
@@ -421,12 +434,14 @@ class KeyboardWindow :
         val targetKeyboard =
             when (info.imeOptions and EditorInfo.IME_FLAG_FORCE_ASCII) {
                 EditorInfo.IME_FLAG_FORCE_ASCII -> ".ascii"
+
                 else -> {
                     when (info.inputType and InputType.TYPE_MASK_CLASS) {
                         InputType.TYPE_CLASS_NUMBER,
                         InputType.TYPE_CLASS_PHONE,
                         InputType.TYPE_CLASS_DATETIME,
                         -> "number"
+
                         InputType.TYPE_CLASS_TEXT -> {
                             when (info.inputType and InputType.TYPE_MASK_VARIATION) {
                                 InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS,
@@ -435,9 +450,11 @@ class KeyboardWindow :
                                 InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS,
                                 InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD,
                                 -> ".ascii"
+
                                 else -> ""
                             }
                         }
+
                         else -> ""
                     }
                 }
@@ -506,6 +523,7 @@ class KeyboardWindow :
                     switchKeyboard(target)
                 }
             }
+
             option.startsWith("_key_") -> {
                 val what = option.removePrefix("_key_")
                 if (what.isNotEmpty() && value.value) {
@@ -514,9 +532,11 @@ class KeyboardWindow :
                         .onAction(KeyActionManager.getAction(what))
                 }
             }
+
             option == "_hide_key_symbol" -> {
                 currentKeyboardView?.showKeySymbols = !value.value
             }
+
             option == "_hide_key_hint" -> {
                 currentKeyboardView?.showKeyHints = !value.value
             }

@@ -78,6 +78,7 @@ class PagedCandidatesUi(
                 viewType: Int,
             ): UiHolder = when (viewType) {
                 0 -> UiHolder.Candidate(LabeledCandidateItemUi(ctx, theme))
+
                 else ->
                     UiHolder.Pagination(PaginationUi(ctx, theme)).apply {
                         val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -106,6 +107,7 @@ class PagedCandidatesUi(
                             true
                         }
                     }
+
                     is UiHolder.Pagination -> {
                         holder.ui.update(menu)
                         holder.ui.root.updateLayoutParams<FlexboxLayoutManager.LayoutParams> {

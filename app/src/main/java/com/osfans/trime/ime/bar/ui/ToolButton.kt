@@ -126,6 +126,7 @@ class ToolButton : GestureFrame {
                     sizeDp = foreground.fontSize.toInt()
                 }
             }
+
             ContentType.TEXT -> {
                 text?.let { label.text = it }
                 label.textSize = foreground.fontSize
@@ -134,7 +135,9 @@ class ToolButton : GestureFrame {
                 label.fontFeatureSettings = FontManager.fontFeatureSettings
                 add(label, lParams(wrapContent, wrapContent, gravityCenter))
             }
+
             ContentType.LOCAL_IMAGE -> drawable?.let { image.setImageDrawable(it) }
+
             ContentType.ICON_ONLY -> icon?.let { image.imageResource = it }
         }
 
@@ -173,6 +176,7 @@ class ToolButton : GestureFrame {
                         LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT),
                     )
                 }
+
                 is LabelSegment.Text -> {
                     val tv = textView {
                         text = seg.content
@@ -266,6 +270,7 @@ class ToolButton : GestureFrame {
                 ColorManager.getDrawable(style)?.let { setupContent(ContentType.LOCAL_IMAGE, drawable = it) }
                     ?: setupFallbackContent(config)
             }
+
             style.isNotEmpty() -> {
                 if (style.isIconFont) {
                     val segments = style.parseLabelSegments()
@@ -278,6 +283,7 @@ class ToolButton : GestureFrame {
                     setupContent(ContentType.TEXT, text = style)
                 }
             }
+
             else -> setupFallbackContent(config)
         }
 
@@ -298,7 +304,9 @@ class ToolButton : GestureFrame {
                         setColor(color)
                         cornerRadius = dp(bg.cornerRadius.toInt()).toFloat()
                     }
+
                     "circle" -> ShapeDrawable(OvalShape()).apply { paint.color = color }
+
                     else -> return@forEach
                 }
                 addState(state, LayerDrawable(arrayOf(shape)).apply { setLayerInset(0, hInset, vInset, hInset, vInset) })

@@ -110,6 +110,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, private 
                     imageView.isVisible = true
                     textView.isVisible = false
                 }
+
                 is LabelSegment.Text -> {
                     textView.text = UnicodeVariantUtils.toDisplay(seg.content)
                     textView.isVisible = true
@@ -139,6 +140,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, private 
                             LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT),
                         )
                     }
+
                     is LabelSegment.Text -> {
                         val tv = AutoScaleTextView(ctx).apply {
                             scaleMode = AutoScaleTextView.Mode.Proportional

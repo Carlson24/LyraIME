@@ -306,6 +306,7 @@ class InputView(
                         v.isPressed = true
                         true
                     }
+
                     MotionEvent.ACTION_MOVE -> {
                         val delta = (event.rawX - lastResizeTouchX).toInt()
                         val newWidth =
@@ -317,6 +318,7 @@ class InputView(
                         applyFloatingWidth()
                         true
                     }
+
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         v.parent?.requestDisallowInterceptTouchEvent(false)
                         v.isPressed = false
@@ -326,6 +328,7 @@ class InputView(
                         )
                         true
                     }
+
                     else -> false
                 }
             }
@@ -346,6 +349,7 @@ class InputView(
                         v.isPressed = true
                         true
                     }
+
                     MotionEvent.ACTION_MOVE -> {
                         val delta = (event.rawX - lastResizeTouchX).toInt()
                         floatingWidthPx =
@@ -353,6 +357,7 @@ class InputView(
                         applyFloatingWidth()
                         true
                     }
+
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         v.parent?.requestDisallowInterceptTouchEvent(false)
                         v.isPressed = false
@@ -362,6 +367,7 @@ class InputView(
                         )
                         true
                     }
+
                     else -> false
                 }
             }
@@ -380,6 +386,7 @@ class InputView(
                         v.isPressed = true
                         true
                     }
+
                     MotionEvent.ACTION_MOVE -> {
                         val delta = (event.rawY - lastResizeTouchY).toInt()
                         floatingHeightPx =
@@ -387,6 +394,7 @@ class InputView(
                         applyFloatingHeight()
                         true
                     }
+
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         v.parent?.requestDisallowInterceptTouchEvent(false)
                         v.isPressed = false
@@ -396,6 +404,7 @@ class InputView(
                         )
                         true
                     }
+
                     else -> false
                 }
             }
@@ -413,6 +422,7 @@ class InputView(
                         v.isPressed = true
                         true
                     }
+
                     MotionEvent.ACTION_MOVE -> {
                         val dx = event.rawX - lastTouchX
                         val dy = event.rawY - lastTouchY
@@ -426,6 +436,7 @@ class InputView(
                         lastTouchY = event.rawY
                         true
                     }
+
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         v.parent?.requestDisallowInterceptTouchEvent(false)
                         v.isPressed = false
@@ -435,6 +446,7 @@ class InputView(
                         )
                         true
                     }
+
                     else -> false
                 }
             }
@@ -459,6 +471,7 @@ class InputView(
                         v.isPressed = true
                         true
                     }
+
                     MotionEvent.ACTION_MOVE -> {
                         val delta = event.rawX - lastOneHandTouchX
                         if (!oneHandDragging && abs(delta) > oneHandTouchSlop) {
@@ -476,6 +489,7 @@ class InputView(
                         }
                         true
                     }
+
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         v.parent?.requestDisallowInterceptTouchEvent(false)
                         v.isPressed = false
@@ -487,6 +501,7 @@ class InputView(
                         oneHandDragging = false
                         true
                     }
+
                     else -> false
                 }
             }
@@ -774,6 +789,7 @@ class InputView(
                     lastTouchY = event.rawY
                     true
                 }
+
                 MotionEvent.ACTION_MOVE -> {
                     val dx = event.rawX - lastTouchX
                     val dy = event.rawY - lastTouchY
@@ -787,6 +803,7 @@ class InputView(
                     lastTouchY = event.rawY
                     true
                 }
+
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.parent?.requestDisallowInterceptTouchEvent(false)
                     saveFloatingPosition(
@@ -795,6 +812,7 @@ class InputView(
                     )
                     true
                 }
+
                 else -> false
             }
         }
@@ -969,6 +987,7 @@ class InputView(
                     keyboardWindow.currentKeyboardView?.invalidateAllKeys()
                 }
             }
+
             is RimeMessage.CompositionMessage -> {
                 val data = if (effectiveWindowMode == PopupCandidatesMode.ALWAYS_SHOW) {
                     CompositionProto()
@@ -977,9 +996,11 @@ class InputView(
                 }
                 broadcaster.onCompositionUpdate(data)
             }
+
             is RimeMessage.CandidateMenuMessage -> {
                 broadcaster.onCandidateMenuUpdate(it.data)
             }
+
             is RimeMessage.CandidateListMessage -> {
                 val data = if (effectiveWindowMode == PopupCandidatesMode.ALWAYS_SHOW) {
                     RimeMessage.CandidateListMessage.Data()
@@ -988,6 +1009,7 @@ class InputView(
                 }
                 broadcaster.onCandidateListUpdate(data)
             }
+
             else -> {}
         }
         broadcastKeyAppearanceUpdate()

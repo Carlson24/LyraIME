@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-/**
+/*
  * The buildscript block is where you configure the repositories and
  * dependencies for Gradle itself--meaning, you should not include dependencies
  * for your modules here. For example, this block includes the Android plugin for
@@ -27,8 +27,8 @@ spotless {
         targetExclude(
             "app/src/main/java/com/k2fsa/sherpa/onnx/**",
             "app/src/main/jni/sherpa-onnx/**",
-            "app/src/main/jni/sherpa-onnx/scripts/go/**",
+            "app/src/main/java/io/github/rosemoe/sora/**",
         )
-        ktlint("1.7.1")
+        ktlint("1.8.0")
     }
 }

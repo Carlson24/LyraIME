@@ -150,6 +150,7 @@ class LiquidLayout(
                             setBtnMargin(btn, btnInsets, true)
                         }
                     }
+
                     LiquidKeyboard.KeyBar.Position.TOP,
                     LiquidKeyboard.KeyBar.Position.BOTTOM,
                     -> {
@@ -177,6 +178,7 @@ class LiquidLayout(
                             setBtnMargin(btn, btnInsets, false)
                         }
                     }
+
                     LiquidKeyboard.KeyBar.Position.NAVBAR -> {
                         // NAVBAR 位置不需要添加按钮到 fixedKeyBar
                     }
@@ -219,6 +221,7 @@ class LiquidLayout(
                     },
                 )
             }
+
             LiquidKeyboard.KeyBar.Position.BOTTOM -> {
                 add(
                     root,
@@ -237,6 +240,7 @@ class LiquidLayout(
                     },
                 )
             }
+
             LiquidKeyboard.KeyBar.Position.LEFT -> {
                 add(
                     root,
@@ -255,6 +259,7 @@ class LiquidLayout(
                     },
                 )
             }
+
             LiquidKeyboard.KeyBar.Position.RIGHT -> {
                 add(
                     root,
@@ -273,6 +278,7 @@ class LiquidLayout(
                     },
                 )
             }
+
             LiquidKeyboard.KeyBar.Position.NAVBAR -> {
                 add(
                     root,

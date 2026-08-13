@@ -35,6 +35,7 @@ class WaveformView @JvmOverloads constructor(
                 setSensibility(10)
                 setMoveSpeed(250f)
             }
+
         AppPrefs.VoiceInput.VoiceAnimationStyle.SPHERE ->
             SphereRippleView(context).apply {
                 backGroundColor = Color.TRANSPARENT

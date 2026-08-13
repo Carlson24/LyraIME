@@ -196,6 +196,7 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
                 secondLayoutPassNeeded = false
                 adapter.contentGravity = Gravity.START or Gravity.CENTER_VERTICAL
             }
+
             CompactCandidateMode.AUTO_FILL -> {
                 layoutMinWidth = view.width / maxSpanCount - separatorDrawable.intrinsicWidth
                 layoutFlexGrow = if (candidates.size < maxSpanCount) 0f else 1f
@@ -204,6 +205,7 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
                 secondLayoutPassDone = false
                 adapter.contentGravity = Gravity.START or Gravity.CENTER_VERTICAL
             }
+
             CompactCandidateMode.ALWAYS_FILL -> {
                 layoutMinWidth = view.width / maxSpanCount - separatorDrawable.intrinsicWidth
                 layoutFlexGrow = 1f

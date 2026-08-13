@@ -80,8 +80,10 @@ class T9InputController(
                     modified = true
                 }
             }
+
             Behavior.SELECT_CANDIDATE -> {
             }
+
             else -> {
                 if (inputQueue.isNotEmpty()) {
                     inputQueue.removeLast()

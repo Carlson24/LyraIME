@@ -40,14 +40,17 @@ class RimeLifecycleRegistry : RimeLifecycle {
                 checkAtState(RimeLifecycle.State.STOPPED)
                 internalState = RimeLifecycle.State.STARTING
             }
+
             RimeLifecycle.State.READY -> {
                 checkAtState(RimeLifecycle.State.STARTING)
                 internalState = RimeLifecycle.State.READY
             }
+
             RimeLifecycle.State.STOPPING -> {
                 checkAtState(RimeLifecycle.State.READY)
                 internalState = RimeLifecycle.State.STOPPING
             }
+
             RimeLifecycle.State.STOPPED -> {
                 checkAtState(RimeLifecycle.State.STOPPING)
                 internalState = RimeLifecycle.State.STOPPED

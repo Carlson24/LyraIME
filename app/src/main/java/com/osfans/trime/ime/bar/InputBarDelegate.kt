@@ -244,11 +244,13 @@ class InputBarDelegate : InputBroadcastReceiver {
                     setUnrollButtonToAttach()
                     setUnrollButtonEnabled(true)
                 }
+
                 UnrollButtonStateMachine.State.ClickToDetachWindow -> {
                     setUnrollButtonToDetach()
                     setUnrollButtonEnabled(true)
                     setUnrollWindowToAttach()
                 }
+
                 UnrollButtonStateMachine.State.Hidden -> {
                     setUnrollButtonEnabled(false)
                 }

@@ -318,6 +318,7 @@ class SyncClipboardManager(
                     localClipboardHash = hash,
                 )
             }
+
             uri != null -> {
                 ClipboardContent(
                     type = ClipboardContentType.File,
@@ -326,6 +327,7 @@ class SyncClipboardManager(
                     hasData = true,
                 )
             }
+
             html != null && html.isNotEmpty() -> {
                 val hash = HashUtils.calculateTextHash(html)
                 ClipboardContent(
@@ -335,6 +337,7 @@ class SyncClipboardManager(
                     localClipboardHash = hash,
                 )
             }
+
             else -> null
         }
     }
@@ -405,18 +408,21 @@ class SyncClipboardManager(
 
         return when (content.type) {
             ClipboardContentType.Text -> handleTextPayload(content, profile, updateClipboard)
+
             ClipboardContentType.Image -> handleFilePayload(
                 content,
                 profile,
                 SyncEntryType.IMAGE,
                 updateClipboard,
             )
+
             ClipboardContentType.File -> handleFilePayload(
                 content,
                 profile,
                 SyncEntryType.FILE,
                 updateClipboard,
             )
+
             ClipboardContentType.Group -> handleFilePayload(
                 content,
                 profile,

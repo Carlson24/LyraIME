@@ -127,6 +127,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                     WanxiangCheckWork.cancel(requireContext())
                 }
             }
+
             AppPrefs.Wanxiang.CHECK_INTERVAL -> {
                 WanxiangCheckWork.start(requireContext())
             }
@@ -737,9 +738,12 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                             lifecycleScope.launch(Dispatchers.Main) {
                                 val status = when {
                                     t.isFinished || t.isError -> t.status
+
                                     t.progress >= 0f && t.totalBytes > 0 ->
                                         "${(t.progress * 100).toInt()}% - ${formatBytes(t.downloadedBytes)}/${formatBytes(t.totalBytes)}"
+
                                     t.progress >= 0f -> "${(t.progress * 100).toInt()}%"
+
                                     else -> t.status.ifEmpty { "…" }
                                 }
                                 progressViews[i].text = getString(
@@ -769,6 +773,7 @@ class WanxiangUpdateSettingsFragment : PreferenceDelegateFragment(AppPrefs.defau
                                 prefs.needsUpdateDict.setValue(false)
                                 task.releaseUpdatedAt?.let { prefs.lastDictUpdatedAt.setValue(it) }
                             }
+
                             task.url.contains(".gram") -> {
                                 prefs.lastModelSha256.setValue(sha)
                                 prefs.needsUpdateModel.setValue(false)

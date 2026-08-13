@@ -35,6 +35,7 @@ abstract class PreferenceDelegateProvider {
             // SerializableDelegate 都存储为 String
             "STRING"
         }
+
         else -> {
             // 根据 defaultValue 的类型判断
             when (delegate.defaultValue) {

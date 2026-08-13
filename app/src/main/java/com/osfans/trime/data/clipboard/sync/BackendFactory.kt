@@ -33,6 +33,7 @@ object BackendFactory {
                     SyncClipboardServerBackend(config.url, authHeader, fileManager)
                 }
             }
+
             ServerType.WEBDAV -> {
                 val authHeader = buildBasicAuthHeader(config.username, config.password)
                 if (authHeader == null) {
@@ -42,6 +43,7 @@ object BackendFactory {
                     WebDAVBackend(config.url, authHeader, config.remotePath, fileManager)
                 }
             }
+
             ServerType.S3 -> {
                 val region = config.region ?: "us-east-1"
                 val bucketName = config.bucketName ?: return null.also {

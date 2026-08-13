@@ -470,9 +470,11 @@ class ParticleWaveView @JvmOverloads constructor(
 
         when {
             volume < realTarget - localPerVolume -> volume += localPerVolume
+
             volume > realTarget + localPerVolume -> {
                 volume = max(MIN_ACTIVE_VOLUME, volume - localPerVolume)
             }
+
             else -> volume = realTarget
         }
     }

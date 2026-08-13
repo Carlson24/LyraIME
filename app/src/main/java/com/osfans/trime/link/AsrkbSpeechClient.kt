@@ -100,6 +100,7 @@ object AsrkbSpeechClient {
                                             reply?.writeNoException()
                                             true
                                         }
+
                                         CB_ON_PARTIAL -> {
                                             data.enforceInterface(DESCRIPTOR_CB)
                                             data.readInt()
@@ -110,6 +111,7 @@ object AsrkbSpeechClient {
                                             reply?.writeNoException()
                                             true
                                         }
+
                                         CB_ON_FINAL -> {
                                             data.enforceInterface(DESCRIPTOR_CB)
                                             data.readInt()
@@ -121,6 +123,7 @@ object AsrkbSpeechClient {
                                             reply?.writeNoException()
                                             true
                                         }
+
                                         CB_ON_ERROR -> {
                                             data.enforceInterface(DESCRIPTOR_CB)
                                             data.readInt()
@@ -131,6 +134,7 @@ object AsrkbSpeechClient {
                                             reply?.writeNoException()
                                             true
                                         }
+
                                         CB_ON_AMPLITUDE -> {
                                             data.enforceInterface(DESCRIPTOR_CB)
                                             data.readInt()
@@ -139,10 +143,12 @@ object AsrkbSpeechClient {
                                             reply?.writeNoException()
                                             true
                                         }
+
                                         INTERFACE_TRANSACTION -> {
                                             reply?.writeString(DESCRIPTOR_CB)
                                             true
                                         }
+
                                         else -> super.onTransact(code, data, reply, flags)
                                     }
                                 } catch (t: Throwable) {

@@ -179,13 +179,16 @@ class SignalRClient(
                 val messageType = obj["type"]?.jsonPrimitive?.content?.toIntOrNull()
                 when (messageType) {
                     1 -> handleInvocation(obj)
+
                     6 -> {
                         val socket = webSocket ?: continue
                         socket.send("""{"type":6}$RECORD_SEPARATOR""")
                     }
+
                     null -> {
                         Timber.tag(TAG).d("Handshake response: $trimmed")
                     }
+
                     else -> {
                         Timber.tag(TAG).d("Unknown message type: $messageType")
                     }
@@ -206,6 +209,7 @@ class SignalRClient(
                 val profile = parseProfileDto(arg0)
                 listener?.onProfileChanged(profile)
             }
+
             "RemoteHistoryChanged" -> {
                 val arg0 = arguments.firstOrNull() as? JsonObject ?: return
                 val hash = arg0["Hash"]?.jsonPrimitive?.content

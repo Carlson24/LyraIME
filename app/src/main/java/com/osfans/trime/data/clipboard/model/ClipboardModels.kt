@@ -87,6 +87,7 @@ fun contentToProfileDto(content: ClipboardContent): ProfileDto {
             dataName = content.fileName,
             size = content.fileSize,
         )
+
         ClipboardContentType.Image -> ProfileDto(
             type = "Image",
             hash = hash,
@@ -95,6 +96,7 @@ fun contentToProfileDto(content: ClipboardContent): ProfileDto {
             dataName = content.fileName,
             size = content.fileSize,
         )
+
         ClipboardContentType.File -> ProfileDto(
             type = "File",
             hash = hash,
@@ -103,6 +105,7 @@ fun contentToProfileDto(content: ClipboardContent): ProfileDto {
             dataName = content.fileName,
             size = content.fileSize,
         )
+
         ClipboardContentType.Group -> ProfileDto(
             type = "Group",
             hash = hash,
@@ -136,6 +139,7 @@ fun calculateContentHash(content: ClipboardContent): String? {
                 HashUtils.calculateTextHash(content.text)
             }
         }
+
         ClipboardContentType.Image, ClipboardContentType.File -> {
             val uri = content.fileUri ?: return null
             val file = File(uri)
@@ -146,6 +150,7 @@ fun calculateContentHash(content: ClipboardContent): String? {
                 ?: return null
             HashUtils.calculateFileProfileHash(name, fileHash)
         }
+
         ClipboardContentType.Group -> content.profileHash
     }
 }
