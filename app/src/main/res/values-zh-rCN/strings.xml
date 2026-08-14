@@ -153,6 +153,8 @@
     <string name="clipboard_data">剪贴板数据</string>
     <string name="collection_data">收藏夹数据</string>
     <string name="custom_tasks_data">自定义任务数据</string>
+    <string name="custom_tasks_exclude_rules">排除规则</string>
+    <string name="custom_tasks_exclude_hint">输入文件匹配规则（每行一条，支持正则）。匹配的文件将在部署时跳过。</string>
     <string name="wanxiang_data">万象更新数据</string>
     <string name="select_restore_items">选择要还原的项目</string>
     <string name="delete">删除</string>
@@ -237,6 +239,7 @@
     <string name="automatic">自动</string>
     <string name="horizontal">横向</string>
     <string name="vertical">纵向</string>
+    <string name="vertical_reverse">倒序纵向候选</string>
     <string name="ascii_switch_tips">切换中英文模式时显示提示</string>
     <string name="key_double_tap_timeout">按键双击超时</string>
     <string name="key_slide_step_size">按键滑动步长</string>
@@ -482,11 +485,13 @@
     <string name="wanxiang_dl_progress_status">%1$d%% - %2$s</string>
     <string name="wanxiang_dl_mb_single">%sMB (单线)</string>
     <string name="wanxiang_dl_extracting">解压中…</string>
+    <string name="wanxiang_dl_copying">复制文件中…</string>
     <string name="wanxiang_dl_auth_expired">授权目录已失效</string>
     <string name="wanxiang_dl_saf_denied">SAF底层拒绝访问</string>
     <string name="wanxiang_dl_all_failed">全部失败</string>
     <string name="wanxiang_dl_partial">部分完成</string>
     <string name="wanxiang_dl_done">解压完成</string>
+    <string name="wanxiang_dl_copied">复制完成</string>
     <string name="wanxiang_dl_extract_failed">解压失败: %s</string>
     <string name="wanxiang_dl_dir_locked">系统锁定了目录: %s</string>
     <string name="wanxiang_dl_file_conflict">文件冲突无法创建: %s</string>

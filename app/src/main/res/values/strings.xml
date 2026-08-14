@@ -41,6 +41,8 @@
     <string name="clipboard_data">Clipboard Data</string>
     <string name="collection_data">Collection Data</string>
     <string name="custom_tasks_data">Custom Tasks Data</string>
+    <string name="custom_tasks_exclude_rules">Exclude rules</string>
+    <string name="custom_tasks_exclude_hint">Enter file patterns (one per line, regex supported). Matching files will be skipped during deploy.</string>
     <string name="wanxiang_data">Wanxiang Data</string>
     <string name="select_restore_items">Select items to restore</string>
     <string name="sound_on_keypress">Sound on key press</string>
@@ -238,6 +240,7 @@
     <string name="automatic">Automatic</string>
     <string name="horizontal">Horizontal</string>
     <string name="vertical">Vertical</string>
+    <string name="vertical_reverse">Reversed vertical candidates</string>
     <string name="ascii_switch_tips">Show tips when switching ASCII mode</string>
     <string name="key_double_tap_timeout">Key double tap timeout</string>
     <string name="key_slide_step_size">Step size for key sliding</string>
@@ -484,11 +487,13 @@
     <string name="wanxiang_dl_progress_status">%1$d%% - %2$s</string>
     <string name="wanxiang_dl_mb_single">%sMB (single)</string>
     <string name="wanxiang_dl_extracting">Extracting…</string>
+    <string name="wanxiang_dl_copying">Copying file…</string>
     <string name="wanxiang_dl_auth_expired">Authorization expired</string>
     <string name="wanxiang_dl_saf_denied">SAF access denied</string>
     <string name="wanxiang_dl_all_failed">All failed</string>
     <string name="wanxiang_dl_partial">Partial complete</string>
     <string name="wanxiang_dl_done">Extraction complete</string>
+    <string name="wanxiang_dl_copied">Copy complete</string>
     <string name="wanxiang_dl_extract_failed">Extraction failed: %s</string>
     <string name="wanxiang_dl_dir_locked">System locked directory: %s</string>
     <string name="wanxiang_dl_file_conflict">File conflict, cannot create: %s</string>

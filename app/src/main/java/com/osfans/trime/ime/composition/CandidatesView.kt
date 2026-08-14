@@ -27,10 +27,12 @@ import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.candidates.popup.PagedCandidatesUi
+import com.osfans.trime.ime.candidates.popup.PopupCandidatesLayout
 import com.osfans.trime.ime.core.BaseInputView
 import com.osfans.trime.ime.core.TouchEventReceiverWindow
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import splitties.dimensions.dp
+import splitties.views.dsl.constraintlayout.above
 import splitties.views.dsl.constraintlayout.below
 import splitties.views.dsl.constraintlayout.bottomOfParent
 import splitties.views.dsl.constraintlayout.centerHorizontally
@@ -57,6 +59,9 @@ class CandidatesView(
 
     private val layout by AppPrefs.defaultInstance().candidates.layout
     private val position by AppPrefs.defaultInstance().candidates.position
+    private val reverseVertical by AppPrefs.defaultInstance().candidates.reverseVertical
+
+    private val isVerticalReversed = reverseVertical && layout == PopupCandidatesLayout.VERTICAL
 
     private var menu = MenuProto()
     private var composition = CompositionProto()
@@ -141,7 +146,7 @@ class CandidatesView(
         val isHorizontalLayout = rime.run {
             getRuntimeOption("_linear") || getRuntimeOption("_horizontal")
         }
-        candidatesUi.update(menu, isHorizontalLayout, layout)
+        candidatesUi.update(menu, isHorizontalLayout, layout, isVerticalReversed)
         if (evaluateVisibility()) {
             visibility = VISIBLE
         } else {
@@ -254,27 +259,51 @@ class CandidatesView(
         clipToOutline = true
         outlineProvider = ViewOutlineProvider.BACKGROUND
         elevation = dp(theme.window.shadow)
-        add(
-            preeditUi.root,
-            lParams(wrapContent, wrapContent) {
-                topOfParent()
-                startOfParent()
-                endOfParent()
-                // let long preedit wrap within the window instead of widening it
-                constrainedWidth = true
-                // keep left-aligned when preedit is narrower than the window
-                horizontalBias = 0f
-            },
-        )
-        add(
-            candidatesUi.root,
-            lParams(matchConstraints, wrapContent) {
-                matchConstraintMinWidth = wrapContent
-                below(preeditUi.root)
-                centerHorizontally()
-                bottomOfParent()
-            },
-        )
+        if (isVerticalReversed) {
+            add(
+                preeditUi.root,
+                lParams(wrapContent, wrapContent) {
+                    bottomOfParent()
+                    startOfParent()
+                    endOfParent()
+                    // let long preedit wrap within the window instead of widening it
+                    constrainedWidth = true
+                    // keep left-aligned when preedit is narrower than the window
+                    horizontalBias = 0f
+                },
+            )
+            add(
+                candidatesUi.root,
+                lParams(matchConstraints, wrapContent) {
+                    matchConstraintMinWidth = wrapContent
+                    above(preeditUi.root)
+                    centerHorizontally()
+                    topOfParent()
+                },
+            )
+        } else {
+            add(
+                preeditUi.root,
+                lParams(wrapContent, wrapContent) {
+                    topOfParent()
+                    startOfParent()
+                    endOfParent()
+                    // let long preedit wrap within the window instead of widening it
+                    constrainedWidth = true
+                    // keep left-aligned when preedit is narrower than the window
+                    horizontalBias = 0f
+                },
+            )
+            add(
+                candidatesUi.root,
+                lParams(matchConstraints, wrapContent) {
+                    matchConstraintMinWidth = wrapContent
+                    below(preeditUi.root)
+                    centerHorizontally()
+                    bottomOfParent()
+                },
+            )
+        }
 
         isFocusable = false
         layoutParams = ViewGroup.LayoutParams(wrapContent, wrapContent)

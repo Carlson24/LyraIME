@@ -36,6 +36,8 @@ class PagedCandidatesUi(
 
     private var isHorizontal = true
 
+    private var isReversed = false
+
     /**
      * Maximum width in pixels of a candidate item.
      * Only limited in vertical layout, so that a long candidate wraps
@@ -143,12 +145,14 @@ class PagedCandidatesUi(
         menu: MenuProto,
         horizontal: Boolean,
         layout: PopupCandidatesLayout,
+        reversed: Boolean,
     ) {
         this.menu = menu
         this.isHorizontal = when (layout) {
             PopupCandidatesLayout.AUTOMATIC -> horizontal
             else -> layout == PopupCandidatesLayout.HORIZONTAL
         }
+        this.isReversed = reversed && !isHorizontal
         maxItemWidth = if (isHorizontal) {
             Int.MAX_VALUE
         } else {
@@ -157,12 +161,19 @@ class PagedCandidatesUi(
             (ctx.resources.displayMetrics.widthPixels - margins).roundToInt().coerceAtLeast(0)
         }
         candidatesLayoutManager.apply {
-            if (isHorizontal) {
-                flexDirection = FlexDirection.ROW
-                alignItems = AlignItems.BASELINE
-            } else {
-                flexDirection = FlexDirection.COLUMN
-                alignItems = AlignItems.STRETCH
+            when {
+                isHorizontal -> {
+                    flexDirection = FlexDirection.ROW
+                    alignItems = AlignItems.BASELINE
+                }
+                isReversed -> {
+                    flexDirection = FlexDirection.COLUMN_REVERSE
+                    alignItems = AlignItems.STRETCH
+                }
+                else -> {
+                    flexDirection = FlexDirection.COLUMN
+                    alignItems = AlignItems.STRETCH
+                }
             }
         }
         candidatesAdapter.submitList(menu.candidates.toList())
