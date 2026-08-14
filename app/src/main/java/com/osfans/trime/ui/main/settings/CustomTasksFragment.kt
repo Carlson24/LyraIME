@@ -40,6 +40,7 @@ import com.osfans.trime.data.wanxiang.addDownloadProgressItem
 import com.osfans.trime.data.wanxiang.loadCustomTasks
 import com.osfans.trime.data.wanxiang.saveCustomTasks
 import com.osfans.trime.data.wanxiang.updateDownloadProgressItem
+import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.common.confirmDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -536,6 +537,27 @@ class CustomTasksFragment : Fragment() {
         }
         actionRow.addView(spacer)
 
+        val excludeBtn = Button(ctx)
+        excludeBtn.apply {
+            text = excludeRulesLabel(task.excludeRules)
+            textSize = 12f
+            minHeight = 0
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 34.dp()).apply { marginEnd = 8.dp() }
+            gravity = Gravity.CENTER
+            setPadding(12.dp(), 0, 12.dp(), 0)
+            background = GradientDrawable().apply {
+                setStroke(1.dp(), accentColor(ctx))
+                cornerRadius = 6.dp().toFloat()
+            }
+            setTextColor(accentColor(ctx))
+        }
+        excludeBtn.setOnClickListener {
+            showExcludeRulesDialog(index, task) { saved ->
+                excludeBtn.text = excludeRulesLabel(saved)
+            }
+        }
+        actionRow.addView(excludeBtn)
+
         val execBtn = Button(ctx).apply {
             text = getString(R.string.wanxiang_execute_task)
             textSize = 12f
@@ -602,7 +624,7 @@ class CustomTasksFragment : Fragment() {
                         task = uiState,
                         token = "",
                         context = c,
-                        rules = emptyList(),
+                        rules = tData.excludeRules.lines().filter { it.isNotBlank() },
                         targetPaths = tData.boundPaths,
                         onProgress = { t ->
                             context?.let { ctx2 ->
@@ -664,7 +686,7 @@ class CustomTasksFragment : Fragment() {
                     task = uiState,
                     token = "",
                     context = c,
-                    rules = emptyList(),
+                    rules = task.excludeRules.lines().filter { it.isNotBlank() },
                     targetPaths = task.boundPaths,
                     onProgress = { t ->
                         context?.let { ctx2 ->
@@ -765,6 +787,53 @@ class CustomTasksFragment : Fragment() {
         }
         box.addView(edit)
         return box
+    }
+
+    private fun excludeRulesLabel(rules: String): String {
+        val count = rules.lines().count { it.isNotBlank() }
+        return if (count > 0) {
+            getString(R.string.custom_tasks_exclude_rules) + " ($count)"
+        } else {
+            getString(R.string.custom_tasks_exclude_rules)
+        }
+    }
+
+    private fun showExcludeRulesDialog(
+        index: Int,
+        task: CustomTask,
+        onSaved: (String) -> Unit,
+    ) {
+        val ctx = requireContext()
+        val dp = ctx.resources.displayMetrics.density
+        fun Int.dp() = (this * dp).toInt()
+
+        val root = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24.dp(), 8.dp(), 24.dp(), 8.dp())
+        }
+        val edit = EditText(ctx).apply {
+            setText(task.excludeRules)
+            setHint(R.string.custom_tasks_exclude_hint)
+            textSize = 13f
+            typeface = Typeface.MONOSPACE
+            gravity = Gravity.TOP or Gravity.START
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 5
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+        }
+        root.addView(edit)
+        ctx.buildDialog(R.string.custom_tasks_exclude_rules)
+            .setView(root)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                customTasks[index] = customTasks[index].copy(excludeRules = edit.text.toString())
+                saveCustomTasks(customTasks, sharedPref)
+                onSaved(customTasks[index].excludeRules)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun uriToDisplayPath(uriString: String): String = try {

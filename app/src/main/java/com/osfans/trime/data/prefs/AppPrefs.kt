@@ -483,12 +483,14 @@ class AppPrefs(
             const val LAYOUT = "candidates_layout"
             const val POSITION = "candidates_window_position"
             const val DISABLE_WINDOW_ON_LANDSCAPE = "disable_window_on_landscape"
+            const val REVERSE_VERTICAL = "reverse_vertical_candidates"
         }
 
         val mode = enum(R.string.show_candidates_window, MODE, PopupCandidatesMode.SYSTEM_DEFAULT)
         val layout = enum(R.string.candidates_layout, LAYOUT, PopupCandidatesLayout.AUTOMATIC)
         val position = enum(R.string.candidates_window_position, POSITION, PopupPosition.BOTTOM_LEFT)
         val disableWindowOnLandscape = switch(R.string.disable_window_on_landscape, DISABLE_WINDOW_ON_LANDSCAPE, false)
+        val reverseVertical = switch(R.string.vertical_reverse, REVERSE_VERTICAL, false)
     }
 
     /**

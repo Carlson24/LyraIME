@@ -102,7 +102,15 @@ object DownloadManager {
         onProgress: (TaskState) -> Unit,
     ) {
         try {
-            task.status = context.getString(R.string.wanxiang_dl_extracting)
+            val needsExtract = task.needsDecompress && (
+                task.url.endsWith(".zip") ||
+                    task.url.endsWith(".tar.gz") ||
+                    task.url.endsWith(".tar.bz2") ||
+                    task.url.endsWith(".tar.zst")
+                )
+            task.status = context.getString(
+                if (needsExtract) R.string.wanxiang_dl_extracting else R.string.wanxiang_dl_copying,
+            )
             task.progress = -1f
             onProgress(task)
 
@@ -183,7 +191,9 @@ object DownloadManager {
 
             task.isFinished = true
             task.progress = 1f
-            task.status = context.getString(R.string.wanxiang_dl_done)
+            task.status = context.getString(
+                if (needsExtract) R.string.wanxiang_dl_done else R.string.wanxiang_dl_copied,
+            )
             onProgress(task)
         } catch (e: Exception) {
             task.isError = true

@@ -88,6 +88,7 @@ object FileDownloader {
     private fun buildRequest(urlStr: String, token: String): Request.Builder {
         val builder = Request.Builder().url(urlStr)
             .header("User-Agent", ResourceUrls.USER_AGENT)
+            .header("Accept-Encoding", "identity")
         if (urlStr.contains("github.com") && token.isNotBlank()) {
             builder.header("Authorization", "Bearer $token")
         }
