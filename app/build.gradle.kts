@@ -30,7 +30,7 @@ android {
         minSdk = 28
         targetSdk = 37
         versionCode = LocalDate.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
-        versionName = "5.2.0"
+        versionName = "5.3.0"
 
         multiDexEnabled = true
         buildConfigField("String", "BUILDER", "\"${project.builder}\"")
