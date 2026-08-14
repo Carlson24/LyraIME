@@ -3,13 +3,14 @@ package com.osfans.trime.ime.t9
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Outline
 import android.graphics.Paint
 import android.graphics.Rect
-import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
 import android.view.View
+import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -35,6 +36,25 @@ class T9SidebarView(
         isVerticalScrollBarEnabled = false
         overScrollMode = OVER_SCROLL_NEVER
         clipToPadding = true
+        clipChildren = true
+        clipToOutline = true
+        setPadding(borderWidthPx, borderWidthPx, borderWidthPx, borderWidthPx)
+        outlineProvider =
+            object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) {
+                    val radius = (sideCornerRadiusPx - borderWidthPx).coerceAtLeast(0f)
+                    val inset = borderWidthPx.coerceAtLeast(0)
+                    val left = inset
+                    val top = inset
+                    val right = view.width - inset
+                    val bottom = view.height - inset
+                    if (right <= left || bottom <= top) {
+                        outline.setRect(0, 0, view.width, view.height)
+                    } else {
+                        outline.setRoundRect(left, top, right, bottom, radius)
+                    }
+                }
+            }
     }
 
     private val itemContainer = LinearLayout(context).apply {
@@ -75,12 +95,17 @@ class T9SidebarView(
         )
     }
 
+    private val borderLayer = View(context).apply {
+        background = sidebarBg
+    }
+
     private fun resolveColor(primaryKey: String, fallbackKey: String): Int {
         runCatching { ColorManager.getColor(primaryKey) }.getOrNull()?.let { return it }
         return runCatching { ColorManager.getColor(fallbackKey) }.getOrElse { Color.TRANSPARENT }
     }
 
     private val borderWidthPx: Int get() = context.dp(keyboard.keyBorder)
+    private val dividerHeightPx: Int get() = context.dp(1)
     private val sideCornerRadiusPx: Float get() = context.dp(keyboard.t9SideRoundCorner.toInt()).toFloat()
     private val verticalGap: Int get() = keyboard.verticalGap
     private val horizontalGap: Int get() = keyboard.horizontalGap
@@ -134,7 +159,6 @@ class T9SidebarView(
     private var currentMode = MODE_EMPTY
 
     init {
-        setWillNotDraw(false)
         val vGap = verticalGap
         val hGap = horizontalGap
         setPadding(
@@ -149,6 +173,16 @@ class T9SidebarView(
             LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 LayoutParams.WRAP_CONTENT,
+            ).apply {
+                gravity = Gravity.TOP
+            },
+        )
+
+        addView(
+            borderLayer,
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT,
             ).apply {
                 gravity = Gravity.TOP
             },
@@ -330,20 +364,11 @@ class T9SidebarView(
     }
 
     private fun computeItemHeight(): Int {
-        val availableHeight = preferredHeight - paddingTop - paddingBottom
+        val availableHeight = preferredHeight - paddingTop - paddingBottom - 2 * borderWidthPx
         if (availableHeight <= 0) return (context.dp(40)).coerceAtLeast(1)
         val count = showItemCount.coerceAtLeast(1)
-        return (availableHeight / count)
-    }
-
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        sidebarBg.setBounds(paddingLeft, paddingTop, w - paddingRight, h - paddingBottom)
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        sidebarBg.draw(canvas)
-        super.onDraw(canvas)
+        val dividers = (count - 1) * dividerHeightPx
+        return ((availableHeight - dividers) / count).coerceAtLeast(1)
     }
 
     override fun onMeasure(
@@ -416,7 +441,7 @@ class T9SidebarView(
         layoutParams =
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                context.dp(1),
+                dividerHeightPx,
             )
         setBackgroundColor(sideSpacingColor)
         alpha = 0.3f

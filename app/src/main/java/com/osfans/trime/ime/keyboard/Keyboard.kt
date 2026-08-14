@@ -210,7 +210,11 @@ class Keyboard(
     fun getT9SidebarHeight(): Int {
         val spanRow = t9SidebarSpanRows
         val firstKeyInNextRow = mKeys.firstOrNull { it.row >= spanRow }
-        return firstKeyInNextRow?.y ?: height
+        return if (firstKeyInNextRow != null) {
+            firstKeyInNextRow.y - verticalGap / 2
+        } else {
+            mKeys.lastOrNull()?.let { it.y + it.height } ?: height
+        }
     }
 
     val keyboardHeight: Int =
