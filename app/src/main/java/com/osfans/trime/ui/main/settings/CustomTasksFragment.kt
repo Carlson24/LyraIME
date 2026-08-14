@@ -405,13 +405,19 @@ class CustomTasksFragment : Fragment() {
 
         content.addView(makeLabel(ctx, getString(R.string.wanxiang_task_alias)))
         val nameInput = makeEditText(ctx, task.name, hint = getString(R.string.wanxiang_hint_task_name)) { text ->
-            customTasks[index] = customTasks[index].copy(name = text)
+            val idx = customTasks.indexOfFirst { it.id == task.id }
+            if (idx >= 0) {
+                customTasks[idx] = customTasks[idx].copy(name = text)
+            }
         }
         content.addView(nameInput)
 
         content.addView(makeLabel(ctx, getString(R.string.wanxiang_url_or_path)))
         val urlInput = makeEditText(ctx, task.url, hint = getString(R.string.wanxiang_hint_url)) { text ->
-            customTasks[index] = customTasks[index].copy(url = text)
+            val idx = customTasks.indexOfFirst { it.id == task.id }
+            if (idx >= 0) {
+                customTasks[idx] = customTasks[idx].copy(url = text)
+            }
         }
         content.addView(urlInput)
 
