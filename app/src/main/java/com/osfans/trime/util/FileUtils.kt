@@ -43,4 +43,10 @@ object FileUtils {
             throw IOException("Cannot delete ${file.path}")
         }
     }
+
+    fun markNativeLibsReadOnly(dir: File) {
+        dir.listFiles()
+            ?.filter { it.isFile && it.name.endsWith(".so") }
+            ?.forEach { it.setWritable(false, false) }
+    }
 }

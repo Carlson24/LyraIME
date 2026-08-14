@@ -21,6 +21,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <uses-permission android:name="com.brycewg.asrkb.EXTERNAL_SPEECH" />
     <uses-permission android:name="com.brycewg.asrkb.pro.EXTERNAL_SPEECH" />
 
+    <!-- 声明 NPU 能力：required=false 保证可安装到无 NPU 设备，Android 17+ 有 NPU 时获得直接访问 -->
+    <uses-feature
+        android:name="android.hardware.npu"
+        android:required="false" />
+
     <queries>
         <package android:name="com.brycewg.asrkb" />
         <package android:name="com.brycewg.asrkb.pro" />

@@ -10,6 +10,7 @@ import android.os.Build
 import com.k2fsa.sherpa.onnx.OnlineRecognizer
 import com.osfans.trime.data.ResourceUrls
 import com.osfans.trime.util.FileDownloader
+import com.osfans.trime.util.FileUtils
 import com.osfans.trime.util.appContext
 import com.osfans.trime.util.extractTarBz2
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +30,10 @@ object VoiceNativeManager {
     fun isOnnxRuntimeInstalled(): Boolean = onnxRuntimeLibPath().exists()
 
     suspend fun ensureOnnxRuntime(context: Context): Boolean {
-        if (isOnnxRuntimeInstalled()) return true
+        if (isOnnxRuntimeInstalled()) {
+            FileUtils.markNativeLibsReadOnly(onnxRuntimeLibPath().parentFile!!)
+            return true
+        }
 
         val tmp = File(context.cacheDir, "onnx-runtime.tar.bz2")
         return try {
@@ -38,6 +42,7 @@ object VoiceNativeManager {
                 val onnxDir = onnxRuntimeLibPath().parentFile!!
                 onnxDir.mkdirs()
                 extractTarBz2(tmp, onnxDir)
+                FileUtils.markNativeLibsReadOnly(onnxDir)
                 tmp.delete()
             }
             val installed = isOnnxRuntimeInstalled()
@@ -58,6 +63,7 @@ object VoiceNativeManager {
         if (!onnxRuntimeLoaded) {
             val so = onnxRuntimeLibPath()
             if (!so.exists()) return false
+            so.setWritable(false, false)
             System.load(so.absolutePath)
             onnxRuntimeLoaded = true
             Timber.i("VoiceNative: onnxruntime loaded")

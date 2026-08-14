@@ -9,6 +9,7 @@ import android.content.Context
 import android.os.Build
 import com.osfans.trime.data.ResourceUrls
 import com.osfans.trime.util.FileDownloader
+import com.osfans.trime.util.FileUtils
 import com.osfans.trime.util.appContext
 import com.osfans.trime.util.extractTarBz2
 import kotlinx.coroutines.Dispatchers
@@ -61,6 +62,7 @@ object QnnDspManager {
         val system = File(dir, "libQnnSystem.so")
 
         if (!force && stub.exists() && skel.exists() && htp.exists() && system.exists()) {
+            FileUtils.markNativeLibsReadOnly(dir)
             return@withContext DspLibs(stub, skel, htp, system)
         }
 
@@ -78,12 +80,14 @@ object QnnDspManager {
         try {
             FileDownloader.download(entry.url, tarBz2, expectedSha256 = expectedSha256)
             extractTarBz2(tarBz2, dir)
+            FileUtils.markNativeLibsReadOnly(dir)
 
             val extractedOnnx = File(dir, "libonnxruntime.so")
             if (extractedOnnx.exists()) {
                 val onnxDest = File(appContext.filesDir, "onnxruntime/libonnxruntime.so")
                 onnxDest.parentFile!!.mkdirs()
                 extractedOnnx.renameTo(onnxDest)
+                onnxDest.setWritable(false, false)
                 Timber.i("QnnDsp: onnxruntime moved to $onnxDest")
             }
 
@@ -108,6 +112,9 @@ object QnnDspManager {
     }
 
     fun loadDsp(dsp: DspLibs) {
+        dsp.stub.setWritable(false, false)
+        dsp.htp.setWritable(false, false)
+        dsp.system.setWritable(false, false)
         System.load(dsp.stub.absolutePath)
         System.load(dsp.htp.absolutePath)
         System.load(dsp.system.absolutePath)
