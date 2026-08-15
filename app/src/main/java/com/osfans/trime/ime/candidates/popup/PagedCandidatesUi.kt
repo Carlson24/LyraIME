@@ -166,10 +166,12 @@ class PagedCandidatesUi(
                     flexDirection = FlexDirection.ROW
                     alignItems = AlignItems.BASELINE
                 }
+
                 isReversed -> {
                     flexDirection = FlexDirection.COLUMN_REVERSE
                     alignItems = AlignItems.STRETCH
                 }
+
                 else -> {
                     flexDirection = FlexDirection.COLUMN
                     alignItems = AlignItems.STRETCH

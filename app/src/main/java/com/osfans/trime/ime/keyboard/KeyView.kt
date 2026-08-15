@@ -332,25 +332,27 @@ class KeyView(
 
         val actionLabel = key.getLabel()
 
-        val labelSegments = (if (actionLabel == "enter_labels") {
-            listOf(TextKeyboard.LabelSegment(text = keyboardView.labelEnter))
-        } else if (key.label.isNotEmpty()) {
-            if (key.label.any { it.text.isNotEmpty() }) {
-                if (actionLabel.isNotEmpty() && key.label.none { it.text == actionLabel }) {
-                    listOf(key.label.first().copy(text = actionLabel))
+        val labelSegments = (
+            if (actionLabel == "enter_labels") {
+                listOf(TextKeyboard.LabelSegment(text = keyboardView.labelEnter))
+            } else if (key.label.isNotEmpty()) {
+                if (key.label.any { it.text.isNotEmpty() }) {
+                    if (actionLabel.isNotEmpty() && key.label.none { it.text == actionLabel }) {
+                        listOf(key.label.first().copy(text = actionLabel))
+                    } else {
+                        key.label
+                    }
+                } else if (actionLabel.isNotEmpty()) {
+                    key.label.map { it.copy(text = it.text.ifEmpty { actionLabel }) }
                 } else {
-                    key.label
+                    emptyList()
                 }
             } else if (actionLabel.isNotEmpty()) {
-                key.label.map { it.copy(text = it.text.ifEmpty { actionLabel }) }
+                listOf(TextKeyboard.LabelSegment(text = actionLabel))
             } else {
                 emptyList()
             }
-        } else if (actionLabel.isNotEmpty()) {
-            listOf(TextKeyboard.LabelSegment(text = actionLabel))
-        } else {
-            emptyList()
-        }).map { seg ->
+            ).map { seg ->
             if (seg.text == SCHEMA_NAME) seg.copy(text = schemaDisplayName) else seg
         }
 
