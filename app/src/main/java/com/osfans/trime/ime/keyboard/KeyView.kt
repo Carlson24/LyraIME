@@ -21,6 +21,7 @@ import android.util.LruCache
 import android.view.KeyEvent
 import com.mikepenz.iconics.IconicsDrawable
 import com.mikepenz.iconics.utils.sizePx
+import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
@@ -48,6 +49,13 @@ class KeyView(
 
     private val popup: PopupDelegate
         get() = keyboardView.popup
+
+    private val schemaDisplayName: String
+        get() = RimeDaemon.getFirstSessionOrNull()?.run {
+            statusCached.schemaName.ifEmpty {
+                schemaCached.schemaId.takeIf { it.isNotEmpty() && it != ".default" } ?: ""
+            }
+        } ?: ""
 
     private val hookShiftArrow: Boolean by lazy {
         AppPrefs.defaultInstance().keyboard.hookShiftArrow.getValue()
@@ -324,7 +332,7 @@ class KeyView(
 
         val actionLabel = key.getLabel()
 
-        val labelSegments = if (actionLabel == "enter_labels") {
+        val labelSegments = (if (actionLabel == "enter_labels") {
             listOf(TextKeyboard.LabelSegment(text = keyboardView.labelEnter))
         } else if (key.label.isNotEmpty()) {
             if (key.label.any { it.text.isNotEmpty() }) {
@@ -342,6 +350,8 @@ class KeyView(
             listOf(TextKeyboard.LabelSegment(text = actionLabel))
         } else {
             emptyList()
+        }).map { seg ->
+            if (seg.text == SCHEMA_NAME) seg.copy(text = schemaDisplayName) else seg
         }
 
         if (labelSegments.isNotEmpty()) {
@@ -906,6 +916,8 @@ class KeyView(
         icon.draw(canvas)
     }
 }
+
+private const val SCHEMA_NAME = "schema_name"
 
 /**
  * 样式分段：存储一段文本及其样式。
