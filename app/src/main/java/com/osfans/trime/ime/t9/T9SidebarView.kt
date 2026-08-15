@@ -14,7 +14,6 @@ import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.TextView
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
@@ -119,17 +118,29 @@ class T9SidebarView(
     private val itemViewPool = ArrayDeque<FrameLayout>(8)
     private val dividerPool = ArrayDeque<View>(8)
 
-    private inner class CjkCorrectedTextView(context: Context) : TextView(context) {
-        override fun onDraw(canvas: Canvas) {
-            val t = text?.toString() ?: ""
-            if (t.isCjkPunctuation()) {
-                canvas.save()
-                canvas.translate(visualCenterCorrect(t, paint), 0f)
-                super.onDraw(canvas)
-                canvas.restore()
-            } else {
-                super.onDraw(canvas)
+    private inner class SidebarTextLabel(context: Context) : View(context) {
+        val textPaint =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textAlign = Paint.Align.CENTER
+                color = sideTextColor
+                textSize = sideTextSizeSp
+                typeface = sideTypeface
+                fontFeatureSettings = FontManager.fontFeatureSettings
             }
+
+        var label: String = ""
+            set(value) {
+                field = value
+                invalidate()
+            }
+
+        override fun onDraw(canvas: Canvas) {
+            if (label.isEmpty()) return
+            val bounds = Rect()
+            textPaint.getTextBounds(label, 0, label.length, bounds)
+            val baseline = (height - (bounds.top + bounds.bottom)) / 2f
+            val offsetX = if (label.isCjkPunctuation()) visualCenterCorrect(label, textPaint) else 0f
+            canvas.drawText(label, width / 2f + offsetX, baseline, textPaint)
         }
     }
 
@@ -270,7 +281,7 @@ class T9SidebarView(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     itemHeight,
                 )
-                (itemView.getChildAt(0) as? TextView)?.text = UnicodeVariantUtils.toDisplay(token.display)
+                (itemView.getChildAt(0) as? SidebarTextLabel)?.label = UnicodeVariantUtils.toDisplay(token.display)
                 itemView.setOnClickListener { onItemSelected?.invoke(token) }
             } else {
                 itemContainer.addView(obtainItemView(token, itemHeight))
@@ -318,7 +329,7 @@ class T9SidebarView(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     itemHeight,
                 )
-                (v.getChildAt(0) as? TextView)?.text = UnicodeVariantUtils.toDisplay(token.display)
+                (v.getChildAt(0) as? SidebarTextLabel)?.label = UnicodeVariantUtils.toDisplay(token.display)
             }
         } else {
             createItemView(token, itemHeight)
@@ -330,14 +341,8 @@ class T9SidebarView(
     private fun obtainDivider(): View = if (dividerPool.isNotEmpty()) dividerPool.removeLast() else createDivider()
 
     private fun createSymbolItemView(symbol: String, itemHeight: Int): FrameLayout {
-        val label = CjkCorrectedTextView(context).apply {
-            text = UnicodeVariantUtils.toDisplay(symbol)
-            setTextColor(sideTextColor)
-            textSize = sideTextSizeSp
-            gravity = Gravity.CENTER
-            typeface = sideTypeface
-            fontFeatureSettings = FontManager.fontFeatureSettings
-            includeFontPadding = false
+        val label = SidebarTextLabel(context).apply {
+            this.label = UnicodeVariantUtils.toDisplay(symbol)
         }
         return FrameLayout(context).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -351,8 +356,8 @@ class T9SidebarView(
             addView(
                 label,
                 LayoutParams(
-                    LayoutParams.WRAP_CONTENT,
-                    LayoutParams.WRAP_CONTENT,
+                    LayoutParams.MATCH_PARENT,
+                    LayoutParams.MATCH_PARENT,
                 ).apply {
                     gravity = Gravity.CENTER
                 },
@@ -386,14 +391,8 @@ class T9SidebarView(
         token: T9InputController.PinYinToken,
         itemHeight: Int,
     ): FrameLayout {
-        val label = CjkCorrectedTextView(context).apply {
-            text = UnicodeVariantUtils.toDisplay(token.display)
-            setTextColor(sideTextColor)
-            textSize = sideTextSizeSp
-            gravity = Gravity.CENTER
-            typeface = sideTypeface
-            fontFeatureSettings = FontManager.fontFeatureSettings
-            includeFontPadding = false
+        val label = SidebarTextLabel(context).apply {
+            this.label = UnicodeVariantUtils.toDisplay(token.display)
         }
 
         return FrameLayout(context).apply {
@@ -409,8 +408,8 @@ class T9SidebarView(
             addView(
                 label,
                 LayoutParams(
-                    LayoutParams.WRAP_CONTENT,
-                    LayoutParams.WRAP_CONTENT,
+                    LayoutParams.MATCH_PARENT,
+                    LayoutParams.MATCH_PARENT,
                 ).apply {
                     gravity = Gravity.CENTER
                 },
