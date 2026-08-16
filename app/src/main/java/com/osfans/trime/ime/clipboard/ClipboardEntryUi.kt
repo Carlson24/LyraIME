@@ -7,6 +7,7 @@ package com.osfans.trime.ime.clipboard
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.text.SpannableString
@@ -23,6 +24,7 @@ import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.keyboard.GestureFrame
+import kotlin.math.ceil
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.views.dsl.constraintlayout.bottomOfParent
@@ -75,6 +77,11 @@ class ClipboardEntryUi(ctx: Context, private val theme: Theme) : Ui {
         setTextColor(ColorManager.getColor("key_text_color"))
         typeface = FontManager.getTypeface("clipboard_font")
         fontFeatureSettings = FontManager.fontFeatureSettings
+        val fm = paint.fontMetrics
+        val bounds = Rect()
+        paint.getTextBounds("jgpqy", 0, 5, bounds)
+        val bottomInset = ceil(bounds.bottom.toFloat() - fm.descent).toInt().coerceAtLeast(0)
+        setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom + bottomInset)
     }
 
     val pin = imageView {

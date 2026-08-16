@@ -83,7 +83,12 @@ constructor(
         val heightMode = MeasureSpec.getMode(heightMeasureSpec)
         val heightSize = MeasureSpec.getSize(heightMeasureSpec)
         val width = measureTextBounds().width() + paddingLeft + paddingRight
-        val height = ceil(fontMetrics.bottom - fontMetrics.top + paddingTop + paddingBottom).toInt()
+        val height =
+            ceil(
+                max(fontMetrics.bottom - fontMetrics.top, textBounds.height().toFloat()) +
+                    paddingTop +
+                    paddingBottom,
+            ).toInt()
         val maxHeight = if (maxHeight >= 0) maxHeight else Int.MAX_VALUE
         val maxWidth = if (maxWidth >= 0) maxWidth else Int.MAX_VALUE
         setMeasuredDimension(
@@ -123,15 +128,17 @@ constructor(
                     paint.getTextBounds(it, 0, text.length, textBounds)
                 }
             } else {
+                val inkBounds = Rect()
+                paint.getTextBounds(text, 0, text.length, inkBounds)
                 textBounds.set(
                     // left =
                     0,
                     // top =
-                    floor(fontMetrics.top).toInt(),
+                    min(floor(fontMetrics.top).toInt(), inkBounds.top),
                     // right =
                     ceil(paint.measureText(text, 0, text.length)).toInt(),
                     // bottom =
-                    ceil(fontMetrics.bottom).toInt(),
+                    max(ceil(fontMetrics.bottom).toInt(), inkBounds.bottom),
                 )
             }
             needsMeasureText = false
@@ -213,9 +220,9 @@ constructor(
             textScaleX = 1.0f
             textScaleY = 1.0f
         }
-        val fontHeight = (fontMetrics.descent - fontMetrics.ascent) * textScaleY
-        val fontOffsetY = fontMetrics.ascent * textScaleY
-        translateY = (contentHeight.toFloat() - fontHeight) / 2.0f - fontOffsetY + paddingTop
+        val inkHeight = (textBounds.bottom - textBounds.top) * textScaleY
+        val inkOffsetY = textBounds.top * textScaleY
+        translateY = (contentHeight.toFloat() - inkHeight) / 2.0f - inkOffsetY + paddingTop
     }
 
     private fun calculateTranslateX(
@@ -251,7 +258,11 @@ constructor(
     override fun getTextScaleX(): Float = textScaleX
 
     override fun getBaseline(): Int {
-        val baseline = -fontMetrics.top * textScaleY
+        measureTextBounds()
+        val contentHeight = height - paddingTop - paddingBottom
+        val inkHeight = (textBounds.bottom - textBounds.top) * textScaleY
+        val baseline =
+            (contentHeight.toFloat() - inkHeight) / 2f - textBounds.top * textScaleY + paddingTop
         // Prevent NaN or Infinity from causing crash
         return if (baseline.isNaN() || baseline.isInfinite()) {
             super.getBaseline()
