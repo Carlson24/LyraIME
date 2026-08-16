@@ -252,8 +252,6 @@ internal class GenKeyMappingProcessor(
             "+" to "KEYCODE_PLUS",
             "(" to "KEYCODE_NUMPAD_LEFT_PAREN",
             ")" to "KEYCODE_NUMPAD_RIGHT_PAREN",
-            "×" to "KEYCODE_NUMPAD_MULTIPLY",
-            "÷" to "KEYCODE_NUMPAD_DIVIDE",
         )
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
