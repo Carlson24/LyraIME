@@ -6,7 +6,6 @@ package com.osfans.trime.ui.texteditor
 
 import android.content.ContentResolver
 import android.net.Uri
-import androidx.documentfile.provider.DocumentFile
 
 object TextFileSupport {
 

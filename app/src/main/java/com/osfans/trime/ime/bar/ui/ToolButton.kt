@@ -7,8 +7,6 @@ package com.osfans.trime.ime.bar.ui
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.ShapeDrawable
@@ -30,7 +28,6 @@ import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.keyboard.LabelSegment
 import com.osfans.trime.ime.keyboard.isIconFont
 import com.osfans.trime.ime.keyboard.parseLabelSegments
-import com.osfans.trime.ime.keyboard.toIconName
 import splitties.dimensions.dp
 import splitties.views.dsl.core.add
 import splitties.views.dsl.core.imageView

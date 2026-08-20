@@ -57,7 +57,6 @@ import splitties.views.dsl.core.add
 import splitties.views.dsl.core.editText
 import splitties.views.dsl.core.imageButton
 import splitties.views.dsl.core.matchParent
-import splitties.views.dsl.core.verticalLayout
 import splitties.views.dsl.core.wrapContent
 import splitties.views.imageDrawable
 import splitties.views.topPadding

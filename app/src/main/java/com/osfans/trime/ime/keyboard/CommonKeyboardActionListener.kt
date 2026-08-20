@@ -43,7 +43,6 @@ import com.osfans.trime.util.buildIntentFromAction
 import com.osfans.trime.util.buildIntentFromArgument
 import com.osfans.trime.util.customFormatDateTime
 import com.osfans.trime.util.isAsciiPrintable
-import com.osfans.trime.util.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.kodein.di.instance

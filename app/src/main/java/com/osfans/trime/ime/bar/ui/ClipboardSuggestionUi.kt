@@ -9,7 +9,6 @@ import android.graphics.Bitmap
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
-import androidx.core.net.toUri
 import com.osfans.trime.R
 import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.theme.ColorManager
@@ -18,7 +17,6 @@ import com.osfans.trime.ime.keyboard.GestureFrame
 import com.osfans.trime.util.rippleDrawable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import splitties.dimensions.dp

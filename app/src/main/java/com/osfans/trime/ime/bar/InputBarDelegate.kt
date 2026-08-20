@@ -6,8 +6,6 @@
 package com.osfans.trime.ime.bar
 
 import android.content.Context
-import android.content.res.Configuration
-import android.net.Uri
 import android.os.Build
 import android.util.Size
 import android.view.View
@@ -24,7 +22,6 @@ import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.data.db.ClipboardHelper
-import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.KeyActionManager

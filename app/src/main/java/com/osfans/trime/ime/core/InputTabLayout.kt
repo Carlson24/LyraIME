@@ -6,11 +6,9 @@
 package com.osfans.trime.ime.core
 
 import android.content.Context
-import android.graphics.Typeface
 import android.view.Gravity
 import android.widget.LinearLayout
 import androidx.viewpager2.widget.ViewPager2
-import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.ime.keyboard.GestureFrame
 import com.osfans.trime.util.alpha
 import splitties.dimensions.dp

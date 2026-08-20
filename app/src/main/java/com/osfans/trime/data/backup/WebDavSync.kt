@@ -181,13 +181,13 @@ object WebDavSync {
             val request = newRequest(url, method).build()
             client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    Timber.d("$method $url -> HTTP ${response.code}")
+                    Timber.i("$method $url -> HTTP ${response.code}")
                     return true
                 }
-                Timber.d("$method $url -> HTTP ${response.code}")
+                Timber.w("$method $url -> HTTP ${response.code}")
             }
         } catch (e: Exception) {
-            Timber.d("$method $url failed: ${e.message}")
+            Timber.e("$method $url failed: ${e.message}")
         }
         return false
     }
@@ -244,7 +244,12 @@ object WebDavSync {
                 val propstat = response.getElementsByTagNameNS("DAV:", "propstat").item(0) as? Element ?: continue
                 val prop = propstat.getElementsByTagNameNS("DAV:", "prop").item(0) as? Element ?: continue
                 val isCollection = prop.getElementsByTagNameNS("DAV:", "resourcetype").item(0)
-                    ?.let { (it as? Element)?.getElementsByTagNameNS("DAV:", "collection")?.length ?: 0 > 0 } ?: false
+                    ?.let {
+                        (
+                            (it as? Element)?.getElementsByTagNameNS("DAV:", "collection")?.length
+                                ?: 0
+                            ) > 0
+                    } ?: false
 
                 val name = href.substringAfterLast('/').ifEmpty { href }
                 if (name.isNotEmpty() && name != href) {

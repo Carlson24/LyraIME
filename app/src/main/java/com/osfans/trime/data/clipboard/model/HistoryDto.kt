@@ -4,7 +4,6 @@
 
 package com.osfans.trime.data.clipboard.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable

@@ -11,7 +11,6 @@ import android.widget.FrameLayout
 import androidx.annotation.Keep
 import androidx.core.content.ContextCompat
 import com.osfans.trime.R
-import com.osfans.trime.core.CompositionProto
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.core.SchemaItem
 import com.osfans.trime.daemon.RimeSession
@@ -40,7 +39,6 @@ import splitties.views.dsl.core.add
 import splitties.views.dsl.core.frameLayout
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
-import splitties.views.dsl.core.wrapContent
 import timber.log.Timber
 
 class KeyboardWindow :

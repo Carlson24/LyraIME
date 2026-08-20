@@ -7,7 +7,6 @@ package com.osfans.trime.data.clipboard
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.net.Uri
 import android.util.Base64
 import com.osfans.trime.data.clipboard.model.ClipboardContent
 import com.osfans.trime.data.clipboard.model.ClipboardContentType
@@ -28,7 +27,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 interface SyncClipboardPrefs {

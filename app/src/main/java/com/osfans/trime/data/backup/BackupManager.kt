@@ -13,7 +13,6 @@ import androidx.paging.PagingSource
 import androidx.preference.PreferenceManager
 import androidx.room.withTransaction
 import com.osfans.trime.data.db.ClipboardHelper
-import com.osfans.trime.data.db.Database
 import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.util.appContext

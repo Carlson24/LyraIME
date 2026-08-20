@@ -6,17 +6,8 @@
 package com.osfans.trime.ui.main
 
 import android.os.Bundle
-import android.text.InputType
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.LinearLayout
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceGroup
@@ -26,7 +17,6 @@ import com.osfans.trime.ui.texteditor.FileBrowserActivity
 import com.osfans.trime.util.addCategory
 import com.osfans.trime.util.addPreference
 import com.osfans.trime.util.navigateWithAnim
-import splitties.dimensions.dp
 
 class MainFragment : PaddingPreferenceFragment() {
     private val viewModel: MainViewModel by activityViewModels()

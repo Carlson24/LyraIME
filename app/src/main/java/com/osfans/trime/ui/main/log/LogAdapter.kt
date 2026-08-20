@@ -6,8 +6,6 @@
 package com.osfans.trime.ui.main.log
 
 import android.graphics.Typeface
-import android.os.Build
-import android.os.Build.VERSION_CODES
 import android.view.ViewGroup
 import android.view.ViewGroup.MarginLayoutParams
 import android.view.textclassifier.TextClassifier

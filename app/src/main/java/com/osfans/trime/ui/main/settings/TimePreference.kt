@@ -4,7 +4,6 @@
  */
 package com.osfans.trime.ui.main.settings
 
-import android.app.TimePickerDialog
 import android.content.Context
 import androidx.preference.Preference
 import androidx.preference.Preference.SummaryProvider

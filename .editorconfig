@@ -14,5 +14,6 @@ insert_final_newline = true
 
 [*.{kt,kts}]
 ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+ktlint_standard_no-unused-imports = enabled
 ktlint_code_style = intellij_idea
 

@@ -13,7 +13,6 @@ import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.RectF
-import android.graphics.Region
 import android.inputmethodservice.InputMethodService
 import android.net.Uri
 import android.os.Build

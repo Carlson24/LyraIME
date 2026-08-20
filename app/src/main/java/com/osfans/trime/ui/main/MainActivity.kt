@@ -6,7 +6,6 @@
 package com.osfans.trime.ui.main
 
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.ViewGroup
@@ -41,8 +40,6 @@ import com.osfans.trime.util.isStorageAvailable
 import com.osfans.trime.util.item
 import com.osfans.trime.util.parcelable
 import com.osfans.trime.util.startActivity
-import com.osfans.trime.worker.BackgroundSyncWork
-import splitties.resources.styledColor
 import splitties.views.topPadding
 
 class MainActivity : AppCompatActivity() {

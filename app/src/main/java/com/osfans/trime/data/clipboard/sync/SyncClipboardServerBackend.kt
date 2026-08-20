@@ -5,7 +5,6 @@
 package com.osfans.trime.data.clipboard.sync
 
 import android.net.Uri
-import android.util.Base64
 import com.osfans.trime.data.clipboard.ClipboardFileManager
 import com.osfans.trime.data.clipboard.model.ClipboardContent
 import com.osfans.trime.data.clipboard.model.HistoryQueryParams
@@ -14,7 +13,6 @@ import com.osfans.trime.data.clipboard.model.HistoryRecordUpdateDto
 import com.osfans.trime.data.clipboard.model.HistoryStatisticsDto
 import com.osfans.trime.data.clipboard.model.ProfileDto
 import com.osfans.trime.data.clipboard.model.contentToProfileDto
-import com.osfans.trime.data.clipboard.util.HashUtils
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody

@@ -5,8 +5,6 @@
 
 package com.osfans.trime.data.db
 
-import android.content.ClipData
-import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build

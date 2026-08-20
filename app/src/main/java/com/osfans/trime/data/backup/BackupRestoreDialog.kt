@@ -15,7 +15,6 @@ import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.common.confirmDialog
-import com.osfans.trime.ui.common.pickMultiple
 import com.osfans.trime.ui.common.withLoadingDialog
 import com.osfans.trime.util.getFileFromUri
 import com.osfans.trime.util.toast

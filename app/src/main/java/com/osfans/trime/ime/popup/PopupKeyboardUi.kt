@@ -23,7 +23,6 @@ import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.keyboard.LabelSegment
 import com.osfans.trime.ime.keyboard.isIconFont
 import com.osfans.trime.ime.keyboard.parseLabelSegments
-import com.osfans.trime.ime.keyboard.toIconName
 import com.osfans.trime.util.UnicodeVariantUtils
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui

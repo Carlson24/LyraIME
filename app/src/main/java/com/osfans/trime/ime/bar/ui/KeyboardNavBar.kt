@@ -7,7 +7,6 @@ package com.osfans.trime.ime.bar.ui
 
 import android.content.Context
 import android.view.View
-import com.osfans.trime.R
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.ToolBar
 import splitties.dimensions.dp
