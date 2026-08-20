@@ -56,7 +56,6 @@ data class BackupData(
     val timestamp: Long = System.currentTimeMillis(),
     val preferences: Map<String, BackupPreference>? = null,
     val clipboard: List<BackupBean>? = null,
-    val wanxiangPrefs: Map<String, BackupPreference>? = null,
     @Serializable(with = RawJsonStringSerializer::class)
     val customTasks: String? = null,
 ) {

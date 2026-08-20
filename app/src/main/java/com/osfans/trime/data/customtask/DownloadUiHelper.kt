@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-package com.osfans.trime.data.wanxiang
+package com.osfans.trime.data.customtask
 
 import android.content.Context
 import android.graphics.Typeface

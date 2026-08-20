@@ -236,7 +236,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 } else {
                     getString(R.string.voice_runtime_download_failed)
                 }
-                taskText.text = getString(R.string.wanxiang_dl_progress_line, taskTitle, status)
+                taskText.text = getString(R.string.custom_dl_progress_line, taskTitle, status)
 
                 val button = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
                 button.text = getString(android.R.string.ok)
@@ -368,7 +368,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                             launch(Dispatchers.Main) {
                                 val status = formatDownloadStatus(progress, downloaded, total)
                                 taskText.text = getString(
-                                    R.string.wanxiang_dl_progress_line,
+                                    R.string.custom_dl_progress_line,
                                     taskTitle,
                                     status,
                                 )
@@ -385,7 +385,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 }
 
                 taskText.text = getString(
-                    R.string.wanxiang_dl_progress_line,
+                    R.string.custom_dl_progress_line,
                     taskTitle,
                     getString(R.string.voice_model_extracting),
                 )
@@ -398,7 +398,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 progressBar.isIndeterminate = false
                 progressBar.progress = 100
                 taskText.text = getString(
-                    R.string.wanxiang_dl_progress_line,
+                    R.string.custom_dl_progress_line,
                     taskTitle,
                     getString(R.string.voice_model_installed),
                 )

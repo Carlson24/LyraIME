@@ -81,7 +81,6 @@ class BackgroundSyncWork(
                 val backupData = BackupManager.createBackup(
                     includePreferences = true,
                     includeClipboard = true,
-                    includeWanxiang = true,
                     includeCustomTasks = true,
                     onlyPinnedClipboard = true,
                 )

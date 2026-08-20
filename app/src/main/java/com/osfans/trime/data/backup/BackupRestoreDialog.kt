@@ -53,10 +53,9 @@ class BackupRestoreDialog(private val fragment: Fragment) {
             arrayOf(
                 context.getString(R.string.preferences),
                 context.getString(R.string.clipboard_data),
-                context.getString(R.string.wanxiang_data),
                 context.getString(R.string.custom_tasks_data),
             )
-        val checked = booleanArrayOf(true, true, true, true)
+        val checked = booleanArrayOf(true, true, true)
 
         context.buildDialog(R.string.select_backup_items)
             .apply {
@@ -68,7 +67,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                     if (isBackupInProgress) return@setPositiveButton
                     val timestamp = System.currentTimeMillis()
                     val fileName = "trime_backup_$timestamp.json"
-                    performBackup(checked[0], checked[1], checked[2], checked[3], fileName)
+                    performBackup(checked[0], checked[1], checked[2], fileName)
                 }
             }.show()
     }
@@ -81,7 +80,6 @@ class BackupRestoreDialog(private val fragment: Fragment) {
     private fun performBackup(
         includePreferences: Boolean,
         includeClipboard: Boolean,
-        includeWanxiang: Boolean,
         includeCustomTasks: Boolean,
         fileName: String,
     ) {
@@ -104,7 +102,6 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                             BackupManager.createBackup(
                                 includePreferences = includePreferences,
                                 includeClipboard = includeClipboard,
-                                includeWanxiang = includeWanxiang,
                                 includeCustomTasks = includeCustomTasks,
                             )
 
@@ -195,10 +192,9 @@ class BackupRestoreDialog(private val fragment: Fragment) {
 
                 val hasPreferences = backupData.preferences != null
                 val hasClipboard = backupData.clipboard != null
-                val hasWanxiang = backupData.wanxiangPrefs != null
                 val hasCustomTasks = backupData.customTasks != null
 
-                if (!hasPreferences && !hasClipboard && !hasWanxiang && !hasCustomTasks) {
+                if (!hasPreferences && !hasClipboard && !hasCustomTasks) {
                     withContext(Dispatchers.Main) {
                         context.toast(R.string.backup_file_invalid)
                     }
@@ -206,7 +202,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                 }
 
                 withContext(Dispatchers.Main) {
-                    showRestoreItemsDialog(backupData, hasPreferences, hasClipboard, hasWanxiang, hasCustomTasks)
+                    showRestoreItemsDialog(backupData, hasPreferences, hasClipboard, hasCustomTasks)
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -222,7 +218,6 @@ class BackupRestoreDialog(private val fragment: Fragment) {
         backupData: BackupData,
         hasPreferences: Boolean,
         hasClipboard: Boolean,
-        hasWanxiang: Boolean,
         hasCustomTasks: Boolean,
     ) {
         val context = fragment.requireContext()
@@ -235,10 +230,6 @@ class BackupRestoreDialog(private val fragment: Fragment) {
         }
         if (hasClipboard) {
             items.add(context.getString(R.string.clipboard_data))
-            checked.add(true)
-        }
-        if (hasWanxiang) {
-            items.add(context.getString(R.string.wanxiang_data))
             checked.add(true)
         }
         if (hasCustomTasks) {
@@ -258,7 +249,6 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                         backupData,
                         if (hasPreferences) checked[idx++] else false,
                         if (hasClipboard) checked[idx++] else false,
-                        if (hasWanxiang) checked[idx++] else false,
                         if (hasCustomTasks) checked[idx] else false,
                     )
                 }
@@ -269,7 +259,6 @@ class BackupRestoreDialog(private val fragment: Fragment) {
         backupData: BackupData,
         restorePreferences: Boolean,
         restoreClipboard: Boolean,
-        restoreWanxiang: Boolean,
         restoreCustomTasks: Boolean,
     ) {
         val context = fragment.requireContext()
@@ -282,7 +271,6 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                         backupData,
                         restorePreferences = restorePreferences,
                         restoreClipboard = restoreClipboard,
-                        restoreWanxiang = restoreWanxiang,
                         restoreCustomTasks = restoreCustomTasks,
                     ).getOrThrow()
                 }

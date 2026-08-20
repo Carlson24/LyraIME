@@ -92,7 +92,6 @@ class AppPrefs(
     val candidates = Candidates(shared).register()
     val clipboard = Clipboard(shared).register()
     val advanced = Advanced(shared).register()
-    val wanxiang = Wanxiang(shared).register()
 
     @Keep
     private val onSharedPreferenceChangeListener =
@@ -763,116 +762,5 @@ class AppPrefs(
             IGNORE_SYSTEM_GESTURE_INSETS,
             false,
         )
-    }
-
-    class Wanxiang(
-        shared: SharedPreferences,
-    ) : PreferenceDelegateOwner(shared, R.string.wanxiang_updater) {
-        companion object {
-            const val UPDATE_CHANNEL = "wanxiang_update_channel"
-            const val IS_PRO = "wanxiang_is_pro"
-            const val AUX_SCHEME = "wanxiang_aux_scheme"
-            const val DOWNLOAD_SOURCE = "wanxiang_download_source"
-            const val GH_TOKEN = "wanxiang_gh_token"
-            const val CNB_TOKEN = "wanxiang_cnb_token"
-            const val EXCLUDE_RULES = "wanxiang_exclude_rules"
-            const val AUTO_CHECK = "wanxiang_auto_check"
-            const val CHECK_INTERVAL = "wanxiang_check_interval"
-            const val CHECK_SCHEMA = "wanxiang_check_schema"
-            const val CHECK_DICT = "wanxiang_check_dict"
-            const val CHECK_MODEL = "wanxiang_check_model"
-            const val LAST_DICT_SHA256 = "wanxiang_last_dict_sha256"
-            const val LAST_MODEL_SHA256 = "wanxiang_last_model_sha256"
-            const val LAST_DICT_UPDATED_AT = "wanxiang_last_dict_updated_at"
-            const val LAST_MODEL_UPDATED_AT = "wanxiang_last_model_updated_at"
-            const val NEEDS_UPDATE_DICT = "wanxiang_needs_update_dict"
-            const val NEEDS_UPDATE_MODEL = "wanxiang_needs_update_model"
-            const val DEPLOY_TARGETS = "wanxiang_deploy_targets"
-        }
-
-        val updateChannel = list(
-            R.string.wanxiang_update_channel,
-            UPDATE_CHANNEL,
-            "Stable",
-            { listOf("Stable", "Preview") },
-            { ctx ->
-                listOf(
-                    ctx.getString(R.string.wanxiang_stable),
-                    ctx.getString(R.string.wanxiang_preview),
-                )
-            },
-        )
-        val isPro = list(
-            R.string.wanxiang_scheme_type,
-            IS_PRO,
-            "pro",
-            { listOf("pro", "base", "pure") },
-            { listOf("Pro", "Base", "Pure") },
-        )
-        val auxScheme = list(
-            R.string.wanxiang_aux_scheme,
-            AUX_SCHEME,
-            "zrm",
-            { listOf("zrm", "wx", "flypy", "moqi", "hanxin", "shouyou", "shyplus", "tiger", "wubi") },
-            {
-                listOf(
-                    "自然码", "万象", "小鹤", "墨奇",
-                    "汉心", "首右", "首右+",
-                    "虎码", "五笔",
-                )
-            },
-            enableUiOn = { isPro.getValue() == "pro" },
-        )
-        val downloadSource = list(
-            R.string.wanxiang_download_source,
-            DOWNLOAD_SOURCE,
-            "CNB",
-            { listOf("CNB", "GitHub") },
-            { listOf("CNB", "GitHub") },
-        )
-        val ghToken = editText(
-            R.string.wanxiang_github_token,
-            GH_TOKEN,
-            "",
-            password = true,
-            enableUiOn = { downloadSource.getValue() == "GitHub" },
-        )
-        val cnbToken = editText(
-            R.string.wanxiang_cnb_token,
-            CNB_TOKEN,
-            "",
-            password = true,
-            enableUiOn = { downloadSource.getValue() == "CNB" },
-        )
-        val autoCheck = switch(R.string.wanxiang_auto_check, AUTO_CHECK, false)
-        val checkInterval = int(
-            R.string.wanxiang_check_interval,
-            CHECK_INTERVAL,
-            12,
-            3,
-            24,
-            "h",
-        ) { autoCheck.getValue() }
-        val excludeRules = editText(
-            R.string.wanxiang_exclude_rules,
-            EXCLUDE_RULES,
-            "",
-            R.string.wanxiang_exclude_hint,
-            onBindEditText = {
-                it.typeface = Typeface.MONOSPACE
-                it.textSize = 15f
-            },
-            summaryCountFormat = R.string.wanxiang_exclude_rules_count,
-        )
-        val checkSchema = bool(CHECK_SCHEMA, true)
-        val checkDict = bool(CHECK_DICT, true)
-        val checkModel = bool(CHECK_MODEL, false)
-        val lastDictSha256 = string(LAST_DICT_SHA256, "")
-        val lastModelSha256 = string(LAST_MODEL_SHA256, "")
-        val lastDictUpdatedAt = string(LAST_DICT_UPDATED_AT, "")
-        val lastModelUpdatedAt = string(LAST_MODEL_UPDATED_AT, "")
-        val needsUpdateDict = bool(NEEDS_UPDATE_DICT, false)
-        val needsUpdateModel = bool(NEEDS_UPDATE_MODEL, false)
-        val deployTargets = string(DEPLOY_TARGETS, "")
     }
 }

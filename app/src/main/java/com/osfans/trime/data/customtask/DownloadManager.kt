@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2025 Rime community
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
-package com.osfans.trime.data.wanxiang
+package com.osfans.trime.data.customtask
 
 import android.content.Context
 import androidx.core.net.toUri
@@ -32,7 +32,7 @@ object DownloadManager {
         onProgress: (TaskState) -> Unit,
         isCancelled: () -> Boolean = { false },
     ) = withContext(Dispatchers.IO) {
-        val stagingDir = File(context.cacheDir, "wanxiang_staging")
+        val stagingDir = File(context.cacheDir, "customtask_staging")
         stagingDir.mkdirs()
         val tmpFile = File(stagingDir, "${task.url.substringAfterLast("/")}.tmp")
 
@@ -44,9 +44,9 @@ object DownloadManager {
                 when {
                     task.url.startsWith("/") || task.url.startsWith("file://") || task.url.startsWith("content://") -> {
                         task.status = if (progress < 0f) {
-                            context.getString(R.string.wanxiang_dl_reading_local)
+                            context.getString(R.string.custom_dl_reading_local)
                         } else {
-                            context.getString(R.string.wanxiang_dl_local_done)
+                            context.getString(R.string.custom_dl_local_done)
                         }
                     }
                 }
@@ -66,13 +66,13 @@ object DownloadManager {
             } catch (e: FileDownloader.Error) {
                 task.isError = true
                 task.progress = 0f
-                task.status = context.getString(R.string.wanxiang_dl_fetch_failed, e.message ?: "")
+                task.status = context.getString(R.string.custom_dl_fetch_failed, e.message ?: "")
                 onProgress(task)
                 return@withContext
             } catch (e: CancellationException) {
                 task.isError = true
                 task.progress = 0f
-                task.status = context.getString(R.string.wanxiang_dl_network_error)
+                task.status = context.getString(R.string.custom_dl_network_error)
                 onProgress(task)
                 throw e
             }
@@ -83,7 +83,7 @@ object DownloadManager {
         } catch (e: CancellationException) {
             task.isError = true
             task.progress = 0f
-            task.status = context.getString(R.string.wanxiang_dl_network_error)
+            task.status = context.getString(R.string.custom_dl_network_error)
             onProgress(task)
             throw e
         } finally {
@@ -109,7 +109,7 @@ object DownloadManager {
                     task.url.endsWith(".tar.zst")
                 )
             task.status = context.getString(
-                if (needsExtract) R.string.wanxiang_dl_extracting else R.string.wanxiang_dl_copying,
+                if (needsExtract) R.string.custom_dl_extracting else R.string.custom_dl_copying,
             )
             task.progress = -1f
             onProgress(task)
@@ -159,13 +159,13 @@ object DownloadManager {
                             copyNormal(realSrcDir, target, excludeRegexList)
                         } else {
                             val rootDoc = DocumentFile.fromTreeUri(context, pathStr.toUri())
-                                ?: throw Exception(context.getString(R.string.wanxiang_dl_auth_expired))
+                                ?: throw Exception(context.getString(R.string.custom_dl_auth_expired))
                             var targetDoc = rootDoc
                             if (isDict) {
                                 val dictsDoc = rootDoc.findFile("dicts")
                                     ?: rootDoc.createDirectory("dicts")
                                     ?: rootDoc.findFile("dicts")
-                                    ?: throw Exception(context.getString(R.string.wanxiang_dl_saf_denied))
+                                    ?: throw Exception(context.getString(R.string.custom_dl_saf_denied))
                                 targetDoc = dictsDoc
                             }
                             copySaf(context, realSrcDir, targetDoc, excludeRegexList)
@@ -173,18 +173,18 @@ object DownloadManager {
                         successCount++
                     } catch (e: Exception) {
                         val pathName = if (pathStr == "DEFAULT") {
-                            context.getString(R.string.wanxiang_default)
+                            context.getString(R.string.custom_default)
                         } else {
-                            context.getString(R.string.wanxiang_granted) + (index + 1)
+                            context.getString(R.string.custom_granted) + (index + 1)
                         }
-                        errorList.add(context.getString(R.string.wanxiang_dl_failed_item, pathName, e.message ?: e.javaClass.simpleName))
+                        errorList.add(context.getString(R.string.custom_dl_failed_item, pathName, e.message ?: e.javaClass.simpleName))
                     }
                 }
                 if (errorList.isNotEmpty()) {
                     task.status = if (successCount == 0) {
-                        context.getString(R.string.wanxiang_dl_all_failed) + " [${errorList.joinToString()}]"
+                        context.getString(R.string.custom_dl_all_failed) + " [${errorList.joinToString()}]"
                     } else {
-                        context.getString(R.string.wanxiang_dl_partial) + " [${context.getString(R.string.wanxiang_dl_fetch_failed, errorList.joinToString())}]"
+                        context.getString(R.string.custom_dl_partial) + " [${context.getString(R.string.custom_dl_fetch_failed, errorList.joinToString())}]"
                     }
                 }
             }
@@ -192,13 +192,13 @@ object DownloadManager {
             task.isFinished = true
             task.progress = 1f
             task.status = context.getString(
-                if (needsExtract) R.string.wanxiang_dl_done else R.string.wanxiang_dl_copied,
+                if (needsExtract) R.string.custom_dl_done else R.string.custom_dl_copied,
             )
             onProgress(task)
         } catch (e: Exception) {
             task.isError = true
             task.progress = 0f
-            task.status = context.getString(R.string.wanxiang_dl_extract_failed, e.message)
+            task.status = context.getString(R.string.custom_dl_extract_failed, e.message)
             onProgress(task)
         }
     }
@@ -226,16 +226,16 @@ object DownloadManager {
                 val nextDest = dest.findFile(file.name)
                     ?: dest.createDirectory(file.name)
                     ?: dest.findFile(file.name)
-                    ?: throw Exception(context.getString(R.string.wanxiang_dl_dir_locked, file.name))
+                    ?: throw Exception(context.getString(R.string.custom_dl_dir_locked, file.name))
                 copySaf(context, file, nextDest, rules, relPath)
             } else {
                 dest.findFile(file.name)?.takeIf { it.exists() }?.delete()
                 val newDoc = dest.createFile("*/*", file.name)
                     ?: dest.findFile(file.name)
-                    ?: throw Exception(context.getString(R.string.wanxiang_dl_file_conflict, file.name))
+                    ?: throw Exception(context.getString(R.string.custom_dl_file_conflict, file.name))
                 context.contentResolver.openOutputStream(newDoc.uri, "wt")?.use { out ->
                     file.inputStream().use { it.copyTo(out) }
-                } ?: throw Exception(context.getString(R.string.wanxiang_dl_file_stream_busy, file.name))
+                } ?: throw Exception(context.getString(R.string.custom_dl_file_stream_busy, file.name))
             }
         }
     }

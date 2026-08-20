@@ -33,13 +33,13 @@ import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
-import com.osfans.trime.data.wanxiang.CustomTask
-import com.osfans.trime.data.wanxiang.DownloadManager
-import com.osfans.trime.data.wanxiang.TaskState
-import com.osfans.trime.data.wanxiang.addDownloadProgressItem
-import com.osfans.trime.data.wanxiang.loadCustomTasks
-import com.osfans.trime.data.wanxiang.saveCustomTasks
-import com.osfans.trime.data.wanxiang.updateDownloadProgressItem
+import com.osfans.trime.data.customtask.CustomTask
+import com.osfans.trime.data.customtask.DownloadManager
+import com.osfans.trime.data.customtask.TaskState
+import com.osfans.trime.data.customtask.addDownloadProgressItem
+import com.osfans.trime.data.customtask.loadCustomTasks
+import com.osfans.trime.data.customtask.saveCustomTasks
+import com.osfans.trime.data.customtask.updateDownloadProgressItem
 import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.common.confirmDialog
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +49,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class CustomTasksFragment : Fragment() {
 
-    private val sharedPref by lazy { requireContext().getSharedPreferences("WanxiangPrefs", 0) }
+    private val sharedPref by lazy { requireContext().getSharedPreferences("CustomTaskPrefs", 0) }
     private var customTasks = mutableListOf<CustomTask>()
     private var isDownloading = false
     private var downloadJob: Job? = null
@@ -129,8 +129,8 @@ class CustomTasksFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             setPadding(16.dp(), 16.dp(), 16.dp(), 32.dp())
 
-            addView(sectionLabel(ctx, R.string.wanxiang_custom_title))
-            addView(secondaryText(ctx, getString(R.string.wanxiang_custom_desc)))
+            addView(sectionLabel(ctx, R.string.custom_title))
+            addView(secondaryText(ctx, getString(R.string.custom_desc)))
 
             cvBatchActions = LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
@@ -145,10 +145,10 @@ class CustomTasksFragment : Fragment() {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
                 }
-                barRow.addView(rowLabel(ctx, R.string.wanxiang_batch_queue))
-                btnBatchExecute = barActionBtn(ctx, R.string.wanxiang_batch_execute, accentColor(ctx))
+                barRow.addView(rowLabel(ctx, R.string.custom_batch_queue))
+                btnBatchExecute = barActionBtn(ctx, R.string.custom_batch_execute, accentColor(ctx))
                 barRow.addView(btnBatchExecute)
-                btnBatchDelete = barActionBtn(ctx, R.string.wanxiang_batch_delete, color(R.color.red))
+                btnBatchDelete = barActionBtn(ctx, R.string.custom_batch_delete, color(R.color.red))
                 barRow.addView(btnBatchDelete)
                 cvBatchActions.addView(barRow)
                 cvBatchActions.addView(
@@ -167,7 +167,7 @@ class CustomTasksFragment : Fragment() {
             }
             addView(cvBatchActions)
 
-            tvEmpty = secondaryText(ctx, getString(R.string.wanxiang_no_tasks)).apply {
+            tvEmpty = secondaryText(ctx, getString(R.string.custom_no_tasks)).apply {
                 gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -186,7 +186,7 @@ class CustomTasksFragment : Fragment() {
 
             addView(
                 Button(ctx).apply {
-                    text = getString(R.string.wanxiang_add_task)
+                    text = getString(R.string.custom_add_task)
                     layoutParams = LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         48.dp(),
@@ -268,13 +268,13 @@ class CustomTasksFragment : Fragment() {
         val selectedCount = customTasks.count { it.isSelected }
         cvBatchActions.visibility = if (customTasks.isNotEmpty()) View.VISIBLE else View.GONE
         btnBatchExecute.apply {
-            text = getString(R.string.wanxiang_batch_execute) + " ($selectedCount)"
+            text = getString(R.string.custom_batch_execute) + " ($selectedCount)"
             isClickable = selectedCount > 0 && !isDownloading
             alpha = if (selectedCount > 0 && !isDownloading) 1f else 0.5f
             setOnClickListener { if (selectedCount > 0 && !isDownloading) executeBatch() }
         }
         btnBatchDelete.apply {
-            text = getString(R.string.wanxiang_batch_delete) + " ($selectedCount)"
+            text = getString(R.string.custom_batch_delete) + " ($selectedCount)"
             isClickable = selectedCount > 0
             alpha = if (selectedCount > 0) 1f else 0.5f
             setOnClickListener { if (selectedCount > 0) executeBatchDelete() }
@@ -323,7 +323,7 @@ class CustomTasksFragment : Fragment() {
         header.addView(selectBtn)
 
         val titleView = TextView(ctx).apply {
-            text = task.name.ifBlank { getString(R.string.wanxiang_default_name) }
+            text = task.name.ifBlank { getString(R.string.custom_default_name) }
             textSize = 14f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(color(R.color.text))
@@ -353,7 +353,7 @@ class CustomTasksFragment : Fragment() {
             layoutParams = (layoutParams as LinearLayout.LayoutParams).apply { marginStart = 4.dp() }
             setOnClickListener {
                 AlertDialog.Builder(ctx)
-                    .setMessage(R.string.wanxiang_delete_task_confirm)
+                    .setMessage(R.string.custom_delete_task_confirm)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
                         customTasks.removeAt(index)
                         saveAndRefresh()
@@ -403,8 +403,8 @@ class CustomTasksFragment : Fragment() {
         }
         content.addView(divider)
 
-        content.addView(makeLabel(ctx, getString(R.string.wanxiang_task_alias)))
-        val nameInput = makeEditText(ctx, task.name, hint = getString(R.string.wanxiang_hint_task_name)) { text ->
+        content.addView(makeLabel(ctx, getString(R.string.custom_task_alias)))
+        val nameInput = makeEditText(ctx, task.name, hint = getString(R.string.custom_hint_task_name)) { text ->
             val idx = customTasks.indexOfFirst { it.id == task.id }
             if (idx >= 0) {
                 customTasks[idx] = customTasks[idx].copy(name = text)
@@ -412,8 +412,8 @@ class CustomTasksFragment : Fragment() {
         }
         content.addView(nameInput)
 
-        content.addView(makeLabel(ctx, getString(R.string.wanxiang_url_or_path)))
-        val urlInput = makeEditText(ctx, task.url, hint = getString(R.string.wanxiang_hint_url)) { text ->
+        content.addView(makeLabel(ctx, getString(R.string.custom_url_or_path)))
+        val urlInput = makeEditText(ctx, task.url, hint = getString(R.string.custom_hint_url)) { text ->
             val idx = customTasks.indexOfFirst { it.id == task.id }
             if (idx >= 0) {
                 customTasks[idx] = customTasks[idx].copy(url = text)
@@ -421,7 +421,7 @@ class CustomTasksFragment : Fragment() {
         }
         content.addView(urlInput)
 
-        content.addView(makeLabel(ctx, getString(R.string.wanxiang_target_path)))
+        content.addView(makeLabel(ctx, getString(R.string.custom_target_path)))
 
         val pathsContainer = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -455,7 +455,7 @@ class CustomTasksFragment : Fragment() {
                         layoutParams = (layoutParams as LinearLayout.LayoutParams).apply { marginStart = 4.dp() }
                         setOnClickListener {
                             AlertDialog.Builder(ctx)
-                                .setMessage(R.string.wanxiang_delete_path_confirm)
+                                .setMessage(R.string.custom_delete_path_confirm)
                                 .setPositiveButton(android.R.string.ok) { _, _ ->
                                     val paths = task.boundPaths.toMutableList()
                                     paths.removeAt(i)
@@ -482,7 +482,7 @@ class CustomTasksFragment : Fragment() {
             ).apply { topMargin = 4.dp() }
         }
         val addBtn = Button(ctx).apply {
-            text = getString(R.string.wanxiang_deploy_add)
+            text = getString(R.string.custom_deploy_add)
             textSize = 12f
             background = GradientDrawable().apply {
                 setColor(colorPrimaryColor(ctx))
@@ -531,7 +531,7 @@ class CustomTasksFragment : Fragment() {
         }
         actionRow.addView(decompressCheck)
         val decompressLabel = TextView(ctx).apply {
-            text = getString(R.string.wanxiang_must_decompress)
+            text = getString(R.string.custom_must_decompress)
             textSize = 13f
             setTextColor(color(R.color.text))
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginStart = 8.dp() }
@@ -565,7 +565,7 @@ class CustomTasksFragment : Fragment() {
         actionRow.addView(excludeBtn)
 
         val execBtn = Button(ctx).apply {
-            text = getString(R.string.wanxiang_execute_task)
+            text = getString(R.string.custom_execute_task)
             textSize = 12f
             minHeight = 0
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 34.dp())
@@ -603,7 +603,7 @@ class CustomTasksFragment : Fragment() {
         val tasks = targets.map { t ->
             val fName = t.url.substringAfterLast("/")
             TaskState(
-                "${t.name.ifBlank { getString(R.string.wanxiang_default_short) }} ($fName)",
+                "${t.name.ifBlank { getString(R.string.custom_default_short) }} ($fName)",
                 t.url,
                 needsDecompress = t.needsDecompress,
             )
@@ -656,8 +656,8 @@ class CustomTasksFragment : Fragment() {
     private fun executeBatchDelete() {
         val targets = customTasks.filter { it.isSelected }
         requireContext().confirmDialog(
-            title = R.string.wanxiang_batch_delete,
-            message = getString(R.string.wanxiang_batch_delete_confirm, targets.size),
+            title = R.string.custom_batch_delete,
+            message = getString(R.string.custom_batch_delete_confirm, targets.size),
             onConfirm = {
                 customTasks.removeAll(targets.toSet())
                 saveAndRefresh()
@@ -674,7 +674,7 @@ class CustomTasksFragment : Fragment() {
         llCustomProgress.removeAllViews()
 
         val uiState = TaskState(
-            task.name.ifBlank { getString(R.string.wanxiang_default_short) } + " (${task.url.substringAfterLast("/")})",
+            task.name.ifBlank { getString(R.string.custom_default_short) } + " (${task.url.substringAfterLast("/")})",
             task.url,
             needsDecompress = task.needsDecompress,
         )

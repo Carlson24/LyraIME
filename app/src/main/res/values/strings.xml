@@ -28,7 +28,7 @@
     <string name="reset">Reset</string>
     <string name="reset_hint">Overwrite the same files in shared directory with default built-in assets</string>
     <string name="backup_and_restore">Backup &amp; Restore</string>
-    <string name="backup_hint">Backup preferences, clipboard, collection, wanxiang and custom task data</string>
+    <string name="backup_hint">Backup preferences, clipboard, collection, and custom task data</string>
     <string name="restore_hint">Restore data from backup file</string>
     <string name="backup_success">Backup succeeded!</string>
     <string name="backup_failure">Backup failed!</string>
@@ -43,7 +43,7 @@
     <string name="custom_tasks_data">Custom Tasks Data</string>
     <string name="custom_tasks_exclude_rules">Exclude rules</string>
     <string name="custom_tasks_exclude_hint">Enter file patterns (one per line, regex supported). Matching files will be skipped during deploy.</string>
-    <string name="wanxiang_data">Wanxiang Data</string>
+    
     <string name="select_restore_items">Select items to restore</string>
     <string name="sound_on_keypress">Sound on key press</string>
     <string name="sound_volume">Sound volume on key press</string>
@@ -401,104 +401,104 @@
     <string name="word_segment">Word segment</string>
     <string name="star_success">Star success</string>
     <string name="ignore_system_gesture_insets">Ignore system gesture insets</string>
-    <string name="wanxiang_updater">Wanxiang Update</string>
-    <string name="wanxiang_auto_check">Auto check for updates</string>
-    <string name="wanxiang_check_interval">Check interval</string>
-    <string name="wanxiang_new_version_title">Wanxiang Update Available</string>
-    <string name="wanxiang_new_version_text">New version %1$s is available (current: %2$s)</string>
-    <string name="wanxiang_update_channel">Update Channel</string>
-    <string name="wanxiang_stable">Stable</string>
-    <string name="wanxiang_preview">Preview</string>
-    <string name="wanxiang_scheme_version">Scheme Version</string>
-    <string name="wanxiang_scheme_type">Scheme Type</string>
-    <string name="wanxiang_version_label_fmt">%1$s (%2$s)</string>
-    <string name="wanxiang_exclude_rules_count">%d file patterns</string>
-    <string name="wanxiang_aux_scheme">Aux Scheme</string>
-    <string name="wanxiang_advanced_rules">Whitelist Files</string>
-    <string name="wanxiang_exclude_hint">Enter file patterns (one per line, regex supported). Matching files will be skipped during deploy.</string>
-    <string name="wanxiang_exclude_rules">Whitelist files rules</string>
-    <string name="wanxiang_reset_rules">Restore Defaults</string>
-    <string name="wanxiang_download_source">Download Source</string>
-    <string name="wanxiang_github_token">GitHub Token (optional)</string>
-    <string name="wanxiang_cnb_token">CNB Token (required)</string>
-    <string name="wanxiang_cnb_token_required">CNB source requires a token. Please configure a CNB token in settings.</string>
-    <string name="wanxiang_task_progress">Task Progress</string>
-    <string name="wanxiang_content_update_title">Wanxiang Content Update</string>
-    <string name="wanxiang_content_update_text">Dict or model updates are available</string>
-    <string name="wanxiang_deploy_targets_title">Deployment Targets</string>
-    <string name="wanxiang_deploy_add">Add Directory</string>
-    <string name="wanxiang_deploy_confirm">Confirm</string>
-    <string name="wanxiang_deploy_delete">Delete</string>
-    <string name="wanxiang_deploy_delete_confirm">Remove this target?</string>
-    <string name="wanxiang_deploy_no_targets">Please add at least one deployment directory</string>
-    <string name="wanxiang_actions">Select items to update</string>
-    <string name="wanxiang_schema_only">Schema</string>
-    <string name="wanxiang_dict_only">Dict</string>
-    <string name="wanxiang_model_only">Model</string>
-    <string name="wanxiang_last_updated_at">Last updated at: %s</string>
-    <string name="wanxiang_current_hash">Resource hash: %s</string>
-    <string name="wanxiang_no_hash">(not yet updated)</string>
-    <string name="wanxiang_custom_title">Custom Update</string>
-    <string name="wanxiang_custom_desc">Select and batch execute, or expand individual configs. Local files and remote URLs supported.</string>
-    <string name="wanxiang_batch_queue">Pending Queue</string>
-    <string name="wanxiang_batch_execute">Batch Execute</string>
-    <string name="wanxiang_no_tasks">No custom tasks. Tap below to add one.</string>
-    <string name="wanxiang_add_task">Add Custom Task</string>
-    <string name="wanxiang_configure_path">Configure Path</string>
-    <string name="wanxiang_task_alias">Task Alias</string>
-    <string name="wanxiang_url_or_path">URL or Absolute Path (.zip)</string>
-    <string name="wanxiang_target_path">Target Path</string>
-    <string name="wanxiang_must_decompress">Decompress</string>
-    <string name="wanxiang_delete_task">Delete Task</string>
-    <string name="wanxiang_delete_task_confirm">Delete this task?</string>
-    <string name="wanxiang_delete_path_confirm">Remove this path?</string>
-    <string name="wanxiang_execute_task">Execute</string>
-    <string name="wanxiang_batch_delete">Batch Delete</string>
-    <string name="wanxiang_batch_delete_confirm">Confirm deletion of %d selected task(s)?</string>
-    <string name="wanxiang_rate_limit">GitHub API rate limit exceeded. Please try again later.</string>
-    <string name="wanxiang_force_update">Force update (skip update check)</string>
-    <string name="wanxiang_model_check_failed">Unable to verify model update. Continue anyway?</string>
-    <string name="wanxiang_model_up_to_date">Model is up to date</string>
-    <string name="wanxiang_dict_up_to_date">Dict is up to date</string>
-    <string name="wanxiang_continue_anyway">Continue</string>
-    <string name="wanxiang_default_name">Unnamed Task</string>
-    <string name="wanxiang_default_short">Unnamed</string>
-    <string name="wanxiang_hint_task_name">e.g. rime-ice</string>
-    <string name="wanxiang_hint_url">https://… or /storage/…</string>
-    <string name="wanxiang_auth_prefix">Granted: </string>
-    <string name="wanxiang_confirm_execute">Confirm to execute selected updates?\nTarget: %s</string>
-    <string name="wanxiang_will_update">Will update: %s</string>
-    <string name="wanxiang_package_dicts">Dict Pack</string>
-    <string name="wanxiang_package_model">Model</string>
-    <string name="wanxiang_package_schema">Schema</string>
-    <string name="wanxiang_default">Default</string>
-    <string name="wanxiang_granted">Granted</string>
-    <string name="wanxiang_dl_local_error">Local file read error</string>
-    <string name="wanxiang_dl_retrying">Retrying (%d/3)</string>
-    <string name="wanxiang_dl_connecting">Connecting…</string>
-    <string name="wanxiang_dl_network_error">Network error</string>
-    <string name="wanxiang_dl_fetch_failed">Fetch failed: %s</string>
-    <string name="wanxiang_dl_reading_local">Reading local file…</string>
-    <string name="wanxiang_dl_local_done">Local read complete</string>
-    <string name="wanxiang_dl_multithread_failed">Multi-thread failed, fallback to single…</string>
-    <string name="wanxiang_dl_mb_multithread">%sMB (multi)</string>
-    <string name="wanxiang_dl_assembling">Merging files…</string>
-    <string name="wanxiang_dl_progress_line">%1$s\n%2$s</string>
-    <string name="wanxiang_dl_progress_status">%1$d%% - %2$s</string>
-    <string name="wanxiang_dl_mb_single">%sMB (single)</string>
-    <string name="wanxiang_dl_extracting">Extracting…</string>
-    <string name="wanxiang_dl_copying">Copying file…</string>
-    <string name="wanxiang_dl_auth_expired">Authorization expired</string>
-    <string name="wanxiang_dl_saf_denied">SAF access denied</string>
-    <string name="wanxiang_dl_all_failed">All failed</string>
-    <string name="wanxiang_dl_partial">Partial complete</string>
-    <string name="wanxiang_dl_done">Extraction complete</string>
-    <string name="wanxiang_dl_copied">Copy complete</string>
-    <string name="wanxiang_dl_extract_failed">Extraction failed: %s</string>
-    <string name="wanxiang_dl_dir_locked">System locked directory: %s</string>
-    <string name="wanxiang_dl_file_conflict">File conflict, cannot create: %s</string>
-    <string name="wanxiang_dl_file_stream_busy">File stream busy, write denied: %s</string>
-    <string name="wanxiang_dl_failed_item" formatted="false">%s(%s)</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <string name="custom_deploy_add">Add Directory</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <string name="custom_title">Custom Update</string>
+    <string name="custom_desc">Select and batch execute, or expand individual configs. Local files and remote URLs supported.</string>
+    <string name="custom_batch_queue">Pending Queue</string>
+    <string name="custom_batch_execute">Batch Execute</string>
+    <string name="custom_no_tasks">No custom tasks. Tap below to add one.</string>
+    <string name="custom_add_task">Add Custom Task</string>
+    
+    <string name="custom_task_alias">Task Alias</string>
+    <string name="custom_url_or_path">URL or Absolute Path (.zip)</string>
+    <string name="custom_target_path">Target Path</string>
+    <string name="custom_must_decompress">Decompress</string>
+    
+    <string name="custom_delete_task_confirm">Delete this task?</string>
+    <string name="custom_delete_path_confirm">Remove this path?</string>
+    <string name="custom_execute_task">Execute</string>
+    <string name="custom_batch_delete">Batch Delete</string>
+    <string name="custom_batch_delete_confirm">Confirm deletion of %d selected task(s)?</string>
+    
+    
+    
+    
+    
+    
+    <string name="custom_default_name">Unnamed Task</string>
+    <string name="custom_default_short">Unnamed</string>
+    <string name="custom_hint_task_name">e.g. rime-ice</string>
+    <string name="custom_hint_url">https://… or /storage/…</string>
+    
+    
+    
+    
+    
+    
+    <string name="custom_default">Default</string>
+    <string name="custom_granted">Granted</string>
+    
+    
+    
+    <string name="custom_dl_network_error">Network error</string>
+    <string name="custom_dl_fetch_failed">Fetch failed: %s</string>
+    <string name="custom_dl_reading_local">Reading local file…</string>
+    <string name="custom_dl_local_done">Local read complete</string>
+    
+    
+    
+    <string name="custom_dl_progress_line">%1$s\n%2$s</string>
+    
+    
+    <string name="custom_dl_extracting">Extracting…</string>
+    <string name="custom_dl_copying">Copying file…</string>
+    <string name="custom_dl_auth_expired">Authorization expired</string>
+    <string name="custom_dl_saf_denied">SAF access denied</string>
+    <string name="custom_dl_all_failed">All failed</string>
+    <string name="custom_dl_partial">Partial complete</string>
+    <string name="custom_dl_done">Extraction complete</string>
+    <string name="custom_dl_copied">Copy complete</string>
+    <string name="custom_dl_extract_failed">Extraction failed: %s</string>
+    <string name="custom_dl_dir_locked">System locked directory: %s</string>
+    <string name="custom_dl_file_conflict">File conflict, cannot create: %s</string>
+    <string name="custom_dl_file_stream_busy">File stream busy, write denied: %s</string>
+    <string name="custom_dl_failed_item" formatted="false">%s(%s)</string>
     <string name="app_data_folder">App data folder</string>
     <string name="app_data_folder_summary">Open the app\'s data directory in file manager</string>
     <string name="webdav_sync">WebDAV Sync</string>

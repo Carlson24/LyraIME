@@ -24,7 +24,6 @@ import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.keyboard.GestureFrame
-import kotlin.math.ceil
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.views.dsl.constraintlayout.bottomOfParent
@@ -44,6 +43,7 @@ import splitties.views.dsl.core.withTheme
 import splitties.views.dsl.core.wrapContent
 import splitties.views.imageDrawable
 import splitties.views.setPaddingDp
+import kotlin.math.ceil
 
 class ClipboardEntryUi(ctx: Context, private val theme: Theme) : Ui {
     override val ctx = ctx.withTheme(android.R.style.Theme_DeviceDefault_Settings)

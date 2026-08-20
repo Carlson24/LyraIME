@@ -40,14 +40,12 @@ object BackupManager {
     private val passwordKeys = setOf(
         AppPrefs.Profile.WEBDAV_PASSWORD,
         AppPrefs.Clipboard.SYNC_CLIPBOARD_PASSWORD,
-        AppPrefs.Wanxiang.GH_TOKEN,
-        AppPrefs.Wanxiang.CNB_TOKEN,
     )
 
     fun computeSettingsFingerprint(): String {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
         val allPrefs = sharedPreferences.all
-        val wanxiangPrefs = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+        val customTaskPrefs = appContext.getSharedPreferences("CustomTaskPrefs", Context.MODE_PRIVATE)
 
         val sb = StringBuilder()
 
@@ -59,7 +57,7 @@ object BackupManager {
             sb.append(key).append('=').append(value).append('\n')
         }
 
-        val customTasks = wanxiangPrefs.getString(CUSTOM_TASKS_KEY, null)
+        val customTasks = customTaskPrefs.getString(CUSTOM_TASKS_KEY, null)
         sb.append(CUSTOM_TASKS_KEY).append('=').append(customTasks).append('\n')
 
         val digest = MessageDigest.getInstance("SHA-256")
@@ -81,16 +79,14 @@ object BackupManager {
     suspend fun createBackup(
         includePreferences: Boolean = true,
         includeClipboard: Boolean = true,
-        includeWanxiang: Boolean = true,
         includeCustomTasks: Boolean = true,
         onlyPinnedClipboard: Boolean = false,
     ): BackupData = backupMutex.withLock {
         withContext(Dispatchers.IO) {
-            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, wanxiang=$includeWanxiang, customTasks=$includeCustomTasks, onlyPinnedClipboard=$onlyPinnedClipboard")
+            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, customTasks=$includeCustomTasks, onlyPinnedClipboard=$onlyPinnedClipboard")
             BackupData(
                 preferences = if (includePreferences) exportPreferences() else null,
                 clipboard = if (includeClipboard) exportClipboard(onlyPinnedClipboard) else null,
-                wanxiangPrefs = if (includeWanxiang) exportWanxiangPrefs() else null,
                 customTasks = if (includeCustomTasks) exportCustomTasks() else null,
             ).also {
                 Timber.d("Backup created successfully")
@@ -102,12 +98,11 @@ object BackupManager {
         backupData: BackupData,
         restorePreferences: Boolean = true,
         restoreClipboard: Boolean = true,
-        restoreWanxiang: Boolean = true,
         restoreCustomTasks: Boolean = true,
     ): Result<Unit> = restoreMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                Timber.d("Restoring backup: preferences=$restorePreferences, clipboard=$restoreClipboard, wanxiang=$restoreWanxiang, customTasks=$restoreCustomTasks")
+                Timber.d("Restoring backup: preferences=$restorePreferences, clipboard=$restoreClipboard, customTasks=$restoreCustomTasks")
                 val migratedData = migrateBackup(backupData)
 
                 // Temporarily disable clipboard listener to avoid conflicts during restore
@@ -131,9 +126,6 @@ object BackupManager {
                     }
                     if (restoreClipboard && migratedData.clipboard != null) {
                         importClipboard(migratedData.clipboard)
-                    }
-                    if (restoreWanxiang && migratedData.wanxiangPrefs != null) {
-                        importWanxiangPrefs(migratedData.wanxiangPrefs)
                     }
                     if (restoreCustomTasks && migratedData.customTasks != null) {
                         importCustomTasks(migratedData.customTasks)
@@ -219,7 +211,7 @@ object BackupManager {
         val filteredPrefs = mutableMapOf<String, BackupPreference>()
 
         for ((key, value) in allPrefs) {
-            if (key != AppPrefs.Internal.PID && !key.startsWith("wanxiang_") && key != "screenshot_sync_handled_items") {
+            if (key != AppPrefs.Internal.PID && key != "screenshot_sync_handled_items") {
                 filteredPrefs[key] = valueToBackupPreference(key, value)
             }
         }
@@ -404,36 +396,14 @@ object BackupManager {
         }
     }
 
-    private fun exportWanxiangPrefs(): Map<String, BackupPreference> {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
-        val allPrefs = sharedPreferences.all
-        val result = mutableMapOf<String, BackupPreference>()
-
-        for ((key, value) in allPrefs) {
-            if (key.startsWith("wanxiang_")) {
-                result[key] = valueToBackupPreference(key, value)
-            }
-        }
-
-        Timber.d("Successfully exported Wanxiang preferences with ${result.size} items")
-        return result
-    }
-
     private fun exportCustomTasks(): String? {
-        val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+        val sharedPreferences = appContext.getSharedPreferences("CustomTaskPrefs", Context.MODE_PRIVATE)
         return sharedPreferences.getString(CUSTOM_TASKS_KEY, null)
     }
 
     private fun importCustomTasks(data: String) {
-        val sharedPreferences = appContext.getSharedPreferences("WanxiangPrefs", Context.MODE_PRIVATE)
+        val sharedPreferences = appContext.getSharedPreferences("CustomTaskPrefs", Context.MODE_PRIVATE)
         sharedPreferences.edit { putString(CUSTOM_TASKS_KEY, data) }
         Timber.d("Successfully imported custom tasks")
-    }
-
-    private fun importWanxiangPrefs(prefs: Map<String, BackupPreference>) {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
-        val appPrefs = AppPrefs.defaultInstance()
-        sharedPreferences.edit { writePreferenceValues(prefs, appPrefs, "Wanxiang") }
-        Timber.d("Successfully imported Wanxiang preferences with ${prefs.size} items")
     }
 }

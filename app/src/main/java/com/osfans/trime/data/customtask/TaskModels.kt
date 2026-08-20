@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2025 Rime community
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
-package com.osfans.trime.data.wanxiang
+package com.osfans.trime.data.customtask
 
 import android.content.SharedPreferences
 import androidx.core.content.edit

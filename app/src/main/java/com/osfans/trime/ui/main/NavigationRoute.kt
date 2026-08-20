@@ -19,7 +19,6 @@ import com.osfans.trime.ui.main.settings.KeyboardSettingsFragment
 import com.osfans.trime.ui.main.settings.PackageListFragment
 import com.osfans.trime.ui.main.settings.ProfileSettingsFragment
 import com.osfans.trime.ui.main.settings.VoiceInputSettingsFragment
-import com.osfans.trime.ui.main.settings.WanxiangUpdateSettingsFragment
 import com.osfans.trime.ui.main.settings.schema.SchemaListFragment
 import com.osfans.trime.ui.main.settings.theme.ThemeSettingsFragment
 import com.osfans.trime.ui.main.settings.userdict.UserDictionaryFragment
@@ -66,10 +65,7 @@ sealed class NavigationRoute : Parcelable {
     data object Advanced : NavigationRoute()
 
     @Serializable
-    data object Wanxiang : NavigationRoute()
-
-    @Serializable
-    data object WanxiangCustom : NavigationRoute()
+    data object CustomTaskSettings : NavigationRoute()
 
     @Serializable
     data object Developer : NavigationRoute()
@@ -123,11 +119,8 @@ sealed class NavigationRoute : Parcelable {
             fragment<AdvancedSettingsFragment, Advanced> {
                 label = ctx.getString(R.string.advanced)
             }
-            fragment<WanxiangUpdateSettingsFragment, Wanxiang> {
-                label = ctx.getString(R.string.wanxiang_updater)
-            }
-            fragment<CustomTasksFragment, WanxiangCustom> {
-                label = ctx.getString(R.string.wanxiang_custom_title)
+            fragment<CustomTasksFragment, CustomTaskSettings> {
+                label = ctx.getString(R.string.custom_title)
             }
             fragment<DeveloperFragment, Developer> {
                 label = ctx.getString(R.string.developer)

@@ -117,16 +117,10 @@ class MainFragment : PaddingPreferenceFragment() {
                     requireContext().startActivity(android.content.Intent(requireContext(), FileBrowserActivity::class.java))
                 }
                 addPreference(
-                    title = R.string.wanxiang_updater,
+                    title = R.string.custom_title,
                     icon = R.drawable.ic_baseline_download_24,
                 ) {
-                    findNavController().navigateWithAnim(NavigationRoute.Wanxiang)
-                }
-                addPreference(
-                    title = R.string.wanxiang_custom_title,
-                    icon = R.drawable.ic_baseline_edit_24,
-                ) {
-                    findNavController().navigateWithAnim(NavigationRoute.WanxiangCustom)
+                    findNavController().navigateWithAnim(NavigationRoute.CustomTaskSettings)
                 }
             }
         }
