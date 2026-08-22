@@ -32,7 +32,7 @@ object FontManager {
         TEXT_FONT,
         LONG_TEXT_FONT,
         TOOLBAR_FONT,
-        T9_SIDE_FONT,
+        SIDEBAR_FONT,
         CANDIDATES_TOOL_FONT,
         CANDIDATES_TOOL_POPUP_FONT,
     }
@@ -136,7 +136,7 @@ object FontManager {
             FontKey.HINT_FONT -> style.fonts.hint
             FontKey.TEXT_FONT -> style.fonts.text
             FontKey.TOOLBAR_FONT -> theme.toolBar.buttonFont
-            FontKey.T9_SIDE_FONT -> style.fonts.t9_side
+            FontKey.SIDEBAR_FONT -> style.fonts.sidebar
             FontKey.CANDIDATES_TOOL_FONT -> theme.candidatesTool?.buttonFont.orEmpty()
             FontKey.CANDIDATES_TOOL_POPUP_FONT -> theme.candidatesTool?.popupFont.orEmpty()
             else -> null

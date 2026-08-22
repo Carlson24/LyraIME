@@ -14,6 +14,7 @@ import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
+import com.osfans.trime.ime.sidebar.SidebarLayout
 import com.osfans.trime.util.isLandscape
 import splitties.bitflags.hasFlag
 import splitties.dimensions.dp
@@ -165,25 +166,26 @@ class Keyboard(
             return (defaultWidth * SEARCH_DISTANCE).pow(2).toInt()
         }
     val isLock = selfConfig?.lock ?: false // 切換程序時記憶鍵盤
-    val isT9Mode: Boolean = selfConfig?.t9Mode ?: false
+    val isSidebarMode: Boolean = selfConfig?.sidebarMode ?: false
+    val sidebarLayout: SidebarLayout = SidebarLayout.fromKey(selfConfig?.sidebarLayout)
     val isDynamicMode: Boolean = selfConfig?.dynamicMode ?: false
     val dynamicOriginal: String = selfConfig?.dynamicOriginal?.takeIf { it.isNotEmpty() } ?: ".default"
-    val t9SidebarWidth: Float = selfConfig?.t9SidebarWidth ?: 0.15f
-    val t9SidebarPosition: String = selfConfig?.t9SidebarPosition ?: "left"
-    val t9SidebarSpanRows: Int = selfConfig?.t9SidebarSpanRows ?: 3
-    val t9SidebarShowItems: Int = selfConfig?.t9SidebarShowItems ?: 4
-    val t9SidebarSymbols: List<String> = selfConfig?.t9SidebarSymbols ?: emptyList()
+    val sidebarWidth: Float = selfConfig?.sidebarWidth ?: 0.15f
+    val sidebarPosition: String = selfConfig?.sidebarPosition ?: "left"
+    val sidebarSpanRows: Int = selfConfig?.sidebarSpanRows ?: 3
+    val sidebarShowItems: Int = selfConfig?.sidebarShowItems ?: 4
+    val sidebarSymbols: List<String> = selfConfig?.sidebarSymbols ?: emptyList()
 
-    val t9SideFont: List<String>
-        get() = theme.generalStyle.fonts.t9_side.ifEmpty { theme.generalStyle.fonts.key }
-    val t9SideTextSize: Float
+    val sidebarFont: List<String>
+        get() = theme.generalStyle.fonts.sidebar.ifEmpty { theme.generalStyle.fonts.key }
+    val sidebarTextSize: Float
         get() {
-            val v = theme.generalStyle.fonts.t9_side_size
+            val v = theme.generalStyle.fonts.sidebar_size
             return if (v > 0f) v else theme.generalStyle.fonts.key_size
         }
-    val t9SideRoundCorner: Float
+    val sidebarRoundCorner: Float
         get() {
-            val v = theme.generalStyle.t9SideRoundCorner
+            val v = theme.generalStyle.sidebarRoundCorner
             return if (v >= 0f) v else roundCorner
         }
 
@@ -207,8 +209,8 @@ class Keyboard(
         }
     }
 
-    fun getT9SidebarHeight(): Int {
-        val spanRow = t9SidebarSpanRows
+    fun getSidebarHeight(): Int {
+        val spanRow = sidebarSpanRows
         val firstKeyInNextRow = mKeys.firstOrNull { it.row >= spanRow }
         return if (firstKeyInNextRow != null) {
             firstKeyInNextRow.y - verticalGap / 2

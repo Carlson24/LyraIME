@@ -337,7 +337,7 @@ class InputView(
     private val floatingRightHandle =
         view(::View) {
             visibility = View.GONE
-            // TODO: T9 sidebar text disappears when resizing width in floating mode,
+            // TODO: Sidebar text disappears when resizing width in floating mode,
             //  because KeyboardWindow.refreshKeyboards() is triggered on every layout change.
             setOnTouchListener { v, event ->
                 if (!isFloating) return@setOnTouchListener false

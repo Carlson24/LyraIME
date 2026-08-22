@@ -356,7 +356,7 @@
 ---| '"apply"'              # 应用配置 (option: 配置内容)
 ---| '"share_text"'         # 分享文本
 ---| '"select_candidate"'   # 选择候选 (option: 候选序号)
----| '"t9_clear"'           # 清除 T9 输入
+---| '"sidebar_clear"'       # 清除侧栏输入
 ---| '"dynamic_clear"'      # 清除动态键盘输入
 
 --- 键盘切换目标。以 "." 开头的值由 evalKeyboard 特殊解析。
@@ -386,6 +386,21 @@
 ---| '"TABS"'               # 标签面板
 ---| '"HISTORY"'            # 历史面板
 ---| '"VAR_LENGTH"'         # 变长面板
+
+--- 侧栏布局：键位数 + 拼音方案
+--- 全拼按键位将字母分组；双拼按 声母键 + 韵母键 拆为两键
+--- 键位映射见 doc/pinyin
+---@alias SidebarLayout
+---| '"t9"'                # 9 键 T9 布局（2=abc … 9=wxyz），全拼
+---| '"14"'                # 14 键布局，全拼
+---| '"18"'                # 18 键布局，全拼
+---| '"t9_zrm"'            # 9 键 T9 布局，自然码双拼
+---| '"t9_flypy"'          # 9 键 T9 布局，小鹤双拼
+---| '"14_zrm"'            # 14 键布局，自然码双拼
+---| '"14_flypy"'          # 14 键布局，小鹤双拼
+---| '"18_zrm"'            # 18 键布局，自然码双拼
+---| '"18_flypy"'          # 18 键布局，小鹤双拼
+---| string                 # 未知值回退为 "t9"
 
 -- ============================================================================
 -- 颜色方案 (ColorScheme)
@@ -453,11 +468,11 @@
 ---@field clipboard_entry_back_color?             Color        # 剪贴板条目背景（回退至 key_back_color）
 ---@field hilited_clipboard_entry_back_color?     Color        # 剪贴板选中条目背景（回退至 hilited_candidate_back_color）
 ---@field clipboard_checkbox_color?               Color        # 剪贴板复选框颜色（回退至 key_text_color）
----@field t9_side_back_color?                     Color        # T9 侧栏背景（回退至 key_back_color）
----@field t9_side_hilited_back_color?             Color        # T9 侧栏高亮背景（回退至 hilited_key_back_color）
----@field t9_side_text_color?                     Color        # T9 侧栏文字（回退至 key_text_color）
----@field t9_side_border_color?                   Color        # T9 侧栏边框（回退至 key_border_color）
----@field t9_side_spacing_color?                  Color        # T9 侧栏间距颜色（回退至 key_border_color）
+---@field sidebar_back_color?                     Color        # 侧栏背景（回退至 key_back_color）
+---@field sidebar_hilited_back_color?             Color        # 侧栏高亮背景（回退至 hilited_key_back_color）
+---@field sidebar_text_color?                     Color        # 侧栏文字（回退至 key_text_color）
+---@field sidebar_border_color?                   Color        # 侧栏边框（回退至 key_border_color）
+---@field sidebar_spacing_color?                  Color        # 侧栏间距颜色（回退至 key_border_color）
 ---@field light_scheme?                           string       # 亮色模式切换目标配色 ID
 ---@field dark_scheme?                            string       # 暗色模式切换目标配色 ID
 ---@field name?                                   string       # 配色显示名称（用于配色选择弹窗，不填则显示 id）
@@ -511,7 +526,7 @@
 ---@field comment?                 string[]              # 注释字体文件列表
 ---@field popup?                   string[]              # 弹窗字体文件列表
 ---@field clipboard?               string[]              # 剪贴板字体文件列表
----@field t9_side?                 string[]              # T9 侧栏字体文件列表
+---@field sidebar?                string[]              # 侧栏字体文件列表
 ---@field clipboard_category?      string[]              # 剪贴板分类标签字体文件列表
 ---@field key_size?                number                # 按键标签字号（默认 15）
 ---@field key_long_size?           number                # 长按键字号（默认 15）
@@ -524,7 +539,7 @@
 ---@field popup_size?              number                # 弹窗字号（默认 0）
 ---@field clipboard_category_size? number                # 剪贴板标签字号（默认 13）
 ---@field clipboard_size?          number                # 剪贴板字号（默认 14）
----@field t9_side_size?            number                # T9 侧栏字号（默认 -1）
+---@field sidebar_size?            number                # 侧栏字号（默认 -1）
 ---@field variations?              { [string]: boolean } # 字体变体特性（如 { cpct = true }）
 ---@field display?                 { [string]: string }  # Unicode 异体字显示映射
 
@@ -579,7 +594,7 @@
 ---@field popup_key_height?                   integer         # 悬浮提示按键高度
 ---@field enter_label_mode?                   integer         # 回车键文本模式：0=不使用 1=仅action 2=优先 3=回退
 ---@field enter_labels?                       EnterLabel      # 回车键标签文本
----@field t9_side_round_corner?               number          # T9 侧栏圆角（-1=跟随 round_corner）
+---@field sidebar_round_corner?             number          # 侧栏圆角（-1=跟随 round_corner）
 ---@field auto_caps?                          boolean         # 自动句首大写
 ---@field background_folder?                  string          # 背景图存放子目录（默认 "backgrounds"）
 ---@field reset_ascii_mode_on_focus_change?   boolean         # 焦点变更时重置英文模式
@@ -888,13 +903,14 @@
 ---@field key_press_offset_y?       number         # 按下时 Y 偏移
 ---@field import_preset?            string         # 导入预设键盘 ID
 ---@field navbar?                   boolean        # 是否显示导航栏
----@field t9_mode?                  boolean        # 是否为 T9 模式
+---@field sidebar_mode?             boolean        # 是否启用侧栏模式（需配合 sidebar_layout）
+---@field sidebar_layout?           SidebarLayout  # 侧栏布局（默认 "t9"）
 ---@field keyboard_padding_top?     integer        # 键盘顶部边距
----@field t9_sidebar_width?         number         # T9 侧栏宽度比例（默认 0.15）
----@field t9_sidebar_position?      string         # T9 侧栏位置（默认 "left"）
----@field t9_sidebar_span_rows?     integer        # T9 侧栏跨越行数（默认 3）
----@field t9_sidebar_show_items?    integer        # T9 侧栏显示条目数（默认 4）
----@field t9_sidebar_symbols?       string[]       # T9 侧栏符号列表
+---@field sidebar_width?            number         # 侧栏宽度比例（默认 0.15）
+---@field sidebar_position?         string         # 侧栏位置（默认 "left"）
+---@field sidebar_span_rows?        integer        # 侧栏跨越行数（默认 3）
+---@field sidebar_show_items?       integer        # 侧栏显示条目数（默认 4）
+---@field sidebar_symbols?          string[]       # 侧栏符号列表
 ---@field dynamic_mode?             boolean        # 是否启用动态键盘
 ---@field dynamic_original?         string         # 动态键盘原始布局引用
 ---@field rows?                     KeyboardRow[]  # 键盘行列表

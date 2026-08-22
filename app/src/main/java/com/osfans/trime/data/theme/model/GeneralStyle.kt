@@ -56,7 +56,7 @@ data class GeneralStyle(
     @SerialName("enter_labels")
     val enterLabel: EnterLabel = EnterLabel(),
     val keyboardPaddingTop: Int = 0,
-    val t9SideRoundCorner: Float = -1f,
+    val sidebarRoundCorner: Float = -1f,
 ) : Parcelable {
     @Serializable
     enum class CommentPosition {
@@ -78,7 +78,7 @@ data class GeneralStyle(
         val hint: List<String> = emptyList(),
         val hanb: List<String> = emptyList(),
         val popup: List<String> = emptyList(),
-        val t9_side: List<String> = emptyList(),
+        val sidebar: List<String> = emptyList(),
         val clipboard: List<String> = emptyList(),
         val clipboard_category: List<String> = emptyList(),
         val candidate_size: Float = 15f,
@@ -92,7 +92,7 @@ data class GeneralStyle(
         val popup_size: Float = 0f,
         val clipboard_category_size: Float = 13f,
         val clipboard_size: Float = 14f,
-        val t9_side_size: Float = -1f,
+        val sidebar_size: Float = -1f,
         val variations: Map<String, Boolean> = emptyMap(),
         val display: Map<String, String> = emptyMap(),
     ) : Parcelable

@@ -630,7 +630,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
 
     override fun onFinishInputView(finishingInput: Boolean) {
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
-        KeyboardWindow.t9Controller?.clear()
+        KeyboardWindow.sidebarController?.clear()
         decorLocationUpdated = false
         inputDeviceManager.onFinishInputView()
         currentInputConnection?.apply {

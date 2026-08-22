@@ -1,4 +1,4 @@
-package com.osfans.trime.ime.t9
+package com.osfans.trime.ime.sidebar
 
 import android.view.KeyEvent
 import com.osfans.trime.core.RimeMessage
@@ -6,8 +6,9 @@ import com.osfans.trime.daemon.RimeSession
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class T9InputController(
+class SidebarInputController(
     private val rime: RimeSession,
+    private val layout: SidebarLayout,
 ) {
     data class PinYinToken(
         val pos: Int,
@@ -57,9 +58,16 @@ class T9InputController(
         messageJob = null
     }
 
-    fun onDigitKey(digit: String) {
-        inputQueue.add(digit)
-        cachedInputString += digit
+    fun onKeyChar(char: String) {
+        if (char.length != 1) return
+        val c = char[0]
+        if (c == SEGMENT_KEY_CHAR_ALIAS && layout.isT9Style) {
+            onSegmentKey()
+            return
+        }
+        if (!layout.isValidKeyChar(c)) return
+        inputQueue.add(char)
+        cachedInputString += char
         behaviorQueue.add(Behavior.NORMAL)
         fireCandidatesChanged()
     }
@@ -73,7 +81,11 @@ class T9InputController(
             Behavior.SELECT_PINYIN -> {
                 if (selectedQueue.isNotEmpty()) {
                     val lastSelected = selectedQueue.last()
-                    if (!lastRimeInput.contains(lastSelected.pinYin)) {
+                    val code =
+                        layout.codeMatchingPhysical(lastSelected.pinYin, lastSelected.raw)
+                            ?: SidebarPinYin.keyCodeOf(lastSelected.pinYin, layout)
+                            ?: lastSelected.pinYin
+                    if (!lastRimeInput.contains(code)) {
                         return false
                     }
                     selectedQueue.removeLast()
@@ -135,9 +147,10 @@ class T9InputController(
         val position = nextSequencePosition()
         if (position < 0) return emptyList()
         val sequence = cachedInputString.substring(position)
-        return T9PinYin.possibleCombinations(sequence).map { pinYin ->
-            var raw = sequence.substring(0, minOf(pinYin.length, sequence.length))
-            if (sequence.getOrNull(pinYin.length) == SEGMENT_KEY_CHAR) {
+        return SidebarPinYin.possibleCombinations(sequence, layout).mapNotNull { pinYin ->
+            val code = layout.physicalCodeOf(pinYin) ?: return@mapNotNull null
+            var raw = sequence.substring(0, minOf(code.length, sequence.length))
+            if (sequence.getOrNull(code.length) == SEGMENT_KEY_CHAR) {
                 raw += SEGMENT_KEY_CHAR.toString()
             }
             PinYinToken(position, raw, pinYin)
@@ -166,8 +179,14 @@ class T9InputController(
                     token.raw.length,
                 )
             ) {
-                result.append(token.pinYin)
-                result.append(SEGMENT_KEY_CHAR)
+                result.append(
+                    layout.codeMatchingPhysical(token.pinYin, token.raw)
+                        ?: SidebarPinYin.keyCodeOf(token.pinYin, layout)
+                        ?: token.pinYin,
+                )
+                if (layout.scheme == PinyinScheme.FULL || token.raw.endsWith(SEGMENT_KEY_CHAR.toString())) {
+                    result.append(SEGMENT_KEY_CHAR)
+                }
             } else {
                 result.append(input.substring(token.pos, rawEnd))
             }

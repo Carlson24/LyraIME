@@ -106,11 +106,11 @@ object ColorManager {
             "on_key_symbol_color" to "hilited_key_symbol_color",
             "hilited_off_key_symbol_color" to "hilited_key_symbol_color",
             "hilited_on_key_symbol_color" to "hilited_key_symbol_color",
-            "t9_side_back_color" to "key_back_color",
-            "t9_side_hilited_back_color" to "hilited_key_back_color",
-            "t9_side_text_color" to "key_text_color",
-            "t9_side_border_color" to "key_border_color",
-            "t9_side_spacing_color" to "key_border_color",
+            "sidebar_back_color" to "key_back_color",
+            "sidebar_hilited_back_color" to "hilited_key_back_color",
+            "sidebar_text_color" to "key_text_color",
+            "sidebar_border_color" to "key_border_color",
+            "sidebar_spacing_color" to "key_border_color",
         )
 
     private var bitmapCache: LruCache<String, Bitmap>? = null

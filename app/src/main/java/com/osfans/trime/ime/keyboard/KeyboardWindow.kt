@@ -27,7 +27,7 @@ import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.dynamic.DynamicController
 import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
 import com.osfans.trime.ime.popup.PopupDelegate
-import com.osfans.trime.ime.t9.T9InputController
+import com.osfans.trime.ime.sidebar.SidebarInputController
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.ResidentWindow
 import com.osfans.trime.util.isLandscape
@@ -75,13 +75,13 @@ class KeyboardWindow :
 
     companion object : ResidentWindow.Key {
         lateinit var currentKeyboard: Keyboard
-        var t9Controller: T9InputController? = null
+        var sidebarController: SidebarInputController? = null
             private set
         var dynamicController: DynamicController? = null
             private set
     }
 
-    private var t9Controller: T9InputController? = null
+    private var sidebarController: SidebarInputController? = null
     private var dynamicController: DynamicController? = null
 
     override val key: ResidentWindow.Key
@@ -161,18 +161,18 @@ class KeyboardWindow :
         val config = getKeyboardConfig(target)
         val keyboard = currentKeyboard ?: Keyboard(context, theme, config)
 
-        val newT9Controller =
-            if (keyboard.isT9Mode) {
-                t9Controller?.destroy()
-                t9Controller?.clear()
-                T9InputController(rime).also { t9Controller = it }
+        val newSidebarController =
+            if (keyboard.isSidebarMode) {
+                sidebarController?.destroy()
+                sidebarController?.clear()
+                SidebarInputController(rime, keyboard.sidebarLayout).also { sidebarController = it }
             } else {
-                t9Controller?.destroy()
-                t9Controller?.clear()
-                t9Controller = null
+                sidebarController?.destroy()
+                sidebarController?.clear()
+                sidebarController = null
                 null
             }
-        KeyboardWindow.t9Controller = newT9Controller
+        KeyboardWindow.sidebarController = newSidebarController
 
         val newDynamicController =
             if (dynamicController == null) {
@@ -200,14 +200,14 @@ class KeyboardWindow :
             service,
             keyboardActionListener,
             enterKeyDisplay,
-            newT9Controller,
+            newSidebarController,
         )
 
         if (currentKeyboard == null) {
             cachedKeyboards[target] = keyboard to view
             keyboard.lastAsciiMode = keyboard.asciiMode
-        } else if (keyboard.isT9Mode) {
-            view.updateT9Controller(newT9Controller)
+        } else if (keyboard.isSidebarMode) {
+            view.updateSidebarController(newSidebarController)
         }
 
         keyboard.also {
@@ -339,12 +339,12 @@ class KeyboardWindow :
         return final
     }
 
-    private fun refreshT9SidebarForReopen() {
-        t9Controller?.destroy()
-        t9Controller?.clear()
-        val newController = T9InputController(rime).also { t9Controller = it }
-        KeyboardWindow.t9Controller = newController
-        currentKeyboardView?.updateT9Controller(newController)
+    private fun refreshSidebarForReopen() {
+        sidebarController?.destroy()
+        sidebarController?.clear()
+        val newController = SidebarInputController(rime, currentKeyboard!!.sidebarLayout).also { sidebarController = it }
+        KeyboardWindow.sidebarController = newController
+        currentKeyboardView?.updateSidebarController(newController)
     }
 
     fun switchKeyboard(to: String) {
@@ -352,8 +352,8 @@ class KeyboardWindow :
         ContextCompat.getMainExecutor(service).execute {
             if (cachedKeyboards.containsKey(target)) {
                 if (target == currentKeyboardId) {
-                    if (currentKeyboard?.isT9Mode == true) {
-                        refreshT9SidebarForReopen()
+                    if (currentKeyboard?.isSidebarMode == true) {
+                        refreshSidebarForReopen()
                     }
                     if (dynamicController == null) {
                         val newController = DynamicController(rime) { switchKeyboard(it) }
@@ -544,11 +544,11 @@ class KeyboardWindow :
 
     override fun onAttached() {
         expandKeypressAreaPref.registerOnChangeListener(onExpandKeypressAreaChangeListener)
-        if (t9Controller == null && currentKeyboard?.isT9Mode == true) {
-            val newController = T9InputController(rime)
-            t9Controller = newController
-            KeyboardWindow.t9Controller = newController
-            currentKeyboardView?.updateT9Controller(newController)
+        if (sidebarController == null && currentKeyboard?.isSidebarMode == true) {
+            val newController = SidebarInputController(rime, currentKeyboard!!.sidebarLayout)
+            sidebarController = newController
+            KeyboardWindow.sidebarController = newController
+            currentKeyboardView?.updateSidebarController(newController)
         }
         if (dynamicController == null) {
             val newController = DynamicController(rime) { switchKeyboard(it) }

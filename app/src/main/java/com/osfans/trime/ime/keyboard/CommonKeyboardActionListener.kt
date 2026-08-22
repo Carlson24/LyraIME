@@ -294,8 +294,8 @@ class CommonKeyboardActionListener {
 
                     "select_candidate" -> handleSelectCandidate(arg)
 
-                    "t9_clear" -> {
-                        KeyboardWindow.t9Controller?.clear()
+                    "sidebar_clear" -> {
+                        KeyboardWindow.sidebarController?.clear()
                         rime.launchOnReady { api ->
                             service.lifecycleScope.launch {
                                 api.clearComposition()
@@ -480,23 +480,34 @@ class CommonKeyboardActionListener {
             ) {
                 shouldReleaseKey = false
 
-                val t9c = KeyboardWindow.t9Controller
-                if (t9c != null && KeyboardWindow.currentKeyboard.isT9Mode) {
+                val sidebarC = KeyboardWindow.sidebarController
+                if (sidebarC != null && KeyboardWindow.currentKeyboard.isSidebarMode) {
+                    val keyChar =
+                        when {
+                            keyEventCode in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> {
+                                (keyEventCode - KeyEvent.KEYCODE_0 + '0'.code).toChar()
+                            }
+
+                            keyEventCode in KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z -> {
+                                (keyEventCode - KeyEvent.KEYCODE_A + 'a'.code).toChar()
+                            }
+
+                            else -> null
+                        }
                     when {
-                        keyEventCode in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> {
-                            val digit = (keyEventCode - KeyEvent.KEYCODE_0).toString()
-                            t9c.onDigitKey(digit)
+                        keyChar != null -> {
+                            sidebarC.onKeyChar(keyChar.toString())
                         }
 
                         keyEventCode == KeyEvent.KEYCODE_DEL -> {
-                            if (t9c.onBackspace()) {
-                                t9c.updateRimeInput()
+                            if (sidebarC.onBackspace()) {
+                                sidebarC.updateRimeInput()
                                 return
                             }
                         }
 
-                        t9c.isSegmentKeyCode(keyEventCode) -> {
-                            if (t9c.onSegmentKey()) {
+                        sidebarC.isSegmentKeyCode(keyEventCode) -> {
+                            if (sidebarC.onSegmentKey()) {
                                 return
                             }
                         }

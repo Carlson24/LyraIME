@@ -1,4 +1,4 @@
-package com.osfans.trime.ime.t9
+package com.osfans.trime.ime.sidebar
 
 import android.content.Context
 import android.graphics.Canvas
@@ -22,13 +22,13 @@ import com.osfans.trime.util.UnicodeVariantUtils
 import com.osfans.trime.util.sp
 import splitties.dimensions.dp
 
-class T9SidebarView(
+class SidebarView(
     context: Context,
     private val theme: Theme,
     private val keyboard: Keyboard,
 ) : FrameLayout(context) {
 
-    var onItemSelected: ((T9InputController.PinYinToken) -> Unit)? = null
+    var onItemSelected: ((SidebarInputController.PinYinToken) -> Unit)? = null
     var onSymbolSelected: ((String) -> Unit)? = null
 
     private val scrollView = ScrollView(context).apply {
@@ -41,7 +41,7 @@ class T9SidebarView(
         outlineProvider =
             object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
-                    val radius = (sideCornerRadiusPx - borderWidthPx).coerceAtLeast(0f)
+                    val radius = (sidebarCornerRadiusPx - borderWidthPx).coerceAtLeast(0f)
                     val inset = borderWidthPx.coerceAtLeast(0)
                     val left = inset
                     val top = inset
@@ -60,37 +60,37 @@ class T9SidebarView(
         orientation = LinearLayout.VERTICAL
     }
 
-    private var tokens: List<T9InputController.PinYinToken> = emptyList()
-    private val defaultSymbols: List<String> = keyboard.t9SidebarSymbols
+    private var tokens: List<SidebarInputController.PinYinToken> = emptyList()
+    private val defaultSymbols: List<String> = keyboard.sidebarSymbols
 
     private val sidebarBg by lazy {
         ColorManager.getDecorDrawable(
-            "t9_side_back_color",
-            "t9_side_border_color",
+            "sidebar_back_color",
+            "sidebar_border_color",
             borderWidthPx,
-            sideCornerRadiusPx,
+            sidebarCornerRadiusPx,
         ) ?: GradientDrawable().apply {
             setColor(Color.TRANSPARENT)
             if (borderWidthPx > 0) {
-                setStroke(borderWidthPx, sideBorderColor)
+                setStroke(borderWidthPx, sidebarBorderColor)
             }
-            cornerRadius = sideCornerRadiusPx
+            cornerRadius = sidebarCornerRadiusPx
         }
     }
-    private val sideTextColor: Int by lazy {
-        resolveColor("t9_side_text_color", "key_text_color")
+    private val sidebarTextColor: Int by lazy {
+        resolveColor("sidebar_text_color", "key_text_color")
     }
-    private val sideBorderColor: Int by lazy {
-        resolveColor("t9_side_border_color", "key_border_color")
+    private val sidebarBorderColor: Int by lazy {
+        resolveColor("sidebar_border_color", "key_border_color")
     }
-    private val sideSpacingColor: Int by lazy {
-        resolveColor("t9_side_spacing_color", "key_border_color")
+    private val sidebarSpacingColor: Int by lazy {
+        resolveColor("sidebar_spacing_color", "key_border_color")
     }
 
-    private val sideHilitedBg by lazy {
+    private val sidebarHilitedBg by lazy {
         ColorManager.getDecorDrawable(
-            "t9_side_hilited_back_color",
-            cornerRadius = sideCornerRadiusPx,
+            "sidebar_hilited_back_color",
+            cornerRadius = sidebarCornerRadiusPx,
         )
     }
 
@@ -105,15 +105,15 @@ class T9SidebarView(
 
     private val borderWidthPx: Int get() = context.dp(keyboard.keyBorder)
     private val dividerHeightPx: Int get() = context.dp(1)
-    private val sideCornerRadiusPx: Float get() = context.dp(keyboard.t9SideRoundCorner.toInt()).toFloat()
+    private val sidebarCornerRadiusPx: Float get() = context.dp(keyboard.sidebarRoundCorner.toInt()).toFloat()
     private val verticalGap: Int get() = keyboard.verticalGap
     private val horizontalGap: Int get() = keyboard.horizontalGap
-    private val isRight: Boolean get() = keyboard.t9SidebarPosition == "right"
-    private val showItemCount: Int get() = keyboard.t9SidebarShowItems
-    private val preferredHeight: Int get() = keyboard.getT9SidebarHeight()
+    private val isRight: Boolean get() = keyboard.sidebarPosition == "right"
+    private val showItemCount: Int get() = keyboard.sidebarShowItems
+    private val preferredHeight: Int get() = keyboard.getSidebarHeight()
 
-    private val sideTextSizeSp: Float get() = sp(keyboard.t9SideTextSize)
-    private val sideTypeface by lazy { FontManager.getTypeface("t9_side_font") }
+    private val sidebarTextSizeSp: Float get() = sp(keyboard.sidebarTextSize)
+    private val sidebarTypeface by lazy { FontManager.getTypeface("sidebar_font") }
 
     private val itemViewPool = ArrayDeque<FrameLayout>(8)
     private val dividerPool = ArrayDeque<View>(8)
@@ -122,9 +122,9 @@ class T9SidebarView(
         val textPaint =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 textAlign = Paint.Align.CENTER
-                color = sideTextColor
-                textSize = sideTextSizeSp
-                typeface = sideTypeface
+                color = sidebarTextColor
+                textSize = sidebarTextSizeSp
+                typeface = sidebarTypeface
                 fontFeatureSettings = FontManager.fontFeatureSettings
             }
 
@@ -214,7 +214,7 @@ class T9SidebarView(
         }
     }
 
-    fun updateItems(items: List<T9InputController.PinYinToken>) {
+    fun updateItems(items: List<SidebarInputController.PinYinToken>) {
         tokens = items
 
         if (items.isEmpty()) {
@@ -241,7 +241,7 @@ class T9SidebarView(
     }
 
     private fun buildTokenViews(
-        items: List<T9InputController.PinYinToken>,
+        items: List<SidebarInputController.PinYinToken>,
         itemHeight: Int,
     ) {
         currentMode = MODE_TOKENS
@@ -254,7 +254,7 @@ class T9SidebarView(
     }
 
     private fun updateTokenViewsIncremental(
-        items: List<T9InputController.PinYinToken>,
+        items: List<SidebarInputController.PinYinToken>,
         itemHeight: Int,
     ) {
         val targetChildCount = items.size * 2 - 1
@@ -320,7 +320,7 @@ class T9SidebarView(
     }
 
     private fun obtainItemView(
-        token: T9InputController.PinYinToken,
+        token: SidebarInputController.PinYinToken,
         itemHeight: Int,
     ): FrameLayout {
         val view = if (itemViewPool.isNotEmpty()) {
@@ -388,7 +388,7 @@ class T9SidebarView(
     }
 
     private fun createItemView(
-        token: T9InputController.PinYinToken,
+        token: SidebarInputController.PinYinToken,
         itemHeight: Int,
     ): FrameLayout {
         val label = SidebarTextLabel(context).apply {
@@ -422,13 +422,13 @@ class T9SidebarView(
     }
 
     private fun createPressStateDrawable(): StateListDrawable {
-        val pressed = sideHilitedBg ?: GradientDrawable().apply {
+        val pressed = sidebarHilitedBg ?: GradientDrawable().apply {
             setColor(Color.TRANSPARENT)
-            cornerRadius = sideCornerRadiusPx
+            cornerRadius = sidebarCornerRadiusPx
         }
         val normal = GradientDrawable().apply {
             setColor(Color.TRANSPARENT)
-            cornerRadius = sideCornerRadiusPx
+            cornerRadius = sidebarCornerRadiusPx
         }
         return StateListDrawable().apply {
             addState(intArrayOf(android.R.attr.state_pressed), pressed)
@@ -442,7 +442,7 @@ class T9SidebarView(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dividerHeightPx,
             )
-        setBackgroundColor(sideSpacingColor)
+        setBackgroundColor(sidebarSpacingColor)
         alpha = 0.3f
     }
 }

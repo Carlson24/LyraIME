@@ -179,7 +179,7 @@ return theme {
       popup_size = 0,
       clipboard_category_size = 13,
       clipboard_size = 14,
-      t9_side_size = -1
+      sidebar_size = -1
     },
 
     -- 键盘
@@ -246,8 +246,8 @@ return theme {
       default = "Enter"
     },
 
-    -- T9 侧栏
-    t9_side_round_corner = -1,               -- [float] T9 侧栏圆角 (-1 = 跟随 round_corner)
+    -- 侧栏
+    sidebar_round_corner = -1,               -- [float] 侧栏圆角 (-1 = 跟随 round_corner)
 
     -- 其他
     auto_caps = false,                       -- [bool] 自动句首大写
@@ -371,12 +371,12 @@ return theme {
       -- 候选栏按钮
       hilited_candidate_button_color = latte.overlay0,
 
-      -- T9 侧栏
-      t9_side_back_color = latte.mantle,
-      t9_side_hilited_back_color = latte.surface0,
-      t9_side_text_color = latte.text,
-      t9_side_border_color = latte.crust,
-      t9_side_spacing_color = latte.crust,
+      -- 侧栏
+      sidebar_back_color = latte.mantle,
+      sidebar_hilited_back_color = latte.surface0,
+      sidebar_text_color = latte.text,
+      sidebar_border_color = latte.crust,
+      sidebar_spacing_color = latte.crust,
 
       -- 上下文
       light_scheme = "latte",                      -- 亮色模式下标记自身
@@ -429,11 +429,11 @@ return theme {
 
       hilited_candidate_button_color = mocha.overlay0,
 
-      t9_side_back_color = mocha.mantle,
-      t9_side_hilited_back_color = mocha.surface0,
-      t9_side_text_color = mocha.text,
-      t9_side_border_color = mocha.crust,
-      t9_side_spacing_color = mocha.crust,
+      sidebar_back_color = mocha.mantle,
+      sidebar_hilited_back_color = mocha.surface0,
+      sidebar_text_color = mocha.text,
+      sidebar_border_color = mocha.crust,
+      sidebar_spacing_color = mocha.crust,
 
       dark_scheme = "mocha",
       light_scheme = "latte"

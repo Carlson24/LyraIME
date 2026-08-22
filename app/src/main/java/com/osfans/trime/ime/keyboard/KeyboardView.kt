@@ -21,8 +21,8 @@ import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.popup.PopupDelegate
-import com.osfans.trime.ime.t9.T9InputController
-import com.osfans.trime.ime.t9.T9SidebarView
+import com.osfans.trime.ime.sidebar.SidebarInputController
+import com.osfans.trime.ime.sidebar.SidebarView
 import com.osfans.trime.ime.voice.WaveformView
 import com.osfans.trime.link.AsrkbSpeechClient
 import com.osfans.trime.link.SherpaSpeechClient
@@ -41,7 +41,7 @@ class KeyboardView(
     val service: TrimeInputMethodService,
     private val keyboardActionListener: KeyboardActionListener,
     private val enterKeyDisplay: EnterKeyDisplayDelegate,
-    private val t9Controller: T9InputController? = null,
+    private val sidebarController: SidebarInputController? = null,
 ) : FrameLayout(context) {
 
     private val keys get() = keyboard.keys
@@ -60,51 +60,51 @@ class KeyboardView(
     private var voiceOverlay: FrameLayout? = null
     private var voiceWave: WaveformView? = null
 
-    private var t9Sidebar: T9SidebarView? = null
+    private var sidebar: SidebarView? = null
 
     init {
         setWillNotDraw(false)
         clipChildren = false
         buildKeyViews()
-        if (keyboard.isT9Mode && t9Controller != null) {
-            createT9Sidebar()
+        if (keyboard.isSidebarMode && sidebarController != null) {
+            createSidebar()
         }
         setLayerType(LAYER_TYPE_HARDWARE, null)
     }
 
-    private fun createT9Sidebar() {
-        val controller = t9Controller ?: return
-        createT9SidebarWithController(controller)
+    private fun createSidebar() {
+        val controller = sidebarController ?: return
+        createSidebarWithController(controller)
     }
 
-    fun getT9Controller(): T9InputController? = t9Controller
+    fun getSidebarController(): SidebarInputController? = sidebarController
 
-    fun updateT9Controller(controller: T9InputController?) {
-        t9Sidebar?.let { removeView(it) }
-        t9Sidebar = null
-        if (controller != null && keyboard.isT9Mode) {
-            createT9SidebarWithController(controller)
+    fun updateSidebarController(controller: SidebarInputController?) {
+        sidebar?.let { removeView(it) }
+        sidebar = null
+        if (controller != null && keyboard.isSidebarMode) {
+            createSidebarWithController(controller)
         }
     }
 
-    fun repositionT9Sidebar(availableWidth: Int) {
-        val sidebar = t9Sidebar ?: return
-        val sidebarWidth = (keyboard.minWidth * keyboard.t9SidebarWidth).toInt()
-        val isRight = keyboard.t9SidebarPosition == "right"
+    fun repositionSidebar(availableWidth: Int) {
+        val view = sidebar ?: return
+        val width = (keyboard.minWidth * keyboard.sidebarWidth).toInt()
+        val isRight = keyboard.sidebarPosition == "right"
         val x = if (isRight) {
-            (availableWidth - sidebarWidth).coerceAtLeast(0).toFloat()
+            (availableWidth - width).coerceAtLeast(0).toFloat()
         } else {
             0f
         }
-        sidebar.translationX = x
+        view.translationX = x
     }
 
-    private fun createT9SidebarWithController(controller: T9InputController) {
-        val sidebarWidth = (keyboard.minWidth * keyboard.t9SidebarWidth).toInt()
-        val sidebarHeight = keyboard.getT9SidebarHeight()
-        val isRight = keyboard.t9SidebarPosition == "right"
+    private fun createSidebarWithController(controller: SidebarInputController) {
+        val sidebarWidth = (keyboard.minWidth * keyboard.sidebarWidth).toInt()
+        val sidebarHeight = keyboard.getSidebarHeight()
+        val isRight = keyboard.sidebarPosition == "right"
 
-        t9Sidebar = T9SidebarView(context, theme, keyboard).apply {
+        sidebar = SidebarView(context, theme, keyboard).apply {
             layoutParams = LayoutParams(sidebarWidth, sidebarHeight)
             val x = if (isRight) {
                 (keyboard.minWidth - sidebarWidth).toFloat()
@@ -123,12 +123,12 @@ class KeyboardView(
         }
 
         controller.onCandidatesChanged = { tokens ->
-            t9Sidebar?.post {
-                t9Sidebar?.updateItems(tokens)
+            sidebar?.post {
+                sidebar?.updateItems(tokens)
             }
         }
 
-        addView(t9Sidebar)
+        addView(sidebar)
     }
 
     private fun buildKeyViews() {
