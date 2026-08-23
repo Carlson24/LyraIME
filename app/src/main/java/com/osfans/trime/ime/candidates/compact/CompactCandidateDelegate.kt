@@ -97,11 +97,6 @@ class CompactCandidateDelegate : InputBroadcastReceiver {
             UnrollButtonStateMachine.BooleanKey.UnrolledCandidatesEmpty to
                 (adapter.total == childCount),
         )
-        bar.unrollButtonStateMachine.push(
-            UnrollButtonStateMachine.TransitionEvent.UnrolledCandidatesUpdated,
-            UnrollButtonStateMachine.BooleanKey.UnrolledCandidatesHighlighted to
-                (adapter.highlightedIdx >= childCount),
-        )
     }
 
     val adapter by lazy {
