@@ -65,7 +65,13 @@ class SidebarInputController(
             onSegmentKey()
             return
         }
-        if (!layout.isValidKeyChar(c)) return
+        val valid =
+            if (layout.isT9Style) {
+                layout.isValidKeyChar(c)
+            } else {
+                layout.isValidKeyChar(c) || !c.isLowerCase()
+            }
+        if (!valid) return
         inputQueue.add(char)
         cachedInputString += char
         behaviorQueue.add(Behavior.NORMAL)
@@ -153,7 +159,7 @@ class SidebarInputController(
             if (sequence.getOrNull(code.length) == SEGMENT_KEY_CHAR) {
                 raw += SEGMENT_KEY_CHAR.toString()
             }
-            PinYinToken(position, raw, pinYin)
+            PinYinToken(position, raw, pinYin, display = SidebarPinYin.displayPinyin(pinYin))
         }
     }
 
@@ -167,7 +173,9 @@ class SidebarInputController(
         if (start < 0 || end > input.length) return input
         val result = StringBuilder().append(input.substring(0, start))
         var cursor = start
-        for (token in selectedQueue) {
+        val rawTail = input.substring(end)
+        var trailingSeparator = false
+        for ((index, token) in selectedQueue.withIndex()) {
             if (token.pos > cursor) {
                 result.append(input.substring(cursor, token.pos))
             }
@@ -184,7 +192,11 @@ class SidebarInputController(
                         ?: SidebarPinYin.keyCodeOf(token.pinYin, layout)
                         ?: token.pinYin,
                 )
-                if (layout.scheme == PinyinScheme.FULL || token.raw.endsWith(SEGMENT_KEY_CHAR.toString())) {
+                val separatorNeeded =
+                    layout.scheme == PinyinScheme.FULL || token.raw.endsWith(SEGMENT_KEY_CHAR.toString())
+                if (index == selectedQueue.lastIndex && rawTail.isNotEmpty() && rawTail.all { !it.isLowerCase() }) {
+                    trailingSeparator = separatorNeeded
+                } else if (separatorNeeded) {
                     result.append(SEGMENT_KEY_CHAR)
                 }
             } else {
@@ -192,7 +204,11 @@ class SidebarInputController(
             }
             cursor = rawEnd
         }
-        return result.append(input.substring(end)).toString()
+        result.append(input.substring(end))
+        if (trailingSeparator) {
+            result.append(SEGMENT_KEY_CHAR)
+        }
+        return result.toString()
     }
 
     fun updateRimeInput() {

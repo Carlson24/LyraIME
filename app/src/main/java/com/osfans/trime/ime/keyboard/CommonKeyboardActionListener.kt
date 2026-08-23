@@ -489,7 +489,12 @@ class CommonKeyboardActionListener {
                             }
 
                             keyEventCode in KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z -> {
-                                (keyEventCode - KeyEvent.KEYCODE_A + 'a'.code).toChar()
+                                val base = (keyEventCode - KeyEvent.KEYCODE_A + 'a'.code).toChar()
+                                if (metaState and KeyEvent.META_SHIFT_ON != 0) {
+                                    base.uppercaseChar()
+                                } else {
+                                    base
+                                }
                             }
 
                             else -> null

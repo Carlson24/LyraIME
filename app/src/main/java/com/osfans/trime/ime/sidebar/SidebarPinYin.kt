@@ -169,38 +169,6 @@ private val flypyZeroInitialAlt =
         "ou" to "oz",
     )
 
-private val yFinalMap =
-    mapOf(
-        "ya" to "ia",
-        "yan" to "ian",
-        "yang" to "iang",
-        "yao" to "iao",
-        "ye" to "ie",
-        "yi" to "i",
-        "yin" to "in",
-        "ying" to "ing",
-        "yo" to "o",
-        "yong" to "iong",
-        "you" to "iu",
-        "yu" to "v",
-        "yue" to "ue",
-        "yuan" to "uan",
-        "yun" to "un",
-    )
-
-private val wFinalMap =
-    mapOf(
-        "wu" to "u",
-        "wa" to "ua",
-        "wo" to "uo",
-        "wai" to "uai",
-        "wei" to "ui",
-        "wan" to "uan",
-        "wen" to "un",
-        "wang" to "uang",
-        "weng" to "eng",
-    )
-
 enum class PinyinScheme {
     FULL,
     ZRM,
@@ -267,58 +235,97 @@ object SidebarPinYin {
     val allPinyin =
         setOf(
             "a", "ai", "an", "ang", "ao",
-            "b", "ba", "bai", "ban", "bang", "bao", "bei", "ben", "beng", "bi",
-            "bian", "biao", "bie", "bin", "bing", "bo", "bu", "biang",
-            "c", "ca", "cai", "can", "cang", "cao", "ce", "cen", "ceng",
-            "cha", "chai", "chan", "chang", "chao", "che", "chen", "cheng", "chi",
-            "chong", "chou", "chu", "chua", "chuai", "chuan", "chuang", "chui", "chun", "chuo",
-            "ci", "cong", "cou", "cu", "cuan", "cui", "cun", "cuo",
-            "d", "da", "dai", "dan", "dang", "dao", "de", "dei", "den", "deng",
-            "di", "dia", "dian", "diao", "die", "ding", "diu", "dong", "dou", "du",
-            "duan", "dui", "dun", "duo",
-            "e", "ei", "en", "eng", "er",
-            "f", "fa", "fan", "fang", "fei", "fen", "feng", "fo", "fou", "fu",
-            "g", "ga", "gai", "gan", "gang", "gao", "ge", "gei", "gen", "geng",
-            "gong", "gou", "gu", "gua", "guai", "guan", "guang", "gui", "gun", "guo",
-            "h", "ha", "hai", "han", "hang", "hao", "he", "hei", "hen", "heng",
-            "hong", "hou", "hu", "hua", "huai", "huan", "huang", "hui", "hun", "huo",
+            "b", "ba", "bai", "ban", "bang", "bao", "be", "beh", "bei", "ben",
+            "beng", "bi", "bia", "biai", "bian", "biang", "biao", "bie", "biee", "bin",
+            "bing", "bio", "biong", "biu", "bo", "bong", "bou", "bu",
+            "c", "ca", "cai", "can", "cang", "cao", "ce", "ceh", "cei", "cen",
+            "ceng", "cha", "chai", "chan", "chang", "chao", "che", "cheh", "chei", "chen",
+            "cheng", "chi", "chong", "chou", "chu", "chua", "chuai", "chuan", "chuang", "chuao",
+            "chue", "chuee", "chui", "chun", "chung", "chuo", "chuong", "chuou", "ci", "cia",
+            "ciai", "cian", "ciang", "ciao", "cie", "ciee", "cii", "cin", "cing", "cio",
+            "ciong", "ciu", "cong", "cou", "cu", "cua", "cuai", "cuan", "cuang", "cue",
+            "cui", "cun", "cung", "cuo", "cv", "cva", "cvai", "cvan", "cvang", "cve",
+            "cvi", "cvn", "cvng", "cvo",
+            "d", "da", "dai", "dan", "dang", "dao", "de", "deh", "dei", "den",
+            "deng", "di", "dia", "diai", "dian", "diang", "diao", "die", "diee", "din",
+            "ding", "dio", "diong", "diu", "do", "dong", "dou", "du", "dua", "duai",
+            "duan", "duang", "duao", "due", "duee", "dui", "dun", "dung", "duo", "duong",
+            "duou", "dv", "dva", "dvai", "dvan", "dvang", "dve", "dvi", "dvn", "dvng",
+            "dvo",
+            "e", "eh", "ei", "en", "eng", "er",
+            "f", "fa", "fai", "fan", "fang", "fao", "fe", "feh", "fei", "fen",
+            "feng", "fiao", "fo", "fong", "fou", "fu", "fua", "fuai", "fuan", "fuang",
+            "fue", "fui", "fun", "fung", "fuo",
+            "g", "ga", "gai", "gan", "gang", "gao", "ge", "geh", "gei", "gen",
+            "geng", "go", "gong", "gou", "gu", "gua", "guai", "guan", "guang", "guao",
+            "gue", "guee", "gui", "gun", "gung", "guo", "guong", "guou",
+            "h", "ha", "hai", "han", "hang", "hao", "he", "heh", "hei", "hen",
+            "heng", "ho", "hong", "hou", "hu", "hua", "huai", "huan", "huang", "huao",
+            "hue", "huee", "hui", "hun", "hung", "huo", "huong", "huou",
             "i",
-            "j", "ji", "jia", "jian", "jiang", "jiao", "jie", "jin", "jing",
-            "jiong", "jiu", "ju", "juan", "jue", "jun",
-            "k", "ka", "kai", "kan", "kang", "kao", "ke", "ken", "keng",
-            "kong", "kou", "ku", "kua", "kuai", "kuan", "kuang", "kui", "kun", "kuo",
-            "l", "la", "lai", "lan", "lang", "lao", "le", "lei", "leng",
-            "li", "lia", "lian", "liang", "liao", "lie", "lin", "ling",
-            "liu", "long", "lou", "lu", "luan", "lun", "luo", "lv", "lo", "lve",
-            "m", "ma", "mai", "man", "mang", "mao", "me", "mei", "men", "meng",
-            "mi", "mian", "miao", "mie", "min", "ming", "miu", "mo", "mou", "mu",
-            "n", "na", "nai", "nan", "nang", "nao", "ne", "nei", "nen", "neng",
-            "ni", "nian", "niang", "niao", "nie", "nin", "ning", "niu",
-            "nong", "nou", "nu", "nuan", "nuo", "nv", "nve",
-            "o", "ou",
-            "p", "pa", "pai", "pan", "pang", "pao", "pei", "pen", "peng",
-            "pi", "pian", "piao", "pie", "pin", "ping", "po", "pou", "pu",
-            "q", "qi", "qia", "qian", "qiang", "qiao", "qie", "qin", "qing",
-            "qiong", "qiu", "qu", "quan", "que", "qun",
-            "r", "ran", "rang", "rao", "re", "ren", "reng", "ri", "rong",
-            "rou", "ru", "rua", "ruan", "rui", "run", "ruo",
-            "s", "sa", "sai", "san", "sang", "sao", "se", "sen", "seng",
-            "sha", "shai", "shan", "shang", "shao", "she", "shei", "shen", "sheng", "shi",
-            "shou", "shu", "shua", "shuai", "shuan", "shuang", "shui", "shun", "shuo",
-            "si", "song", "sou", "su", "suan", "sui", "sun", "suo",
-            "t", "ta", "tai", "tan", "tang", "tao", "te", "teng",
-            "ti", "tian", "tiao", "tie", "ting", "tong", "tou", "tu",
-            "tuan", "tui", "tun", "tuo",
-            "u", "v",
-            "w", "wa", "wai", "wan", "wang", "wei", "wen", "weng", "wo", "wu",
-            "x", "xi", "xia", "xian", "xiang", "xiao", "xie", "xin", "xing",
-            "xiong", "xiu", "xu", "xuan", "xue", "xun",
-            "y", "ya", "yan", "yang", "yao", "ye", "yi", "yin", "ying",
-            "yo", "yong", "you", "yu", "yuan", "yue", "yun",
-            "z", "za", "zai", "zan", "zang", "zao", "ze", "zei", "zen", "zeng",
-            "zha", "zhai", "zhan", "zhang", "zhao", "zhe", "zhen", "zheng", "zhi",
-            "zhong", "zhou", "zhu", "zhua", "zhuai", "zhuan", "zhuang", "zhui", "zhun", "zhuo",
-            "zi", "zong", "zou", "zu", "zuan", "zui", "zun", "zuo",
+            "j", "ji", "jia", "jiai", "jian", "jiang", "jiao", "jie", "jiee", "jin",
+            "jing", "jio", "jiong", "jiu", "jv", "jva", "jvai", "jvan", "jvang", "jve",
+            "jvi", "jvn", "jvng", "jvo",
+            "k", "ka", "kai", "kan", "kang", "kao", "ke", "keh", "kei", "ken",
+            "keng", "ko", "kong", "kou", "ku", "kua", "kuai", "kuan", "kuang", "kuao",
+            "kue", "kuee", "kui", "kun", "kung", "kuo", "kuong", "kuou",
+            "l", "la", "lai", "lan", "lang", "lao", "le", "leh", "lei", "len",
+            "leng", "li", "lia", "liai", "lian", "liang", "liao", "lie", "liee", "lin",
+            "ling", "lio", "liong", "liu", "lo", "long", "lou", "lu", "lua", "luai",
+            "luan", "luang", "luao", "lue", "luee", "lui", "lun", "lung", "luo", "luong",
+            "luou", "lv", "lva", "lvai", "lvan", "lvang", "lve", "lvi", "lvn", "lvng",
+            "lvo",
+            "m", "ma", "mai", "man", "mang", "mao", "me", "meh", "mei", "men",
+            "meng", "mi", "mia", "miai", "mian", "miang", "miao", "mie", "miee", "min",
+            "ming", "mio", "miong", "miu", "mo", "mong", "mou", "mu",
+            "n", "na", "nai", "nan", "nang", "nao", "ne", "neh", "nei", "nen",
+            "neng", "ni", "nia", "niai", "nian", "niang", "niao", "nie", "niee", "nin",
+            "ning", "nio", "niong", "niu", "no", "nong", "nou", "nu", "nua", "nuai",
+            "nuan", "nuang", "nuao", "nue", "nuee", "nui", "nun", "nung", "nuo", "nuong",
+            "nuou", "nv", "nva", "nvai", "nvan", "nvang", "nve", "nvi", "nvn", "nvng",
+            "nvo",
+            "o", "ong", "ou",
+            "p", "pa", "pai", "pan", "pang", "pao", "pe", "peh", "pei", "pen",
+            "peng", "pi", "pia", "piai", "pian", "piang", "piao", "pie", "piee", "pin",
+            "ping", "pio", "piong", "piu", "po", "pong", "pou", "pu",
+            "q", "qi", "qia", "qiai", "qian", "qiang", "qiao", "qie", "qiee", "qin",
+            "qing", "qio", "qiong", "qiu", "qv", "qva", "qvai", "qvan", "qvang", "qve",
+            "qvi", "qvn", "qvng", "qvo",
+            "r", "ra", "rai", "ran", "rang", "rao", "re", "reh", "rei", "ren",
+            "reng", "ri", "rong", "rou", "ru", "rua", "ruai", "ruan", "ruang", "ruao",
+            "rue", "ruee", "rui", "run", "rung", "ruo", "ruong", "ruou",
+            "s", "sa", "sai", "san", "sang", "sao", "se", "seh", "sei", "sen",
+            "seng", "sha", "shai", "shan", "shang", "shao", "she", "sheh", "shei", "shen",
+            "sheng", "shi", "shong", "shou", "shu", "shua", "shuai", "shuan", "shuang", "shuao",
+            "shue", "shuee", "shui", "shun", "shung", "shuo", "shuong", "shuou", "si", "sia",
+            "siai", "sian", "siang", "siao", "sie", "siee", "sii", "sin", "sing", "sio",
+            "siong", "siu", "song", "sou", "su", "sua", "suai", "suan", "suang", "sue",
+            "sui", "sun", "sung", "suo", "sv", "sva", "svai", "svan", "svang", "sve",
+            "svi", "svn", "svng", "svo",
+            "t", "ta", "tai", "tan", "tang", "tao", "te", "teh", "tei", "ten",
+            "teng", "ti", "tia", "tiai", "tian", "tiang", "tiao", "tie", "tiee", "tin",
+            "ting", "tio", "tiong", "tiu", "to", "tong", "tou", "tu", "tua", "tuai",
+            "tuan", "tuang", "tuao", "tue", "tuee", "tui", "tun", "tung", "tuo", "tuong",
+            "tuou", "tv", "tva", "tvai", "tvan", "tvang", "tve", "tvi", "tvn", "tvng",
+            "tvo",
+            "u",
+            "v",
+            "w", "wa", "wai", "wan", "wang", "wao", "we", "wee", "wei", "wen",
+            "weng", "wo", "wong", "wou", "wu",
+            "x", "xi", "xia", "xiai", "xian", "xiang", "xiao", "xie", "xiee", "xin",
+            "xing", "xio", "xiong", "xiu", "xv", "xva", "xvai", "xvan", "xvang", "xve",
+            "xvi", "xvn", "xvng", "xvo",
+            "y", "ya", "yai", "yan", "yang", "yao", "ye", "yee", "yei", "yi",
+            "yin", "ying", "yo", "yong", "you", "yu", "yuai", "yuan", "yuang", "yue",
+            "yui", "yun", "yung", "yuo",
+            "z", "za", "zai", "zan", "zang", "zao", "ze", "zeh", "zei", "zen",
+            "zeng", "zha", "zhai", "zhan", "zhang", "zhao", "zhe", "zheh", "zhei", "zhen",
+            "zheng", "zhi", "zhong", "zhou", "zhu", "zhua", "zhuai", "zhuan", "zhuang", "zhuao",
+            "zhue", "zhuee", "zhui", "zhun", "zhung", "zhuo", "zhuong", "zhuou", "zi", "zia",
+            "ziai", "zian", "ziang", "ziao", "zie", "ziee", "zii", "zin", "zing", "zio",
+            "ziong", "ziu", "zong", "zou", "zu", "zua", "zuai", "zuan", "zuang", "zue",
+            "zui", "zun", "zung", "zuo", "zv", "zva", "zvai", "zvan", "zvang", "zve",
+            "zvi", "zvn", "zvng", "zvo",
         )
 
     internal fun keyCodeOf(pinyin: String, layout: SidebarLayout): String? = when (layout.scheme) {
@@ -346,18 +353,6 @@ object SidebarPinYin {
                 val finalKey = finalKey(rest, initial.last(), scheme) ?: return null
                 return "$key$finalKey"
             }
-        }
-
-        if (pinyin.startsWith("y")) {
-            val rest = yFinalMap[pinyin] ?: return null
-            val finalKey = finalKey(rest, 'y', scheme) ?: return null
-            return "y$finalKey"
-        }
-
-        if (pinyin.startsWith("w")) {
-            val rest = wFinalMap[pinyin] ?: return null
-            val finalKey = finalKey(rest, 'w', scheme) ?: return null
-            return "w$finalKey"
         }
 
         val initial = pinyin.firstOrNull() ?: return null
@@ -407,5 +402,14 @@ object SidebarPinYin {
 
         cache[sequence] = result
         return result
+    }
+
+    internal fun displayPinyin(pinyin: String): String {
+        if ('v' !in pinyin) return pinyin
+        return when (pinyin.first()) {
+            in "jqxy" -> pinyin.replace('v', 'u')
+            in "nlzcs" -> pinyin.replace('v', 'ü')
+            else -> pinyin
+        }
     }
 }
