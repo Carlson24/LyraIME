@@ -154,6 +154,7 @@ abstract class BaseInputView(
                     }
                 })
                 setOnItemClickListener { _, _, position, _ ->
+                    dismissCandidateActionMenu()
                     if (popupActions.isNullOrEmpty()) {
                         rime.runIfReady { deleteCandidate(idx, global) }
                     } else {
@@ -230,11 +231,22 @@ abstract class BaseInputView(
         requestApplyInsets()
     }
 
+    override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
+        super.onWindowFocusChanged(hasWindowFocus)
+        if (!hasWindowFocus) {
+            dismissCandidateActionMenu()
+        }
+    }
+
     override fun onDetachedFromWindow() {
         handleMessages = false
+        dismissCandidateActionMenu()
+        super.onDetachedFromWindow()
+    }
+
+    internal fun dismissCandidateActionMenu() {
         candidateActionMenu?.dismiss()
         candidateActionMenu = null
-        super.onDetachedFromWindow()
     }
 
     companion object {
