@@ -97,13 +97,16 @@ if(NOT SKIP_LUA_THEME_TARGETS)
 endif()
 
 # ---- sherpa-onnx (voice ASR with optional QNN) ----
+# Download the onnxruntime shared libs up front (outside the sherpa guard) so
+# that libonnxruntime.so is always available locally for pre-packaging into the
+# APK, even when the sherpa native targets are skipped by the native cache.
+include(OnnxRuntime)
+
+# Point sherpa-onnx's cmake module to the downloaded onnxruntime shared libs
+set(ENV{SHERPA_ONNXRUNTIME_LIB_DIR} "${SHERPA_ONNXRUNTIME_LIB_DIR}")
+set(ENV{SHERPA_ONNXRUNTIME_INCLUDE_DIR} "${SHERPA_ONNXRUNTIME_INCLUDE_DIR}")
+
 if(NOT SKIP_SHERPA_TARGETS)
-  include(OnnxRuntime)
-
-  # Point sherpa-onnx's cmake module to the downloaded onnxruntime shared libs
-  set(ENV{SHERPA_ONNXRUNTIME_LIB_DIR} "${SHERPA_ONNXRUNTIME_LIB_DIR}")
-  set(ENV{SHERPA_ONNXRUNTIME_INCLUDE_DIR} "${SHERPA_ONNXRUNTIME_INCLUDE_DIR}")
-
   set(SHERPA_ONNX_ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
   set(SHERPA_ONNX_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
   set(SHERPA_ONNX_ENABLE_CHECK OFF CACHE BOOL "" FORCE)

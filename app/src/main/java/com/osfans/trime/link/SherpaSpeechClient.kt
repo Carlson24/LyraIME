@@ -123,15 +123,13 @@ object SherpaSpeechClient {
                 val transducerConfig =
                     if (effectiveQnn) {
                         OnlineTransducerModelConfig(
-                            encoder = "",
-                            decoder = "",
-                            joiner = "",
+                            encoder = if (modelFiles.usesLibModels) modelFiles.encoder.absolutePath else "",
+                            decoder = if (modelFiles.usesLibModels) modelFiles.decoder.absolutePath else "",
+                            joiner = if (modelFiles.usesLibModels) modelFiles.joiner.absolutePath else "",
                             qnnConfig = QnnConfig(
                                 backendLib = "libQnnHtp.so",
                                 systemLib = "libQnnSystem.so",
-                                contextBinary = "${modelFiles.encoder.absolutePath}," +
-                                    "${modelFiles.decoder.absolutePath}," +
-                                    "${modelFiles.joiner.absolutePath}",
+                                contextBinary = modelFiles.qnnContextBinary,
                             ),
                         )
                     } else {
@@ -167,7 +165,7 @@ object SherpaSpeechClient {
 
                 val encoderPath = modelFiles.encoder.absolutePath
                 val engineVariant = when {
-                    effectiveQnn -> "qnn"
+                    effectiveQnn -> if (modelFiles.usesLibModels) "qnn-lib" else "qnn-binary"
                     modelFiles.isQnn -> "qnn-fallback-cpu"
                     modelFiles.encoder.nameWithoutExtension.contains("int8", ignoreCase = true) -> "int8"
                     else -> "standard"
@@ -202,12 +200,6 @@ object SherpaSpeechClient {
         }
 
         val cfg = readEngineConfig()
-        if (!VoiceNativeManager.isOnnxRuntimeInstalled()) {
-            service.toast(service.getString(R.string.voice_runtime_missing_toast))
-            runCatching { VoiceOverlayUiBridge.onDone?.invoke() }
-            resetStateDirectly()
-            return
-        }
         if (cfg.useQnn && Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a" && !QnnDspManager.isInstalled()) {
             service.toast(service.getString(R.string.voice_qnn_dsp_missing_toast))
             runCatching { VoiceOverlayUiBridge.onDone?.invoke() }

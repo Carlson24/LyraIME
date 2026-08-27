@@ -21,7 +21,13 @@ object QnnDspManager {
     private val dspDir: File
         get() = File(appContext.filesDir, "qnn-dsp").also { it.mkdirs() }
 
-    data class DspLibs(val stub: File, val skel: File, val htp: File, val system: File)
+    data class DspLibs(
+        val stub: File,
+        val skel: File,
+        val htp: File,
+        val system: File,
+        val packaged: Boolean = false,
+    )
 
     fun getHtpVariant(): String? = when (Build.SOC_MODEL) {
         "SM8350" -> "V68"
@@ -33,17 +39,18 @@ object QnnDspManager {
         else -> null
     }
 
-    fun isInstalled(): Boolean {
-        val variant = getHtpVariant() ?: return false
-        val dir = dspDir
-        return File(dir, "libQnnHtp${variant}Stub.so").exists() &&
-            File(dir, "libQnnHtp${variant}Skel.so").exists() &&
-            File(dir, "libQnnHtp.so").exists() &&
-            File(dir, "libQnnSystem.so").exists()
+    /** V81 (SM8850) libs are pre-packaged in the APK's native lib dir. */
+    private fun packagedDspLibs(): DspLibs? {
+        val libDir = File(appContext.applicationInfo.nativeLibraryDir)
+        val stub = File(libDir, "libQnnHtpV81Stub.so")
+        val skel = File(libDir, "libQnnHtpV81Skel.so")
+        val htp = File(libDir, "libQnnHtp.so")
+        val system = File(libDir, "libQnnSystem.so")
+        if (!stub.exists() || !skel.exists() || !htp.exists() || !system.exists()) return null
+        return DspLibs(stub, skel, htp, system, packaged = true)
     }
 
-    fun getLibs(): DspLibs? {
-        val variant = getHtpVariant() ?: return null
+    private fun downloadedDspLibs(variant: String): DspLibs? {
         val dir = dspDir
         val stub = File(dir, "libQnnHtp${variant}Stub.so")
         val skel = File(dir, "libQnnHtp${variant}Skel.so")
@@ -53,8 +60,29 @@ object QnnDspManager {
         return DspLibs(stub, skel, htp, system)
     }
 
+    fun isInstalled(): Boolean {
+        val variant = getHtpVariant() ?: return false
+        if (variant == "V81") {
+            return packagedDspLibs() != null
+        }
+        return downloadedDspLibs(variant) != null
+    }
+
+    fun getLibs(): DspLibs? {
+        val variant = getHtpVariant() ?: return null
+        if (variant == "V81") {
+            packagedDspLibs()?.let { return it }
+            Timber.w("QnnDsp: V81 packaged libs not found, falling back to downloaded libs")
+        }
+        return downloadedDspLibs(variant)
+    }
+
     suspend fun ensureInstalled(context: Context, force: Boolean = false): DspLibs? = withContext(Dispatchers.IO) {
         val variant = getHtpVariant() ?: return@withContext null
+        if (variant == "V81") {
+            return@withContext packagedDspLibs()
+        }
+
         val dir = dspDir
         val stub = File(dir, "libQnnHtp${variant}Stub.so")
         val skel = File(dir, "libQnnHtp${variant}Skel.so")
@@ -81,16 +109,6 @@ object QnnDspManager {
             FileDownloader.download(entry.url, tarBz2, expectedSha256 = expectedSha256)
             extractTarBz2(tarBz2, dir)
             FileUtils.markNativeLibsReadOnly(dir)
-
-            val extractedOnnx = File(dir, "libonnxruntime.so")
-            if (extractedOnnx.exists()) {
-                val onnxDest = File(appContext.filesDir, "onnxruntime/libonnxruntime.so")
-                onnxDest.parentFile!!.mkdirs()
-                extractedOnnx.renameTo(onnxDest)
-                onnxDest.setWritable(false, false)
-                Timber.i("QnnDsp: onnxruntime moved to $onnxDest")
-            }
-
             tarBz2.delete()
 
             if (!stub.exists() || !skel.exists() || !htp.exists() || !system.exists()) {
@@ -112,11 +130,17 @@ object QnnDspManager {
     }
 
     fun loadDsp(dsp: DspLibs) {
-        dsp.stub.setWritable(false, false)
-        dsp.htp.setWritable(false, false)
-        dsp.system.setWritable(false, false)
-        System.load(dsp.stub.absolutePath)
-        System.load(dsp.htp.absolutePath)
-        System.load(dsp.system.absolutePath)
+        if (dsp.packaged) {
+            System.loadLibrary("QnnHtpV81Stub")
+            System.loadLibrary("QnnHtp")
+            System.loadLibrary("QnnSystem")
+        } else {
+            dsp.stub.setWritable(false, false)
+            dsp.htp.setWritable(false, false)
+            dsp.system.setWritable(false, false)
+            System.load(dsp.stub.absolutePath)
+            System.load(dsp.htp.absolutePath)
+            System.load(dsp.system.absolutePath)
+        }
     }
 }

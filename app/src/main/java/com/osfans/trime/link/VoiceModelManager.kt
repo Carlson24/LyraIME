@@ -8,6 +8,7 @@ package com.osfans.trime.link
 import com.osfans.trime.data.ResourceUrls
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.util.appContext
 import com.osfans.trime.util.computeFileSha256
 import timber.log.Timber
 import java.io.File
@@ -18,14 +19,23 @@ object VoiceModelManager {
             val prefs = AppPrefs.defaultInstance().voiceInput
             val chunkMs = prefs.voiceChunkSize.getValue().ms
             val punct = prefs.voicePunctModel.getValue()
-            val base = when (getSelectedVariant()) {
+            val variant = getSelectedVariant()
+            val base = when (variant) {
                 ModelVariant.INT8 -> "xasr-int8"
                 ModelVariant.QNN -> "xasr-qnn"
                 else -> "xasr"
             }
+            // QNN model .so libs must be dlopen'd; external/shared storage is noexec,
+            // so keep the QNN model on internal storage.
+            val root =
+                if (variant == ModelVariant.QNN) {
+                    File(appContext.filesDir, "voice-qnn")
+                } else {
+                    DataManager.voiceDataDir
+                }
             val chunk = "${chunkMs}ms"
             val sub = if (punct) "$chunk-punct" else chunk
-            return File(DataManager.voiceDataDir, base).let { File(it, sub).also { it.mkdirs() } }
+            return File(root, base).let { File(it, sub).also { it.mkdirs() } }
         }
 
     enum class ModelVariant {
@@ -56,7 +66,7 @@ object VoiceModelManager {
         val chunkMs = prefs.voiceChunkSize.getValue().ms
         val punct = prefs.voicePunctModel.getValue()
         if (getSelectedVariant() == ModelVariant.QNN) {
-            return ResourceUrls.buildQnnVoiceModelUrl(ResourceUrls.resolveQnnSoc(), chunkMs, punct)
+            return ResourceUrls.buildQnnVoiceModelUrl(chunkMs, punct)
         }
         return ResourceUrls.buildVoiceModelUrl(chunkMs, punct, voiceModelVariant())
     }
@@ -96,7 +106,23 @@ object VoiceModelManager {
         val joiner: File,
         val bpeVocab: File?,
         val isQnn: Boolean = false,
-    )
+    ) {
+        /** True when the QNN model is provided as .so libs (libencoder.so etc.). */
+        val usesLibModels: Boolean get() = encoder.extension == "so"
+
+        /** QNN context binary paths; for .so lib models these are generated on first use. */
+        val qnnContextBinary: String
+            get() =
+                if (isQnn) {
+                    val dir = encoder.parentFile!!
+                    listOf(encoder, decoder, joiner)
+                        .joinToString(",") {
+                            "${dir.absolutePath}/${it.nameWithoutExtension.removePrefix("lib")}.bin"
+                        }
+                } else {
+                    ""
+                }
+    }
 
     @Volatile
     private var migrationDone = false
@@ -150,14 +176,6 @@ object VoiceModelManager {
         if (!dir.isDirectory) return null
 
         val isQnn = getSelectedVariant() == ModelVariant.QNN
-        val ext = if (isQnn) "bin" else "onnx"
-        val label = if (isQnn) "bin" else "onnx"
-
-        val modelFiles = dir.listFiles { f -> f.isFile && f.extension == ext } ?: return null
-
-        val encoder = modelFiles.find { it.nameWithoutExtension.startsWith("encoder") }
-        val decoder = modelFiles.find { it.nameWithoutExtension.startsWith("decoder") }
-        val joiner = modelFiles.find { it.nameWithoutExtension.startsWith("joiner") }
 
         val tokensFile = File(dir, "tokens.txt")
         val bpeFile = File(dir, "bpe.model").takeIf { it.exists() }
@@ -166,16 +184,45 @@ object VoiceModelManager {
             Timber.w("Voice model check: tokens.txt not found")
             return null
         }
+
+        if (isQnn) {
+            // New flow: .so model libs — context binaries are generated on-device on first use.
+            val libEncoder = File(dir, "libencoder.so")
+            val libDecoder = File(dir, "libdecoder.so")
+            val libJoiner = File(dir, "libjoiner.so")
+            if (libEncoder.isFile && libDecoder.isFile && libJoiner.isFile) {
+                return ModelFiles(tokensFile, libEncoder, libDecoder, libJoiner, bpeFile, isQnn)
+            }
+
+            // Legacy flow: pre-downloaded .bin context binaries.
+            val bins = dir.listFiles { f -> f.isFile && f.extension == "bin" } ?: emptyArray()
+            val binEncoder = bins.find { it.nameWithoutExtension.startsWith("encoder") }
+            val binDecoder = bins.find { it.nameWithoutExtension.startsWith("decoder") }
+            val binJoiner = bins.find { it.nameWithoutExtension.startsWith("joiner") }
+            if (binEncoder != null && binDecoder != null && binJoiner != null) {
+                return ModelFiles(tokensFile, binEncoder, binDecoder, binJoiner, bpeFile, isQnn)
+            }
+
+            Timber.w("Voice model check: QNN libencoder.so/libdecoder.so/libjoiner.so (or legacy .bin) not found")
+            return null
+        }
+
+        val onnxFiles = dir.listFiles { f -> f.isFile && f.extension == "onnx" } ?: return null
+
+        val encoder = onnxFiles.find { it.nameWithoutExtension.startsWith("encoder") }
+        val decoder = onnxFiles.find { it.nameWithoutExtension.startsWith("decoder") }
+        val joiner = onnxFiles.find { it.nameWithoutExtension.startsWith("joiner") }
+
         if (encoder == null) {
-            Timber.w("Voice model check: encoder $label not found")
+            Timber.w("Voice model check: encoder onnx not found")
             return null
         }
         if (decoder == null) {
-            Timber.w("Voice model check: decoder $label not found")
+            Timber.w("Voice model check: decoder onnx not found")
             return null
         }
         if (joiner == null) {
-            Timber.w("Voice model check: joiner $label not found")
+            Timber.w("Voice model check: joiner onnx not found")
             return null
         }
 

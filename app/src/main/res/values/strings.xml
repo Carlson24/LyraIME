@@ -382,7 +382,6 @@
     <string name="voice_runtime_not_installed">Not installed — tap to download</string>
     <string name="voice_runtime_downloading">Downloading voice runtime…</string>
     <string name="voice_runtime_download_failed">Voice runtime download failed</string>
-    <string name="voice_runtime_missing_toast">Voice runtime not initialized. Go to Voice settings to download.</string>
     <string name="voice_qnn_dsp_missing_toast">QNN acceleration library not initialized. Go to Voice settings to download.</string>
     <string name="voice_runtime_require_builtin">Switch to built-in voice to enable</string>
     <string name="voice_model_download_action_reinstall">Re-download voice model</string>

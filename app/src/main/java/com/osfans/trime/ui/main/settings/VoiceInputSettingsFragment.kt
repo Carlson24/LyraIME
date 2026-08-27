@@ -22,7 +22,6 @@ import com.osfans.trime.data.prefs.PreferenceDelegateFragment
 import com.osfans.trime.data.prefs.PreferenceDelegateProvider
 import com.osfans.trime.link.QnnDspManager
 import com.osfans.trime.link.VoiceModelManager
-import com.osfans.trime.link.VoiceNativeManager
 import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.common.confirmDialog
 import com.osfans.trime.ui.common.progressDialog
@@ -159,15 +158,16 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     }
 
     private fun refreshDspUi(enabled: Boolean) {
-        dspInitPref?.isEnabled = enabled
-
-        val onnxReady = VoiceNativeManager.isOnnxRuntimeInstalled()
         val isQnn = voiceInputPrefs.voiceModelType.getValue() == AppPrefs.VoiceInput.VoiceModelType.QNN
+        val isQualcomm = QnnDspManager.getHtpVariant() != null
         val dspReady = if (isQnn) QnnDspManager.isInstalled() else true
-        val allReady = onnxReady && dspReady
+        // onnxruntime is pre-packaged in the APK; only non-V81 Qualcomm QNN devices
+        // may still need a runtime download.
+        val canDownload = enabled && isQnn && isQualcomm && !dspReady
 
+        dspInitPref?.isEnabled = canDownload
         dspInitPref?.title = getString(
-            if (allReady) {
+            if (isQnn && dspReady) {
                 R.string.voice_runtime_reinitialize
             } else {
                 R.string.voice_runtime_initialize
@@ -176,7 +176,8 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         dspInitPref?.summary = getString(
             when {
                 !enabled -> R.string.voice_runtime_require_builtin
-                allReady -> R.string.voice_runtime_installed
+                !isQnn -> R.string.voice_runtime_installed
+                dspReady -> R.string.voice_runtime_installed
                 else -> R.string.voice_runtime_not_installed
             },
         )
@@ -225,7 +226,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                     if (isQualcomm) {
                         QnnDspManager.ensureInstalled(ctx, force = true) != null
                     } else {
-                        VoiceNativeManager.ensureOnnxRuntime(ctx)
+                        true
                     }
                 }
 

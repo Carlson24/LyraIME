@@ -19,7 +19,7 @@ object ResourceUrls {
     const val VOICE_MODEL_RELEASE_BASE =
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models"
     const val VOICE_MODEL_QNN_RELEASE_BASE =
-        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn-binary"
+        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn"
 
     fun buildVoiceModelUrl(
         chunkMs: Int,
@@ -37,12 +37,11 @@ object ResourceUrls {
     }
 
     fun buildQnnVoiceModelUrl(
-        soc: String,
         chunkMs: Int,
         punct: Boolean,
     ): String {
         val punctSegment = if (punct) "-punct" else ""
-        return "$VOICE_MODEL_QNN_RELEASE_BASE/sherpa-onnx-qnn-$soc-binary-x-asr-streaming-zipformer-transducer-zh-en$punctSegment-2026-06-05-chunk-size-${chunkMs}ms.tar.bz2"
+        return "$VOICE_MODEL_QNN_RELEASE_BASE/sherpa-onnx-qnn-x-asr-streaming-zipformer-transducer-zh-en$punctSegment-2026-06-05-chunk-size-${chunkMs}ms-android-aarch64.tar.bz2"
     }
 
     enum class VoiceModelVariant {
@@ -79,22 +78,6 @@ object ResourceUrls {
         ),
     )
 
-    // ---- Voice Model QNN Binary (per SOC) ----
-    // https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models-qnn-binary
-    val QNN_SOC_SET: Set<String> = setOf(
-        "SM8450",
-        "SM8475",
-        "SM8550",
-        "SM8650",
-        "SM8750",
-        "SM8850",
-    )
-
-    fun resolveQnnSoc(): String {
-        val soc = android.os.Build.SOC_MODEL
-        return if (soc in QNN_SOC_SET) soc else "SM8850"
-    }
-
     // ---- GitHub Release API URLs ----
     private const val RELEASE_API_K2FSA_SHERPA_ONNX =
         "https://api.github.com/repos/k2-fsa/sherpa-onnx/releases/tags"
@@ -104,12 +87,9 @@ object ResourceUrls {
     const val VOICE_MODEL_RELEASE_API =
         "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models"
     const val VOICE_MODEL_QNN_RELEASE_API =
-        "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models-qnn-binary"
+        "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models-qnn"
     const val QNN_DSP_RELEASE_API =
         "$RELEASE_API_LYRAIME/libVoiceRuntime"
-
-    const val ONNX_RUNTIME_URL =
-        "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libonnxruntime.tar.bz2"
 
     // ---- SHA256 cache (fetched from GitHub release API) ----
     object GitHubAssetCache {

@@ -380,7 +380,6 @@
     <string name="voice_runtime_not_installed">未安装 — 点击下载</string>
     <string name="voice_runtime_downloading">正在下载语音组件…</string>
     <string name="voice_runtime_download_failed">语音组件下载失败</string>
-    <string name="voice_runtime_missing_toast">语音组件未初始化，请前往语音设置中下载</string>
     <string name="voice_qnn_dsp_missing_toast">QNN 加速库未初始化，请前往语音设置中下载</string>
     <string name="voice_runtime_require_builtin">切换为内置语音后可用</string>
     <string name="voice_model_download_action_reinstall">重新下载语音模型</string>
