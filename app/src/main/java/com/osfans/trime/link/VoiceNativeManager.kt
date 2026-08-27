@@ -16,10 +16,7 @@ object VoiceNativeManager {
     @Volatile
     private var qnnDspLoaded = false
 
-    /** onnxruntime is always pre-packaged into the APK's native lib dir. */
-    fun isOnnxRuntimeInstalled(): Boolean = true
-
-    fun loadNativeLibs(useQnn: Boolean): Boolean {
+    fun loadNativeLibs(): Boolean {
         if (!onnxRuntimeLoaded) {
             try {
                 System.loadLibrary("onnxruntime")
@@ -31,7 +28,7 @@ object VoiceNativeManager {
             }
         }
 
-        if (useQnn && !qnnDspLoaded) {
+        if (!qnnDspLoaded) {
             if (Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a") {
                 val dsp = QnnDspManager.getLibs()
                 if (dsp != null) {

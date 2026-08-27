@@ -15,81 +15,19 @@ import java.util.concurrent.ConcurrentHashMap
 object ResourceUrls {
     const val USER_AGENT = "Mozilla/5.0"
 
-    // ---- Voice Model ----
-    const val VOICE_MODEL_RELEASE_BASE =
-        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models"
+    // ---- Voice Model (QNN-only, punctuation always enabled) ----
     const val VOICE_MODEL_QNN_RELEASE_BASE =
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn"
 
-    fun buildVoiceModelUrl(
-        chunkMs: Int,
-        punct: Boolean,
-        variant: VoiceModelVariant,
-    ): String {
-        val punctSegment = if (punct) "-punct" else ""
-        return when (variant) {
-            VoiceModelVariant.INT8 ->
-                "$VOICE_MODEL_RELEASE_BASE/sherpa-onnx-x-asr-${chunkMs}ms-streaming-zipformer-transducer-zh-en$punctSegment-int8-2026-06-05.tar.bz2"
-
-            else ->
-                "$VOICE_MODEL_RELEASE_BASE/sherpa-onnx-x-asr-${chunkMs}ms-streaming-zipformer-transducer-zh-en$punctSegment-2026-06-05.tar.bz2"
-        }
-    }
-
-    fun buildQnnVoiceModelUrl(
-        chunkMs: Int,
-        punct: Boolean,
-    ): String {
-        val punctSegment = if (punct) "-punct" else ""
-        return "$VOICE_MODEL_QNN_RELEASE_BASE/sherpa-onnx-qnn-x-asr-streaming-zipformer-transducer-zh-en$punctSegment-2026-06-05-chunk-size-${chunkMs}ms-android-aarch64.tar.bz2"
-    }
-
-    enum class VoiceModelVariant {
-        STANDARD,
-        INT8,
-        QNN,
-    }
-
-    // ---- QNN DSP Libraries (per SoC) ----
-    // https://github.com/Carlson24/LyraIME/releases/tag/libVoiceRuntime
-    data class QnnDspEntry(val url: String)
-
-    val QNN_DSP_MAP: Map<String, QnnDspEntry> = mapOf(
-        "SM8350" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV68.tar.bz2",
-        ),
-        "SM8450" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV69.tar.bz2",
-        ),
-        "SM8475" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV69.tar.bz2",
-        ),
-        "SM8550" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV73.tar.bz2",
-        ),
-        "SM8650" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV75.tar.bz2",
-        ),
-        "SM8750" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV79.tar.bz2",
-        ),
-        "SM8850" to QnnDspEntry(
-            "https://github.com/Carlson24/LyraIME/releases/download/libVoiceRuntime/libQnnHtpV81.tar.bz2",
-        ),
-    )
+    fun buildQnnVoiceModelUrl(chunkMs: Int): String =
+        "$VOICE_MODEL_QNN_RELEASE_BASE/sherpa-onnx-qnn-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-${chunkMs}ms-android-aarch64.tar.bz2"
 
     // ---- GitHub Release API URLs ----
     private const val RELEASE_API_K2FSA_SHERPA_ONNX =
         "https://api.github.com/repos/k2-fsa/sherpa-onnx/releases/tags"
-    private const val RELEASE_API_LYRAIME =
-        "https://api.github.com/repos/Carlson24/LyraIME/releases/tags"
 
-    const val VOICE_MODEL_RELEASE_API =
-        "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models"
     const val VOICE_MODEL_QNN_RELEASE_API =
         "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models-qnn"
-    const val QNN_DSP_RELEASE_API =
-        "$RELEASE_API_LYRAIME/libVoiceRuntime"
 
     // ---- SHA256 cache (fetched from GitHub release API) ----
     object GitHubAssetCache {

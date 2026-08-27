@@ -18,22 +18,21 @@ make release            # assembles release APK (auto-applies patches, needs key
 
 Java 17 is required (source/target compatibility and JVM target).
 
-## QNN DSP — Runtime download
+## QNN DSP — pre-packaged
 
-QNN DSP libraries are **not bundled** in the APK. They are downloaded at runtime on first QNN voice input use from GitHub Releases (`libQnnHtp` tag). The SoC model is detected via `Build.SOC_MODEL` at runtime to select the correct HTP variant. On non-Qualcomm or x86_64 devices, CPU-only inference is used with no download.
+QNN DSP libraries are **pre-packaged** into the APK (V81 / SM8850 only) during the build, from the local QNN SDK. They are never downloaded at runtime.
 
-| HTP | SoC |
-|-----|-----|
-| V81 | SM8850 (Snapdragon 8 Gen 5) |
-| V79 | SM8750 (Snapdragon 8 Gen 4) |
-| V75 | SM8650 (Snapdragon 8 Gen 3) |
-| V73 | SM8550 (Snapdragon 8 Gen 2) |
-| V69 | SM8450 / SM8475 (Snapdragon 8 Gen 1 / 8+ Gen 1) |
-| V68 | SM8350 (Snapdragon 888) |
+During a build with `QNN_SDK_ROOT`/`qnnSdkRoot` set, the `packageVoiceRuntimeLibs` task in `NativeBaseConventionPlugin` copies five libraries from the QNN SDK into the APK's `lib/arm64-v8a/`:
 
-The download is handled by `QnnDspManager` (`app/src/main/java/com/osfans/trime/link/QnnDspManager.kt`) before QNN engine initialization. The Stub+Skel pair (plus `libQnnHtp.so` and `libQnnSystem.so`) for the detected SoC are extracted to the app's internal files dir.
+- `libQnnHtp.so` + `libQnnHtpV81Stub.so` (from `lib/aarch64-android/`)
+- `libQnnHtpV81Skel.so` (from `lib/hexagon-v81/unsigned/`)
+- `libQnnSystem.so`, `libQnnHtpPrepare.so` (from `lib/aarch64-android/`)
 
-The DSP packages (`libQnnHtpV{n}.tar.bz2`) are hosted at `https://github.com/Carlson24/LyraIME/releases/download/libQnnHtp/`. See the `publish-qnn-htp` CI workflow for how these are built from the QNN SDK.
+`libQnnHtpPrepare.so` enables **on-device context binary generation**: the QNN model is downloaded as `.so` model libs (`libencoder.so`/`libdecoder.so`/`libjoiner.so`, universal android-aarch64, punctuation variant), and sherpa-onnx generates the `encoder.bin`/`decoder.bin`/`joiner.bin` context binaries locally on first use. `libonnxruntime.so` is likewise pre-packaged (it is produced by the sherpa-onnx CMake build).
+
+The model files are kept on **internal storage** (`filesDir/voice-qnn/<chunk>ms`) because `dlopen` requires executable mappings that external/shared storage (noexec FUSE) does not allow.
+
+If the QNN SDK is not available at build time, the DSP libs are not packaged and built-in voice is unavailable; only third-party/AIDL voice input works.
 
 ## Native build (C++ / JNI)
 

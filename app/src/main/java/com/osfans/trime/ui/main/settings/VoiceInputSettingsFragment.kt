@@ -20,7 +20,7 @@ import com.osfans.trime.R
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegateFragment
 import com.osfans.trime.data.prefs.PreferenceDelegateProvider
-import com.osfans.trime.link.QnnDspManager
+import com.osfans.trime.link.SherpaSpeechClient
 import com.osfans.trime.link.VoiceModelManager
 import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.common.confirmDialog
@@ -42,11 +42,8 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     private val voiceInputPrefs = AppPrefs.defaultInstance().voiceInput
     private var downloadPref: Preference? = null
     private var importPref: Preference? = null
-    private var dspInitPref: Preference? = null
+    private var deletePref: Preference? = null
     private var downloadJob: Job? = null
-    private var dspJob: Job? = null
-
-    @Volatile private var dspDownloadCancelled = false
 
     private val importMimeTypes = arrayOf(
         "application/zip",
@@ -78,7 +75,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         val enabled = isBuiltin && !isAidlEnabled
         downloadPref?.isEnabled = enabled
         importPref?.isEnabled = enabled
-        refreshDspUi(enabled)
+        refreshDeletePrefState()
     }
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
@@ -114,12 +111,13 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 }
             }.also { screen.addPreference(it) }
 
-        dspInitPref =
+        deletePref =
             Preference(requireContext()).apply {
-                key = "voice_qnn_dsp_init"
+                key = "voice_model_delete"
                 isIconSpaceReserved = false
+                title = getString(R.string.voice_model_delete_action)
                 setOnPreferenceClickListener {
-                    startDspDownload()
+                    maybeConfirmThenDelete()
                     true
                 }
             }.also { screen.addPreference(it) }
@@ -129,15 +127,8 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     }
 
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == AppPrefs.VoiceInput.VOICE_MODEL_TYPE ||
-            key == AppPrefs.VoiceInput.VOICE_CHUNK_SIZE ||
-            key == AppPrefs.VoiceInput.VOICE_PUNCT_MODEL
-        ) {
+        if (key == AppPrefs.VoiceInput.VOICE_CHUNK_SIZE) {
             refreshModelUi()
-            refreshDspUi(
-                voiceInputPrefs.preferredVoiceInput.getValue() == InputMethodUtils.BUILTIN_VOICE_INPUT &&
-                    !voiceInputPrefs.asrkbAidlVoiceInputEnabled.getValue(),
-            )
         }
     }
 
@@ -146,9 +137,6 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         preferenceManager.sharedPreferences
             ?.registerOnSharedPreferenceChangeListener(prefsListener)
         refreshModelUi()
-        val isBuiltin = voiceInputPrefs.preferredVoiceInput.getValue() == InputMethodUtils.BUILTIN_VOICE_INPUT
-        val isAidlEnabled = voiceInputPrefs.asrkbAidlVoiceInputEnabled.getValue()
-        refreshDspUi(isBuiltin && !isAidlEnabled)
     }
 
     override fun onPause() {
@@ -157,107 +145,8 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
             ?.unregisterOnSharedPreferenceChangeListener(prefsListener)
     }
 
-    private fun refreshDspUi(enabled: Boolean) {
-        val isQnn = voiceInputPrefs.voiceModelType.getValue() == AppPrefs.VoiceInput.VoiceModelType.QNN
-        val isQualcomm = QnnDspManager.getHtpVariant() != null
-        val dspReady = if (isQnn) QnnDspManager.isInstalled() else true
-        // onnxruntime is pre-packaged in the APK; only non-V81 Qualcomm QNN devices
-        // may still need a runtime download.
-        val canDownload = enabled && isQnn && isQualcomm && !dspReady
-
-        dspInitPref?.isEnabled = canDownload
-        dspInitPref?.title = getString(
-            if (isQnn && dspReady) {
-                R.string.voice_runtime_reinitialize
-            } else {
-                R.string.voice_runtime_initialize
-            },
-        )
-        dspInitPref?.summary = getString(
-            when {
-                !enabled -> R.string.voice_runtime_require_builtin
-                !isQnn -> R.string.voice_runtime_installed
-                dspReady -> R.string.voice_runtime_installed
-                else -> R.string.voice_runtime_not_installed
-            },
-        )
-    }
-
-    private fun startDspDownload() {
-        dspDownloadCancelled = false
-        val ctx = requireContext()
-        val taskTitle = getString(R.string.voice_runtime_initialize)
-        val isQualcomm = QnnDspManager.getHtpVariant() != null
-        val dp = ctx.resources.displayMetrics.density
-        fun Int.dp() = (this * dp).toInt()
-
-        val taskText = TextView(ctx).apply {
-            textSize = 14f
-            text = taskTitle
-        }
-        val progressBar = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            )
-            max = 100
-            isIndeterminate = true
-        }
-        val taskContainer = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(24.dp(), 16.dp(), 24.dp(), 16.dp())
-            addView(taskText)
-            addView(progressBar)
-        }
-
-        val dialog = ctx.buildDialog(R.string.voice_runtime_downloading)
-            .setView(ScrollView(ctx).also { it.addView(taskContainer) })
-            .setCancelable(false)
-            .setNegativeButton(android.R.string.cancel) { _, _ ->
-                dspDownloadCancelled = true
-                dspJob?.cancel()
-            }
-            .create()
-        dialog.show()
-
-        dspJob = lifecycleScope.launch {
-            try {
-                val success = withContext(Dispatchers.IO) {
-                    if (isQualcomm) {
-                        QnnDspManager.ensureInstalled(ctx, force = true) != null
-                    } else {
-                        true
-                    }
-                }
-
-                progressBar.isIndeterminate = false
-                progressBar.progress = 100
-                val status = if (success) {
-                    getString(R.string.voice_runtime_installed)
-                } else {
-                    getString(R.string.voice_runtime_download_failed)
-                }
-                taskText.text = getString(R.string.custom_dl_progress_line, taskTitle, status)
-
-                val button = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
-                button.text = getString(android.R.string.ok)
-                button.setOnClickListener { dialog.dismiss() }
-            } catch (_: CancellationException) {
-                dialog.dismiss()
-            }
-        }
-
-        dialog.setOnDismissListener {
-            val isBuiltin = voiceInputPrefs.preferredVoiceInput.getValue() == InputMethodUtils.BUILTIN_VOICE_INPUT
-            val isAidlEnabled = voiceInputPrefs.asrkbAidlVoiceInputEnabled.getValue()
-            refreshDspUi(isBuiltin && !isAidlEnabled)
-        }
-    }
-
     private fun refreshModelUi() {
         val installed = VoiceModelManager.checkModelFiles()
-        val variant = VoiceModelManager.getSelectedVariant()
-        val variantName = getString(variantToStringRes(variant))
 
         downloadPref?.title = getString(
             if (installed) {
@@ -272,7 +161,6 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
             } else {
                 R.string.voice_model_status_not_installed
             },
-            variantName,
         )
 
         importPref?.title = getString(R.string.voice_model_import_action)
@@ -282,14 +170,43 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
             } else {
                 R.string.voice_model_status_not_installed
             },
-            variantName,
+        )
+
+        refreshDeletePrefState()
+    }
+
+    private fun refreshDeletePrefState() {
+        val installed = VoiceModelManager.checkModelFiles()
+        val builtinVoice =
+            voiceInputPrefs.preferredVoiceInput.getValue() == InputMethodUtils.BUILTIN_VOICE_INPUT &&
+                !voiceInputPrefs.asrkbAidlVoiceInputEnabled.getValue()
+        deletePref?.isEnabled = builtinVoice && installed
+        deletePref?.summary = getString(
+            if (installed) {
+                R.string.voice_model_status_installed
+            } else {
+                R.string.voice_model_status_not_installed
+            },
         )
     }
 
-    private fun variantToStringRes(variant: VoiceModelManager.ModelVariant): Int = when (variant) {
-        VoiceModelManager.ModelVariant.QNN -> R.string.voice_model_type_qnn
-        VoiceModelManager.ModelVariant.INT8 -> R.string.voice_model_type_int8
-        else -> R.string.voice_model_type_standard
+    private fun maybeConfirmThenDelete() {
+        requireContext().confirmDialog(
+            title = R.string.voice_model_delete_title,
+            message = R.string.voice_model_delete_message,
+            onConfirm = { doDeleteModel() },
+        )
+    }
+
+    private fun doDeleteModel() {
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                SherpaSpeechClient.resetEngine()
+                VoiceModelManager.deleteModel()
+            }
+            requireContext().toast(R.string.voice_model_deleted)
+            refreshModelUi()
+        }
     }
 
     private fun maybeConfirmThenDownload() {
@@ -430,8 +347,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
     private fun handleSelectedFile(uri: Uri) {
         val ctx = requireContext()
         val displayName = queryDisplayName(ctx, uri) ?: "voice_model_selected"
-        val onProceed: () -> Unit = { doImportSelectedFile(ctx, uri, displayName) }
-        checkModelTypeMismatch(displayName, ctx, onProceed)
+        doImportSelectedFile(ctx, uri, displayName)
     }
 
     private fun doImportSelectedFile(
@@ -480,41 +396,6 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 ctx.toast(e.message ?: getString(R.string.voice_model_download_failed, ""))
             }
         }
-    }
-
-    private fun checkModelTypeMismatch(
-        displayName: String,
-        ctx: android.content.Context,
-        onProceed: () -> Unit,
-    ) {
-        val selectedVariant = VoiceModelManager.getSelectedVariant()
-        val detectedVariant = detectVariantFromName(displayName)
-
-        if (detectedVariant == selectedVariant) {
-            onProceed()
-            return
-        }
-
-        val fileType = ctx.getString(variantToStringResName(detectedVariant))
-        val selectedType = ctx.getString(variantToStringResName(selectedVariant))
-
-        ctx.confirmDialog(
-            title = R.string.voice_model_type_mismatch_title,
-            message = ctx.getString(R.string.voice_model_type_mismatch_message, fileType, selectedType),
-            onConfirm = onProceed,
-        )
-    }
-
-    private fun detectVariantFromName(name: String): VoiceModelManager.ModelVariant = when {
-        name.contains("qnn", ignoreCase = true) || name.contains("SM8850") -> VoiceModelManager.ModelVariant.QNN
-        name.contains("int8", ignoreCase = true) -> VoiceModelManager.ModelVariant.INT8
-        else -> VoiceModelManager.ModelVariant.STANDARD
-    }
-
-    private fun variantToStringResName(variant: VoiceModelManager.ModelVariant): Int = when (variant) {
-        VoiceModelManager.ModelVariant.QNN -> R.string.voice_model_type_qnn_name
-        VoiceModelManager.ModelVariant.INT8 -> R.string.voice_model_type_int8_name
-        else -> R.string.voice_model_type_standard_name
     }
 
     private fun queryDisplayName(ctx: android.content.Context, uri: Uri): String? = ctx.contentResolver.query(uri, null, null, null, null)?.use { cursor ->

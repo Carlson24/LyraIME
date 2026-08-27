@@ -183,22 +183,13 @@ class AppPrefs(
             const val ASRKB_AIDL_VOICE_INPUT = "asrkb_aidl_voice_input"
             const val PREFERRED_VOICE_INPUT = "preferred_voice_input"
             const val VOICE_ANIMATION_STYLE = "voice_animation_style"
-            const val VOICE_MODEL_TYPE = "voice_model_type"
-            const val VOICE_NUM_THREADS = "voice_num_threads"
             const val VOICE_SENSITIVITY = "voice_sensitivity"
             const val VOICE_CHUNK_SIZE = "voice_chunk_size"
-            const val VOICE_PUNCT_MODEL = "voice_punct_model"
         }
 
         enum class VoiceAnimationStyle(override val stringRes: Int) : PreferenceDelegateEnum {
             PARTICLE(R.string.voice_animation_particle),
             SPHERE(R.string.voice_animation_sphere),
-        }
-
-        enum class VoiceModelType(override val stringRes: Int) : PreferenceDelegateEnum {
-            STANDARD(R.string.voice_model_type_standard),
-            INT8(R.string.voice_model_type_int8),
-            QNN(R.string.voice_model_type_qnn),
         }
 
         enum class VoiceChunkSize(override val stringRes: Int, val ms: Int) : PreferenceDelegateEnum {
@@ -228,20 +219,6 @@ class AppPrefs(
             enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
 
-        val voiceModelType = enum(
-            R.string.voice_model_type,
-            VOICE_MODEL_TYPE,
-            VoiceModelType.STANDARD,
-            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
-        )
-        val voiceNumThreads = int(
-            R.string.voice_num_threads,
-            VOICE_NUM_THREADS,
-            4,
-            1,
-            Runtime.getRuntime().availableProcessors().coerceAtLeast(4),
-            enableUiOn = { voiceModelType.getValue() != VoiceModelType.QNN && !asrkbAidlVoiceInputEnabled.getValue() },
-        )
         val voiceSensitivity = int(
             R.string.voice_sensitivity,
             VOICE_SENSITIVITY,
@@ -254,13 +231,6 @@ class AppPrefs(
             R.string.voice_chunk_size,
             VOICE_CHUNK_SIZE,
             VoiceChunkSize.CHUNK_480,
-            enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
-        )
-        val voicePunctModel = switch(
-            R.string.voice_punct_model,
-            VOICE_PUNCT_MODEL,
-            true,
-            R.string.voice_punct_model_summary,
             enableUiOn = { !asrkbAidlVoiceInputEnabled.getValue() },
         )
     }

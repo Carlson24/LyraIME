@@ -13,7 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
 import com.osfans.trime.ui.common.buildDialog
-import com.osfans.trime.ui.common.confirmDialog
 import com.osfans.trime.ui.common.progressDialog
 import com.osfans.trime.util.FileDownloader
 import kotlinx.coroutines.Dispatchers
@@ -124,8 +123,7 @@ class VoiceModelDownloadActivity : ComponentActivity() {
 
     private fun handleSelectedFile(uri: Uri) {
         val displayName = queryDisplayName(uri) ?: "voice_model_selected"
-        val onProceed = { doImportSelectedFile(uri, displayName) }
-        checkModelTypeMismatch(displayName, onProceed)
+        doImportSelectedFile(uri, displayName)
     }
 
     private fun doImportSelectedFile(uri: Uri, displayName: String) {
@@ -159,37 +157,6 @@ class VoiceModelDownloadActivity : ComponentActivity() {
                 showError(e.message ?: getString(R.string.voice_model_download_failed, ""))
             }
         }
-    }
-
-    private fun checkModelTypeMismatch(displayName: String, onProceed: () -> Unit) {
-        val selectedVariant = VoiceModelManager.getSelectedVariant()
-        val detectedVariant = detectVariantFromName(displayName)
-
-        if (detectedVariant == selectedVariant) {
-            onProceed()
-            return
-        }
-
-        val fileType = getString(variantToStringResName(detectedVariant))
-        val selectedType = getString(variantToStringResName(selectedVariant))
-
-        confirmDialog(
-            title = R.string.voice_model_type_mismatch_title,
-            message = getString(R.string.voice_model_type_mismatch_message, fileType, selectedType),
-            onConfirm = onProceed,
-        )
-    }
-
-    private fun detectVariantFromName(name: String): VoiceModelManager.ModelVariant = when {
-        name.contains("qnn", ignoreCase = true) || name.contains("SM8850") -> VoiceModelManager.ModelVariant.QNN
-        name.contains("int8", ignoreCase = true) -> VoiceModelManager.ModelVariant.INT8
-        else -> VoiceModelManager.ModelVariant.STANDARD
-    }
-
-    private fun variantToStringResName(variant: VoiceModelManager.ModelVariant): Int = when (variant) {
-        VoiceModelManager.ModelVariant.QNN -> R.string.voice_model_type_qnn_name
-        VoiceModelManager.ModelVariant.INT8 -> R.string.voice_model_type_int8_name
-        else -> R.string.voice_model_type_standard_name
     }
 
     private fun queryDisplayName(uri: Uri): String? = contentResolver.query(uri, null, null, null, null)
