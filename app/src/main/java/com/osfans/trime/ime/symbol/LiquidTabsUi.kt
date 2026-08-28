@@ -35,7 +35,12 @@ class LiquidTabsUi(
         override val ctx = this@LiquidTabsUi.ctx
         private val textColor = ColorManager.getColor("key_text_color")
         private val hlTextColor = ColorManager.getColor("hilited_key_text_color")
-        private val hlBackColor = ColorManager.getColor("hilited_key_back_color")
+        private val hlRippleColor: Int =
+            runCatching { ColorManager.getColor("hilited_key_back_color") }
+                .getOrElse {
+                    runCatching { ColorManager.getColor("hilited_candidate_back_color") }
+                        .getOrDefault(Color.TRANSPARENT)
+                }
         private val cornerRadius = ctx.dp(theme.generalStyle.roundCorner)
 
         val text =
@@ -56,7 +61,7 @@ class LiquidTabsUi(
                         horizontalPadding = dp(theme.generalStyle.candidatePadding)
                     },
                 )
-                background = roundedRippleDrawable(hlBackColor, cornerRadius)
+                background = roundedRippleDrawable(hlRippleColor, cornerRadius)
             }
 
         fun setText(str: String) {
@@ -64,10 +69,15 @@ class LiquidTabsUi(
         }
 
         fun setActive(active: Boolean) {
-            val color = if (active) hlTextColor else textColor
-            val contentColor = if (active) hlBackColor else Color.TRANSPARENT
-            text.setTextColor(color)
-            root.background = roundedRippleDrawable(hlBackColor, cornerRadius, contentColor)
+            text.setTextColor(if (active) hlTextColor else textColor)
+            root.background = if (active) {
+                ColorManager.getDecorDrawable(
+                    "hilited_key_back_color",
+                    cornerRadius = cornerRadius,
+                ) ?: roundedRippleDrawable(hlRippleColor, cornerRadius, hlRippleColor)
+            } else {
+                roundedRippleDrawable(hlRippleColor, cornerRadius)
+            }
         }
     }
 
