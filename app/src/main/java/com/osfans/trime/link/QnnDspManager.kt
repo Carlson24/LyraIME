@@ -5,6 +5,7 @@
 
 package com.osfans.trime.link
 
+import com.osfans.trime.BuildConfig
 import com.osfans.trime.util.appContext
 import java.io.File
 
@@ -17,13 +18,18 @@ object QnnDspManager {
     )
 
     /**
-     * QNN DSP V81 (SM8850) libraries are pre-packaged in the APK's native lib dir
-     * (via the `packageVoiceRuntimeLibs` build task); nothing is downloaded at runtime.
+     * QNN DSP libraries for the configured [BuildConfig.QNN_VARIANT] variant are
+     * pre-packaged in the APK's native lib dir (via the `packageVoiceRuntimeLibs`
+     * build task); nothing is downloaded at runtime. When no variant is configured,
+     * no DSP libraries are packaged and QNN voice is unavailable.
      */
+    private val variant: String? = BuildConfig.QNN_VARIANT.takeIf { it.isNotBlank() }
+
     private fun packagedDspLibs(): DspLibs? {
+        val version = variant?.removePrefix("v") ?: return null
         val libDir = File(appContext.applicationInfo.nativeLibraryDir)
-        val stub = File(libDir, "libQnnHtpV81Stub.so")
-        val skel = File(libDir, "libQnnHtpV81Skel.so")
+        val stub = File(libDir, "libQnnHtpV${version}Stub.so")
+        val skel = File(libDir, "libQnnHtpV${version}Skel.so")
         val htp = File(libDir, "libQnnHtp.so")
         val system = File(libDir, "libQnnSystem.so")
         if (!stub.exists() || !skel.exists() || !htp.exists() || !system.exists()) return null
@@ -35,7 +41,8 @@ object QnnDspManager {
     fun getLibs(): DspLibs? = packagedDspLibs()
 
     fun loadDsp(dsp: DspLibs) {
-        System.loadLibrary("QnnHtpV81Stub")
+        val version = variant?.removePrefix("v") ?: return
+        System.loadLibrary("QnnHtpV${version}Stub")
         System.loadLibrary("QnnHtp")
         System.loadLibrary("QnnSystem")
     }
