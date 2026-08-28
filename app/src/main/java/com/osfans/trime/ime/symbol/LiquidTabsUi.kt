@@ -25,7 +25,7 @@ import splitties.views.dsl.core.wrapContent
 import splitties.views.dsl.recyclerview.recyclerView
 import splitties.views.gravityCenter
 import splitties.views.horizontalPadding
-import splitties.views.recyclerview.horizontalLayoutManager
+import splitties.views.recyclerview.verticalLayoutManager
 
 class LiquidTabsUi(
     override val ctx: Context,
@@ -48,7 +48,7 @@ class LiquidTabsUi(
 
         override val root =
             view(::GestureFrame) {
-                minimumWidth = dp(40)
+                minimumHeight = dp(40)
                 add(
                     text,
                     lParams {
@@ -96,7 +96,7 @@ class LiquidTabsUi(
                     setText(item!!.label)
                     setActive(position == selected)
                     root.run {
-                        layoutParams = ViewGroup.LayoutParams(wrapContent, matchParent)
+                        layoutParams = ViewGroup.LayoutParams(matchParent, wrapContent)
                     }
                 }
             }
@@ -121,10 +121,9 @@ class LiquidTabsUi(
 
     override val root =
         recyclerView {
-            layoutManager = horizontalLayoutManager()
+            layoutManager = verticalLayoutManager()
             adapter = this@LiquidTabsUi.adapter
             isVerticalScrollBarEnabled = false
-            isHorizontalScrollBarEnabled = false
         }
 
     fun setTags(tags: List<LiquidData.Tag>) {

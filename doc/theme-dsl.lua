@@ -371,14 +371,6 @@
 ---| '".ascii"'             # 英文模式键盘
 ---| string                 # preset_keyboards 中的自定义 ID
 
---- 液态键盘固定按键栏位置
----@alias KeyBarPosition
----| '"TOP"'                # 顶部
----| '"LEFT"'               # 左侧
----| '"BOTTOM"'             # 底部（默认）
----| '"RIGHT"'              # 右侧
----| '"NAVBAR"'             # 导航栏区域
-
 --- 液态键盘面板类型
 ---@alias LiquidKeyboardType
 ---| '"SINGLE"'             # 单面板
@@ -723,27 +715,6 @@
 -- 液态键盘 (LiquidKeyboard)
 -- ============================================================================
 
----@class EdgeInsets
----@field left?             number                # 左间距
----@field top?              number                # 上间距
----@field right?            number                # 右间距
----@field bottom?           number                # 下间距
-
---- 液态键盘固定按键项
----@class FixedKeyItem
----@field click?            string                # 点击动作
----@field label?            string                # 显示标签
----@field width?            number?               # 宽度（nil 表示自适应）
----@field height?           number?               # 高度（nil 表示自适应）
----@field margin?           EdgeInsets?           # 外边距
----@field padding?          EdgeInsets?           # 内边距
----@field is_string_format? boolean               # 是否以字符串格式处理
-
---- 液态键盘固定按键栏
----@class KeyBar
----@field keys?             FixedKeyItem[]        # 固定按键列表
----@field position?         KeyBarPosition        # 栏位位置（默认 BOTTOM）
-
 --- 液态键盘按键项
 ---@class KeyItem
 ---@field text?             string                # 主文本
@@ -762,7 +733,6 @@
 ---@field single_width?     integer               # 单键宽度
 ---@field key_height?       integer               # 按键高度
 ---@field margin_x?         number                # 水平外边距
----@field fixed_key_bar?    KeyBar                # 固定按键栏
 ---@field keyboards?        LiquidKeyboardPanel[] # 面板列表
 
 -- ============================================================================

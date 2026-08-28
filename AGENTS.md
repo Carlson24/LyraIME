@@ -20,12 +20,12 @@ Java 17 is required (source/target compatibility and JVM target).
 
 ## QNN DSP — pre-packaged
 
-QNN DSP libraries are **pre-packaged** into the APK (V81 / SM8850 only) during the build, from the local QNN SDK. They are never downloaded at runtime.
+QNN DSP libraries are **pre-packaged** into the APK during the build, from the local QNN SDK. They are never downloaded at runtime. The HTP variant is selected via `QNN_VARIANT`/`qnnVariant` (e.g. `v81` for SM8850); if it is not set, **no** QNN DSP libraries are packaged and built-in QNN voice is unavailable at runtime.
 
-During a build with `QNN_SDK_ROOT`/`qnnSdkRoot` set, the `packageVoiceRuntimeLibs` task in `NativeBaseConventionPlugin` copies five libraries from the QNN SDK into the APK's `lib/arm64-v8a/`:
+During a build with `QNN_SDK_ROOT`/`qnnSdkRoot` set, the `packageVoiceRuntimeLibs` task in `NativeBaseConventionPlugin` copies five libraries from the QNN SDK into the APK's `lib/arm64-v8a/` (for variant `vXX`):
 
-- `libQnnHtp.so` + `libQnnHtpV81Stub.so` (from `lib/aarch64-android/`)
-- `libQnnHtpV81Skel.so` (from `lib/hexagon-v81/unsigned/`)
+- `libQnnHtp.so` + `libQnnHtpV{XX}Stub.so` (from `lib/aarch64-android/`)
+- `libQnnHtpV{XX}Skel.so` (from `lib/hexagon-vXX/unsigned/`)
 - `libQnnSystem.so`, `libQnnHtpPrepare.so` (from `lib/aarch64-android/`)
 
 `libQnnHtpPrepare.so` enables **on-device context binary generation**: the QNN model is downloaded as `.so` model libs (`libencoder.so`/`libdecoder.so`/`libjoiner.so`, universal android-aarch64, punctuation variant), and sherpa-onnx generates the `encoder.bin`/`decoder.bin`/`joiner.bin` context binaries locally on first use. `libonnxruntime.so` is likewise pre-packaged (it is produced by the sherpa-onnx CMake build).

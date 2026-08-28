@@ -6,185 +6,49 @@ package com.osfans.trime.ime.symbol
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
 import android.widget.FrameLayout
-import androidx.constraintlayout.widget.ConstraintLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.core.view.setPadding
-import androidx.core.view.updateLayoutParams
-import com.osfans.trime.data.theme.KeyActionManager
+import com.osfans.trime.R
+import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
-import com.osfans.trime.data.theme.model.LiquidKeyboard
-import com.osfans.trime.ime.keyboard.CommonKeyboardActionListener
+import com.osfans.trime.ime.keyboard.GestureFrame
+import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
 import splitties.dimensions.dp
-import splitties.views.dsl.constraintlayout.above
-import splitties.views.dsl.constraintlayout.after
-import splitties.views.dsl.constraintlayout.before
-import splitties.views.dsl.constraintlayout.below
-import splitties.views.dsl.constraintlayout.bottomOfParent
-import splitties.views.dsl.constraintlayout.bottomToTopOf
-import splitties.views.dsl.constraintlayout.centerHorizontally
-import splitties.views.dsl.constraintlayout.centerVertically
+import splitties.views.dsl.constraintlayout.centerInParent
 import splitties.views.dsl.constraintlayout.constraintLayout
-import splitties.views.dsl.constraintlayout.endOfParent
-import splitties.views.dsl.constraintlayout.endToStartOf
 import splitties.views.dsl.constraintlayout.lParams
-import splitties.views.dsl.constraintlayout.matchConstraints
-import splitties.views.dsl.constraintlayout.startOfParent
-import splitties.views.dsl.constraintlayout.startToEndOf
-import splitties.views.dsl.constraintlayout.topOfParent
-import splitties.views.dsl.constraintlayout.topToBottomOf
 import splitties.views.dsl.core.add
+import splitties.views.dsl.core.imageView
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.view
 import splitties.views.dsl.core.wrapContent
 import splitties.views.dsl.recyclerview.recyclerView
-import splitties.views.gravityCenter
 
 @SuppressLint("ViewConstructor")
 class LiquidLayout(
     context: Context,
-    theme: Theme,
-    commonKeyboardActionListener: CommonKeyboardActionListener,
-) : ConstraintLayout(context) {
-    // TODO: 继承一个键盘视图嵌入到这里，而不是自定义一个视图
+    private val theme: Theme,
+) : LinearLayout(context) {
     private val space = context.dp(theme.liquidKeyboard.marginX).toInt()
 
-    private val fixedKeyBar =
-        constraintLayout {
-            val fixedKeys =
-                theme.liquidKeyboard.fixedKeyBar.keys
-            if (fixedKeys.isNotEmpty()) {
-                val btns =
-                    Array(fixedKeys.size) { index ->
-                        val keyItem = fixedKeys[index]
-                        // click 属性作为按键标识符
-                        val keyName = keyItem.click
-                        val ui = LiquidItemUi(context, theme)
+    private val sideMarginPx = context.dp(
+        if (context.isLandscapeMode()) theme.generalStyle.keyboardPaddingLand
+        else theme.generalStyle.keyboardPadding,
+    )
 
-                        // 确保文本居中显示
-                        ui.mainText.gravity = gravityCenter
+    val tabsUi = LiquidTabsUi(context, theme)
 
-                        // 设置显示文本：优先使用 label，其次使用 presetKeys 的 label，最后使用 keyName
-                        ui.mainText.text = when {
-                            keyItem.label.isNotEmpty() -> keyItem.label
-                            keyName.isNotEmpty() -> theme.presetKeys[keyName]?.label ?: ""
-                            else -> ""
-                        }
+    val lockIcon = createIcon()
 
-                        // 应用自定义内边距：支持四个方向
-                        keyItem.padding?.let { insets ->
-                            ui.root.setPadding(
-                                dp(insets.left).toInt(),
-                                dp(insets.top).toInt(),
-                                dp(insets.right).toInt(),
-                                dp(insets.bottom).toInt(),
-                            )
-                        }
+    val returnIcon = createIcon()
 
-                        // 处理按键点击和长按重复触发
-                        val keyAction = if (keyName.isNotEmpty()) {
-                            KeyActionManager.getAction(keyName)
-                        } else {
-                            null
-                        }
-                        ui.root.apply {
-                            isRepeatable = keyAction?.isRepeatable == true
-                            onClick = {
-                                keyAction?.let {
-                                    commonKeyboardActionListener.listener.onAction(it)
-                                }
-                            }
-                        }
+    val lockButton = createIconButton(lockIcon)
 
-                        // 保存 keyItem 以便后续使用
-                        ui.root.tag = keyItem
-
-                        return@Array ui.root
-                    }
-
-                // 辅助函数：设置按键的 margin
-                fun setBtnMargin(btn: android.view.View, insets: LiquidKeyboard.EdgeInsets?, isVertical: Boolean) {
-                    btn.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                        insets?.let {
-                            leftMargin = dp(it.left).toInt()
-                            topMargin = dp(it.top).toInt()
-                            rightMargin = dp(it.right).toInt()
-                            bottomMargin = dp(it.bottom).toInt()
-                        } ?: run {
-                            // 根据方向设置默认边距
-                            if (isVertical) {
-                                topMargin = space
-                                bottomMargin = space
-                            } else {
-                                leftMargin = space
-                                rightMargin = space
-                            }
-                        }
-                    }
-                }
-                when (theme.liquidKeyboard.fixedKeyBar.position) {
-                    LiquidKeyboard.KeyBar.Position.LEFT,
-                    LiquidKeyboard.KeyBar.Position.RIGHT,
-                    -> {
-                        btns.forEachIndexed { i, btn ->
-                            val keyItem = btn.tag as? LiquidKeyboard.FixedKeyItem
-                            val btnInsets = keyItem?.margin
-                            add(
-                                btn,
-                                lParams(
-                                    keyItem?.width?.let { dp(it).toInt() } ?: wrapContent,
-                                    keyItem?.height?.let { dp(it).toInt() } ?: matchConstraints,
-                                ) {
-                                    if (i == 0) {
-                                        topOfParent()
-                                    } else {
-                                        below(btns[i - 1])
-                                    }
-                                    if (i == btns.size - 1) {
-                                        bottomOfParent()
-                                    } else {
-                                        above(btns[i + 1])
-                                    }
-                                },
-                            )
-                            setBtnMargin(btn, btnInsets, true)
-                        }
-                    }
-
-                    LiquidKeyboard.KeyBar.Position.TOP,
-                    LiquidKeyboard.KeyBar.Position.BOTTOM,
-                    -> {
-                        btns.forEachIndexed { i, btn ->
-                            val keyItem = btn.tag as? LiquidKeyboard.FixedKeyItem
-                            val btnInsets = keyItem?.margin
-                            add(
-                                btn,
-                                lParams(
-                                    keyItem?.width?.let { dp(it).toInt() } ?: wrapContent,
-                                    keyItem?.height?.let { dp(it).toInt() } ?: matchConstraints,
-                                ) {
-                                    if (i == 0) {
-                                        startOfParent()
-                                    } else {
-                                        after(btns[i - 1])
-                                    }
-                                    if (i == btns.size - 1) {
-                                        endOfParent()
-                                    } else {
-                                        before(btns[i + 1])
-                                    }
-                                },
-                            )
-                            setBtnMargin(btn, btnInsets, false)
-                        }
-                    }
-
-                    LiquidKeyboard.KeyBar.Position.NAVBAR -> {
-                        // NAVBAR 位置不需要添加按钮到 fixedKeyBar
-                    }
-                }
-            }
-        }
+    val returnButton = createIconButton(returnIcon)
 
     val recyclerView =
         recyclerView {
@@ -192,110 +56,78 @@ class LiquidLayout(
             setPadding(space)
         }
 
-    val root = view(::FrameLayout) {
-        add(recyclerView, lParams(matchParent, matchParent))
+    init {
+        orientation = HORIZONTAL
+        setPadding(sideMarginPx, 0, sideMarginPx, 0)
+
+        // 左侧栏：导航(3/5) + 锁定(1/5) + 返回(1/5)，占宽 1/5
+        val leftPanel = view(::LinearLayout) {
+            orientation = VERTICAL
+            tabsUi.root.setPadding(space)
+            tabsUi.root.background = ColorManager.getDecorDrawable(
+                "key_back_color",
+                "key_border_color",
+                dp(theme.generalStyle.keyBorder),
+                dp(theme.generalStyle.roundCorner),
+            )
+            add(
+                tabsUi.root,
+                lParams(matchParent, 0, weight = 3f),
+            )
+            add(
+                lockButton,
+                lParams(matchParent, 0, weight = 1f),
+            )
+            add(
+                returnButton,
+                lParams(matchParent, 0, weight = 1f),
+            )
+        }
+        add(leftPanel, lParams(0, matchParent, weight = 1f))
+
+        // 右侧符号面板，占宽 4/5
+        val rightPanel = view(::FrameLayout) {
+            add(recyclerView, lParams(matchParent, matchParent))
+        }
+        add(rightPanel, lParams(0, matchParent, weight = 6f))
+
+        // 初始化按钮样式
+        val textColor = ColorManager.getColor("key_text_color")
+        lockIcon.setImageResource(R.drawable.ic_outline_lock_open_24)
+        lockIcon.imageTintList = ColorStateList.valueOf(textColor)
+        returnIcon.setImageResource(R.drawable.ic_baseline_arrow_back_24)
+        returnIcon.imageTintList = ColorStateList.valueOf(textColor)
+        setLocked(false)
     }
 
-    val tabsUi = LiquidTabsUi(context, theme)
+    private fun createIcon(): ImageView = imageView {
+        scaleType = ImageView.ScaleType.CENTER
+    }
 
-    val isNavbarMode: Boolean =
-        theme.liquidKeyboard.fixedKeyBar.position == LiquidKeyboard.KeyBar.Position.NAVBAR
-
-    init {
-        when (theme.liquidKeyboard.fixedKeyBar.position) {
-            LiquidKeyboard.KeyBar.Position.TOP -> {
-                add(
-                    root,
-                    lParams {
-                        centerHorizontally()
-                        topToBottomOf(fixedKeyBar)
-                        bottomOfParent()
-                    },
-                )
-                add(
-                    fixedKeyBar,
-                    lParams(wrapContent, wrapContent) {
-                        centerHorizontally()
-                        topOfParent()
-                        bottomToTopOf(root)
-                    },
-                )
-            }
-
-            LiquidKeyboard.KeyBar.Position.BOTTOM -> {
-                add(
-                    root,
-                    lParams {
-                        centerHorizontally()
-                        topOfParent()
-                        bottomToTopOf(fixedKeyBar)
-                    },
-                )
-                add(
-                    fixedKeyBar,
-                    lParams(wrapContent, wrapContent) {
-                        centerHorizontally()
-                        topToBottomOf(root)
-                        bottomOfParent()
-                    },
-                )
-            }
-
-            LiquidKeyboard.KeyBar.Position.LEFT -> {
-                add(
-                    root,
-                    lParams {
-                        centerVertically()
-                        startToEndOf(fixedKeyBar)
-                        endOfParent()
-                    },
-                )
-                add(
-                    fixedKeyBar,
-                    lParams(wrapContent, matchConstraints) {
-                        centerVertically()
-                        startOfParent()
-                        endToStartOf(root)
-                    },
-                )
-            }
-
-            LiquidKeyboard.KeyBar.Position.RIGHT -> {
-                add(
-                    root,
-                    lParams {
-                        centerVertically()
-                        startOfParent()
-                        endToStartOf(fixedKeyBar)
-                    },
-                )
-                add(
-                    fixedKeyBar,
-                    lParams(wrapContent, matchConstraints) {
-                        centerVertically()
-                        startToEndOf(root)
-                        endOfParent()
-                    },
-                )
-            }
-
-            LiquidKeyboard.KeyBar.Position.NAVBAR -> {
-                add(
-                    root,
-                    lParams {
-                        centerHorizontally()
-                        topOfParent()
-                        bottomToTopOf(tabsUi.root)
-                    },
-                )
-                add(
-                    tabsUi.root,
-                    lParams(matchParent, wrapContent) {
-                        centerHorizontally()
-                        bottomOfParent()
-                    },
-                )
-            }
+    private fun createIconButton(icon: ImageView): GestureFrame = view(::GestureFrame) {
+        val content = constraintLayout {
+            background = ColorManager.getDecorDrawable(
+                "key_back_color",
+                "key_border_color",
+                dp(theme.generalStyle.keyBorder),
+                dp(theme.generalStyle.roundCorner),
+            )
+            add(
+                icon,
+                lParams(wrapContent, wrapContent) {
+                    centerInParent()
+                },
+            )
         }
+        add(content, lParams(matchParent, matchParent))
+    }
+
+    fun setLocked(locked: Boolean) {
+        lockIcon.setImageResource(
+            if (locked) R.drawable.ic_outline_lock_24 else R.drawable.ic_outline_lock_open_24,
+        )
+        lockIcon.imageTintList = ColorStateList.valueOf(
+            ColorManager.getColor(if (locked) "hilited_key_text_color" else "key_text_color"),
+        )
     }
 }

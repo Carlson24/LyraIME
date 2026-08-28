@@ -11,14 +11,13 @@ import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
+import com.osfans.trime.R
 import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.daemon.launchOnReady
 import com.osfans.trime.data.SymbolHistory
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.model.LiquidKeyboard
-import com.osfans.trime.ime.bar.ui.LiquidKeyboardNavBar
 import com.osfans.trime.ime.core.TrimeInputMethodService
-import com.osfans.trime.ime.keyboard.CommonKeyboardActionListener
 import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
@@ -29,15 +28,18 @@ import splitties.dimensions.dp
 class LiquidWindow :
     BoardWindow.BarBoardWindow(),
     ResidentWindow {
-    override val showTitle: Boolean
-        get() = liquidLayout.isNavbarMode
+    override val title: String
+        get() = context.getString(R.string.liquid_symbol_panel)
+
+    override val showTitle: Boolean = true
 
     private val service: TrimeInputMethodService by di.instance()
     private val rime: RimeSession by di.instance()
     private val theme: Theme by di.instance()
     private val windowManager: BoardWindowManager by di.instance()
-    private val commonKeyboardActionListener: CommonKeyboardActionListener by di.instance()
-    private val navBar by lazy { LiquidKeyboardNavBar(context, theme) }
+
+    var locked: Boolean = false
+        private set
 
     private lateinit var liquidLayout: LiquidLayout
     private val symbolHistory = SymbolHistory(180)
@@ -56,9 +58,7 @@ class LiquidWindow :
                     if (this.altText != this.text) {
                         triggerSymbolInput(this.text)
                     } else {
-                        service.commitText(this.text)
-                        symbolHistory.insert(this.text)
-                        symbolHistory.save()
+                        commitText(this.text, recordHistory = true)
                     }
                 }
 
@@ -69,11 +69,7 @@ class LiquidWindow :
                 }
 
                 else -> {
-                    service.commitText(this.text)
-                    if (currentDataType != LiquidData.Type.HISTORY) {
-                        symbolHistory.insert(this.text)
-                        symbolHistory.save()
-                    }
+                    commitText(this.text, recordHistory = currentDataType != LiquidData.Type.HISTORY)
                 }
             }
         }
@@ -91,7 +87,7 @@ class LiquidWindow :
     override val key: ResidentWindow.Key
         get() = LiquidWindow
 
-    override fun onCreateView(): View = LiquidLayout(context, theme, commonKeyboardActionListener).apply {
+    override fun onCreateView(): View = LiquidLayout(context, theme).apply {
         liquidLayout = this
         tabsUi.apply {
             setTags(LiquidData.getTagList())
@@ -103,16 +99,16 @@ class LiquidWindow :
             layoutManager = mainLayoutManager
             this.adapter = this@LiquidWindow.adapter
         }
+        lockButton.setOnClickListener {
+            locked = !locked
+            liquidLayout.setLocked(locked)
+        }
+        returnButton.setOnClickListener {
+            windowManager.attachWindow(KeyboardWindow)
+        }
     }
 
-    override fun onCreateBarView(): View? = if (liquidLayout.isNavbarMode) {
-        navBar.createLiquidNavBar(
-            fixedKeys = theme.liquidKeyboard.fixedKeyBar.keys,
-            actionListener = commonKeyboardActionListener,
-        )
-    } else {
-        liquidLayout.tabsUi.root
-    }
+    override fun onCreateBarView(): View? = null
 
     override fun onAttached() {}
 
@@ -192,6 +188,20 @@ class LiquidWindow :
         return containerWidth / itemTotalWidth
     }
 
+    private fun commitText(
+        text: String,
+        recordHistory: Boolean,
+    ) {
+        service.commitText(text)
+        if (recordHistory) {
+            symbolHistory.insert(text)
+            symbolHistory.save()
+        }
+        if (!locked) {
+            windowManager.attachWindow(KeyboardWindow)
+        }
+    }
+
     private fun triggerSymbolInput(symbol: String) {
         rime.launchOnReady {
             val (isAsciiMode, isAsciiPunch) = it.statusCached.run { isAsciiMode to isAsciiPunct }
@@ -201,7 +211,9 @@ class LiquidWindow :
             it.simulateKeySequence(symbol)
             if (isAsciiPunch) it.setRuntimeOption("ascii_punch", true)
             ContextCompat.getMainExecutor(service).execute {
-                windowManager.attachWindow(KeyboardWindow)
+                if (!locked) {
+                    windowManager.attachWindow(KeyboardWindow)
+                }
             }
         }
     }
