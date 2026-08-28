@@ -63,7 +63,7 @@ val Project.buildGitRepo
 val Project.buildVersionName
     get() =
         envOrProp("BUILD_VERSION_NAME", "buildVersionName") {
-            runCmd("git describe --tags --long --always --exclude=nightly --exclude=libVoiceRuntime")
+            runCmd("git describe --tags --long --always --exclude=nightly")
         }
 
 val Project.buildCommitHash

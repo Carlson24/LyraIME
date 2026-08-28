@@ -1,0 +1,128 @@
+# SPDX-FileCopyrightText: 2015 - 2024 Rime community
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: Nightly
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 16 * * *' # UTC 16:00 / GMT+8 0:00, daily
+
+env:
+  CI_NAME: Nightly CI
+  QNN_SDK_VERSION: "2.48.40.260702"
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        qnn-variant: [v68, v69, v73, v75, v79, v81]
+    env:
+      QNN_VARIANT: ${{ matrix.qnn-variant }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: 17
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android NDK
+        run: |
+          sdkmanager --install "cmake;4.1.2"
+
+      - name: Compute build version name
+        run: |
+          echo "BUILD_VERSION_NAME=$(git describe --tags --long --always --exclude=nightly)" >> $GITHUB_ENV
+
+      - name: Cache QNN SDK
+        id: qnn-sdk-cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/qnn
+          key: qnn-sdk-${{ env.QNN_SDK_VERSION }}
+
+      - name: Download QNN SDK
+        if: steps.qnn-sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ${{ runner.temp }}/qnn
+          cd ${{ runner.temp }}/qnn
+          curl -fSL -o "v${QNN_SDK_VERSION}.zip" \
+            "https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/${QNN_SDK_VERSION}/v${QNN_SDK_VERSION}.zip"
+          unzip -q "v${QNN_SDK_VERSION}.zip"
+
+      - name: Set QNN_SDK_ROOT
+        run: |
+          echo "QNN_SDK_ROOT=${{ runner.temp }}/qnn/qairt/${QNN_SDK_VERSION}" >> $GITHUB_ENV
+
+      - name: Calculate JNI cache hash
+        id: cache-hash
+        run: |
+          ./gradlew :app:calculateNativeCacheHash
+
+      - name: Fetch JNI cache
+        uses: actions/cache@v5
+        id: jni-cache
+        with:
+          path: "app/prebuilt"
+          key: ${{ runner.os }}-trime-jni-release-${{ matrix.qnn-variant }}-${{ steps.cache-hash.outputs.native-cache-hash }}
+
+      - name: Setup Keystore
+        run: |
+          cat << EOF > keystore.properties
+          keyBase64=${{ secrets.SIGNING_KEY }}
+          storePassword=${{ secrets.KEY_STORE_PASSWORD }}
+          keyAlias=${{ secrets.ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+
+      - name: Build LyraIME (${{ matrix.qnn-variant }})
+        run: make release
+
+      - name: Add JNI cache
+        if: ${{ !steps.jni-cache.outputs.cache-hit }}
+        run: cp -R app/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib app/prebuilt
+
+      - name: Rename APK
+        run: |
+          for f in app/build/outputs/apk/release/*.apk; do
+            mv "$f" "app/build/outputs/apk/release/LyraIME-Qnn${{ matrix.qnn-variant }}-${BUILD_VERSION_NAME}.apk"
+          done
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: lyraime-nightly-${{ matrix.qnn-variant }}
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs: build
+    steps:
+      - name: Download APKs
+        uses: actions/download-artifact@v4
+        with:
+          path: apks
+          merge-multiple: true
+
+      - name: Create Nightly release
+        uses: 'marvinpinto/action-automatic-releases@latest'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: nightly
+          prerelease: true
+          title: "Nightly Build"
+          files: apks/*.apk

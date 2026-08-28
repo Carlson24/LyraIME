@@ -33,10 +33,10 @@ class LiquidTabsUi(
 ) : Ui {
     inner class TabUi : Ui {
         override val ctx = this@LiquidTabsUi.ctx
-        private val textColor = ColorManager.getColor("candidate_text_color")
-        private val hlTextColor = ColorManager.getColor("hilited_candidate_text_color")
-        private val hlBackColor = ColorManager.getColor("hilited_candidate_back_color")
-        private val cornerRadius = ctx.dp(theme.generalStyle.candidateCornerRadius)
+        private val textColor = ColorManager.getColor("key_text_color")
+        private val hlTextColor = ColorManager.getColor("hilited_key_text_color")
+        private val hlBackColor = ColorManager.getColor("hilited_key_back_color")
+        private val cornerRadius = ctx.dp(theme.generalStyle.roundCorner)
 
         val text =
             textView {
