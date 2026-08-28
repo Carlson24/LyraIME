@@ -221,10 +221,9 @@ enum class SidebarLayout(
         String(code.map { keyArray[it.code] }.toCharArray())
     }
 
-    fun codeMatchingPhysical(pinyin: String, physical: String): String? =
-        SidebarPinYin.keyCodesOf(pinyin, this).firstOrNull { code ->
-            String(code.map { keyArray[it.code] }.toCharArray()) == physical
-        }
+    fun codeMatchingPhysical(pinyin: String, physical: String): String? = SidebarPinYin.keyCodesOf(pinyin, this).firstOrNull { code ->
+        String(code.map { keyArray[it.code] }.toCharArray()) == physical
+    }
 
     companion object {
         fun fromKey(name: String?): SidebarLayout = entries.firstOrNull { it.keyName == name } ?: T9

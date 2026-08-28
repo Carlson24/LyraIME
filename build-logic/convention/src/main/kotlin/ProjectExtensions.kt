@@ -42,6 +42,11 @@ val Project.buildAbiOverride
 val Project.qnnSdkRoot
     get() = envOrPropOrNull("QNN_SDK_ROOT", "qnnSdkRoot")
 
+val Project.qnnVariant: String?
+    get() =
+        envOrPropOrNull("QNN_VARIANT", "qnnVariant")
+            ?.trim()?.lowercase()?.removePrefix("v")?.let { "v$it" }
+
 val Project.builder
     get() =
         envOrProp("CI_NAME", "ciName") {

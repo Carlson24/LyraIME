@@ -19,8 +19,7 @@ object ResourceUrls {
     const val VOICE_MODEL_QNN_RELEASE_BASE =
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn"
 
-    fun buildQnnVoiceModelUrl(chunkMs: Int): String =
-        "$VOICE_MODEL_QNN_RELEASE_BASE/sherpa-onnx-qnn-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-${chunkMs}ms-android-aarch64.tar.bz2"
+    fun buildQnnVoiceModelUrl(chunkMs: Int): String = "$VOICE_MODEL_QNN_RELEASE_BASE/sherpa-onnx-qnn-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-${chunkMs}ms-android-aarch64.tar.bz2"
 
     // ---- GitHub Release API URLs ----
     private const val RELEASE_API_K2FSA_SHERPA_ONNX =

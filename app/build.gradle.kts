@@ -27,10 +27,10 @@ android {
 
     defaultConfig {
         applicationId = "com.carlson.lyraime"
-        minSdk = 28
+        minSdk = 33
         targetSdk = 37
         versionCode = LocalDate.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.BASIC_ISO_DATE).toInt()
-        versionName = "5.4.5"
+        versionName = "5.5.0"
 
         multiDexEnabled = true
         buildConfigField("String", "BUILDER", "\"${project.builder}\"")
@@ -85,7 +85,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        isCoreLibraryDesugaringEnabled = true
     }
 
     // hack workaround lint gradle 8.0.2

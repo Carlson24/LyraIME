@@ -45,6 +45,7 @@ class NativeCacheHashPlugin : Plugin<Project> {
                             appendLine(sha256(patch))
                         }
                         appendLine(qnnSdkRoot ?: "no-qnn")
+                        appendLine(qnnVariant ?: "no-qnn-variant")
                     }
                 val hash = sha256(magic)
                 logger.log(LogLevel.DEBUG, "Native Cache Hash: $hash")

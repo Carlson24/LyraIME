@@ -42,8 +42,8 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
             }
 
             // Pre-packaged voice runtime libs (onnxruntime + QNN DSP) are staged here
-            sourceSets.getByName("main").jniLibs.srcDir(
-                target.layout.buildDirectory.dir("generated/voiceJniLibs").get().asFile,
+            sourceSets.getByName("main").jniLibs.directories.add(
+                target.layout.buildDirectory.dir("generated/voiceJniLibs").get().asFile.absolutePath,
             )
 
             splits.abi {
@@ -199,7 +199,7 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
         val packageTask =
             project.tasks.register("packageVoiceRuntimeLibs") {
                 group = "native"
-                description = "Pre-package voice runtime libraries (onnxruntime + QNN DSP V81) into the APK"
+                description = "Pre-package voice runtime libraries (onnxruntime + QNN DSP) into the APK"
                 outputs.dir(outDir)
 
                 doLast {
@@ -229,40 +229,42 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                         }
                     }
 
-                    // QNN DSP V81 (arm64-v8a only, from the local QNN SDK)
+                    // QNN DSP (arm64-v8a only, from the local QNN SDK), variant from qnnVariant
                     if (abis.contains("arm64-v8a")) {
                         val qnnRoot = project.qnnSdkRoot?.let { File(it) }
-                        if (qnnRoot != null && qnnRoot.isDirectory) {
-                            val v81 =
+                        val variant = project.qnnVariant
+                        if (qnnRoot != null && qnnRoot.isDirectory && variant != null) {
+                            val version = variant.removePrefix("v")
+                            val libs =
                                 listOf(
                                     "libQnnHtp.so",
                                     "libQnnSystem.so",
                                     "libQnnHtpPrepare.so",
-                                    "libQnnHtpV81Stub.so",
+                                    "libQnnHtpV${version}Stub.so",
                                 ).map { File(qnnRoot, "lib/aarch64-android/$it") } +
                                     File(
                                         qnnRoot,
-                                        "lib/hexagon-v81/unsigned/libQnnHtpV81Skel.so",
+                                        "lib/hexagon-$variant/unsigned/libQnnHtpV${version}Skel.so",
                                     )
-                            val missing = v81.filterNot { it.isFile }
+                            val missing = libs.filterNot { it.isFile }
                             if (missing.isNotEmpty()) {
                                 throw GradleException(
-                                    "QNN SDK incomplete at $qnnRoot; missing: " +
+                                    "QNN SDK incomplete at $qnnRoot for variant $variant; missing: " +
                                         missing.joinToString { it.path },
                                 )
                             }
                             val targetDir = File(outDir, "arm64-v8a").apply { mkdirs() }
-                            for (src in v81) {
+                            for (src in libs) {
                                 val dest = File(targetDir, src.name)
                                 if (!dest.exists() || dest.length() != src.length()) {
                                     src.copyTo(dest, overwrite = true)
                                 }
                             }
-                            project.logger.lifecycle("Pre-packaged QNN DSP V81 libraries")
+                            project.logger.lifecycle("Pre-packaged QNN DSP $variant libraries")
                         } else {
                             project.logger.warn(
-                                "QNN_SDK_ROOT/qnnSdkRoot not set; QNN DSP libs will NOT be " +
-                                    "pre-packaged (QNN voice will be unavailable)",
+                                "QNN_SDK_ROOT/qnnSdkRoot or QNN_VARIANT/qnnVariant not set; " +
+                                    "QNN DSP libs will NOT be pre-packaged (QNN voice will be unavailable)",
                             )
                         }
                     }
