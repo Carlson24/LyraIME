@@ -36,14 +36,20 @@ class LiquidLayout(
     private val theme: Theme,
 ) : LinearLayout(context) {
     private val sideMarginPx = context.dp(
-        if (context.isLandscapeMode()) theme.generalStyle.keyboardPaddingLand
-        else theme.generalStyle.keyboardPadding,
+        if (context.isLandscapeMode()) {
+            theme.generalStyle.keyboardPaddingLand
+        } else {
+            theme.generalStyle.keyboardPadding
+        },
     )
 
     private val bottomPadding =
         theme.liquidKeyboard.bottomPadding
-            ?: if (context.isLandscapeMode()) theme.generalStyle.keyboardPaddingLandBottom
-            else theme.generalStyle.keyboardPaddingBottom
+            ?: if (context.isLandscapeMode()) {
+                theme.generalStyle.keyboardPaddingLandBottom
+            } else {
+                theme.generalStyle.keyboardPaddingBottom
+            }
 
     private val verticalGapPx = context.dp(theme.generalStyle.verticalGap.coerceAtLeast(0))
 
