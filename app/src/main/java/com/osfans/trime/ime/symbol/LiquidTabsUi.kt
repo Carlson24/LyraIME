@@ -106,7 +106,10 @@ class LiquidTabsUi(
                     setText(item!!.label)
                     setActive(position == selected)
                     root.run {
-                        layoutParams = ViewGroup.LayoutParams(matchParent, wrapContent)
+                        val spacing = ctx.dp(2)
+                        layoutParams = RecyclerView.LayoutParams(matchParent, wrapContent).apply {
+                            setMargins(spacing, spacing, spacing, spacing)
+                        }
                     }
                 }
             }

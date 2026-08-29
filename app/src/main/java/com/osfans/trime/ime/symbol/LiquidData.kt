@@ -46,6 +46,4 @@ object LiquidData {
             item.second.toList()
         }
     }
-
-    fun isVarLengthType(type: Type): Boolean = type == Type.VAR_LENGTH || type == Type.TABS || type == Type.HISTORY
 }

@@ -6,11 +6,13 @@
 package com.osfans.trime.ime.symbol
 
 import android.content.Context
+import android.graphics.drawable.ColorDrawable
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.core.AutoScaleTextView
 import com.osfans.trime.ime.keyboard.GestureFrame
+import com.osfans.trime.util.roundedRippleDrawable
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.centerInParent
 import splitties.views.dsl.constraintlayout.constraintLayout
@@ -27,6 +29,11 @@ class LiquidItemUi(
     override val ctx: Context,
     private val theme: Theme,
 ) : Ui {
+    private val hlRippleColor =
+        runCatching { ColorManager.getColor("hilited_key_back_color") }
+            .getOrElse { ColorManager.getColor("hilited_candidate_back_color") }
+    private val cornerRadius = ctx.dp(theme.generalStyle.roundCorner)
+
     val mainText = view(::AutoScaleTextView) {
         isClickable = false
         isFocusable = false
@@ -40,12 +47,6 @@ class LiquidItemUi(
 
     override val root = view(::GestureFrame) {
         val content = constraintLayout {
-            background = ColorManager.getDecorDrawable(
-                "key_back_color",
-                "key_border_color",
-                dp(theme.generalStyle.keyBorder),
-                dp(theme.generalStyle.roundCorner),
-            )
             add(
                 mainText,
                 lParams(wrapContent, wrapContent) {
@@ -54,5 +55,13 @@ class LiquidItemUi(
             )
         }
         add(content, lParams(matchParent, matchParent))
+    }
+
+    fun setActive(active: Boolean) {
+        root.background = if (active) {
+            roundedRippleDrawable(hlRippleColor, cornerRadius, hlRippleColor)
+        } else {
+            ColorDrawable(android.graphics.Color.TRANSPARENT)
+        }
     }
 }

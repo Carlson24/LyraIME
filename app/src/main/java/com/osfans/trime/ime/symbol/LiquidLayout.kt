@@ -7,10 +7,12 @@ package com.osfans.trime.ime.symbol
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Outline
+import android.view.View
+import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import androidx.core.view.setPadding
 import com.osfans.trime.R
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
@@ -33,12 +35,23 @@ class LiquidLayout(
     context: Context,
     private val theme: Theme,
 ) : LinearLayout(context) {
-    private val space = context.dp(theme.liquidKeyboard.marginX).toInt()
-
     private val sideMarginPx = context.dp(
         if (context.isLandscapeMode()) theme.generalStyle.keyboardPaddingLand
         else theme.generalStyle.keyboardPadding,
     )
+
+    private val bottomPadding =
+        theme.liquidKeyboard.bottomPadding
+            ?: if (context.isLandscapeMode()) theme.generalStyle.keyboardPaddingLandBottom
+            else theme.generalStyle.keyboardPaddingBottom
+
+    private val verticalGapPx = context.dp(theme.generalStyle.verticalGap.coerceAtLeast(0))
+
+    private val contentPaddingPx = context.dp(theme.generalStyle.contentPadding.coerceAtLeast(0))
+
+    val gridDividerSize = context.dp(1)
+
+    var onGridMeasured: ((width: Int, height: Int) -> Unit)? = null
 
     val tabsUi = LiquidTabsUi(context, theme)
 
@@ -52,44 +65,73 @@ class LiquidLayout(
 
     val recyclerView =
         recyclerView {
-            addItemDecoration(SpacesItemDecoration(space))
-            setPadding(space)
+            setPadding(0, contentPaddingPx, 0, contentPaddingPx)
+            addItemDecoration(
+                LiquidGridDecoration(
+                    spanCount = theme.liquidKeyboard.columns,
+                    dividerSize = gridDividerSize,
+                    dividerColor = ColorManager.getColor("liquid_keyboard_divider_color"),
+                ),
+            )
         }
 
     init {
         orientation = HORIZONTAL
-        setPadding(sideMarginPx, 0, sideMarginPx, 0)
+        setPadding(sideMarginPx, 0, sideMarginPx, context.dp(bottomPadding.coerceAtLeast(0)))
 
         // 左侧栏：导航(3/5) + 锁定(1/5) + 返回(1/5)，占宽 1/5
         val leftPanel = view(::LinearLayout) {
             orientation = VERTICAL
-            tabsUi.root.setPadding(space)
             tabsUi.root.background = ColorManager.getDecorDrawable(
                 "key_back_color",
                 "key_border_color",
                 dp(theme.generalStyle.keyBorder),
                 dp(theme.generalStyle.roundCorner),
             )
+            tabsUi.root.setPadding(0, contentPaddingPx, 0, contentPaddingPx)
+            tabsUi.root.clipToOutline = true
+            tabsUi.root.outlineProvider =
+                object : ViewOutlineProvider() {
+                    override fun getOutline(view: View, outline: Outline) {
+                        val radius = context.dp(theme.generalStyle.roundCorner)
+                        outline.setRoundRect(0, 0, view.width, view.height, radius)
+                    }
+                }
             add(
                 tabsUi.root,
                 lParams(matchParent, 0, weight = 3f),
             )
             add(
                 lockButton,
-                lParams(matchParent, 0, weight = 1f),
+                lParams(matchParent, 0, weight = 1f) { topMargin = verticalGapPx },
             )
             add(
                 returnButton,
-                lParams(matchParent, 0, weight = 1f),
+                lParams(matchParent, 0, weight = 1f) { topMargin = verticalGapPx },
             )
         }
         add(leftPanel, lParams(0, matchParent, weight = 1f))
 
-        // 右侧符号面板，占宽 4/5
+        // 右侧符号面板，占宽 4/5，整体渲染单一背景
         val rightPanel = view(::FrameLayout) {
+            background = ColorManager.getDecorDrawable(
+                "liquid_keyboard_background",
+                "liquid_keyboard_board",
+                dp(theme.generalStyle.keyBorder),
+                dp(theme.generalStyle.roundCorner),
+            )
+            clipToOutline = true
+            outlineProvider = ViewOutlineProvider.BACKGROUND
             add(recyclerView, lParams(matchParent, matchParent))
         }
-        add(rightPanel, lParams(0, matchParent, weight = 6f))
+        add(rightPanel, lParams(0, matchParent, weight = 6f) { marginStart = context.dp(2) })
+
+        rightPanel.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            onGridMeasured?.invoke(
+                recyclerView.width,
+                recyclerView.height - recyclerView.paddingTop - recyclerView.paddingBottom,
+            )
+        }
 
         // 初始化按钮样式
         val textColor = ColorManager.getColor("key_text_color")

@@ -37,7 +37,12 @@ class SidebarView(
         clipToPadding = true
         clipChildren = true
         clipToOutline = true
-        setPadding(borderWidthPx, borderWidthPx, borderWidthPx, borderWidthPx)
+        setPadding(
+            borderWidthPx,
+            borderWidthPx + contentPaddingPx,
+            borderWidthPx,
+            borderWidthPx + contentPaddingPx,
+        )
         outlineProvider =
             object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
@@ -104,6 +109,7 @@ class SidebarView(
     }
 
     private val borderWidthPx: Int get() = context.dp(keyboard.keyBorder)
+    private val contentPaddingPx: Int get() = context.dp(theme.generalStyle.contentPadding.coerceAtLeast(0))
     private val dividerHeightPx: Int get() = context.dp(1)
     private val sidebarCornerRadiusPx: Float get() = context.dp(keyboard.sidebarRoundCorner.toInt()).toFloat()
     private val verticalGap: Int get() = keyboard.verticalGap

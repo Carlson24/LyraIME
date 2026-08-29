@@ -48,6 +48,7 @@ data class GeneralStyle(
     val popupKeyHeight: Int = 0,
     val resetAsciiModeOnFocusChange: Boolean = false,
     val roundCorner: Float = 0f,
+    val contentPadding: Int = 0,
     val keyShadowRadius: Float = 0f,
     val keyShadowDirection: List<String> = emptyList(),
     val verticalGap: Int = 0,

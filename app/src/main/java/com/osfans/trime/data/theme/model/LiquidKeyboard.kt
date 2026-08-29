@@ -13,9 +13,9 @@ import kotlinx.serialization.Serializable
 @Parcelize
 @Serializable
 data class LiquidKeyboard(
-    val singleWidth: Int = 0,
-    val keyHeight: Int = 0,
-    val marginX: Float = 0f,
+    val columns: Int = 6,
+    val rows: Int = 5,
+    val bottomPadding: Int? = null,
     val keyboards: List<Keyboard> = emptyList(),
 ) : Parcelable {
     @Parcelize

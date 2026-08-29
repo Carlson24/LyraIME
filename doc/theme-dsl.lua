@@ -451,6 +451,8 @@
 ---@field keyboard_back_color?                    Color        # 键盘背景色（回退至 border_color）
 ---@field keyboard_background?                    Color        # 键盘背景（回退至 keyboard_back_color）
 ---@field liquid_keyboard_background?             Color        # 液态键盘背景（回退至 keyboard_back_color）
+---@field liquid_keyboard_board?                   Color        # 液态键盘边框（回退至 key_border_color）
+---@field liquid_keyboard_divider_color?           Color        # 液态键盘分割线颜色（回退至 candidate_separator_color）
 ---@field text_back_color?                        Color        # 编码区背景（回退至 back_color）
 ---@field long_text_color?                        Color        # 长文本/剪贴板文字（回退至 key_text_color）
 ---@field long_text_back_color?                   Color        # 长文本/剪贴板背景（回退至 key_back_color）
@@ -561,6 +563,7 @@
 ---@field keyboard_padding_top?               integer         # 键盘顶部边距
 ---@field keyboard_padding_land?              integer         # 横屏键盘左右边距
 ---@field keyboard_padding_land_bottom?       integer         # 横屏键盘底部边距
+---@field content_padding?                    integer         # 面板内容上下内缩（适配图片背景的透明边框区，默认 0）
 ---@field key_text_offset_x?                  number          # 按键文字 X 偏移
 ---@field key_text_offset_y?                  number          # 按键文字 Y 偏移
 ---@field key_symbol_offset_x?                number          # 符号 X 偏移
@@ -730,10 +733,10 @@
 --- 液态键盘。
 --- 可选——不配置时使用默认值。
 ---@class LiquidKeyboard
----@field single_width?     integer               # 单键宽度
----@field key_height?       integer               # 按键高度
----@field margin_x?         number                # 水平外边距
----@field keyboards?        LiquidKeyboardPanel[] # 面板列表
+---@field columns?        integer               # 每行符号数（默认 6）
+---@field rows?           integer               # 可见行数（默认 5）
+---@field bottom_padding?              integer   # 底部抬高（未设置则回退 keyboard_padding_bottom / keyboard_padding_land_bottom）
+---@field keyboards?      LiquidKeyboardPanel[] # 面板列表
 
 -- ============================================================================
 -- 键盘布局 (TextKeyboard) 及相关类型

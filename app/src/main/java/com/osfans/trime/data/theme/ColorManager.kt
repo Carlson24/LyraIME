@@ -92,6 +92,8 @@ object ColorManager {
             "keyboard_back_color" to "border_color",
             "keyboard_background" to "keyboard_back_color",
             "liquid_keyboard_background" to "keyboard_back_color",
+            "liquid_keyboard_board" to "key_border_color",
+            "liquid_keyboard_divider_color" to "candidate_separator_color",
             "text_back_color" to "back_color",
             "long_text_color" to "key_text_color",
             "long_text_back_color" to "key_back_color",

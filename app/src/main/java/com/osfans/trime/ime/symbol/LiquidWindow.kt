@@ -7,10 +7,8 @@ package com.osfans.trime.ime.symbol
 
 import android.view.View
 import androidx.core.content.ContextCompat
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexWrap
-import com.google.android.flexbox.FlexboxLayoutManager
-import com.google.android.flexbox.JustifyContent
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.osfans.trime.R
 import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.daemon.launchOnReady
@@ -23,7 +21,6 @@ import com.osfans.trime.ime.window.BoardWindow
 import com.osfans.trime.ime.window.BoardWindowManager
 import com.osfans.trime.ime.window.ResidentWindow
 import org.kodein.di.instance
-import splitties.dimensions.dp
 
 class LiquidWindow :
     BoardWindow.BarBoardWindow(),
@@ -46,6 +43,7 @@ class LiquidWindow :
     var currentDataType: LiquidData.Type = LiquidData.Type.SINGLE
         private set
     private var currentTabIndex: Int = -1
+    private var activePanelLabel: String? = null
 
     private val adapter by lazy {
         LiquidAdapter(theme) {
@@ -75,11 +73,14 @@ class LiquidWindow :
         }
     }
 
-    private val mainLayoutManager by lazy {
-        FlexboxLayoutManager(context).apply {
-            flexDirection = FlexDirection.ROW
-            flexWrap = FlexWrap.WRAP
-        }
+    private val columns: Int
+        get() = theme.liquidKeyboard.columns.coerceAtLeast(1)
+
+    private val rows: Int
+        get() = theme.liquidKeyboard.rows.coerceAtLeast(1)
+
+    private val layoutManager by lazy {
+        GridLayoutManager(context, columns)
     }
 
     companion object : ResidentWindow.Key
@@ -96,8 +97,11 @@ class LiquidWindow :
             }
         }
         recyclerView.apply {
-            layoutManager = mainLayoutManager
+            layoutManager = this@LiquidWindow.layoutManager
             this.adapter = this@LiquidWindow.adapter
+        }
+        onGridMeasured = { _, height ->
+            adapter.itemHeightPx = height / rows - gridDividerSize
         }
         lockButton.setOnClickListener {
             locked = !locked
@@ -124,21 +128,6 @@ class LiquidWindow :
         currentDataType = tag.type
         liquidLayout.tabsUi.activateTab(i)
 
-        // 更新 adapter 的数据类型
-        val dataTypeChanged = adapter.currentDataType != currentDataType
-        adapter.currentDataType = currentDataType
-
-        // 根据数据类型动态设置 LayoutManager 的 justifyContent
-        mainLayoutManager.justifyContent =
-            if (LiquidData.isVarLengthType(currentDataType)) {
-                JustifyContent.SPACE_BETWEEN
-            } else {
-                JustifyContent.FLEX_START
-            }
-
-        // 数据类型改变时，先通知刷新以重新创建 ViewHolder，然后再提交数据
-        if (dataTypeChanged) adapter.notifyDataSetChanged()
-
         val data = when (tag.type) {
             LiquidData.Type.HISTORY -> {
                 symbolHistory.load()
@@ -149,43 +138,25 @@ class LiquidWindow :
                 LiquidData.getDataByIndex(i)
             }
         }
-
-        if (LiquidData.isVarLengthType(currentDataType)) {
-            val originalData = data
-            val expectedTabIndex = currentTabIndex
-            val expectedDataType = currentDataType
-
-            liquidLayout.recyclerView.post {
-                if (currentTabIndex != expectedTabIndex || currentDataType != expectedDataType) {
-                    return@post
-                }
-                val dataWithPlaceholders = originalData.toMutableList()
-                val placeholderCount = calculatePlaceholderCount()
-                repeat(placeholderCount) {
-                    dataWithPlaceholders.add(LiquidKeyboard.KeyItem("", ""))
-                }
-                submitData(dataWithPlaceholders)
-            }
+        if (tag.type == LiquidData.Type.TABS) {
+            adapter.activePosition = data.indexOfFirst { it.text == activePanelLabel }
         } else {
-            submitData(data)
+            adapter.activePosition = RecyclerView.NO_POSITION
+            activePanelLabel = tag.label
         }
+        submitData(data)
     }
 
     private fun submitData(data: List<LiquidKeyboard.KeyItem>) {
-        adapter.submitList(data)
-    }
-
-    private fun calculatePlaceholderCount(): Int {
-        val recyclerView = liquidLayout.recyclerView
-        val containerWidth = recyclerView.width
-        if (containerWidth <= 0) return 0
-
-        val singleWidth = context.dp(theme.liquidKeyboard.singleWidth)
-        val marginX = context.dp(theme.liquidKeyboard.marginX).toInt()
-        val itemTotalWidth = singleWidth + 2 * marginX
-        if (itemTotalWidth <= 0) return 0
-
-        return containerWidth / itemTotalWidth
+        val screen = rows * columns
+        val remainder = data.size % columns
+        val target =
+            if (data.size < screen) {
+                screen
+            } else {
+                data.size + if (remainder == 0) 0 else columns - remainder
+            }
+        adapter.submitList(data + List(target - data.size) { LiquidKeyboard.KeyItem("", "") })
     }
 
     private fun commitText(
