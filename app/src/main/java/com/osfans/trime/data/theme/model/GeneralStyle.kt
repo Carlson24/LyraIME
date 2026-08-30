@@ -94,6 +94,7 @@ data class GeneralStyle(
         val clipboard_category_size: Float = 13f,
         val clipboard_size: Float = 14f,
         val sidebar_size: Float = -1f,
+        val liquid_tabs_size: Float = -1f,
         val variations: Map<String, Boolean> = emptyMap(),
         val display: Map<String, String> = emptyMap(),
     ) : Parcelable

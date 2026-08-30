@@ -6,6 +6,7 @@
 package com.osfans.trime.ui.main
 
 import android.app.Activity
+import android.content.ClipData
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -39,6 +40,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import splitties.dimensions.dp
+import splitties.systemservices.clipboardManager
 import splitties.systemservices.inputMethodManager
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
@@ -158,7 +160,7 @@ class ClipSearchActivity : Activity() {
     }
 
     private fun onEntryClicked(entry: DatabaseBean) {
-        ClipboardHelper.onSearchResultPaste?.invoke(entry.text)
+        clipboardManager.setPrimaryClip(ClipData.newPlainText(null, entry.text))
         finish()
     }
 }

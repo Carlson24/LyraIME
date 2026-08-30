@@ -472,14 +472,6 @@ class ClipboardWindow(
         submitCategory(currentCategory)
         clipboardEnabledPref.registerOnChangeListener(clipboardEnabledListener)
         updateUndoButtonVisibility()
-        ClipboardHelper.onSearchResultPaste = { text ->
-            if (service.currentInputConnection != null) {
-                service.commitText(text)
-                if (clipboardReturnAfterPaste) {
-                    windowManager.attachWindow(KeyboardWindow)
-                }
-            }
-        }
         ClipboardHelper.addOnUpdateListener(usageCountListener)
     }
 
@@ -489,7 +481,6 @@ class ClipboardWindow(
         adapter.onDetached()
         adapterSubmitJob?.cancel()
         undoTimeoutJob?.cancel()
-        ClipboardHelper.onSearchResultPaste = null
     }
 
     @Suppress("unused")

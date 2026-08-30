@@ -47,8 +47,6 @@ object ClipboardHelper :
 
     private val onUpdateListeners = WeakHashSet<OnClipboardUpdateListener>()
 
-    var onSearchResultPaste: ((String) -> Unit)? = null
-
     fun addOnUpdateListener(listener: OnClipboardUpdateListener) {
         onUpdateListeners.add(listener)
     }

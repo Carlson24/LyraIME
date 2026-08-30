@@ -534,6 +534,7 @@
 ---@field clipboard_category_size? number                # 剪贴板标签字号（默认 13）
 ---@field clipboard_size?          number                # 剪贴板字号（默认 14）
 ---@field sidebar_size?            number                # 侧栏字号（默认 -1）
+---@field liquid_tabs_size?        number                # 液态键盘导航栏字号（默认 -1，跟随 candidate_size）
 ---@field variations?              { [string]: boolean } # 字体变体特性（如 { cpct = true }）
 ---@field display?                 { [string]: string }  # Unicode 异体字显示映射
 

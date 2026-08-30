@@ -6,6 +6,7 @@ package com.osfans.trime.ime.symbol
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter4.BaseQuickAdapter
@@ -13,7 +14,6 @@ import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.keyboard.GestureFrame
-import com.osfans.trime.util.roundedRippleDrawable
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.add
@@ -21,7 +21,6 @@ import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.textView
 import splitties.views.dsl.core.view
-import splitties.views.dsl.core.wrapContent
 import splitties.views.dsl.recyclerview.recyclerView
 import splitties.views.gravityCenter
 import splitties.views.horizontalPadding
@@ -45,7 +44,12 @@ class LiquidTabsUi(
 
         val text =
             textView {
-                textSize = theme.generalStyle.fonts.candidate_size
+                textSize =
+                    if (theme.generalStyle.fonts.liquid_tabs_size > 0f) {
+                        theme.generalStyle.fonts.liquid_tabs_size
+                    } else {
+                        theme.generalStyle.fonts.candidate_size
+                    }
                 typeface = FontManager.getTypeface("candidate_font")
                 fontFeatureSettings = FontManager.fontFeatureSettings
                 setTextColor(textColor)
@@ -53,7 +57,6 @@ class LiquidTabsUi(
 
         override val root =
             view(::GestureFrame) {
-                minimumHeight = dp(40)
                 add(
                     text,
                     lParams {
@@ -61,7 +64,6 @@ class LiquidTabsUi(
                         horizontalPadding = dp(theme.generalStyle.candidatePadding)
                     },
                 )
-                background = roundedRippleDrawable(hlRippleColor, cornerRadius)
             }
 
         fun setText(str: String) {
@@ -70,13 +72,17 @@ class LiquidTabsUi(
 
         fun setActive(active: Boolean) {
             text.setTextColor(if (active) hlTextColor else textColor)
+            root.setPadding(0, 0, 0, 0)
             root.background = if (active) {
                 ColorManager.getDecorDrawable(
                     "hilited_key_back_color",
                     cornerRadius = cornerRadius,
-                ) ?: roundedRippleDrawable(hlRippleColor, cornerRadius, hlRippleColor)
+                ) ?: GradientDrawable().apply {
+                    setColor(hlRippleColor)
+                    cornerRadius = cornerRadius
+                }
             } else {
-                roundedRippleDrawable(hlRippleColor, cornerRadius)
+                null
             }
         }
     }
@@ -106,9 +112,9 @@ class LiquidTabsUi(
                     setText(item!!.label)
                     setActive(position == selected)
                     root.run {
-                        val spacing = ctx.dp(2)
-                        layoutParams = RecyclerView.LayoutParams(matchParent, wrapContent).apply {
-                            setMargins(spacing, spacing, spacing, spacing)
+                        val horizontal = ctx.dp(2)
+                        layoutParams = RecyclerView.LayoutParams(matchParent, ctx.dp(35)).apply {
+                            setMargins(horizontal, 0, horizontal, 0)
                         }
                     }
                 }
@@ -136,6 +142,7 @@ class LiquidTabsUi(
         recyclerView {
             layoutManager = verticalLayoutManager()
             adapter = this@LiquidTabsUi.adapter
+            itemAnimator = null
             isVerticalScrollBarEnabled = false
         }
 
@@ -145,7 +152,6 @@ class LiquidTabsUi(
 
     fun activateTab(index: Int) {
         adapter.activateTab(index)
-        root.post { root.scrollToPosition(index) }
     }
 
     fun setOnTabClickListener(listener: ((Int) -> Unit)? = null) {
