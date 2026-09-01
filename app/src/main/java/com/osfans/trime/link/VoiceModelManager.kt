@@ -77,6 +77,14 @@ object VoiceModelManager {
             }
     }
 
+    private fun contextBinaryFiles(dir: File): List<File> = listOf("encoder.bin", "decoder.bin", "joiner.bin").map { File(dir, it) }
+
+    fun hasContextBinaries(): Boolean {
+        val dir = voiceDir
+        if (!dir.isDirectory) return false
+        return contextBinaryFiles(dir).all { it.isFile }
+    }
+
     fun resolveModelFiles(): ModelFiles? {
         val dir = voiceDir
         if (!dir.isDirectory) return null
@@ -90,15 +98,41 @@ object VoiceModelManager {
         val libEncoder = File(dir, "libencoder.so")
         val libDecoder = File(dir, "libdecoder.so")
         val libJoiner = File(dir, "libjoiner.so")
-        if (!libEncoder.isFile || !libDecoder.isFile || !libJoiner.isFile) {
-            Timber.w("Voice model check: libencoder.so/libdecoder.so/libjoiner.so not found")
+        val hasLibs = libEncoder.isFile && libDecoder.isFile && libJoiner.isFile
+
+        if (!hasLibs && !hasContextBinaries()) {
+            Timber.w("Voice model check: neither .so model libs nor .bin context binaries found")
             return null
         }
 
-        return ModelFiles(tokensFile, libEncoder, libDecoder, libJoiner)
+        return if (hasLibs) {
+            ModelFiles(tokensFile, libEncoder, libDecoder, libJoiner)
+        } else {
+            val bins = contextBinaryFiles(dir)
+            ModelFiles(tokensFile, bins[0], bins[1], bins[2])
+        }
     }
 
     fun checkModelFiles(): Boolean = resolveModelFiles() != null
+
+    /**
+     * Delete the original .so model libs once the QNN context binaries have been
+     * generated on-device. No-op (returns false) unless all three .bin files exist,
+     * so a failed context binary save keeps the .so fallback.
+     */
+    fun deleteModelLibsIfContextBinaryReady(): Boolean {
+        if (!hasContextBinaries()) return false
+        val dir = voiceDir
+        val results =
+            listOf("libencoder.so", "libdecoder.so", "libjoiner.so").map {
+                val f = File(dir, it)
+                !f.exists() || f.delete()
+            }
+        if (results.any { !it }) {
+            Timber.w("Voice model: failed to delete some .so model libs")
+        }
+        return results.all { it }
+    }
 
     /** Delete the current chunk's model files (other chunk variants are kept). */
     fun deleteModel(): Boolean = voiceDir.deleteRecursively()

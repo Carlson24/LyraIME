@@ -110,6 +110,11 @@ class VoiceModelDownloadActivity : ComponentActivity() {
                     destFile.delete()
                 }
 
+                progressDialog.setTitle(R.string.voice_model_initializing)
+                withContext(Dispatchers.IO) {
+                    SherpaSpeechClient.initializeAfterInstall()
+                }
+
                 progressDialog.dismiss()
                 setResult(RESULT_OK)
                 finish()
@@ -147,6 +152,7 @@ class VoiceModelDownloadActivity : ComponentActivity() {
 
                         VoiceModelManager.autoExtract(tempFile, VoiceModelManager.voiceDir)
                         tempFile.delete()
+                        SherpaSpeechClient.initializeAfterInstall()
                         valid
                     }
 

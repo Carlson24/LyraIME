@@ -359,6 +359,7 @@
     <string name="voice_model_importing">正在导入语音模型…</string>
     <string name="voice_model_verifying">正在校验…</string>
     <string name="voice_model_extracting">正在解压…</string>
+    <string name="voice_model_initializing">正在初始化语音引擎…</string>
     <string name="voice_model_download_failed">下载失败：%s</string>
     <string name="voice_model_verification_failed">SHA256校验失败</string>
     <string name="voice_model_extract_failed">解压失败：%s</string>

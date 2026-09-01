@@ -313,6 +313,15 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                     destFile.delete()
                 }
 
+                taskText.text = getString(
+                    R.string.custom_dl_progress_line,
+                    taskTitle,
+                    getString(R.string.voice_model_initializing),
+                )
+                withContext(Dispatchers.IO) {
+                    SherpaSpeechClient.initializeAfterInstall()
+                }
+
                 progressBar.isIndeterminate = false
                 progressBar.progress = 100
                 taskText.text = getString(
@@ -385,6 +394,11 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 withContext(Dispatchers.IO) {
                     VoiceModelManager.autoExtract(tempFile, VoiceModelManager.voiceDir)
                     tempFile.delete()
+                }
+
+                progressDialog.text = ctx.getString(R.string.voice_model_initializing)
+                withContext(Dispatchers.IO) {
+                    SherpaSpeechClient.initializeAfterInstall()
                 }
 
                 progressDialog.dismiss()

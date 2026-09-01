@@ -91,6 +91,30 @@ object SherpaSpeechClient {
         }
     }
 
+    /**
+     * Eagerly initialize the QNN engine right after a model download/import so the
+     * on-device context binaries are generated and the original .so model libs are
+     * removed. Best-effort: returns false (and keeps the .so) when the engine cannot
+     * be initialized — non-arm64, missing DSP libs, or an active holding session; the
+     * lazy init on next use will retry and clean up then.
+     */
+    suspend fun initializeAfterInstall(): Boolean {
+        if (isHolding.get()) return false
+        if (Build.SUPPORTED_ABIS.firstOrNull() != "arm64-v8a" || !QnnDspManager.isInstalled()) return false
+        synchronized(initLock) {
+            try {
+                recognizerRef.getAndSet(null)?.release()
+            } catch (_: Throwable) {}
+            lastEngineConfig = null
+            engineWasReloaded = false
+        }
+        return withContext(Dispatchers.IO) {
+            if (!VoiceModelManager.checkModelFiles()) return@withContext false
+            if (!VoiceNativeManager.loadNativeLibs()) return@withContext false
+            initEngineIfNeeded()
+        }
+    }
+
     private fun initEngineIfNeeded(): Boolean {
         val currentConfig = readEngineConfig()
 
@@ -154,8 +178,30 @@ object SherpaSpeechClient {
                     )
 
                 val encoderPath = modelFiles.encoder.absolutePath
+                val binReadyBefore = VoiceModelManager.hasContextBinaries()
                 Timber.i("Creating OnlineRecognizer: encoder=$encoderPath, variant=qnn-lib")
                 recognizerRef.set(OnlineRecognizer(null, config))
+
+                val binReadyNow = VoiceModelManager.hasContextBinaries()
+                if (binReadyNow && !binReadyBefore) {
+                    // Context binaries were just generated from the .so model libs this
+                    // run. The recognizer still holds the .so via dlopen, which keeps the
+                    // files busy until process exit — release it first, delete the .so,
+                    // then recreate the recognizer from the context binaries (fast path).
+                    try {
+                        recognizerRef.getAndSet(null)?.release()
+                    } catch (_: Throwable) {}
+                    if (VoiceModelManager.deleteModelLibsIfContextBinaryReady()) {
+                        Timber.i("QNN context binaries ready; removed original model libs (.so)")
+                    }
+                    recognizerRef.set(OnlineRecognizer(null, config))
+                } else if (binReadyBefore) {
+                    // Recognizer loaded straight from the context binaries, so the .so
+                    // model libs are not held by this process — delete them right away.
+                    if (VoiceModelManager.deleteModelLibsIfContextBinaryReady()) {
+                        Timber.i("Removed original model libs (.so) after engine init")
+                    }
+                }
                 lastEngineConfig = currentConfig
                 Timber.i("Sherpa-onnx online ASR engine initialized (variant=qnn-lib)")
                 true

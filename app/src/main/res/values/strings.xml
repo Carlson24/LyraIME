@@ -360,6 +360,7 @@
     <string name="voice_model_importing">Importing voice model…</string>
     <string name="voice_model_verifying">Verifying checksum…</string>
     <string name="voice_model_extracting">Extracting model files…</string>
+    <string name="voice_model_initializing">Initializing voice engine…</string>
     <string name="voice_model_download_failed">Download failed: %s</string>
     <string name="voice_model_verification_failed">SHA256 verification failed</string>
     <string name="voice_model_extract_failed">Failed to extract model files: %s</string>

@@ -25,7 +25,7 @@ if(NOT EXISTS "${ONNXRUNTIME_ZIP}")
   message(STATUS "Downloading onnxruntime from ${ONNXRUNTIME_URL}")
   file(DOWNLOAD "${ONNXRUNTIME_URL}" "${ONNXRUNTIME_ZIP}"
        EXPECTED_HASH
-          SHA256=a78f303a26b5e75c84c8b2a97fa2ddb400b2d1b5e069bec19aa229ccd3597fdb
+          SHA256=98c059ae599539060cc20cf629f8bc4454685b6058f499c81848b939b85f8bfd
        SHOW_PROGRESS STATUS download_status)
   list(GET download_status 0 status_code)
   if(NOT status_code EQUAL 0)
