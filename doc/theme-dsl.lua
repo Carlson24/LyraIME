@@ -720,6 +720,9 @@
 -- ============================================================================
 
 --- 液态键盘按键项
+--- 简写：可直接写字符串（如 `","`），等价于 `{ text = ",", alt_text = "," }`。
+--- 示例：
+---   keys = { ",", ".", "?", { text = "!", alt_text = "！" } },
 ---@class KeyItem
 ---@field text?             string                # 主文本
 ---@field alt_text?         string                # 替代文本（默认同 text）
@@ -729,7 +732,7 @@
 ---@field id?               string                # 面板唯一标识符
 ---@field type?             LiquidKeyboardType    # 面板类型
 ---@field name?             string                # 面板名称（标签显示用）
----@field keys?             KeyItem[]             # 按键列表
+---@field keys?             (string | KeyItem)[]  # 按键列表（支持字符串简写）
 
 --- 液态键盘。
 --- 可选——不配置时使用默认值。
