@@ -1,5 +1,5 @@
 diff --git a/sherpa-onnx/csrc/macros.h b/sherpa-onnx/csrc/macros.h
-index a2ccf2cd..e4b81206 100644
+index d68c4c18..041cf2c2 100644
 --- a/sherpa-onnx/csrc/macros.h
 +++ b/sherpa-onnx/csrc/macros.h
 @@ -7,6 +7,8 @@
@@ -9,9 +9,9 @@ index a2ccf2cd..e4b81206 100644
 +#include <stdexcept>
 +#include <string>
  #include <utility>
- #if SHERPA_ONNX_ENABLE_WASM
- #include <emscripten.h>
-@@ -56,11 +58,13 @@
+ #if __OHOS__
+ #include "hilog/log.h"
+@@ -51,11 +53,13 @@
    } while (0)
  #endif
  

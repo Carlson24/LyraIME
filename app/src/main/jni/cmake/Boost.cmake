@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-set(BOOST_VERSION 1.89.0)
+set(BOOST_VERSION 1.92.0)
 
 if(NOT EXISTS "boost-${BOOST_VERSION}.tar.xz")
   message(STATUS "Downloading Boost ${BOOST_VERSION} ......")
