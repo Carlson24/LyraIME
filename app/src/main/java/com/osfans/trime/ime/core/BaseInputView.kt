@@ -210,7 +210,13 @@ abstract class BaseInputView(
 
     private val ignoreSystemGestureInsets by AppPrefs.defaultInstance().advanced.ignoreSystemGestureInsets
 
+    private val customGestureInsetHeight by AppPrefs.defaultInstance().advanced.customGestureInsetHeight
+
     protected fun getNavBarBottomInset(windowInsets: WindowInsets): Int {
+        val customHeight = dp(customGestureInsetHeight)
+        if (customHeight > 0) {
+            return customHeight
+        }
         if (navBarBackground != ThemePrefs.NavbarBackground.FULL) {
             return 0
         }

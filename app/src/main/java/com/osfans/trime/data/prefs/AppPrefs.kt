@@ -712,6 +712,7 @@ class AppPrefs(
             const val UI_MODE = "ui_mode"
             const val SHOW_APP_ICON = "show_app_icon"
             const val IGNORE_SYSTEM_GESTURE_INSETS = "ignore_system_gesture_insets"
+            const val CUSTOM_GESTURE_INSET_HEIGHT = "custom_gesture_inset_height"
         }
 
         enum class UiMode(override val stringRes: Int) : PreferenceDelegateEnum {
@@ -731,6 +732,16 @@ class AppPrefs(
             R.string.ignore_system_gesture_insets,
             IGNORE_SYSTEM_GESTURE_INSETS,
             false,
+        )
+        val customGestureInsetHeight = int(
+            R.string.custom_gesture_inset_height,
+            CUSTOM_GESTURE_INSET_HEIGHT,
+            0,
+            0,
+            50,
+            "dp",
+            defaultLabel = R.string.custom_gesture_inset_height_summary,
+            enableUiOn = { !ignoreSystemGestureInsets.getValue() },
         )
     }
 }

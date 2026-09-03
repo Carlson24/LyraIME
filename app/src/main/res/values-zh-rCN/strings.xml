@@ -386,6 +386,8 @@
     <string name="liquid_symbol_panel">符号面板</string>
     <string name="star_success">收藏成功</string>
     <string name="ignore_system_gesture_insets">忽略系统手势边衬区</string>
+    <string name="custom_gesture_inset_height">自定义手势边衬高度</string>
+    <string name="custom_gesture_inset_height_summary">0 = 使用系统值</string>
     
     
     

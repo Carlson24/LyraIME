@@ -387,6 +387,8 @@
     <string name="liquid_symbol_panel">Symbol Panel</string>
     <string name="star_success">Star success</string>
     <string name="ignore_system_gesture_insets">Ignore system gesture insets</string>
+    <string name="custom_gesture_inset_height">Custom gesture inset height</string>
+    <string name="custom_gesture_inset_height_summary">0 = use system value</string>
     
     
     
