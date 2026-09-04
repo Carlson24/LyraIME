@@ -22,7 +22,7 @@ import com.osfans.trime.ime.core.AutoScaleTextView
 import com.osfans.trime.ime.keyboard.GestureFrame
 import com.osfans.trime.util.roundedRippleDrawable
 import splitties.dimensions.dp
-import splitties.views.dsl.constraintlayout.baselineToBaselineOf
+
 import splitties.views.dsl.constraintlayout.bottomOfParent
 import splitties.views.dsl.constraintlayout.bottomToTopOf
 import splitties.views.dsl.constraintlayout.centerHorizontally
@@ -144,7 +144,7 @@ class CandidateItemUi(
                     lParams(wrapContent, wrapContent) {
                         startToEndOf(text, ctx.dp(1))
                         endOfParent()
-                        baselineToBaselineOf(text)
+                        centerVertically()
                         horizontalChainStyle = ConstraintLayout.LayoutParams.CHAIN_PACKED
                     },
                 )
