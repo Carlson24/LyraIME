@@ -294,7 +294,7 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
         val macrosHeader = project.file("src/main/jni/sherpa-onnx/sherpa-onnx/csrc/macros.h")
         val tableTranslatorH = project.file("src/main/jni/librime/src/rime/gear/table_translator.h")
         val luaCmake = project.file("src/main/jni/librime-plugins/librime-lua/CMakeLists.txt")
-        val luaLiolib = project.file("src/main/jni/librime-plugins/librime-lua-deps/lua5.4/liolib.c")
+        val luaLiolib = project.file("src/main/jni/librime-plugins/librime-lua-deps/lua5.5/liolib.c")
         val witogramCc = project.file("src/main/jni/librime-plugins/librime-witogram/src/witogram.cc")
         val applyPatches =
             project.tasks.register("applyNativePatches") {

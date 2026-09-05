@@ -1,6 +1,6 @@
 {
     "uniqueId": "k2-fsa/sherpa-onnx",
-    "artifactVersion": "1.13.4",
+    "artifactVersion": "1.13.7",
     "description": "Speech-to-text, text-to-speech, speaker recognition, and VAD using next-gen Kaldi with onnxruntime without Internet connection.",
     "name": "k2-fsa/sherpa-onnx",
     "website": "https://github.com/k2-fsa/sherpa-onnx",

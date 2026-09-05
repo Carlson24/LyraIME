@@ -1,21 +1,19 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 42f2ebb..6686548 100644
+index e33365c..c71c933 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -19,7 +19,12 @@ else()
+@@ -19,6 +19,10 @@ else()
    message(STATUS "Using in-tree lua source")
-   include_directories(thirdparty/lua5.4)
-   aux_source_directory(thirdparty/lua5.4 LUA_SRC)
+   include_directories(thirdparty/lua5.5)
+   aux_source_directory(thirdparty/lua5.5 LUA_SRC)
 +  if(NOT WIN32)
 +    # Standard utf8 source replaced by lua-utf8 (provides super-set API)
 +    list(FILTER LUA_SRC EXCLUDE REGEX "lutf8lib\\.c$")
 +  endif()
-   add_definitions(-DLUA_COMPAT_5_3)
-+
+   add_definitions(-DLUA_COMPAT_MATHLIB)
    if(WIN32)
      set_property(SOURCE ${LUA_SRC} PROPERTY COMPILE_DEFINITIONS LUA_BUILD_AS_DLL)
-   else()
-@@ -36,10 +41,14 @@ else()
+@@ -36,10 +40,14 @@ else()
    endif()
  endif()
  
