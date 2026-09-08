@@ -301,8 +301,7 @@ class ClipboardWindow(
         textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
-        typeface = FontManager.getTypeface("clipboard_category_font")
-        fontFeatureSettings = FontManager.fontFeatureSettings
+        typeface = FontManager.getTypeface()
     }
 
     private val barSelectButton = ImageButton(context).apply {
@@ -325,8 +324,7 @@ class ClipboardWindow(
         textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
-        typeface = FontManager.getTypeface("clipboard_category_font")
-        fontFeatureSettings = FontManager.fontFeatureSettings
+        typeface = FontManager.getTypeface()
         visibility = View.GONE
         setOnClickListener { undoLastDelete() }
     }
@@ -336,8 +334,7 @@ class ClipboardWindow(
         textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
-        typeface = FontManager.getTypeface("clipboard_category_font")
-        fontFeatureSettings = FontManager.fontFeatureSettings
+        typeface = FontManager.getTypeface()
     }
 
     private val barCancelSelectButton = TextView(context).apply {
@@ -346,8 +343,7 @@ class ClipboardWindow(
         textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
-        typeface = FontManager.getTypeface("clipboard_category_font")
-        fontFeatureSettings = FontManager.fontFeatureSettings
+        typeface = FontManager.getTypeface()
         setOnClickListener { exitMultiSelectMode() }
     }
 
@@ -357,8 +353,7 @@ class ClipboardWindow(
         textSize = theme.generalStyle.fonts.clipboard_category_size
         setPadding(dp(8), dp(4), dp(8), dp(4))
         setTextColor(ColorManager.getColor("key_text_color"))
-        typeface = FontManager.getTypeface("clipboard_category_font")
-        fontFeatureSettings = FontManager.fontFeatureSettings
+        typeface = FontManager.getTypeface()
         setOnClickListener { showDeleteSelectedConfirm() }
     }
 

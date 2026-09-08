@@ -22,7 +22,6 @@ import com.osfans.trime.ime.core.AutoScaleTextView
 import com.osfans.trime.ime.keyboard.GestureFrame
 import com.osfans.trime.util.roundedRippleDrawable
 import splitties.dimensions.dp
-
 import splitties.views.dsl.constraintlayout.bottomOfParent
 import splitties.views.dsl.constraintlayout.bottomToTopOf
 import splitties.views.dsl.constraintlayout.centerHorizontally
@@ -56,9 +55,7 @@ class CandidateItemUi(
     private val textSize = theme.generalStyle.fonts.candidate_size
     private val commentSize = theme.generalStyle.fonts.comment_size
 
-    private val textFont = FontManager.getTypeface("candidate_font")
-    private val commentFont = FontManager.getTypeface("comment_font")
-    private val labelFont = FontManager.getTypeface("label_font")
+    private val font = FontManager.getTypeface()
 
     private val textColor = ColorManager.getColor("candidate_text_color")
     private val commentColor = ColorManager.getColor("comment_text_color")
@@ -84,8 +81,7 @@ class CandidateItemUi(
         view(::AutoScaleTextView) {
             id = View.generateViewId()
             this.textSize = this@CandidateItemUi.textSize
-            typeface = textFont
-            fontFeatureSettings = FontManager.fontFeatureSettings
+            typeface = font
             isSingleLine = true
             gravity = gravityCenter
             scaleMode = AutoScaleTextView.Mode.Proportional
@@ -95,8 +91,7 @@ class CandidateItemUi(
         view(::AutoScaleTextView) {
             id = View.generateViewId()
             this.textSize = commentSize
-            typeface = commentFont
-            fontFeatureSettings = FontManager.fontFeatureSettings
+            typeface = font
             isSingleLine = true
             gravity = gravityCenter
             scaleMode = AutoScaleTextView.Mode.Proportional
@@ -106,8 +101,7 @@ class CandidateItemUi(
         view(::AutoScaleTextView) {
             id = View.generateViewId()
             this.textSize = this@CandidateItemUi.theme.generalStyle.fonts.candidate_label_size
-            typeface = labelFont
-            fontFeatureSettings = FontManager.fontFeatureSettings
+            typeface = font
             isSingleLine = true
             gravity = gravityCenter
             scaleMode = AutoScaleTextView.Mode.Proportional

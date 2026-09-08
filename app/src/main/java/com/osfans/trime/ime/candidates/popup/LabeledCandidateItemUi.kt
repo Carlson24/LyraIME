@@ -29,9 +29,7 @@ class LabeledCandidateItemUi(
     private val labelSize = theme.window.foreground.labelFontSize
     private val textSize = theme.window.foreground.textFontSize
     private val commentSize = theme.window.foreground.commentFontSize
-    private val labelFont = FontManager.getTypeface("label_font")
-    private val textFont = FontManager.getTypeface("candidate_font")
-    private val commentFont = FontManager.getTypeface("comment_font")
+    private val font = FontManager.getTypeface()
     private val labelColor = ColorManager.getColor("label_color")
     private val textColor = ColorManager.getColor("candidate_text_color")
     private val commentColor = ColorManager.getColor("comment_text_color")
@@ -45,7 +43,6 @@ class LabeledCandidateItemUi(
             val v = dp(theme.window.itemPadding.vertical)
             val h = dp(theme.window.itemPadding.horizontal)
             setPadding(h, v, h, v)
-            fontFeatureSettings = FontManager.fontFeatureSettings
         }
 
     private inline fun SpannableStringBuilder.inSpanWith(
@@ -64,12 +61,12 @@ class LabeledCandidateItemUi(
         val commentFg = if (highlighted) highlightCommentTextColor else commentColor
         root.text =
             buildSpannedString {
-                inSpanWith(labelFg, ctx.sp(labelSize), labelFont) { append(candidate.label) }
+                inSpanWith(labelFg, ctx.sp(labelSize), font) { append(candidate.label) }
                 append(" ")
-                inSpanWith(textFg, ctx.sp(textSize), textFont) { append(candidate.text) }
+                inSpanWith(textFg, ctx.sp(textSize), font) { append(candidate.text) }
                 if (candidate.comment.isNotBlank()) {
                     append(" ")
-                    inSpanWith(commentFg, ctx.sp(commentSize), commentFont) { append(candidate.comment) }
+                    inSpanWith(commentFg, ctx.sp(commentSize), font) { append(candidate.comment) }
                 }
             }
         val bg =

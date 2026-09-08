@@ -18,7 +18,6 @@ import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.keyboard.Keyboard
-import com.osfans.trime.util.UnicodeVariantUtils
 import com.osfans.trime.util.sp
 import splitties.dimensions.dp
 
@@ -119,7 +118,7 @@ class SidebarView(
     private val preferredHeight: Int get() = keyboard.getSidebarHeight()
 
     private val sidebarTextSizeSp: Float get() = sp(keyboard.sidebarTextSize)
-    private val sidebarTypeface by lazy { FontManager.getTypeface("sidebar_font") }
+    private val sidebarTypeface by lazy { FontManager.getTypeface() }
 
     private val itemViewPool = ArrayDeque<FrameLayout>(8)
     private val dividerPool = ArrayDeque<View>(8)
@@ -131,7 +130,6 @@ class SidebarView(
                 color = sidebarTextColor
                 textSize = sidebarTextSizeSp
                 typeface = sidebarTypeface
-                fontFeatureSettings = FontManager.fontFeatureSettings
             }
 
         var label: String = ""
@@ -287,7 +285,7 @@ class SidebarView(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     itemHeight,
                 )
-                (itemView.getChildAt(0) as? SidebarTextLabel)?.label = UnicodeVariantUtils.toDisplay(token.display)
+                (itemView.getChildAt(0) as? SidebarTextLabel)?.label = token.display
                 itemView.setOnClickListener { onItemSelected?.invoke(token) }
             } else {
                 itemContainer.addView(obtainItemView(token, itemHeight))
@@ -335,7 +333,7 @@ class SidebarView(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     itemHeight,
                 )
-                (v.getChildAt(0) as? SidebarTextLabel)?.label = UnicodeVariantUtils.toDisplay(token.display)
+                (v.getChildAt(0) as? SidebarTextLabel)?.label = token.display
             }
         } else {
             createItemView(token, itemHeight)
@@ -348,7 +346,7 @@ class SidebarView(
 
     private fun createSymbolItemView(symbol: String, itemHeight: Int): FrameLayout {
         val label = SidebarTextLabel(context).apply {
-            this.label = UnicodeVariantUtils.toDisplay(symbol)
+            this.label = symbol
         }
         return FrameLayout(context).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -398,7 +396,7 @@ class SidebarView(
         itemHeight: Int,
     ): FrameLayout {
         val label = SidebarTextLabel(context).apply {
-            this.label = UnicodeVariantUtils.toDisplay(token.display)
+            this.label = token.display
         }
 
         return FrameLayout(context).apply {

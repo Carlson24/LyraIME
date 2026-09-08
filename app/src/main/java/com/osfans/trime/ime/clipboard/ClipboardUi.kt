@@ -76,8 +76,7 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
         setPaddingDp(12, 0, 12, 0)
         background = categoryBackground(selected = false)
         setTextColor(ColorManager.getColor("key_text_color"))
-        typeface = FontManager.getTypeface("clipboard_category_font")
-        fontFeatureSettings = FontManager.fontFeatureSettings
+        typeface = FontManager.getTypeface()
     }
 
     private fun categoryBackground(selected: Boolean) = ColorManager.getDecorDrawable(

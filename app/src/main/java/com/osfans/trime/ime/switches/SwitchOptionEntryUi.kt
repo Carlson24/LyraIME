@@ -59,8 +59,7 @@ class SwitchOptionEntryUi(
     val textIcon =
         view(::AutoScaleTextView) {
             setTextSize(TypedValue.COMPLEX_UNIT_DIP, 24f)
-            typeface = FontManager.getTypeface("key_font")
-            fontFeatureSettings = FontManager.fontFeatureSettings
+            typeface = FontManager.getTypeface()
         }
 
     val label =
@@ -68,8 +67,7 @@ class SwitchOptionEntryUi(
             textSize = 12f
             gravity = gravityCenter
             setTextColor(ColorManager.getColor("key_text_color"))
-            typeface = FontManager.getTypeface("key_font")
-            fontFeatureSettings = FontManager.fontFeatureSettings
+            typeface = FontManager.getTypeface()
         }
 
     override val root =

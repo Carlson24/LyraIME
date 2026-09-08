@@ -157,17 +157,7 @@ return theme {
   style = style {
     -- ── 字体（统一定义在 fonts 子表中）──
     fonts = {
-      key = { "symbol.ttf" },
-      label = { "label.ttf" },
-      latin = { "latin.ttf" },
-      hanb = { "hanb.ttf" },
-      symbol = { "symbol.ttf" },
-      text = { "latin.ttf" },
-      hint = { "latin.ttf" },
-      candidate = { "han.ttf" },
-      comment = { "comment.ttf" },
-      popup = { "latin.ttf" },
-      clipboard = { "comment.ttf" },
+      font_list = { "symbol.ttf", "label.ttf", "latin.ttf", "comment.ttf", "han.ttf", "hanb.ttf" },
       key_size = 22,
       key_long_size = 14,
       label_size = 22,

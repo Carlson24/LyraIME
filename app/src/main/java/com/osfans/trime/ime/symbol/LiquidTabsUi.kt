@@ -50,8 +50,7 @@ class LiquidTabsUi(
                     } else {
                         theme.generalStyle.fonts.candidate_size
                     }
-                typeface = FontManager.getTypeface("candidate_font")
-                fontFeatureSettings = FontManager.fontFeatureSettings
+                typeface = FontManager.getTypeface()
                 setTextColor(textColor)
             }
 

@@ -14,7 +14,6 @@ import kotlinx.serialization.Serializable
 data class ToolBar(
     val primaryButton: Button? = null,
     val buttons: List<Button> = emptyList(),
-    val buttonFont: List<String> = emptyList(),
     val backStyle: String = "ic@arrow-left",
 ) : Parcelable {
 

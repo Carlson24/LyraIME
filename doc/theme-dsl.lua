@@ -509,19 +509,7 @@
 
 --- 字体样式
 ---@class FontStyle
----@field key?                     string[]              # 按键标签字体文件列表
----@field label?                   string[]              # 按键副标签字体文件列表
----@field latin?                   string[]              # 拉丁字符字体文件列表
----@field hanb?                    string[]              # 汉字字体文件列表
----@field symbol?                  string[]              # 符号字体文件列表
----@field text?                    string[]              # 文字字体文件列表
----@field hint?                    string[]              # 提示字体文件列表
----@field candidate?               string[]              # 候选字体文件列表
----@field comment?                 string[]              # 注释字体文件列表
----@field popup?                   string[]              # 弹窗字体文件列表
----@field clipboard?               string[]              # 剪贴板字体文件列表
----@field sidebar?                string[]              # 侧栏字体文件列表
----@field clipboard_category?      string[]              # 剪贴板分类标签字体文件列表
+---@field font_list?                string[]              # 全局字体文件列表（有序回退，所有文本共用）
 ---@field key_size?                number                # 按键标签字号（默认 15）
 ---@field key_long_size?           number                # 长按键字号（默认 15）
 ---@field label_size?              number                # 副标签字号（默认 0）
@@ -535,8 +523,6 @@
 ---@field clipboard_size?          number                # 剪贴板字号（默认 14）
 ---@field sidebar_size?            number                # 侧栏字号（默认 -1）
 ---@field liquid_tabs_size?        number                # 液态键盘导航栏字号（默认 -1，跟随 candidate_size）
----@field variations?              { [string]: boolean } # 字体变体特性（如 { cpct = true }）
----@field display?                 { [string]: string }  # Unicode 异体字显示映射
 
 --- 回车键标签文本
 ---@class EnterLabel
@@ -665,7 +651,6 @@
 ---@class ToolBar
 ---@field primary_button? ToolBarButton?   # 主按钮（可选，不配置则使用默认）
 ---@field buttons?        ToolBarButton[]  # 附加按钮列表
----@field button_font?    string[]         # 按钮字体文件列表
 ---@field back_style?     string           # 返回按钮样式（默认 "ic@arrow-left"）
 
 -- ============================================================================
@@ -707,10 +692,8 @@
 ---@field popup_text_size?         number                                     # 弹窗文字字号
 ---@field popup_text_color?        Color                                      # 弹窗文字颜色
 ---@field popup_background_color?  Color                                      # 弹窗背景颜色
----@field popup_font?              string[]                                   # 弹窗字体文件列表
 ---@field background?              Color                                      # 工具栏背景
 ---@field separator_color?         Color                                      # 分隔线颜色
----@field button_font?             string[]                                   # 按钮字体文件列表
 ---@field buttons?                 ToolBarButton[]                            # 工具栏按钮列表
 ---@field popup?                   PopupAction[]                              # 弹窗动作列表（默认菜单）
 ---@field popup_by_type?           { [string]: TypePopupConfig }              # 按候选类型的弹窗菜单

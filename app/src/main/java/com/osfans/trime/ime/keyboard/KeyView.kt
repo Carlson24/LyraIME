@@ -30,7 +30,6 @@ import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.ime.popup.PopupAction
 import com.osfans.trime.ime.popup.PopupDelegate
 import com.osfans.trime.link.AsrkbVoiceHoldSessionController
-import com.osfans.trime.util.UnicodeVariantUtils
 import com.osfans.trime.util.sp
 import splitties.dimensions.dp
 import timber.log.Timber
@@ -383,11 +382,10 @@ class KeyView(
             },
         )
         val iconSize = textSize.toInt()
-        val fontKey = if (isTop) "symbol_font" else "hint_font"
         val offsetX = if (isTop) key.keySymbolOffsetX else key.keyHintOffsetX
         val offsetY = if (isTop) key.keySymbolOffsetY else key.keyHintOffsetY
 
-        drawSegmentsImpl(canvas, segments, textSize, iconSize, textColor, offsetX, offsetY, defaultVerticalAlign, fontKey, symbolPaint)
+        drawSegmentsImpl(canvas, segments, textSize, iconSize, textColor, offsetX, offsetY, defaultVerticalAlign, symbolPaint)
     }
 
     private fun drawLabelSegments(canvas: Canvas, segments: List<TextKeyboard.LabelSegment>) {
@@ -401,7 +399,7 @@ class KeyView(
 
         drawSegmentsImpl(
             canvas, segments, textSize, iconSize, textColor,
-            key.keyTextOffsetX, key.keyTextOffsetY, TextKeyboard.VerticalAlign.CENTER, "key_font", textPaint,
+            key.keyTextOffsetX, key.keyTextOffsetY, TextKeyboard.VerticalAlign.CENTER, textPaint,
         )
     }
 
@@ -414,7 +412,6 @@ class KeyView(
         offsetX: Float,
         offsetY: Float,
         defaultVerticalAlign: TextKeyboard.VerticalAlign,
-        fontKey: String,
         paint: Paint,
     ) {
         if (segments.isEmpty()) return
@@ -424,8 +421,7 @@ class KeyView(
         paint.apply {
             color = textColor
             this.textSize = textSize
-            typeface = FontManager.getTypeface(fontKey)
-            fontFeatureSettings = FontManager.fontFeatureSettings
+            typeface = FontManager.getTypeface()
             clearShadowLayer()
         }
 
@@ -693,7 +689,7 @@ class KeyView(
     ) {
         if (line.segments.isEmpty()) {
             basePaint.textAlign = Paint.Align.CENTER
-            val displayText = UnicodeVariantUtils.toDisplay(line.text)
+            val displayText = line.text
             val cx = if (displayText.isCjkPunctuation()) {
                 x + visualCenterCorrect(basePaint, displayText)
             } else {
@@ -763,7 +759,7 @@ class KeyView(
         val leftStart = paddedLeft
         val rightStart = paddedRight - rightWidth
         val centerCjkCorrect = if (centerGroup.size == 1) {
-            val displayText = UnicodeVariantUtils.toDisplay(centerGroup[0].text)
+            val displayText = centerGroup[0].text
             if (displayText.isCjkPunctuation()) visualCenterCorrect(basePaint, displayText) else 0f
         } else {
             0f
@@ -861,7 +857,7 @@ class KeyView(
                         richTextPaint.typeface = boldTypeface
                     }
 
-                    canvas.drawText(UnicodeVariantUtils.toDisplay(seg.text), currentX, adjustedY, richTextPaint)
+                    canvas.drawText(seg.text, currentX, adjustedY, richTextPaint)
                     currentX += richTextPaint.measureText(seg.text) + gap
                 }
             }

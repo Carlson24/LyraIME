@@ -128,8 +128,7 @@ class ToolButton : GestureFrame {
                 text?.let { label.text = it }
                 label.textSize = foreground.fontSize
                 label.padding = dp(foreground.padding)
-                label.typeface = FontManager.getTypeface("toolbar_font")
-                label.fontFeatureSettings = FontManager.fontFeatureSettings
+                label.typeface = FontManager.getTypeface()
                 add(label, lParams(wrapContent, wrapContent, gravityCenter))
             }
 
@@ -179,8 +178,7 @@ class ToolButton : GestureFrame {
                         text = seg.content
                         textSize = foreground.fontSize
                         padding = dp(foreground.padding)
-                        typeface = FontManager.getTypeface("toolbar_font")
-                        fontFeatureSettings = FontManager.fontFeatureSettings
+                        typeface = FontManager.getTypeface()
                     }
                     hLayout.addView(
                         tv,

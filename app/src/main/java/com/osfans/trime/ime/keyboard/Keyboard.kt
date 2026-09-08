@@ -176,8 +176,6 @@ class Keyboard(
     val sidebarShowItems: Int = selfConfig?.sidebarShowItems ?: 4
     val sidebarSymbols: List<String> = selfConfig?.sidebarSymbols ?: emptyList()
 
-    val sidebarFont: List<String>
-        get() = theme.generalStyle.fonts.sidebar.ifEmpty { theme.generalStyle.fonts.key }
     val sidebarTextSize: Float
         get() {
             val v = theme.generalStyle.fonts.sidebar_size

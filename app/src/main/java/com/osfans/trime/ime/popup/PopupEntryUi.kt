@@ -22,7 +22,6 @@ import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.core.AutoScaleTextView
 import com.osfans.trime.ime.keyboard.LabelSegment
 import com.osfans.trime.ime.keyboard.parseLabelSegments
-import com.osfans.trime.util.UnicodeVariantUtils
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.centerHorizontally
 import splitties.views.dsl.constraintlayout.constraintLayout
@@ -43,8 +42,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, private 
         textSize = theme.generalStyle.fonts.popup_size
         gravity = gravityCenter
         setTextColor(ColorManager.getColor("popup_text_color"))
-        typeface = FontManager.getTypeface("POPUP_FONT")
-        fontFeatureSettings = FontManager.fontFeatureSettings
+        typeface = FontManager.getTypeface()
     }
 
     val imageView = view(::AppCompatImageView) {
@@ -112,7 +110,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, private 
                 }
 
                 is LabelSegment.Text -> {
-                    textView.text = UnicodeVariantUtils.toDisplay(seg.content)
+                    textView.text = seg.content
                     textView.isVisible = true
                     imageView.isVisible = false
                 }
@@ -146,9 +144,8 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, private 
                             scaleMode = AutoScaleTextView.Mode.Proportional
                             textSize = theme.generalStyle.fonts.popup_size
                             setTextColor(ColorManager.getColor("popup_text_color"))
-                            typeface = FontManager.getTypeface("POPUP_FONT")
-                            fontFeatureSettings = FontManager.fontFeatureSettings
-                            setText(UnicodeVariantUtils.toDisplay(seg.content))
+                            typeface = FontManager.getTypeface()
+                            setText(seg.content)
                         }
                         hLayout.addView(
                             tv,

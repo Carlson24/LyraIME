@@ -75,8 +75,7 @@ class ClipboardEntryUi(ctx: Context, private val theme: Theme) : Ui {
         setPaddingDp(8, 4, 8, 4)
         ellipsize = TextUtils.TruncateAt.END
         setTextColor(ColorManager.getColor("key_text_color"))
-        typeface = FontManager.getTypeface("clipboard_font")
-        fontFeatureSettings = FontManager.fontFeatureSettings
+        typeface = FontManager.getTypeface()
         val fm = paint.fontMetrics
         val bounds = Rect()
         paint.getTextBounds("jgpqy", 0, 5, bounds)

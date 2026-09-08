@@ -23,7 +23,6 @@ import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.ime.keyboard.LabelSegment
 import com.osfans.trime.ime.keyboard.isIconFont
 import com.osfans.trime.ime.keyboard.parseLabelSegments
-import com.osfans.trime.util.UnicodeVariantUtils
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.add
@@ -80,8 +79,7 @@ class PopupKeyboardUi(
             scaleMode = AutoScaleTextView.Mode.Proportional
             textSize = theme.generalStyle.fonts.popup_size
             setTextColor(ColorManager.getColor("popup_text_color"))
-            typeface = FontManager.getTypeface("POPUP_FONT")
-            fontFeatureSettings = FontManager.fontFeatureSettings
+            typeface = FontManager.getTypeface()
         }
 
         val imageView = view(::AppCompatImageView) {}
@@ -123,8 +121,7 @@ class PopupKeyboardUi(
                                 scaleMode = AutoScaleTextView.Mode.Proportional
                                 textSize = theme.generalStyle.fonts.popup_size
                                 setTextColor(ColorManager.getColor("popup_text_color"))
-                                typeface = FontManager.getTypeface("POPUP_FONT")
-                                fontFeatureSettings = FontManager.fontFeatureSettings
+                                typeface = FontManager.getTypeface()
                                 text = seg.content
                             }
                             textViews.add(tv)
@@ -271,7 +268,7 @@ class PopupKeyboardUi(
                 }
             }
 
-        PopupKeyUi(ctx, theme, UnicodeVariantUtils.toDisplay(displayLabel))
+        PopupKeyUi(ctx, theme, displayLabel)
     }
 
     init {

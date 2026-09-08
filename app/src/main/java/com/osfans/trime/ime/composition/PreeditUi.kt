@@ -35,8 +35,7 @@ open class PreeditUi(
         view(::PreeditTextView) {
             setTextColor(textColor)
             textSize = theme.preedit.foreground.fontSize
-            typeface = FontManager.getTypeface("text_font")
-            fontFeatureSettings = FontManager.fontFeatureSettings
+            typeface = FontManager.getTypeface()
             setupPreeditView?.invoke(this)
             onMoveCursor = this@PreeditUi.onMoveCursor
         }

@@ -108,7 +108,7 @@ abstract class BaseInputView(
         val popupTextColor = ColorManager.getColor(popupTextColorKey)
         val popupBackgroundColorKey = tool?.popupBackgroundColor?.takeIf { it.isNotEmpty() } ?: "candidate_background"
         val popupBackgroundColor = ColorManager.getColor(popupBackgroundColorKey)
-        val popupTypeface = FontManager.getTypeface("candidates_tool_popup_font")
+        val popupTypeface = FontManager.getTypeface()
             .takeIf { it != Typeface.DEFAULT }
         service.lifecycleScope.launch {
             InputFeedbackManager.keyPressVibrate(view, longPress = true)

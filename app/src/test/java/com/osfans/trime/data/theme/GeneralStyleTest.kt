@@ -39,7 +39,7 @@ class GeneralStyleTest :
                 Then("with default value without exception") {
                     generalStyle.autoCaps shouldBe false
                     generalStyle.candidateBorder shouldBe 0
-                    generalStyle.fonts.candidate shouldBe emptyList()
+                    generalStyle.fonts.font_list shouldBe emptyList()
                     generalStyle.commentPosition shouldBe GeneralStyle.CommentPosition.RIGHT
                     generalStyle.enterLabel shouldNotBe null
                     generalStyle.enterLabel.go shouldBe "go"

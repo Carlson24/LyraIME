@@ -2,21 +2,14 @@
   "name": "預設",
   "style": {
     "fonts": {
-      "candidate": ["han.ttf"],
+      "font_list": ["symbol.ttf", "label.ttf", "latin.ttf", "comment.ttf", "han.ttf", "hanb.ttf"],
       "candidate_size": 22,
       "candidate_label_size": 22,
-      "comment": ["comment.ttf"],
       "comment_size": 12,
-      "hanb": ["hanb.ttf"],
-      "key": ["symbol.ttf"],
       "key_long_size": 14,
       "key_size": 22,
-      "label": ["label.ttf"],
       "label_size": 22,
-      "latin": ["latin.ttf"],
-      "symbol": ["symbol.ttf"],
-      "symbol_size": 10,
-      "text": ["latin.ttf"]
+      "symbol_size": 10
     },
     "auto_caps": false,
     "candidate_border": 0,

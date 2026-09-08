@@ -69,19 +69,7 @@ data class GeneralStyle(
     @Parcelize
     @Serializable
     data class FontStyle(
-        val candidate: List<String> = emptyList(),
-        val comment: List<String> = emptyList(),
-        val key: List<String> = emptyList(),
-        val label: List<String> = emptyList(),
-        val latin: List<String> = emptyList(),
-        val symbol: List<String> = emptyList(),
-        val text: List<String> = emptyList(),
-        val hint: List<String> = emptyList(),
-        val hanb: List<String> = emptyList(),
-        val popup: List<String> = emptyList(),
-        val sidebar: List<String> = emptyList(),
-        val clipboard: List<String> = emptyList(),
-        val clipboard_category: List<String> = emptyList(),
+        val font_list: List<String> = emptyList(),
         val candidate_size: Float = 15f,
         val candidate_label_size: Float = 14f,
         val comment_size: Float = 10f,
@@ -95,8 +83,6 @@ data class GeneralStyle(
         val clipboard_size: Float = 14f,
         val sidebar_size: Float = -1f,
         val liquid_tabs_size: Float = -1f,
-        val variations: Map<String, Boolean> = emptyMap(),
-        val display: Map<String, String> = emptyMap(),
     ) : Parcelable
 
     @Parcelize

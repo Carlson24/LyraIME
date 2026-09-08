@@ -114,8 +114,7 @@ class NavBarButton(
                         text = style
                         textSize = foreground.fontSize
                         padding = dp(foreground.padding)
-                        typeface = FontManager.getTypeface("candidates_tool_font")
-                        fontFeatureSettings = FontManager.fontFeatureSettings
+                        typeface = FontManager.getTypeface()
                         isClickable = false
                         isFocusable = false
                         setSingleLine()
@@ -171,8 +170,7 @@ class NavBarButton(
                         text = seg.content
                         textSize = foreground.fontSize
                         padding = dp(foreground.padding)
-                        typeface = FontManager.getTypeface("candidates_tool_font")
-                        fontFeatureSettings = FontManager.fontFeatureSettings
+                        typeface = FontManager.getTypeface()
                     }
                     hLayout.addView(
                         tv,
