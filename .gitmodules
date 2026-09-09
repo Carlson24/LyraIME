@@ -16,7 +16,7 @@
 	url = https://github.com/google/leveldb.git
 [submodule "librime"]
 	path = app/src/main/jni/librime
-	url = https://github.com/rime/librime.git
+	url = https://github.com/Carlson24/librime-custom.git
 	ignore = dirty
 [submodule "librime-lua"]
 	path = app/src/main/jni/librime-plugins/librime-lua

@@ -292,7 +292,7 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
         val rootDir = project.rootDir
         val jniDir = "app/src/main/jni"
         val macrosHeader = project.file("src/main/jni/sherpa-onnx/sherpa-onnx/csrc/macros.h")
-        val tableTranslatorH = project.file("src/main/jni/librime/src/rime/gear/table_translator.h")
+        val rimeApiH = project.file("src/main/jni/librime/src/rime_api.h")
         val luaCmake = project.file("src/main/jni/librime-plugins/librime-lua/CMakeLists.txt")
         val luaLiolib = project.file("src/main/jni/librime-plugins/librime-lua-deps/lua5.5/liolib.c")
         val witogramCc = project.file("src/main/jni/librime-plugins/librime-witogram/src/witogram.cc")
@@ -334,7 +334,7 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                 }
                 outputs.upToDateWhen {
                     (macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")) &&
-                        (tableTranslatorH.exists() && tableTranslatorH.readText().contains("min_word_length")) &&
+                        (rimeApiH.exists() && rimeApiH.readText().contains("char* type;")) &&
                         (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)")) &&
                         (luaCmake.exists() && luaCmake.readText().contains("lua-utf8")) &&
                         (witogramCc.exists() && witogramCc.readText().contains("Fallback to KenLM"))
