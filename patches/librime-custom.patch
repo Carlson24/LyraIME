@@ -1,3 +1,207 @@
+diff --git a/src/rime/dict/dict_compiler.cc b/src/rime/dict/dict_compiler.cc
+index 5996ee2c..3793d3dd 100644
+--- a/src/rime/dict/dict_compiler.cc
++++ b/src/rime/dict/dict_compiler.cc
+@@ -63,7 +63,8 @@ static bool get_dict_files_from_settings(vector<path>* dict_files,
+ 
+ static uint32_t compute_dict_file_checksum(uint32_t initial_checksum,
+                                            const vector<path>& dict_files,
+-                                           DictSettings& settings) {
++                                           DictSettings& settings,
++                                           ResourceResolver* source_resolver) {
+   if (dict_files.empty()) {
+     return initial_checksum;
+   }
+@@ -74,6 +75,13 @@ static uint32_t compute_dict_file_checksum(uint32_t initial_checksum,
+   if (settings.use_preset_vocabulary()) {
+     cc.ProcessFile(PresetVocabulary::DictFilePath(settings.vocabulary()));
+   }
++  string aux_file_name = settings.auxiliary_code_file();
++  if (!aux_file_name.empty()) {
++    auto aux_file = source_resolver->ResolvePath(aux_file_name);
++    if (std::filesystem::exists(aux_file)) {
++      cc.ProcessFile(aux_file);
++    }
++  }
+   return cc.Checksum();
+ }
+ 
+@@ -94,8 +102,8 @@ bool DictCompiler::Compile(const path& schema_file) {
+                                     source_resolver_.get())) {
+     return false;
+   }
+-  uint32_t dict_file_checksum =
+-      compute_dict_file_checksum(0, dict_files, settings);
++  uint32_t dict_file_checksum = compute_dict_file_checksum(
++      0, dict_files, settings, source_resolver_.get());
+   uint32_t schema_file_checksum =
+       schema_file.empty() ? 0 : Checksum(schema_file);
+   bool rebuild_table = false;
+@@ -184,8 +192,8 @@ bool DictCompiler::Compile(const path& schema_file) {
+                                       source_resolver_.get())) {
+       continue;
+     }
+-    uint32_t pack_file_checksum =
+-        compute_dict_file_checksum(dict_file_checksum, dict_files, settings);
++    uint32_t pack_file_checksum = compute_dict_file_checksum(
++        dict_file_checksum, dict_files, settings, source_resolver_.get());
+     bool rebuild_pack = true;
+     if (pack_table->Exists() && pack_table->Load()) {
+       rebuild_pack = pack_table->dict_file_checksum() != pack_file_checksum;
+@@ -225,6 +233,18 @@ bool DictCompiler::BuildTable(int table_index,
+   table = New<Table>(target_path);
+ 
+   collector.Configure(settings);
++  string aux_file_name = settings->auxiliary_code_file();
++  if (!aux_file_name.empty()) {
++    auto aux_file = source_resolver_->ResolvePath(aux_file_name);
++    if (std::filesystem::exists(aux_file)) {
++      if (collector.LoadAuxiliaryCodes(aux_file)) {
++        collector.set_auxiliary_code_separator(
++            settings->auxiliary_code_separator());
++      }
++    } else {
++      LOG(ERROR) << "auxiliary code file '" << aux_file << "' does not exist.";
++    }
++  }
+   collector.Collect(dict_files);
+   if (options_ & kDump) {
+     path dump_path(table->file_path());
+diff --git a/src/rime/dict/dict_settings.cc b/src/rime/dict/dict_settings.cc
+index f2438ee4..b370fb76 100644
+--- a/src/rime/dict/dict_settings.cc
++++ b/src/rime/dict/dict_settings.cc
+@@ -76,6 +76,15 @@ double DictSettings::min_phrase_weight() {
+   return (*this)["min_phrase_weight"].ToDouble();
+ }
+ 
++string DictSettings::auxiliary_code_file() {
++  return (*this)["need_aux"].ToString();
++}
++
++string DictSettings::auxiliary_code_separator() {
++  string value = (*this)["aux_separator"].ToString();
++  return !value.empty() ? value : ";";
++}
++
+ an<ConfigList> DictSettings::GetTables() {
+   if (empty())
+     return nullptr;
+diff --git a/src/rime/dict/dict_settings.h b/src/rime/dict/dict_settings.h
+index 3da7216f..08bdbf49 100644
+--- a/src/rime/dict/dict_settings.h
++++ b/src/rime/dict/dict_settings.h
+@@ -26,6 +26,8 @@ class DictSettings : public Config {
+   bool use_rule_based_encoder();
+   int max_phrase_length();
+   double min_phrase_weight();
++  string auxiliary_code_file();
++  string auxiliary_code_separator();
+   an<ConfigList> GetTables();
+   int GetColumnIndex(const string& column_label);
+ };
+diff --git a/src/rime/dict/entry_collector.cc b/src/rime/dict/entry_collector.cc
+index 48d94027..76fbf19d 100644
+--- a/src/rime/dict/entry_collector.cc
++++ b/src/rime/dict/entry_collector.cc
+@@ -8,6 +8,7 @@
+ #include <fstream>
+ #include <utility>
+ #include <boost/algorithm/string.hpp>
++#include <utf8.h>
+ #include <rime/algo/strings.h>
+ #include <rime/dict/dict_settings.h>
+ #include <rime/dict/entry_collector.h>
+@@ -54,6 +55,36 @@ void EntryCollector::LoadPresetVocabulary(DictSettings* settings) {
+   }
+ }
+ 
++bool EntryCollector::LoadAuxiliaryCodes(const path& file) {
++  auxiliary_codes_.clear();
++  auxiliary_enabled_ = false;
++  std::ifstream fin(file.c_str());
++  if (!fin) {
++    LOG(ERROR) << "failed to load auxiliary code file: " << file;
++    return false;
++  }
++  string line;
++  int line_number = 0;
++  while (getline(fin, line)) {
++    ++line_number;
++    boost::algorithm::trim_right(line);
++    if (line.empty() || line[0] == '#')
++      continue;
++    auto row = strings::split(line, "\t");
++    if (row.size() < 2 || row[0].empty()) {
++      LOG(WARNING) << "invalid auxiliary code at line " << line_number
++                   << " in file: " << file;
++      continue;
++    }
++    auxiliary_codes_[row[0]] = row[1];
++  }
++  fin.close();
++  auxiliary_enabled_ = true;
++  LOG(INFO) << "loaded " << auxiliary_codes_.size() << " auxiliary codes from "
++            << file;
++  return true;
++}
++
+ void EntryCollector::Collect(const path& dict_file) {
+   LOG(INFO) << "collecting entries from " << dict_file;
+   current_dict_file = dict_file.u8string();
+@@ -115,6 +146,24 @@ void EntryCollector::Collect(const path& dict_file) {
+     // collect entry
+     collection.insert(word);
+     if (!code_str.empty()) {
++      if (auxiliary_enabled_) {
++        RawCode raw_code;
++        raw_code.FromString(code_str);
++        size_t index = 0;
++        const char* char_ptr = word.c_str();
++        const char* char_end = char_ptr;
++        while (*char_end != '\0' && index < raw_code.size()) {
++          utf8::unchecked::next(char_end);
++          string character(char_ptr, char_end - char_ptr);
++          auto aux = auxiliary_codes_.find(character);
++          string aux_code =
++              (aux != auxiliary_codes_.end()) ? aux->second : string();
++          raw_code[index] += auxiliary_code_separator_ + aux_code;
++          ++index;
++          char_ptr = char_end;
++        }
++        code_str = raw_code.ToString();
++      }
+       CreateEntry(word, code_str, weight_str);
+     } else {
+       encode_queue.push({word, weight_str});
+diff --git a/src/rime/dict/entry_collector.h b/src/rime/dict/entry_collector.h
+index dc39cb79..fe06a016 100644
+--- a/src/rime/dict/entry_collector.h
++++ b/src/rime/dict/entry_collector.h
+@@ -49,6 +49,12 @@ class EntryCollector : public PhraseCollector {
+   void Configure(DictSettings* settings);
+   void Collect(const vector<path>& dict_files);
+ 
++  // load auxiliary codes (character -> code) from a tab-separated file
++  bool LoadAuxiliaryCodes(const path& file);
++  void set_auxiliary_code_separator(const string& separator) {
++    auxiliary_code_separator_ = separator;
++  }
++
+   // export contents of table and prism to text files
+   void Dump(const path& file_path) const;
+ 
+@@ -73,6 +79,10 @@ class EntryCollector : public PhraseCollector {
+   WeightMap total_weight;
+ 
+  private:
++  // character -> auxiliary code
++  map<string, string> auxiliary_codes_;
++  string auxiliary_code_separator_ = ";";
++  bool auxiliary_enabled_ = false;
+   string current_dict_file;
+   size_t line_number;
+ };
 diff --git a/src/rime/gear/table_translator.cc b/src/rime/gear/table_translator.cc
 index 67bc2292..5491d7f5 100644
 --- a/src/rime/gear/table_translator.cc
