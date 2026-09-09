@@ -26,9 +26,11 @@
 	path = app/src/main/jni/librime-plugins/librime-lua-deps
 	url = https://github.com/hchunhui/librime-lua.git
 	branch = thirdparty
+	ignore = dirty
 [submodule "librime-witogram"]
 	path = app/src/main/jni/librime-plugins/librime-witogram
 	url = https://github.com/levelel/librime-witogram.git
+	ignore = dirty
 [submodule "librime-calculator"]
 	path = app/src/main/jni/librime-plugins/librime-calculator
 	url = https://github.com/Carlson24/librime-calculator.git
@@ -38,6 +40,7 @@
 [submodule "sherpa-onnx"]
 	path = app/src/main/jni/sherpa-onnx
 	url = https://github.com/k2-fsa/sherpa-onnx.git
+	ignore = dirty
 [submodule "lua-utf8"]
 	path = app/src/main/jni/librime-plugins/lua-utf8
 	url = https://github.com/starwing/luautf8.git
