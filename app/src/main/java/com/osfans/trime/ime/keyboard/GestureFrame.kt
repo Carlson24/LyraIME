@@ -9,10 +9,12 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.SystemClock
 import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.data.prefs.AppPrefs
+import timber.log.Timber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,6 +47,8 @@ open class GestureFrame(context: Context) : FrameLayout(context) {
         findViewTreeLifecycleOwner()?.lifecycleScope
             ?: CoroutineScope(Dispatchers.Main + SupervisorJob())
     }
+
+    private val touchSlop: Int by lazy { ViewConfiguration.get(context).scaledTouchSlop }
 
     var onClick: (() -> Unit)? = null
     var onDoubleClick: (() -> Unit)? = null
@@ -120,6 +124,10 @@ open class GestureFrame(context: Context) : FrameLayout(context) {
                 val dx = x - startX
                 val dy = y - startY
 
+                if (!isLongPressed && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
+                    longPressJob?.cancel()
+                }
+
                 onMove?.invoke(x, y, isLongPressed)
 
                 if ((isSlideCursor || isSlideDelete) && onSlide != null && !isLongPressed && swipeTravel > 0) {
@@ -169,6 +177,13 @@ open class GestureFrame(context: Context) : FrameLayout(context) {
                 if (isLongPressed) {
                     dispatchBehavior(KeyBehavior.LONG_CLICK, true)
                     return true
+                }
+
+                if (!swipeTriggered) {
+                    val behavior = detectSwipe(dx, dy)
+                    if (behavior != KeyBehavior.CLICK) {
+                        lastSwipeBehavior = behavior
+                    }
                 }
 
                 if (swipeTriggered) {
@@ -274,11 +289,16 @@ open class GestureFrame(context: Context) : FrameLayout(context) {
         swipeTriggered = isSwipe
 
         if (!isSwipe) return KeyBehavior.CLICK
-        return if (absDx > absDy) {
+        val behavior = if (absDx > absDy) {
             if (dx > 0) KeyBehavior.SWIPE_RIGHT else KeyBehavior.SWIPE_LEFT
         } else {
             if (dy > 0) KeyBehavior.SWIPE_DOWN else KeyBehavior.SWIPE_UP
         }
+        Timber.d(
+            "detectSwipe: dx=$dx, dy=$dy, distance=$distance, swipeTravel=$swipeTravel, " +
+                "swipeVelocity=$swipeVelocity, velocity=$velocity, behavior=$behavior",
+        )
+        return behavior
     }
 
     private fun dispatchBehavior(
