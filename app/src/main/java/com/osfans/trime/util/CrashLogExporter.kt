@@ -8,7 +8,6 @@ package com.osfans.trime.util
 import android.app.ActivityManager
 import android.app.ApplicationExitInfo
 import android.content.Context
-import android.os.Build
 import android.os.Process
 import com.osfans.trime.data.base.DataManager
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +35,7 @@ object CrashLogExporter {
     }
 
     private fun getLogDir(): File {
-        val dir = File(DataManager.defaultDataDir, LOG_DIR_NAME)
+        val dir = File(DataManager.userDataBaseDir, LOG_DIR_NAME)
         dir.mkdirs()
         return dir
     }
@@ -102,7 +101,6 @@ object CrashLogExporter {
     }
 
     suspend fun checkAndExportHistoricalExits(context: Context, previousPid: Int?) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
         if (previousPid == null) return
         withContext(Dispatchers.IO) {
             runCatching {
@@ -116,6 +114,8 @@ object CrashLogExporter {
                         -> {
                             exportAbnormalExit(context, previousPid, reason)
                         }
+
+                        else -> Unit
                     }
                     break
                 }
