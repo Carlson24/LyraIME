@@ -6,7 +6,7 @@ name: Nightly
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 16 * * *' # UTC 16:00 / GMT+8 0:00, daily
+    - cron: "0 16 * * *" # UTC 16:00 / GMT+8 0:00, daily
 
 env:
   CI_NAME: Nightly CI
@@ -32,10 +32,12 @@ jobs:
         with:
           distribution: "temurin"
           java-version: 17
-          cache: 'gradle'
+          cache: "gradle"
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools"
 
       - name: Install Android NDK
         run: |
@@ -119,7 +121,7 @@ jobs:
           merge-multiple: true
 
       - name: Create Nightly release
-        uses: 'marvinpinto/action-automatic-releases@latest'
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           automatic_release_tag: nightly
