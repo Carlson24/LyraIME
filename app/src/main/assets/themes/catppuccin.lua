@@ -436,8 +436,9 @@ return theme {
   -- ========================================================================
   preset_keys = {
     -- 编辑键
-    Shift_L = { label = "⇧", send = "Shift_L", shift_lock = "ascii_long" },
-    BackSpace = { label = "⌫", send = "BackSpace", repeatable = true },
+    -- label 支持 LabelSpec 富文本：可写纯字符串，也可写分段样式表（color/align/bold/scale/valign）
+    Shift_L = { label = { text = "⇧", scale = 0.9 }, send = "Shift_L", shift_lock = "ascii_long" },
+    BackSpace = { label = { text = "⌫", color = "key_symbol_color" }, send = "BackSpace", repeatable = true },
     Return = { label = "↩", send = "Return" },
     space = { label = " ", send = "space", repeatable = false, functional = false },
     Hide = { label = "∨", send = "BACK" },

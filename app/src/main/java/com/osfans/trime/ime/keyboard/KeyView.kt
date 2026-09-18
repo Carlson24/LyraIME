@@ -329,31 +329,15 @@ class KeyView(
 
         drawBackground(canvas, key)
 
-        val actionLabel = key.getLabel()
-
-        val labelSegments = (
-            if (actionLabel == "enter_labels") {
-                listOf(TextKeyboard.LabelSegment(text = keyboardView.labelEnter))
-            } else if (key.label.isNotEmpty()) {
-                if (key.label.any { it.text.isNotEmpty() }) {
-                    if (actionLabel.isNotEmpty() && key.label.none { it.text == actionLabel }) {
-                        listOf(key.label.first().copy(text = actionLabel))
-                    } else {
-                        key.label
-                    }
-                } else if (actionLabel.isNotEmpty()) {
-                    key.label.map { it.copy(text = it.text.ifEmpty { actionLabel }) }
+        val labelSegments = key.getLabelSegments()
+            .let { segs ->
+                if (segs.firstOrNull()?.text == "enter_labels") {
+                    listOf(TextKeyboard.LabelSegment(text = keyboardView.labelEnter))
                 } else {
-                    emptyList()
+                    segs
                 }
-            } else if (actionLabel.isNotEmpty()) {
-                listOf(TextKeyboard.LabelSegment(text = actionLabel))
-            } else {
-                emptyList()
             }
-            ).map { seg ->
-            if (seg.text == SCHEMA_NAME) seg.copy(text = schemaDisplayName) else seg
-        }
+            .map { seg -> if (seg.text == SCHEMA_NAME) seg.copy(text = schemaDisplayName) else seg }
 
         if (labelSegments.isNotEmpty()) {
             drawLabelSegments(canvas, labelSegments)

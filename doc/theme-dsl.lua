@@ -487,8 +487,8 @@
 ---@field option?         string    # 命令选项值
 ---@field select?         Select    # 键盘切换目标（如 "symbols"、"number"、".default"）
 ---@field toggle?         string    # Rime 运行时开关名称（如 "ascii_mode"、"full_shape"）
----@field label?          string    # 按键显示标签
----@field ascii_label?    string    # 英文模式下替换标签（为 nil 则沿用 label）
+---@field label?          LabelSpec # 按键显示标签（字符串或分段样式表，同布局 key.label）
+---@field ascii_label?    LabelSpec # 英文模式下替换标签（为 nil 则沿用 label）
 ---@field popup_label?    string    # 弹窗键盘显示标签（优先于 label，不截断）
 ---@field preview?        string?   # 预览文字（nil 时使用 label）
 ---@field shift_lock?     ShiftLock # Shift 锁定模式： "long" | "click" | "ascii_long"
@@ -502,6 +502,12 @@
 ---@field functional?     boolean   # 是否为功能键（不计入文本输入）
 ---@field states?         string[]  # 开关按键的双态标签 [off_label, on_label]
 ---@field send?           KeyName   # 发送的按键事件或键码（如 "space"、"BackSpace"、"Return"）
+---
+--- label / ascii_label 与布局 key.label 相同，支持三种 LabelSpec 写法：
+---   纯字符串：            label = "⌫"
+---   分段数组：            label = { { text = "⌫", color = "red" }, { text = "x2" } }
+---   字符串 text + 样式：  label = { text = { "A", "1" }, color = { "red", "blue" }, align = { "left", "right" } }
+--- 引用该预设的按键会直接渲染这些分段及样式。
 
 -- ============================================================================
 -- 全局样式 (GeneralStyle) 及子类型

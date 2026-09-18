@@ -16,8 +16,10 @@ data class PresetKey(
     val option: String = "",
     val select: String = "",
     val toggle: String = "",
-    val label: String = "",
-    val asciiLabel: String = "",
+    @Serializable(with = LabelSpecSerializer::class)
+    val label: List<TextKeyboard.LabelSegment> = emptyList(),
+    @Serializable(with = LabelSpecSerializer::class)
+    val asciiLabel: List<TextKeyboard.LabelSegment> = emptyList(),
     val popupLabel: String = "",
     val preview: String? = null,
     val shiftLock: String = "",

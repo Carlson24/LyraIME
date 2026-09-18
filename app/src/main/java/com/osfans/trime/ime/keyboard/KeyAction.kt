@@ -9,6 +9,7 @@ import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.data.theme.model.KeyActionToken
+import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.util.virtualKeyCharacterMap
 
 /** [按鍵][Key]的各種事件（單擊、長按、滑動等）  */
@@ -67,9 +68,9 @@ class KeyAction(
         get() = getModifierKeyOnMask(this.code)
 
     private var text: String = ""
-    private var label: String = ""
-    private var asciiLabel = ""
-    private var shiftLabel = ""
+    private var label: List<TextKeyboard.LabelSegment> = emptyList()
+    private var asciiLabel: List<TextKeyboard.LabelSegment> = emptyList()
+    private var shiftLabel: List<TextKeyboard.LabelSegment> = emptyList()
     private var preview: String? = null
     private var states: List<String> = listOf()
     var popupLabel: String = ""
@@ -100,11 +101,26 @@ class KeyAction(
         }
     }
 
-    fun getLabel(keyboard: Keyboard): String {
-        if (states.isNotEmpty() && toggle.isNotEmpty()) {
-            return states[if (rime.run { getRuntimeOption(toggle) }) 1 else 0]
+    private fun adjustCase(
+        segments: List<TextKeyboard.LabelSegment>,
+        keyboard: Keyboard,
+    ): List<TextKeyboard.LabelSegment> {
+        val status = rime.run { statusCached }
+        val upper = keyboard.isShifted || (!status.isAsciiMode && keyboard.isLabelUppercase)
+        return if (upper) {
+            segments.map { seg -> if (seg.text.length == 1) seg.copy(text = seg.text.uppercase()) else seg }
+        } else {
+            segments
         }
-        if (asciiLabel.isNotEmpty() && rime.run { statusCached }.isAsciiMode) {
+    }
+
+    fun getLabel(keyboard: Keyboard): String = getLabelSegments(keyboard).joinToString("") { it.text }
+
+    fun getLabelSegments(keyboard: Keyboard): List<TextKeyboard.LabelSegment> {
+        if (states.isNotEmpty() && toggle.isNotEmpty()) {
+            return listOf(TextKeyboard.LabelSegment(text = states[if (rime.run { getRuntimeOption(toggle) }) 1 else 0]))
+        }
+        if (asciiLabel.any { it.text.isNotEmpty() } && rime.run { statusCached }.isAsciiMode) {
             return asciiLabel
         }
         if (keyboard.isOnlyShiftOn) {
@@ -126,14 +142,18 @@ class KeyAction(
             }
         }
         // 仅在为空格键且 label 为空时才去查询 schema 名称，先检查键码以减少无谓计算
-        val displayLabel = takeIf { code == KeyEvent.KEYCODE_SPACE && label.isEmpty() }?.let { getSpaceKeySchemaName() } ?: label
+        val displayLabel = if (code == KeyEvent.KEYCODE_SPACE && label.none { it.text.isNotEmpty() }) {
+            listOf(TextKeyboard.LabelSegment(text = getSpaceKeySchemaName()))
+        } else {
+            label
+        }
         return adjustCase(displayLabel, keyboard)
     }
 
     fun getText(keyboard: Keyboard): String = if (text.isNotEmpty()) {
         adjustCase(text, keyboard)
     } else if (keyboard.isShifted && code in KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z && modifier == 0) {
-        adjustCase(label, keyboard)
+        adjustCase(label.joinToString("") { it.text }, keyboard)
     } else {
         text
     }
@@ -143,7 +163,6 @@ class KeyAction(
     init {
         when (token) {
             is KeyActionToken.Plain -> {
-                val label: String
                 // match like: { x: BackSpace } -> preset_keys/BackSpace: {..., send: BackSpace }
                 val preset = ThemeManager.activeTheme.presetKeys[token.token]
                 if (preset != null) {
@@ -181,23 +200,23 @@ class KeyAction(
                     if (keycode != 0 || modifiers != 0) {
                         code = keycode
                         modifier = modifiers
-                        label = ""
+                        label = emptyList()
                     } else {
                         // match like: { x: 1 } or { x: q } ...
                         code = KeyCode.nameToKeyCode(token.token)
                         // match like: { x: "(){Left}" } (key sequence to simulate)
                         if (token.token.isNotEmpty() && !KeyCode.isStandardKey(code)) {
                             text = token.token
-                            label = token.token.replace(BRACED_PATTERN, "")
+                            label = listOf(TextKeyboard.LabelSegment(text = token.token.replace(BRACED_PATTERN, "")))
                         } else {
-                            label = ""
+                            label = emptyList()
                         }
                     }
                 }
-                this.label = label.ifEmpty {
-                    when (code) {
-                        KeyEvent.KEYCODE_UNKNOWN, KeyEvent.KEYCODE_SPACE -> ""
-                        else -> KeyCode.getDisplayLabel(code, modifier)
+                if (label.isEmpty()) {
+                    label = when (code) {
+                        KeyEvent.KEYCODE_UNKNOWN, KeyEvent.KEYCODE_SPACE -> emptyList()
+                        else -> listOf(TextKeyboard.LabelSegment(text = KeyCode.getDisplayLabel(code, modifier)))
                     }
                 }
             }
@@ -206,14 +225,15 @@ class KeyAction(
             is KeyActionToken.Inline -> {
                 commit = token.token.commit ?: ""
                 text = token.token.text ?: ""
-                label = token.token.label ?: ""
+                label = token.token.label?.takeIf { it.isNotEmpty() }?.let { listOf(TextKeyboard.LabelSegment(text = it)) }
+                    ?: emptyList()
             }
         }
         shiftLabel = label
         if (KeyCode.isStandardKey(code) && virtualKeyCharacterMap.isPrintingKey(code)) {
             val charCode = virtualKeyCharacterMap.get(code, modifier or KeyEvent.META_SHIFT_ON)
             if (charCode != 0) {
-                shiftLabel = charCode.toChar().toString()
+                shiftLabel = listOf(TextKeyboard.LabelSegment(text = charCode.toChar().toString()))
             }
         }
     }
