@@ -226,11 +226,9 @@ internal object TextKeySerializer : KSerializer<TextKeyboard.TextKey> {
         }
     }
 
-    private fun labelSegments(obj: JsonObject, key: String): List<TextKeyboard.LabelSegment> =
-        LabelSpecParser.parseElement(obj[key], key)
+    private fun labelSegments(obj: JsonObject, key: String): List<TextKeyboard.LabelSegment> = LabelSpecParser.parseElement(obj[key], key)
 
-    private fun labelSegmentsToJson(segs: List<TextKeyboard.LabelSegment>): kotlinx.serialization.json.JsonElement =
-        LabelSpecParser.toJson(segs)
+    private fun labelSegmentsToJson(segs: List<TextKeyboard.LabelSegment>): kotlinx.serialization.json.JsonElement = LabelSpecParser.toJson(segs)
 
     override fun serialize(encoder: Encoder, value: TextKeyboard.TextKey) {
         val jsonEncoder = encoder as JsonEncoder
