@@ -396,11 +396,16 @@ class Key(
             return listOf(label.first())
         }
 
-        // 3) Layout-level label: use ascii_label in ASCII mode, label otherwise
+        // 3) Layout-level label. In ASCII mode only the layout ascii_label overrides;
+        //    otherwise fall through so the action label (preset ascii_label / states / keycode
+        //    display label) is used.
         if (checkKeyAction() == null) {
             val isAscii = RimeDaemon.isAsciiMode
-            val layoutLabel = if (isAscii) asciiLabel.ifEmpty { label } else label
-            if (layoutLabel.any { it.text.isNotEmpty() }) return layoutLabel
+            if (isAscii) {
+                if (asciiLabel.any { it.text.isNotEmpty() }) return asciiLabel
+            } else if (label.any { it.text.isNotEmpty() }) {
+                return label
+            }
         }
 
         // 4) Action / PresetKey label
@@ -409,8 +414,7 @@ class Key(
 
         // 5) Merge layout label styling with the resolved action text, so styled placeholder
         //    keys like `key { label = { text = "", color = "red" }, click = "Space" }` keep working
-        val isAscii = RimeDaemon.isAsciiMode
-        val layoutLabel = if (isAscii) asciiLabel.ifEmpty { label } else label
+        val layoutLabel = label
         if (layoutLabel.isNotEmpty()) {
             return when {
                 layoutLabel.any { it.text.isNotEmpty() } ->
