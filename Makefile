@@ -21,7 +21,7 @@ style-apply patch-apply release install translate ndk android
 all: release
 
 clean:
-	rm -rf build app/build app/.cxx/ app/src/main/jni/.native-cache
+	rm -rf build app/build app/.cxx/
 	$(GRADLEW) clean
 
 build: style-lint
