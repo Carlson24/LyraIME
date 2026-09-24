@@ -295,7 +295,6 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
         val rimeApiH = project.file("src/main/jni/librime/src/rime_api.h")
         val luaCmake = project.file("src/main/jni/librime-plugins/librime-lua/CMakeLists.txt")
         val luaLiolib = project.file("src/main/jni/librime-plugins/librime-lua-deps/lua5.5/liolib.c")
-        val witogramCc = project.file("src/main/jni/librime-plugins/librime-witogram/src/witogram.cc")
         val applyPatches =
             project.tasks.register("applyNativePatches") {
                 group = "native"
@@ -325,19 +324,12 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                         "--directory=$jniDir/librime-plugins/librime-lua-deps",
                         "patches/lua.patch",
                     ).directory(rootDir).inheritIO().start().waitFor()
-                    ProcessBuilder(
-                        "git",
-                        "apply",
-                        "--directory=$jniDir/librime-plugins/librime-witogram",
-                        "patches/librime-witogram.patch",
-                    ).directory(rootDir).inheritIO().start().waitFor()
                 }
                 outputs.upToDateWhen {
                     (macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")) &&
                         (rimeApiH.exists() && rimeApiH.readText().contains("char* type;")) &&
                         (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)")) &&
-                        (luaCmake.exists() && luaCmake.readText().contains("lua-utf8")) &&
-                        (witogramCc.exists() && witogramCc.readText().contains("Fallback to KenLM"))
+                        (luaCmake.exists() && luaCmake.readText().contains("lua-utf8"))
                 }
             }
 

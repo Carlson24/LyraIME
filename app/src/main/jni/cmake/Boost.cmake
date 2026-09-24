@@ -29,6 +29,7 @@ set(BOOST_INCLUDE_LIBRARIES
     algorithm
     crc
     dll
+    endian
     interprocess
     preprocessor
     program_options
