@@ -4,7 +4,7 @@
 # (onnxruntime_cxx_api.h, nnapi_provider_factory.h, etc.).
 
 if(NOT DEFINED SHERPA_ONNX_ONNXRUNTIME_VERSION)
-  set(SHERPA_ONNX_ONNXRUNTIME_VERSION "1.29.0")
+  set(SHERPA_ONNX_ONNXRUNTIME_VERSION "1.30.0")
 endif()
 
 message(STATUS "ONNXRUNTIME_VERSION: ${SHERPA_ONNX_ONNXRUNTIME_VERSION}")
@@ -25,7 +25,7 @@ if(NOT EXISTS "${ONNXRUNTIME_ZIP}")
   message(STATUS "Downloading onnxruntime from ${ONNXRUNTIME_URL}")
   file(DOWNLOAD "${ONNXRUNTIME_URL}" "${ONNXRUNTIME_ZIP}"
        EXPECTED_HASH
-          SHA256=98c059ae599539060cc20cf629f8bc4454685b6058f499c81848b939b85f8bfd
+          SHA256=150d1fd3356220e7539e17cb4ec81a7f6649218e5d2bab5afbeef6e23daf9641
        SHOW_PROGRESS STATUS download_status)
   list(GET download_status 0 status_code)
   if(NOT status_code EQUAL 0)
