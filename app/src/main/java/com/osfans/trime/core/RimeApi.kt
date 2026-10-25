@@ -74,7 +74,11 @@ interface RimeApi {
 
     suspend fun currentSchema(): RimeSchema
 
-    suspend fun commitComposition(): Boolean
+    /**
+     * Commit the current composition, optionally appending [appendText] to the committed text.
+     * If there is no composition, [appendText] is committed on its own.
+     */
+    suspend fun commitComposition(appendText: String? = null): Boolean
 
     suspend fun clearComposition()
 

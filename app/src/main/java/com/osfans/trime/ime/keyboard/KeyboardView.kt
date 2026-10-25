@@ -118,7 +118,9 @@ class KeyboardView(
                 controller.onSelectPinyin(token.pos, token.raw, token.pinYin)
             }
             onSymbolSelected = { symbol ->
-                service.commitText(symbol)
+                service.postKeyJob {
+                    commitComposition(appendText = symbol)
+                }
             }
         }
 

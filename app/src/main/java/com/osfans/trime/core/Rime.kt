@@ -254,7 +254,18 @@ class Rime :
         RimeSchema(getCurrentRimeSchema())
     }
 
-    override suspend fun commitComposition(): Boolean = withRimeContext { commitRimeComposition().also { if (it) emitResponse() } }
+    override suspend fun commitComposition(appendText: String?): Boolean = withRimeContext {
+        val committed = commitRimeComposition()
+        if (committed || !appendText.isNullOrEmpty()) {
+            val commit = getRimeCommit()
+            val text = buildString {
+                append(commit.text.orEmpty())
+                append(appendText.orEmpty())
+            }
+            emitResponse { CommitProto(text) }
+        }
+        committed
+    }
 
     override suspend fun clearComposition() = withRimeContext {
         clearRimeComposition()

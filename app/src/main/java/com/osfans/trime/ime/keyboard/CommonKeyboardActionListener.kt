@@ -156,7 +156,10 @@ class CommonKeyboardActionListener {
             override fun onAction(action: KeyAction, key: Key?, behavior: KeyBehavior) {
                 val shouldHandle = when {
                     action.commit.isNotEmpty() -> {
-                        service.commitText(action.commit)
+                        val commitText = action.commit
+                        service.postKeyJob {
+                            commitComposition(appendText = commitText)
+                        }
                         false
                     }
 
@@ -595,31 +598,39 @@ class CommonKeyboardActionListener {
             override fun onText(input: String) {
                 if (input.isEmpty()) return
                 Timber.d("onText: $input")
-                if (!input[0].isAsciiPrintable() && RimeDaemon.isComposing) {
-                    service.postKeyJob { commitComposition() }
-                }
 
                 val escaped = input.replace("{}", "{braceleft}{braceright}")
-                var i = 0
-                while (i < escaped.length) {
-                    val value = when (val match = TEXT_INPUT_PATTERN.matchEntire(escaped.substring(i))) {
-                        match if (match != null) -> match.groupValues[1]
-                        else -> escaped[i].toString()
+                val values = buildList {
+                    var i = 0
+                    while (i < escaped.length) {
+                        val value = when (val match = TEXT_INPUT_PATTERN.matchEntire(escaped.substring(i))) {
+                            match if (match != null) -> match.groupValues[1]
+                            else -> escaped[i].toString()
+                        }
+                        add(value)
+                        i += value.length
                     }
+                }
 
-                    service.postKeyJob {
-                        if (value.run { startsWith('{') && endsWith('}') }) {
-                            val token = value.removeSurrounding("{", "}")
-                            onAction(KeyActionManager.getAction(token))
-                        } else if (!value[0].isAsciiPrintable()) {
-                            service.commitText(value)
-                        } else {
-                            simulateKeySequence(value)
+                service.postKeyJob {
+                    for (value in values) {
+                        when {
+                            value.run { startsWith('{') && endsWith('}') } -> {
+                                val token = value.removeSurrounding("{", "}")
+                                onAction(KeyActionManager.getAction(token))
+                            }
+
+                            !value[0].isAsciiPrintable() -> {
+                                // Commit through Rime's message flow so the symbol is
+                                // ordered after the composition commit on the main thread.
+                                commitComposition(appendText = value)
+                            }
+
+                            else -> simulateKeySequence(value)
                         }
                     }
-
-                    i += value.length
                 }
+
                 shouldReleaseKey = false
             }
 
