@@ -36,9 +36,9 @@
 [submodule "librime-user-predict"]
 	path = app/src/main/jni/librime-plugins/librime-user-predict
 	url = https://github.com/Carlson24/librime-user-predict.git
-[submodule "librime-ids-search"]
-	path = app/src/main/jni/librime-plugins/librime-ids-search
-	url = https://github.com/Carlson24/librime-ids-search.git
+[submodule "librime-ids-reverse"]
+	path = app/src/main/jni/librime-plugins/librime-ids-reverse
+	url = https://github.com/Carlson24/librime-ids-reverse.git
 [submodule "sherpa-onnx"]
 	path = app/src/main/jni/sherpa-onnx
 	url = https://github.com/k2-fsa/sherpa-onnx.git

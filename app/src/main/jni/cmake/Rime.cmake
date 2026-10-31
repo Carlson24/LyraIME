@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # if you want to add some new plugins, add them to librime_jni/rime_jni.cc too
-set(RIME_PLUGINS librime-lua librime-octagram librime-user-predict librime-calculator librime-ids-search)
+set(RIME_PLUGINS librime-lua librime-octagram librime-user-predict librime-calculator librime-ids-reverse)
 
 # symlink plugins
 foreach(plugin ${RIME_PLUGINS})
@@ -41,4 +41,4 @@ target_compile_options(
   rime-calculator-objs PRIVATE "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
 
 target_compile_options(
-  rime-ids-search-objs PRIVATE "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+  rime-ids-reverse-objs PRIVATE "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")

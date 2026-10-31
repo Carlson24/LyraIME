@@ -150,7 +150,6 @@ kotlin {
 }
 
 dependencies {
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
     ksp(project(":codegen"))
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotlinx.serialization.json)
