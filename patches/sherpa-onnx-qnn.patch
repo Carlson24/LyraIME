@@ -66,7 +66,7 @@ diff --git a/sherpa-onnx/csrc/qnn/qnn-backend.cc b/sherpa-onnx/csrc/qnn/qnn-back
 index b482acf4..1dd40692 100644
 --- a/sherpa-onnx/csrc/qnn/qnn-backend.cc
 +++ b/sherpa-onnx/csrc/qnn/qnn-backend.cc
-@@ -23,39 +23,55 @@ namespace sherpa_onnx {
+@@ -23,38 +23,54 @@ namespace sherpa_onnx {
  class QnnBackend::Impl {
   public:
    explicit Impl(const std::string &backend_lib, bool debug) : debug_(debug) {
@@ -135,23 +135,3 @@ index b482acf4..1dd40692 100644
 +      }
      }
    }
- 
-diff --git a/sherpa-onnx/jni/online-recognizer.cc b/sherpa-onnx/jni/online-recognizer.cc
-index 40f7ac10..720893b9 100644
---- a/sherpa-onnx/jni/online-recognizer.cc
-+++ b/sherpa-onnx/jni/online-recognizer.cc
-@@ -309,7 +309,13 @@ JNIEXPORT jlong JNICALL Java_com_k2fsa_sherpa_onnx_OnlineRecognizer_newFromFile(
-     return 0;
-   }
- 
--  auto recognizer = new sherpa_onnx::OnlineRecognizer(config);
-+  sherpa_onnx::OnlineRecognizer *recognizer = nullptr;
-+  try {
-+    recognizer = new sherpa_onnx::OnlineRecognizer(config);
-+  } catch (const std::exception &e) {
-+    SHERPA_ONNX_LOGE("Failed to create OnlineRecognizer: %s", e.what());
-+    return 0;
-+  }
- 
-   return (jlong)recognizer;
- }
