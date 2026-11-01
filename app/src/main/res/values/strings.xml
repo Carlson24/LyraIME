@@ -372,6 +372,12 @@
     <string name="voice_model_exists_re_download">The voice model is already installed. Download again?</string>
     <string name="voice_model_exists_re_import">The voice model is already installed. Import again?</string>
     <string name="voice_qnn_unsupported_toast">QNN acceleration is not supported on this device.</string>
+    <string name="voice_qnn_fallback_cpu_toast">QNN acceleration is unavailable, switched to CPU mode.</string>
+    <string name="voice_engine_init_failed">Failed to initialize the voice engine. Please check the model files.</string>
+    <string name="voice_backend_qnn">QNN acceleration</string>
+    <string name="voice_backend_cpu">CPU mode</string>
+    <string name="voice_model_not_enough_space">Not enough storage space for the voice model (about 1.3 GB required).</string>
+    <string name="voice_model_wrong_backend">The imported model does not match the current acceleration mode.</string>
     <string name="voice_model_download_action_reinstall">Re-download voice model</string>
     <string name="voice_model_status_installed">Installed</string>
     <string name="voice_model_status_not_installed">Not installed</string>

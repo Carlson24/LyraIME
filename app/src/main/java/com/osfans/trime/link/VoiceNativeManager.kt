@@ -5,7 +5,6 @@
 
 package com.osfans.trime.link
 
-import android.os.Build
 import com.k2fsa.sherpa.onnx.OnlineRecognizer
 import timber.log.Timber
 
@@ -28,8 +27,10 @@ object VoiceNativeManager {
             }
         }
 
-        if (!qnnDspLoaded) {
-            if (Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a") {
+        // DSP libs are only loaded on devices whose SoC matches the packaged QNN
+        // variant; a failed load must not break CPU-only inference.
+        if (!qnnDspLoaded && !VoiceBackendSelector.isQnnBroken() && QnnDspManager.isDeviceSupported()) {
+            try {
                 val dsp = QnnDspManager.getLibs()
                 if (dsp != null) {
                     QnnDspManager.loadDsp(dsp)
@@ -37,6 +38,8 @@ object VoiceNativeManager {
                     qnnDspLoaded = true
                     Timber.i("VoiceNative: QNN DSP loaded")
                 }
+            } catch (e: Throwable) {
+                VoiceBackendSelector.markQnnBroken(e)
             }
         }
 

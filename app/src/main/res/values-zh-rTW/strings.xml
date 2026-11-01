@@ -372,6 +372,12 @@
     <string name="voice_model_exists_re_download">語音模型已安裝，是否重新…</string>
     <string name="voice_model_exists_re_import">語音模型已安裝，是否重新匯入？</string>
     <string name="voice_qnn_unsupported_toast">此裝置不支援 QNN 加速</string>
+    <string name="voice_qnn_fallback_cpu_toast">QNN 加速不可用，已切換到 CPU 模式</string>
+    <string name="voice_engine_init_failed">語音引擎初始化失敗，請檢查模型檔案</string>
+    <string name="voice_backend_qnn">QNN 加速</string>
+    <string name="voice_backend_cpu">CPU 模式</string>
+    <string name="voice_model_not_enough_space">儲存空間不足，下載語音模型約需 1.3GB 可用空間</string>
+    <string name="voice_model_wrong_backend">匯入的模型與目前加速方式不符</string>
     <string name="voice_model_download_action_reinstall">重新下載語音模型</string>
     <string name="voice_model_status_installed">已安裝</string>
     <string name="voice_model_status_not_installed">未安裝</string>

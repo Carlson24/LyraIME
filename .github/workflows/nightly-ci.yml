@@ -17,15 +17,45 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        qnn-variant: [v68, v69, v73, v75, v79, v81]
+        include:
+          - variant: cpu
+            label: Cpu
+            qnn_variant: ""
+          - variant: v68
+            label: Qnnv68
+            qnn_variant: v68
+          - variant: v69
+            label: Qnnv69
+            qnn_variant: v69
+          - variant: v73
+            label: Qnnv73
+            qnn_variant: v73
+          - variant: v75
+            label: Qnnv75
+            qnn_variant: v75
+          - variant: v79
+            label: Qnnv79
+            qnn_variant: v79
+          - variant: v81
+            label: Qnnv81
+            qnn_variant: v81
     env:
-      QNN_VARIANT: ${{ matrix.qnn-variant }}
+      QNN_VARIANT: ${{ matrix.qnn_variant }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
+
+      # gradle.properties commits a developer-local qnnSdkRoot path and a default
+      # qnnVariant; remove both for the CPU-only build, otherwise CMake would try
+      # to enable QNN with a non-existent SDK.
+      - name: Disable QNN (CPU build)
+        if: matrix.variant == 'cpu'
+        run: |
+          sed -i '/^qnnVariant=/d; /^qnnSdkRoot=/d' gradle.properties
+          grep -E '^qnn' gradle.properties || echo "QNN disabled for CPU build"
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -48,6 +78,7 @@ jobs:
           echo "BUILD_VERSION_NAME=$(git describe --tags --long --always --exclude=nightly)" >> $GITHUB_ENV
 
       - name: Cache QNN SDK
+        if: matrix.variant != 'cpu'
         id: qnn-sdk-cache
         uses: actions/cache@v5
         with:
@@ -55,7 +86,7 @@ jobs:
           key: qnn-sdk-${{ env.QNN_SDK_VERSION }}
 
       - name: Download QNN SDK
-        if: steps.qnn-sdk-cache.outputs.cache-hit != 'true'
+        if: matrix.variant != 'cpu' && steps.qnn-sdk-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p ${{ runner.temp }}/qnn
           cd ${{ runner.temp }}/qnn
@@ -64,6 +95,7 @@ jobs:
           unzip -q "v${QNN_SDK_VERSION}.zip"
 
       - name: Set QNN_SDK_ROOT
+        if: matrix.variant != 'cpu'
         run: |
           echo "QNN_SDK_ROOT=${{ runner.temp }}/qnn/qairt/${QNN_SDK_VERSION}" >> $GITHUB_ENV
 
@@ -77,7 +109,7 @@ jobs:
         id: jni-cache
         with:
           path: "app/prebuilt"
-          key: ${{ runner.os }}-trime-jni-release-${{ matrix.qnn-variant }}-${{ steps.cache-hash.outputs.native-cache-hash }}
+          key: ${{ runner.os }}-trime-jni-release-${{ matrix.variant }}-${{ steps.cache-hash.outputs.native-cache-hash }}
 
       - name: Setup Keystore
         run: |
@@ -88,7 +120,7 @@ jobs:
           keyPassword=${{ secrets.KEY_PASSWORD }}
           EOF
 
-      - name: Build LyraIME (${{ matrix.qnn-variant }})
+      - name: Build LyraIME (${{ matrix.label }})
         run: make release
 
       - name: Add JNI cache
@@ -98,13 +130,13 @@ jobs:
       - name: Rename APK
         run: |
           for f in app/build/outputs/apk/release/*.apk; do
-            mv "$f" "app/build/outputs/apk/release/LyraIME-Qnn${{ matrix.qnn-variant }}-${BUILD_VERSION_NAME}.apk"
+            mv "$f" "app/build/outputs/apk/release/LyraIME-${{ matrix.label }}-${BUILD_VERSION_NAME}.apk"
           done
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: lyraime-nightly-${{ matrix.qnn-variant }}
+          name: lyraime-nightly-${{ matrix.variant }}
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 

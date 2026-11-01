@@ -21,6 +21,8 @@ import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegateFragment
 import com.osfans.trime.data.prefs.PreferenceDelegateProvider
 import com.osfans.trime.link.SherpaSpeechClient
+import com.osfans.trime.link.VoiceBackend
+import com.osfans.trime.link.VoiceBackendSelector
 import com.osfans.trime.link.VoiceModelManager
 import com.osfans.trime.ui.common.buildDialog
 import com.osfans.trime.ui.common.confirmDialog
@@ -147,6 +149,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
 
     private fun refreshModelUi() {
         val installed = VoiceModelManager.checkModelFiles()
+        val installedSummary = installedModelSummary()
 
         downloadPref?.title = getString(
             if (installed) {
@@ -155,24 +158,22 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 R.string.voice_model_download_action
             },
         )
-        downloadPref?.summary = getString(
-            if (installed) {
-                R.string.voice_model_status_installed
-            } else {
-                R.string.voice_model_status_not_installed
-            },
-        )
+        downloadPref?.summary = if (installed) installedSummary else getString(R.string.voice_model_status_not_installed)
 
         importPref?.title = getString(R.string.voice_model_import_action)
-        importPref?.summary = getString(
-            if (installed) {
-                R.string.voice_model_status_installed
-            } else {
-                R.string.voice_model_status_not_installed
-            },
-        )
+        importPref?.summary = if (installed) installedSummary else getString(R.string.voice_model_status_not_installed)
 
         refreshDeletePrefState()
+    }
+
+    private fun installedModelSummary(): String {
+        val backend = getString(
+            when (VoiceModelManager.resolveActiveModelFiles()?.backend ?: VoiceBackendSelector.preferred()) {
+                VoiceBackend.QNN -> R.string.voice_backend_qnn
+                VoiceBackend.CPU -> R.string.voice_backend_cpu
+            },
+        )
+        return "${getString(R.string.voice_model_status_installed)} · $backend"
     }
 
     private fun refreshDeletePrefState() {
@@ -181,13 +182,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
             voiceInputPrefs.preferredVoiceInput.getValue() == InputMethodUtils.BUILTIN_VOICE_INPUT &&
                 !voiceInputPrefs.asrkbAidlVoiceInputEnabled.getValue()
         deletePref?.isEnabled = builtinVoice && installed
-        deletePref?.summary = getString(
-            if (installed) {
-                R.string.voice_model_status_installed
-            } else {
-                R.string.voice_model_status_not_installed
-            },
-        )
+        deletePref?.summary = if (installed) installedModelSummary() else getString(R.string.voice_model_status_not_installed)
     }
 
     private fun maybeConfirmThenDelete() {
@@ -276,6 +271,9 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
         downloadJob = lifecycleScope.launch {
             try {
                 val destFile = File(ctx.cacheDir, destName)
+                if (!VoiceModelManager.hasEnoughSpace(VoiceModelManager.getRequiredFreeSpaceBytes())) {
+                    throw RuntimeException(getString(R.string.voice_model_not_enough_space))
+                }
                 val expectedSha256 = VoiceModelManager.getExpectedSha256()
                 withContext(Dispatchers.IO) {
                     FileDownloader.download(
@@ -309,7 +307,7 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 )
                 progressBar.isIndeterminate = true
                 withContext(Dispatchers.IO) {
-                    VoiceModelManager.autoExtract(destFile, VoiceModelManager.voiceDir)
+                    VoiceModelManager.installArchive(destFile, downloadUrl.substringAfterLast('/'))
                     destFile.delete()
                 }
 
@@ -389,12 +387,16 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                     tempFile.delete()
                     throw SecurityException(getString(R.string.voice_model_verification_failed))
                 }
+                if (!VoiceModelManager.hasEnoughSpace(tempFile.length() * 2)) {
+                    tempFile.delete()
+                    throw RuntimeException(getString(R.string.voice_model_not_enough_space))
+                }
 
                 progressDialog.text = ctx.getString(R.string.voice_model_extracting)
-                withContext(Dispatchers.IO) {
-                    VoiceModelManager.autoExtract(tempFile, VoiceModelManager.voiceDir)
-                    tempFile.delete()
-                }
+                val installedBackend =
+                    withContext(Dispatchers.IO) {
+                        VoiceModelManager.installArchive(tempFile, displayName).also { tempFile.delete() }
+                    }
 
                 progressDialog.text = ctx.getString(R.string.voice_model_initializing)
                 withContext(Dispatchers.IO) {
@@ -402,7 +404,11 @@ class VoiceInputSettingsFragment : PreferenceDelegateFragment(AppPrefs.defaultIn
                 }
 
                 progressDialog.dismiss()
-                ctx.toast(R.string.voice_model_installed)
+                if (installedBackend != VoiceBackendSelector.preferred()) {
+                    ctx.toast(R.string.voice_model_wrong_backend)
+                } else {
+                    ctx.toast(R.string.voice_model_installed)
+                }
                 refreshModelUi()
             } catch (e: Exception) {
                 Timber.e(e, "Voice model selection/install failed")

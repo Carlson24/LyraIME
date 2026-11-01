@@ -25,6 +25,7 @@ import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.ime.clipboard.ScreenshotClipboardWatcher
+import com.osfans.trime.link.SherpaSpeechClient
 import com.osfans.trime.receiver.RimeIntentReceiver
 import com.osfans.trime.ui.main.LogActivity
 import com.osfans.trime.util.CrashLogExporter
@@ -179,6 +180,15 @@ class TrimeApplication : Application() {
             ColorManager.onSystemNightModeChange(newConfig.isNightMode())
         } catch (e: Exception) {
             Timber.w(e, "Something wrong on configuration changed")
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        // The CPU voice model is large (hosted in the IME process), so release the
+        // cached recognizer under memory pressure. It is re-created on next use.
+        if (!SherpaSpeechClient.isHolding()) {
+            runCatching { SherpaSpeechClient.releaseEngineForMemoryPressure() }
         }
     }
 

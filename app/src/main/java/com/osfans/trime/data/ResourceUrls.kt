@@ -15,11 +15,17 @@ import java.util.concurrent.ConcurrentHashMap
 object ResourceUrls {
     const val USER_AGENT = "Mozilla/5.0"
 
-    // ---- Voice Model (QNN-only, punctuation always enabled) ----
+    // ---- Voice Model (punctuation always enabled) ----
     const val VOICE_MODEL_QNN_RELEASE_BASE =
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models-qnn"
 
     fun buildQnnVoiceModelUrl(chunkMs: Int): String = "$VOICE_MODEL_QNN_RELEASE_BASE/sherpa-onnx-qnn-x-asr-streaming-zipformer-transducer-zh-en-punct-2026-06-05-chunk-size-${chunkMs}ms-android-aarch64.tar.bz2"
+
+    /** CPU-only (fp32) variant of the same X-ASR streaming punct model. */
+    const val VOICE_MODEL_CPU_RELEASE_BASE =
+        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models"
+
+    fun buildCpuVoiceModelUrl(chunkMs: Int): String = "$VOICE_MODEL_CPU_RELEASE_BASE/sherpa-onnx-x-asr-${chunkMs}ms-streaming-zipformer-transducer-zh-en-punct-2026-06-05.tar.bz2"
 
     // ---- GitHub Release API URLs ----
     private const val RELEASE_API_K2FSA_SHERPA_ONNX =
@@ -28,9 +34,13 @@ object ResourceUrls {
     const val VOICE_MODEL_QNN_RELEASE_API =
         "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models-qnn"
 
-    // ---- SHA256 cache (fetched from GitHub release API) ----
+    const val VOICE_MODEL_CPU_RELEASE_API =
+        "$RELEASE_API_K2FSA_SHERPA_ONNX/asr-models"
+
+    // ---- SHA256 / size cache (fetched from GitHub release API) ----
     object GitHubAssetCache {
         private val cache = ConcurrentHashMap<String, String>()
+        private val sizeCache = ConcurrentHashMap<String, Long>()
         private val client = OkHttpClient()
 
         private suspend fun fetchReleaseAssets(releaseApiUrl: String) {
@@ -54,8 +64,12 @@ object ResourceUrls {
                 val asset = assets.getJSONObject(i)
                 val url = asset.optString("browser_download_url", "")
                 val digest = asset.optString("digest", "")
+                val size = asset.optLong("size", 0L)
                 if (url.isNotEmpty() && digest.startsWith("sha256:")) {
                     cache[url] = digest.removePrefix("sha256:")
+                }
+                if (url.isNotEmpty() && size > 0) {
+                    sizeCache[url] = size
                 }
             }
         }
@@ -64,6 +78,12 @@ object ResourceUrls {
             cache[downloadUrl]?.let { return it }
             fetchReleaseAssets(releaseApiUrl)
             return cache[downloadUrl]
+        }
+
+        suspend fun getAssetSize(downloadUrl: String, releaseApiUrl: String): Long? {
+            sizeCache[downloadUrl]?.let { return it }
+            fetchReleaseAssets(releaseApiUrl)
+            return sizeCache[downloadUrl]
         }
 
         suspend fun getAllKnownSha256s(vararg releaseApiUrls: String): List<String> {

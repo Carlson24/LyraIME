@@ -78,6 +78,9 @@ class VoiceModelDownloadActivity : ComponentActivity() {
             val destName = "voice_model_download$ext"
             try {
                 val destFile = File(cacheDir, destName)
+                if (!VoiceModelManager.hasEnoughSpace(VoiceModelManager.getRequiredFreeSpaceBytes())) {
+                    throw RuntimeException(getString(R.string.voice_model_not_enough_space))
+                }
                 val expectedSha256 = VoiceModelManager.getExpectedSha256()
                 withContext(Dispatchers.IO) {
                     FileDownloader.download(
@@ -103,7 +106,7 @@ class VoiceModelDownloadActivity : ComponentActivity() {
 
                 progressDialog.setTitle(R.string.voice_model_extracting)
                 withContext(Dispatchers.IO) {
-                    VoiceModelManager.autoExtract(destFile, VoiceModelManager.voiceDir)
+                    VoiceModelManager.installArchive(destFile, downloadUrl.substringAfterLast('/'))
                 }
 
                 withContext(Dispatchers.IO) {
@@ -149,8 +152,12 @@ class VoiceModelDownloadActivity : ComponentActivity() {
                             tempFile.delete()
                             throw SecurityException(getString(R.string.voice_model_verification_failed))
                         }
+                        if (!VoiceModelManager.hasEnoughSpace(tempFile.length() * 2)) {
+                            tempFile.delete()
+                            throw RuntimeException(getString(R.string.voice_model_not_enough_space))
+                        }
 
-                        VoiceModelManager.autoExtract(tempFile, VoiceModelManager.voiceDir)
+                        VoiceModelManager.installArchive(tempFile, displayName)
                         tempFile.delete()
                         SherpaSpeechClient.initializeAfterInstall()
                         valid

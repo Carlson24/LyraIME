@@ -11,7 +11,6 @@ import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
-import android.os.Build
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -50,6 +49,7 @@ object SherpaSpeechClient {
 
     private data class EngineConfig(
         val sensitivity: Int,
+        val backend: VoiceBackend,
     )
 
     @Volatile
@@ -72,6 +72,7 @@ object SherpaSpeechClient {
     private const val SAMPLE_RATE = 16000
     private const val NOISE_THRESHOLD = 0.02f
     private const val PARTIAL_EMIT_MIN_INTERVAL_MS = 120L
+    private const val CPU_NUM_THREADS = 2
 
     @Volatile
     private var lastEmitUptimeMs: Long = 0L
@@ -82,25 +83,27 @@ object SherpaSpeechClient {
     @Volatile
     private var lastRawText: String? = null
 
+    @Volatile
+    private var cpuFallbackNotified = false
+
     fun prewarmAsync(service: TrimeInputMethodService) {
         service.lifecycleScope.launch(Dispatchers.IO) {
             if (!VoiceModelManager.checkModelFiles()) return@launch
-            val currentConfig = readEngineConfig()
             if (!VoiceNativeManager.loadNativeLibs()) return@launch
             initEngineIfNeeded()
         }
     }
 
     /**
-     * Eagerly initialize the QNN engine right after a model download/import so the
-     * on-device context binaries are generated and the original .so model libs are
-     * removed. Best-effort: returns false (and keeps the .so) when the engine cannot
-     * be initialized — non-arm64, missing DSP libs, or an active holding session; the
-     * lazy init on next use will retry and clean up then.
+     * Eagerly initialize the engine right after a model download/import so QNN
+     * context binaries are generated (and the original .so model libs removed) or
+     * the CPU model is validated. Best-effort: returns false (and keeps the model)
+     * when the engine cannot be initialized — an active holding session, a missing
+     * model for the selected backend, or an unsupported device. The lazy init on
+     * next use will retry.
      */
     suspend fun initializeAfterInstall(): Boolean {
         if (isHolding.get()) return false
-        if (Build.SUPPORTED_ABIS.firstOrNull() != "arm64-v8a" || !QnnDspManager.isInstalled()) return false
         synchronized(initLock) {
             try {
                 recognizerRef.getAndSet(null)?.release()
@@ -116,101 +119,156 @@ object SherpaSpeechClient {
     }
 
     private fun initEngineIfNeeded(): Boolean {
-        val currentConfig = readEngineConfig()
-
         synchronized(initLock) {
-            if (recognizerRef.get() != null && currentConfig == lastEngineConfig) return true
+            val preferred = VoiceBackendSelector.preferred()
+            val modelFiles = VoiceModelManager.resolveActiveModelFiles()
+
+            val sensitivity = readEngineConfig().sensitivity
+            val desiredConfig = EngineConfig(sensitivity, modelFiles?.backend ?: preferred)
+
+            if (recognizerRef.get() != null && desiredConfig == lastEngineConfig) return true
 
             if (recognizerRef.get() != null) {
-                Timber.i("Engine config changed ($lastEngineConfig -> $currentConfig), releasing old recognizer")
+                Timber.i("Engine config changed ($lastEngineConfig -> $desiredConfig), releasing old recognizer")
                 try {
                     recognizerRef.getAndSet(null)?.release()
                 } catch (_: Throwable) {}
                 engineWasReloaded = true
             }
 
-            val modelFiles = VoiceModelManager.resolveModelFiles()
             if (modelFiles == null) {
-                Timber.e("Sherpa init aborted: model files not resolved in voice dir")
+                Timber.e("Sherpa init aborted: no usable voice model for backend=$preferred")
                 engineWasReloaded = false
                 return false
             }
 
             return try {
-                val isArm64 = Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a"
-                if (!isArm64) {
-                    Timber.e("Sherpa init aborted: QNN requires arm64-v8a")
-                    engineWasReloaded = false
-                    return false
+                when (modelFiles.backend) {
+                    VoiceBackend.QNN -> initQnnEngine(modelFiles, sensitivity)
+                    VoiceBackend.CPU -> initCpuEngine(modelFiles, sensitivity)
                 }
-
-                val transducerConfig =
-                    OnlineTransducerModelConfig(
-                        encoder = modelFiles.encoder.absolutePath,
-                        decoder = modelFiles.decoder.absolutePath,
-                        joiner = modelFiles.joiner.absolutePath,
-                        qnnConfig = QnnConfig(
-                            backendLib = "libQnnHtp.so",
-                            systemLib = "libQnnSystem.so",
-                            contextBinary = modelFiles.qnnContextBinary,
-                        ),
-                    )
-
-                val modelConfig =
-                    OnlineModelConfig(
-                        transducer = transducerConfig,
-                        tokens = modelFiles.tokens.absolutePath,
-                        numThreads = 1,
-                        provider = "qnn",
-                        modelType = "zipformer",
-                        debug = false,
-                        modelingUnit = "",
-                        bpeVocab = "",
-                    )
-
-                val config =
-                    OnlineRecognizerConfig(
-                        featConfig = FeatureConfig(sampleRate = SAMPLE_RATE, featureDim = 80),
-                        modelConfig = modelConfig,
-                        decodingMethod = "greedy_search",
-                        maxActivePaths = currentConfig.sensitivity,
-                        enableEndpoint = false,
-                    )
-
-                val encoderPath = modelFiles.encoder.absolutePath
-                val binReadyBefore = VoiceModelManager.hasContextBinaries()
-                Timber.i("Creating OnlineRecognizer: encoder=$encoderPath, variant=qnn-lib")
-                recognizerRef.set(OnlineRecognizer(null, config))
-
-                val binReadyNow = VoiceModelManager.hasContextBinaries()
-                if (binReadyNow && !binReadyBefore) {
-                    // Context binaries were just generated from the .so model libs this
-                    // run. The recognizer still holds the .so via dlopen, which keeps the
-                    // files busy until process exit — release it first, delete the .so,
-                    // then recreate the recognizer from the context binaries (fast path).
-                    try {
-                        recognizerRef.getAndSet(null)?.release()
-                    } catch (_: Throwable) {}
-                    if (VoiceModelManager.deleteModelLibsIfContextBinaryReady()) {
-                        Timber.i("QNN context binaries ready; removed original model libs (.so)")
-                    }
-                    recognizerRef.set(OnlineRecognizer(null, config))
-                } else if (binReadyBefore) {
-                    // Recognizer loaded straight from the context binaries, so the .so
-                    // model libs are not held by this process — delete them right away.
-                    if (VoiceModelManager.deleteModelLibsIfContextBinaryReady()) {
-                        Timber.i("Removed original model libs (.so) after engine init")
-                    }
-                }
-                lastEngineConfig = currentConfig
-                Timber.i("Sherpa-onnx online ASR engine initialized (variant=qnn-lib)")
+                lastEngineConfig = desiredConfig
+                Timber.i("Sherpa-onnx online ASR engine initialized (variant=${modelFiles.backend})")
                 true
             } catch (e: Throwable) {
-                Timber.e(e, "Sherpa engine init crashed")
                 engineWasReloaded = false
+                Timber.e(e, "Sherpa engine init crashed (variant=${modelFiles.backend})")
+                if (modelFiles.backend == VoiceBackend.QNN) {
+                    VoiceBackendSelector.markQnnBroken(e)
+                    val cpuFiles = VoiceModelManager.resolveModelFiles(VoiceBackend.CPU)
+                    if (cpuFiles != null) {
+                        try {
+                            initCpuEngine(cpuFiles, sensitivity)
+                            lastEngineConfig = EngineConfig(sensitivity, VoiceBackend.CPU)
+                            Timber.i("Sherpa-onnx online ASR engine initialized (variant=CPU fallback)")
+                            return true
+                        } catch (cpuError: Throwable) {
+                            Timber.e(cpuError, "CPU fallback engine init crashed")
+                        }
+                    } else {
+                        Timber.w("QNN init failed and no CPU model is installed")
+                    }
+                }
                 false
             }
         }
+    }
+
+    private fun initQnnEngine(
+        modelFiles: VoiceModelManager.ModelFiles,
+        sensitivity: Int,
+    ) {
+        val transducerConfig =
+            OnlineTransducerModelConfig(
+                encoder = modelFiles.encoder.absolutePath,
+                decoder = modelFiles.decoder.absolutePath,
+                joiner = modelFiles.joiner.absolutePath,
+                qnnConfig = QnnConfig(
+                    backendLib = "libQnnHtp.so",
+                    systemLib = "libQnnSystem.so",
+                    contextBinary = modelFiles.qnnContextBinary,
+                ),
+            )
+
+        val modelConfig =
+            OnlineModelConfig(
+                transducer = transducerConfig,
+                tokens = modelFiles.tokens.absolutePath,
+                numThreads = 1,
+                provider = "qnn",
+                modelType = "zipformer",
+                debug = false,
+                modelingUnit = "",
+                bpeVocab = "",
+            )
+
+        val config =
+            OnlineRecognizerConfig(
+                featConfig = FeatureConfig(sampleRate = SAMPLE_RATE, featureDim = 80),
+                modelConfig = modelConfig,
+                decodingMethod = "greedy_search",
+                maxActivePaths = sensitivity,
+                enableEndpoint = false,
+            )
+
+        val encoderPath = modelFiles.encoder.absolutePath
+        val binReadyBefore = VoiceModelManager.hasContextBinaries()
+        Timber.i("Creating OnlineRecognizer: encoder=$encoderPath, variant=qnn-lib")
+        recognizerRef.set(OnlineRecognizer(null, config))
+
+        val binReadyNow = VoiceModelManager.hasContextBinaries()
+        if (binReadyNow && !binReadyBefore) {
+            // Context binaries were just generated from the .so model libs this
+            // run. The recognizer still holds the .so via dlopen, which keeps the
+            // files busy until process exit — release it first, delete the .so,
+            // then recreate the recognizer from the context binaries (fast path).
+            try {
+                recognizerRef.getAndSet(null)?.release()
+            } catch (_: Throwable) {}
+            if (VoiceModelManager.deleteModelLibsIfContextBinaryReady()) {
+                Timber.i("QNN context binaries ready; removed original model libs (.so)")
+            }
+            recognizerRef.set(OnlineRecognizer(null, config))
+        } else if (binReadyBefore) {
+            // Recognizer loaded straight from the context binaries, so the .so
+            // model libs are not held by this process — delete them right away.
+            if (VoiceModelManager.deleteModelLibsIfContextBinaryReady()) {
+                Timber.i("Removed original model libs (.so) after engine init")
+            }
+        }
+    }
+
+    private fun initCpuEngine(
+        modelFiles: VoiceModelManager.ModelFiles,
+        sensitivity: Int,
+    ) {
+        val modelConfig =
+            OnlineModelConfig(
+                transducer = OnlineTransducerModelConfig(
+                    encoder = modelFiles.encoder.absolutePath,
+                    decoder = modelFiles.decoder.absolutePath,
+                    joiner = modelFiles.joiner.absolutePath,
+                ),
+                tokens = modelFiles.tokens.absolutePath,
+                numThreads = CPU_NUM_THREADS,
+                provider = "cpu",
+                modelType = "zipformer2",
+                debug = false,
+                modelingUnit = "",
+                bpeVocab = "",
+            )
+
+        val config =
+            OnlineRecognizerConfig(
+                featConfig = FeatureConfig(sampleRate = SAMPLE_RATE, featureDim = 80),
+                modelConfig = modelConfig,
+                decodingMethod = "greedy_search",
+                maxActivePaths = sensitivity,
+                enableEndpoint = false,
+            )
+
+        Timber.i("Creating OnlineRecognizer: encoder=${modelFiles.encoder.absolutePath}, variant=cpu")
+        recognizerRef.set(OnlineRecognizer(null, config))
     }
 
     fun startHoldSession(service: TrimeInputMethodService) {
@@ -229,19 +287,11 @@ object SherpaSpeechClient {
             return
         }
 
-        val cfg = readEngineConfig()
-        if (Build.SUPPORTED_ABIS.firstOrNull() != "arm64-v8a" || !QnnDspManager.isInstalled()) {
-            service.toast(service.getString(R.string.voice_qnn_unsupported_toast))
-            runCatching { VoiceOverlayUiBridge.onDone?.invoke() }
-            resetStateDirectly()
-            return
-        }
-
         service.lifecycleScope.launch {
             val initWasFirst = isFirstInit
-            val currentConfig = readEngineConfig()
+            val currentSensitivity = readEngineConfig().sensitivity
 
-            if (lastEngineConfig != null && currentConfig != lastEngineConfig) {
+            if (lastEngineConfig != null && currentSensitivity != lastEngineConfig?.sensitivity) {
                 service.toast(service.getString(R.string.voice_engine_reloading))
             }
 
@@ -262,6 +312,15 @@ object SherpaSpeechClient {
                 service.toast(service.getString(R.string.voice_engine_reloaded, elapsed))
             }
 
+            if (initSuccess &&
+                lastEngineConfig?.backend == VoiceBackend.CPU &&
+                VoiceBackendSelector.isQnnBroken() &&
+                !cpuFallbackNotified
+            ) {
+                cpuFallbackNotified = true
+                service.toast(service.getString(R.string.voice_qnn_fallback_cpu_toast))
+            }
+
             if (initSuccess) {
                 val engine = recognizerRef.get()
                 if (isHolding.get() && engine != null) {
@@ -277,9 +336,7 @@ object SherpaSpeechClient {
                     }
                 }
             } else {
-                service.lifecycleScope.launch {
-                    service.toast(service.getString(R.string.asrkb_err_audio_record_failed))
-                }
+                service.toast(service.getString(R.string.voice_engine_init_failed))
                 cancelSession()
             }
         }
@@ -305,12 +362,28 @@ object SherpaSpeechClient {
 
     /** Release the cached recognizer so the next session re-initializes the engine. */
     fun resetEngine() {
+        releaseEngine(resetQnnState = true)
+    }
+
+    /**
+     * Release the cached recognizer under memory pressure without re-enabling QNN
+     * if it was already known to be broken.
+     */
+    fun releaseEngineForMemoryPressure() {
+        releaseEngine(resetQnnState = false)
+    }
+
+    private fun releaseEngine(resetQnnState: Boolean) {
         synchronized(initLock) {
             try {
                 recognizerRef.getAndSet(null)?.release()
             } catch (_: Throwable) {}
             lastEngineConfig = null
             engineWasReloaded = false
+            cpuFallbackNotified = false
+            if (resetQnnState) {
+                VoiceBackendSelector.reset()
+            }
         }
     }
 
@@ -529,6 +602,7 @@ object SherpaSpeechClient {
         return EngineConfig(
             sensitivity = prefs.voiceSensitivity.getValue()
                 .coerceIn(1, 10),
+            backend = VoiceBackendSelector.preferred(),
         )
     }
 
