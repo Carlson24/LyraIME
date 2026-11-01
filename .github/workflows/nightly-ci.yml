@@ -48,14 +48,14 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      # gradle.properties commits a developer-local qnnSdkRoot path and a default
-      # qnnVariant; remove both for the CPU-only build, otherwise CMake would try
-      # to enable QNN with a non-existent SDK.
-      - name: Disable QNN (CPU build)
+      # The CPU build still compiles QNN support because QNN_SDK_ROOT is provided
+      # below, but it must not package any DSP libs: dropping qnnVariant leaves
+      # QnnDspManager without a variant, so the app runs in CPU mode at runtime.
+      - name: Disable QNN DSP packaging (CPU build)
         if: matrix.variant == 'cpu'
         run: |
           sed -i '/^qnnVariant=/d; /^qnnSdkRoot=/d' gradle.properties
-          grep -E '^qnn' gradle.properties || echo "QNN disabled for CPU build"
+          grep -E '^qnn' gradle.properties || echo "QNN DSP packaging disabled for CPU build"
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -78,7 +78,6 @@ jobs:
           echo "BUILD_VERSION_NAME=$(git describe --tags --long --always --exclude=nightly)" >> $GITHUB_ENV
 
       - name: Cache QNN SDK
-        if: matrix.variant != 'cpu'
         id: qnn-sdk-cache
         uses: actions/cache@v5
         with:
@@ -86,7 +85,7 @@ jobs:
           key: qnn-sdk-${{ env.QNN_SDK_VERSION }}
 
       - name: Download QNN SDK
-        if: matrix.variant != 'cpu' && steps.qnn-sdk-cache.outputs.cache-hit != 'true'
+        if: steps.qnn-sdk-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p ${{ runner.temp }}/qnn
           cd ${{ runner.temp }}/qnn
@@ -95,7 +94,6 @@ jobs:
           unzip -q "v${QNN_SDK_VERSION}.zip"
 
       - name: Set QNN_SDK_ROOT
-        if: matrix.variant != 'cpu'
         run: |
           echo "QNN_SDK_ROOT=${{ runner.temp }}/qnn/qairt/${QNN_SDK_VERSION}" >> $GITHUB_ENV
 
@@ -126,6 +124,17 @@ jobs:
       - name: Add JNI cache
         if: ${{ !steps.jni-cache.outputs.cache-hit }}
         run: cp -R app/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib app/prebuilt
+
+      - name: Verify CPU build has no QNN DSP libraries
+        if: matrix.variant == 'cpu'
+        run: |
+          for apk in app/build/outputs/apk/release/*.apk; do
+            if unzip -l "$apk" | grep -qi 'libQnn'; then
+              echo "ERROR: CPU APK contains QNN libraries: $apk"
+              exit 1
+            fi
+          done
+          echo "CPU APK contains no QNN DSP libraries"
 
       - name: Rename APK
         run: |
