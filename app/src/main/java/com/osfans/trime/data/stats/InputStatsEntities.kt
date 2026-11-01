@@ -26,6 +26,10 @@ data class InputStatsDailyEntity(
     val entryCount: Long,
     @ColumnInfo(name = "char_count")
     val charCount: Long,
+    @ColumnInfo(name = "active_ms", defaultValue = "0")
+    val activeMs: Long = 0,
+    @ColumnInfo(name = "timed_chars", defaultValue = "0")
+    val timedChars: Long = 0,
 )
 
 @Entity(tableName = "schema_usage")

@@ -5,6 +5,7 @@
 
 package com.osfans.trime.data.stats
 
+import android.os.SystemClock
 import androidx.room.withTransaction
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.util.appContext
@@ -32,6 +33,7 @@ import java.time.LocalDate
 object InputStatsRepository {
     private const val FLUSH_DELAY_MS = 2_000L
     private const val MAX_PENDING_ROWS = 64
+    private const val MAX_ACTIVE_GAP_MS = 10_000L
 
     private data class DailyKey(
         val day: String,
@@ -43,6 +45,8 @@ object InputStatsRepository {
     private class DailyDelta(
         var entries: Long = 0,
         var chars: Long = 0,
+        var activeMs: Long = 0,
+        var timedChars: Long = 0,
     )
 
     private class SchemaDelta(
@@ -61,6 +65,9 @@ object InputStatsRepository {
     @Volatile
     private var flushJob: Job? = null
 
+    @Volatile
+    private var lastRimeCommitAt: Long = 0L
+
     private val database: InputStatsDatabase by lazy {
         InputStatsDatabase.get(appContext)
     }
@@ -71,7 +78,22 @@ object InputStatsRepository {
         schemaName: String,
     ) {
         if (!isEnabled()) return
-        val sample = InputStatsClassifier.classify(text) ?: return
+        val commitAt = SystemClock.elapsedRealtime()
+        val sample = InputStatsClassifier.classify(text)
+        if (sample == null) {
+            lastRimeCommitAt = commitAt
+            return
+        }
+        val previousCommitAt = lastRimeCommitAt
+        lastRimeCommitAt = commitAt
+        val gap = commitAt - previousCommitAt
+        val activeDurationMs = if (previousCommitAt > 0L && gap in 1..MAX_ACTIVE_GAP_MS) {
+            gap
+        } else {
+            0L
+        }
+        val timedHanCount = if (activeDurationMs > 0L) sample.hanCount.toLong() else 0L
+
         val day = LocalDate.now().toString()
         val dimension = schemaId.ifEmpty { InputStats.UNKNOWN_SCHEMA_ID }
         val displayName = schemaName.ifEmpty { dimension }
@@ -82,6 +104,8 @@ object InputStatsRepository {
             pendingDaily.getOrPut(key) { DailyDelta() }.apply {
                 entries += 1
                 chars += sample.hanCount
+                activeMs += activeDurationMs
+                timedChars += timedHanCount
             }
             if (dimension != InputStats.UNKNOWN_SCHEMA_ID) {
                 val schema = pendingSchemas.getOrPut(dimension) {
@@ -150,6 +174,7 @@ object InputStatsRepository {
                 synchronized(lock) {
                     pendingDaily.clear()
                     pendingSchemas.clear()
+                    lastRimeCommitAt = 0L
                 }
                 try {
                     val dao = database.inputStatsDao()
@@ -190,6 +215,8 @@ object InputStatsRepository {
                     bucket = row.bucket,
                     entryCount = row.entryCount,
                     charCount = row.charCount,
+                    activeMs = row.activeMs,
+                    timedChars = row.timedChars,
                 )
             },
             schemas = dao.getAllSchemas().map { row ->
@@ -209,6 +236,7 @@ object InputStatsRepository {
             synchronized(lock) {
                 pendingDaily.clear()
                 pendingSchemas.clear()
+                lastRimeCommitAt = 0L
             }
             val dao = database.inputStatsDao()
             database.withTransaction {
@@ -223,6 +251,8 @@ object InputStatsRepository {
                             bucket = row.bucket,
                             entryCount = row.entryCount,
                             charCount = row.charCount,
+                            activeMs = row.activeMs,
+                            timedChars = row.timedChars,
                         ),
                     )
                 }
@@ -258,7 +288,9 @@ object InputStatsRepository {
                     .append(row.dimension).append('\t')
                     .append(row.bucket).append('\t')
                     .append(row.entryCount).append('\t')
-                    .append(row.charCount).append('\n')
+                    .append(row.charCount).append('\t')
+                    .append(row.activeMs).append('\t')
+                    .append(row.timedChars).append('\n')
             }
         data.schemas
             .sortedBy { it.schemaId }
@@ -302,7 +334,12 @@ object InputStatsRepository {
                     return@withLock
                 }
                 val dailySnapshot = pendingDaily.mapValues { (_, delta) ->
-                    DailyDelta(entries = delta.entries, chars = delta.chars)
+                    DailyDelta(
+                        entries = delta.entries,
+                        chars = delta.chars,
+                        activeMs = delta.activeMs,
+                        timedChars = delta.timedChars,
+                    )
                 }
                 val schemaSnapshot = pendingSchemas.mapValues { (_, delta) ->
                     SchemaDelta(
@@ -328,6 +365,8 @@ object InputStatsRepository {
                             bucket = key.bucket,
                             entryCount = delta.entries,
                             charCount = delta.chars,
+                            activeMs = delta.activeMs,
+                            timedChars = delta.timedChars,
                         )
                         if (updated == 0) {
                             dao.insertDaily(
@@ -338,6 +377,8 @@ object InputStatsRepository {
                                     bucket = key.bucket,
                                     entryCount = delta.entries,
                                     charCount = delta.chars,
+                                    activeMs = delta.activeMs,
+                                    timedChars = delta.timedChars,
                                 ),
                             )
                         }
@@ -370,6 +411,8 @@ object InputStatsRepository {
                         pendingDaily.getOrPut(key) { DailyDelta() }.apply {
                             entries += delta.entries
                             chars += delta.chars
+                            activeMs += delta.activeMs
+                            timedChars += delta.timedChars
                         }
                     }
                     schemas.forEach { (schemaId, delta) ->

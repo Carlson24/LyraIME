@@ -28,10 +28,9 @@ import java.util.Locale
 class InputStatsFragment : PaddingPreferenceFragment() {
     private val numberFormat = NumberFormat.getIntegerInstance()
 
-    private var keyboardCharsPref: Preference? = null
-    private var keyboardEntriesPref: Preference? = null
-    private var keyboardTodayCharsPref: Preference? = null
-    private var keyboardTodayEntriesPref: Preference? = null
+    private var keyboardTotalPref: Preference? = null
+    private var keyboardTodayPref: Preference? = null
+    private var keyboardSpeedPref: Preference? = null
     private var activeDaysPref: Preference? = null
     private val bucketPrefs = mutableMapOf<Int, Preference>()
     private var voiceBuiltinPref: Preference? = null
@@ -45,10 +44,9 @@ class InputStatsFragment : PaddingPreferenceFragment() {
         preferenceScreen = preferenceManager.createPreferenceScreen(requireContext()).apply {
             addCategory(R.string.stats_keyboard_category) {
                 isIconSpaceReserved = false
-                keyboardCharsPref = addStatPreference(R.string.stats_total_chars)
-                keyboardEntriesPref = addStatPreference(R.string.stats_total_entries)
-                keyboardTodayCharsPref = addStatPreference(R.string.stats_today_chars)
-                keyboardTodayEntriesPref = addStatPreference(R.string.stats_today_entries)
+                keyboardTotalPref = addStatPreference(R.string.stats_input_total)
+                keyboardTodayPref = addStatPreference(R.string.stats_today_input)
+                keyboardSpeedPref = addStatPreference(R.string.stats_speed)
                 activeDaysPref = addStatPreference(R.string.stats_active_days)
             }
 
@@ -124,22 +122,22 @@ class InputStatsFragment : PaddingPreferenceFragment() {
     }.also { addPreference(it) }
 
     private fun render(snapshot: InputStatsSnapshot) {
-        keyboardCharsPref?.summary = getString(
-            R.string.stats_chars_value,
+        keyboardTotalPref?.summary = getString(
+            R.string.stats_input_total_summary,
             formatNumber(snapshot.keyboard.chars),
-        )
-        keyboardEntriesPref?.summary = getString(
-            R.string.stats_times_value,
             formatNumber(snapshot.keyboard.entries),
         )
-        keyboardTodayCharsPref?.summary = getString(
-            R.string.stats_chars_value,
+        keyboardTodayPref?.summary = getString(
+            R.string.stats_input_total_summary,
             formatNumber(snapshot.keyboardToday.chars),
-        )
-        keyboardTodayEntriesPref?.summary = getString(
-            R.string.stats_times_value,
             formatNumber(snapshot.keyboardToday.entries),
         )
+        keyboardSpeedPref?.summary = snapshot.keyboardSpeedCharsPerMinute?.let { speed ->
+            getString(
+                R.string.stats_speed_value,
+                String.format(Locale.getDefault(), "%.1f", speed),
+            )
+        } ?: getString(R.string.stats_empty_value)
         activeDaysPref?.summary = getString(
             R.string.stats_days_value,
             formatNumber(snapshot.activeDays.toLong()),
@@ -149,8 +147,8 @@ class InputStatsFragment : PaddingPreferenceFragment() {
             val totals = snapshot.buckets[bucket] ?: InputStatsTotals()
             bucketPrefs[bucket]?.summary = getString(
                 R.string.stats_bucket_summary,
-                formatNumber(totals.entries),
                 formatNumber(totals.chars),
+                formatNumber(totals.entries),
                 formatPercent(totals.chars, snapshot.keyboard.chars),
             )
         }
@@ -219,7 +217,7 @@ class InputStatsFragment : PaddingPreferenceFragment() {
         part: Long,
         total: Long,
     ): String {
-        if (total <= 0L) return "0.0"
-        return String.format(Locale.getDefault(), "%.1f", part * 100.0 / total)
+        if (total <= 0L) return "0.00"
+        return String.format(Locale.getDefault(), "%.2f", part * 100.0 / total)
     }
 }

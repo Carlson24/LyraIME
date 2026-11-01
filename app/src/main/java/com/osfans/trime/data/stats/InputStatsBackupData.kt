@@ -21,6 +21,8 @@ data class InputStatsBackupDaily(
     val bucket: Int,
     val entryCount: Long,
     val charCount: Long,
+    val activeMs: Long = 0,
+    val timedChars: Long = 0,
 )
 
 @Serializable

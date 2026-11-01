@@ -17,26 +17,28 @@ class InputStatsBackupDataTest :
             val data =
                 InputStatsBackupData(
                     daily =
-                        listOf(
-                            InputStatsBackupDaily(
-                                day = "2026-11-01",
-                                origin = InputStats.ORIGIN_RIME,
-                                dimension = "luna_pinyin",
-                                bucket = 2,
-                                entryCount = 3,
-                                charCount = 6,
-                            ),
+                    listOf(
+                        InputStatsBackupDaily(
+                            day = "2026-11-01",
+                            origin = InputStats.ORIGIN_RIME,
+                            dimension = "luna_pinyin",
+                            bucket = 2,
+                            entryCount = 3,
+                            charCount = 6,
+                            activeMs = 5_000,
+                            timedChars = 4,
                         ),
+                    ),
                     schemas =
-                        listOf(
-                            InputStatsBackupSchema(
-                                schemaId = "luna_pinyin",
-                                schemaName = "Luna Pinyin",
-                                entryCount = 3,
-                                charCount = 6,
-                                lastUsedAt = 1_760_000_000_000,
-                            ),
+                    listOf(
+                        InputStatsBackupSchema(
+                            schemaId = "luna_pinyin",
+                            schemaName = "Luna Pinyin",
+                            entryCount = 3,
+                            charCount = 6,
+                            lastUsedAt = 1_760_000_000_000,
                         ),
+                    ),
                 )
 
             val json = Json { encodeDefaults = true }

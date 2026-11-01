@@ -29,7 +29,9 @@ interface InputStatsDao {
         """
         UPDATE stats_daily
         SET entry_count = entry_count + :entryCount,
-            char_count = char_count + :charCount
+            char_count = char_count + :charCount,
+            active_ms = active_ms + :activeMs,
+            timed_chars = timed_chars + :timedChars
         WHERE day = :day
           AND origin = :origin
           AND dimension = :dimension
@@ -43,6 +45,8 @@ interface InputStatsDao {
         bucket: Int,
         entryCount: Long,
         charCount: Long,
+        activeMs: Long,
+        timedChars: Long,
     ): Int
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)

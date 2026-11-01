@@ -62,7 +62,7 @@ data class BackupData(
     val inputStats: InputStatsBackupData? = null,
 ) {
     companion object {
-        const val CURRENT_VERSION = 3
+        const val CURRENT_VERSION = 4
     }
 }
 

@@ -1,0 +1,120 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "953fd27ad264f63a65dac9f34dd3e8dc",
+    "entities": [
+      {
+        "tableName": "stats_daily",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`day` TEXT NOT NULL, `origin` TEXT NOT NULL, `dimension` TEXT NOT NULL, `bucket` INTEGER NOT NULL, `entry_count` INTEGER NOT NULL, `char_count` INTEGER NOT NULL, `active_ms` INTEGER NOT NULL DEFAULT 0, `timed_chars` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`day`, `origin`, `dimension`, `bucket`))",
+        "fields": [
+          {
+            "fieldPath": "day",
+            "columnName": "day",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origin",
+            "columnName": "origin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dimension",
+            "columnName": "dimension",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bucket",
+            "columnName": "bucket",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entryCount",
+            "columnName": "entry_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "charCount",
+            "columnName": "char_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activeMs",
+            "columnName": "active_ms",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "timedChars",
+            "columnName": "timed_chars",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "day",
+            "origin",
+            "dimension",
+            "bucket"
+          ]
+        }
+      },
+      {
+        "tableName": "schema_usage",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`schema_id` TEXT NOT NULL, `schema_name` TEXT NOT NULL, `entry_count` INTEGER NOT NULL, `char_count` INTEGER NOT NULL, `last_used_at` INTEGER NOT NULL, PRIMARY KEY(`schema_id`))",
+        "fields": [
+          {
+            "fieldPath": "schemaId",
+            "columnName": "schema_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "schemaName",
+            "columnName": "schema_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entryCount",
+            "columnName": "entry_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "charCount",
+            "columnName": "char_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUsedAt",
+            "columnName": "last_used_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "schema_id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '953fd27ad264f63a65dac9f34dd3e8dc')"
+    ]
+  }
+}

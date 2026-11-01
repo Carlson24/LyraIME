@@ -25,7 +25,16 @@ data class InputStatsSnapshot(
     val voiceAidlToday: InputStatsTotals = InputStatsTotals(),
     val schemas: List<InputStatsSchemaEntity> = emptyList(),
     val activeDays: Int = 0,
+    val keyboardActiveMs: Long = 0,
+    val keyboardTimedChars: Long = 0,
 ) {
+    val keyboardSpeedCharsPerMinute: Double?
+        get() = if (keyboardActiveMs > 0L) {
+            keyboardTimedChars * 60_000.0 / keyboardActiveMs
+        } else {
+            null
+        }
+
     companion object {
         fun build(
             daily: List<InputStatsDailyEntity>,
@@ -38,6 +47,8 @@ data class InputStatsSnapshot(
             var voiceBuiltinToday = InputStatsTotals()
             var voiceAidl = InputStatsTotals()
             var voiceAidlToday = InputStatsTotals()
+            var keyboardActiveMs = 0L
+            var keyboardTimedChars = 0L
             val buckets = mutableMapOf<Int, InputStatsTotals>()
             val activeDays = mutableSetOf<String>()
 
@@ -47,6 +58,8 @@ data class InputStatsSnapshot(
                 when (row.origin) {
                     InputStats.ORIGIN_RIME -> {
                         keyboard += totals
+                        keyboardActiveMs += row.activeMs
+                        keyboardTimedChars += row.timedChars
                         if (row.day == today) {
                             keyboardToday += totals
                         }
@@ -79,6 +92,8 @@ data class InputStatsSnapshot(
                 voiceAidlToday = voiceAidlToday,
                 schemas = schemas,
                 activeDays = activeDays.size,
+                keyboardActiveMs = keyboardActiveMs,
+                keyboardTimedChars = keyboardTimedChars,
             )
         }
     }

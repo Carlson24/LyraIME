@@ -155,10 +155,9 @@
     <string name="input_statistics">Input statistics</string>
     <string name="input_statistics_summary">Record keyboard and voice input statistics locally. Nothing is uploaded.</string>
     <string name="stats_keyboard_category">Keyboard input</string>
-    <string name="stats_total_chars">Total Chinese characters</string>
-    <string name="stats_total_entries">Total commits</string>
-    <string name="stats_today_chars">Chinese characters today</string>
-    <string name="stats_today_entries">Commits today</string>
+    <string name="stats_input_total">Total input</string>
+    <string name="stats_today_input">Today\'s input</string>
+    <string name="stats_speed">Typing speed</string>
     <string name="stats_active_days">Days with input</string>
     <string name="stats_length_category">Phrase length distribution</string>
     <string name="stats_bucket_single">Single character</string>
@@ -172,10 +171,10 @@
     <string name="stats_schema_category">Rime schemas</string>
     <string name="stats_data_category">Data</string>
     <string name="stats_empty_value">—</string>
-    <string name="stats_chars_value">%1$s characters</string>
-    <string name="stats_times_value">%1$s times</string>
+    <string name="stats_input_total_summary">%1$s characters / %2$s times</string>
+    <string name="stats_speed_value">%1$s characters/min</string>
     <string name="stats_days_value">%1$s days</string>
-    <string name="stats_bucket_summary">%1$s times / %2$s characters (%3$s%%)</string>
+    <string name="stats_bucket_summary">%1$s characters (%2$s times) / %3$s%%</string>
     <string name="stats_voice_summary">%1$s times / %2$s characters (today %3$s times / %4$s characters)</string>
     <string name="stats_schema_summary">%1$s times / %2$s characters · last used %3$s</string>
     <string name="stats_no_schema_data">No schema data yet</string>

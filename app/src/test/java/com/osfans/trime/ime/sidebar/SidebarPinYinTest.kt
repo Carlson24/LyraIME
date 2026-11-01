@@ -8,6 +8,36 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 
+// 双拼方案只定义了标准韵母，allPinyin 中的非常规韵母音节（eh/io/ung/va 等）无法编码。
+private val doublePinyinFinals =
+    setOf(
+        "a", "o", "e", "i", "u", "v",
+        "ai", "ei", "ao", "ou", "an", "en", "ang", "eng", "ong",
+        "ia", "ie", "iao", "iu", "ian", "in", "iang", "ing", "iong",
+        "ua", "uo", "uai", "ui", "uan", "un", "uang", "ue", "ve", "ueng",
+    )
+
+private val zeroInitialPinyin =
+    setOf("a", "ai", "an", "ao", "e", "ei", "en", "er", "o", "ou", "ang", "eng")
+
+private fun finalOf(pinyin: String): String? {
+    if (pinyin in zeroInitialPinyin) return ""
+    val initial =
+        when {
+            pinyin.startsWith("zh") || pinyin.startsWith("ch") || pinyin.startsWith("sh") -> pinyin.take(2)
+            else -> pinyin.take(1)
+        }
+    val rest = pinyin.drop(initial.length)
+    if (rest.isEmpty()) return null
+    return if (rest == "u" && initial.last() in "jqxy") "v" else rest
+}
+
+private fun isDoublePinyinSyllable(pinyin: String): Boolean {
+    if (pinyin in zeroInitialPinyin) return true
+    val final = finalOf(pinyin) ?: return false
+    return final in doublePinyinFinals
+}
+
 class SidebarPinYinTest :
     StringSpec({
 
@@ -121,18 +151,13 @@ class SidebarPinYinTest :
         }
 
         "every pinyin syllable maps to a key code in each layout" {
-            val nonSyllables =
-                setOf(
-                    "b", "c", "d", "f", "g", "h", "j", "k", "l", "m",
-                    "n", "p", "q", "r", "s", "t", "w", "x", "y", "z",
-                    "i", "u", "v",
-                )
             for (layout in SidebarLayout.entries) {
                 val expected =
-                    if (layout.scheme == PinyinScheme.FULL) {
-                        SidebarPinYin.allPinyin
-                    } else {
-                        SidebarPinYin.allPinyin - nonSyllables
+                    when (layout.scheme) {
+                        PinyinScheme.FULL -> SidebarPinYin.allPinyin
+
+                        PinyinScheme.ZRM, PinyinScheme.FLYPY ->
+                            SidebarPinYin.allPinyin.filterTo(mutableSetOf()) { isDoublePinyinSyllable(it) }
                     }
                 val covered = layout.pinyinMap.values.flatten().toSet()
                 covered shouldBe expected
