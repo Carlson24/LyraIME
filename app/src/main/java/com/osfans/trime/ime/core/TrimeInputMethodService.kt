@@ -50,6 +50,7 @@ import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegate
 import com.osfans.trime.data.prefs.PreferenceDelegateProvider
+import com.osfans.trime.data.stats.InputStatsRepository
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.ThemeManager
@@ -337,6 +338,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
 
     override fun onDestroy() {
         InputFeedbackManager.destroy()
+        InputStatsRepository.flushAsync()
         inputView = null
         recreateInputViewPrefs.forEach {
             it.unregisterOnChangeListener(recreateInputViewListener)
@@ -647,6 +649,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         SherpaSpeechClient.forceStop()
         inputView?.stopVoiceRecognition()
         InputFeedbackManager.finishInput()
+        InputStatsRepository.flushAsync()
     }
 
     fun commitText(text: String) {

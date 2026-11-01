@@ -23,6 +23,8 @@ import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
 import com.k2fsa.sherpa.onnx.QnnConfig
 import com.osfans.trime.R
 import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.stats.InputStatsRepository
+import com.osfans.trime.data.stats.InputStatsVoiceSource
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.util.toast
 import kotlinx.coroutines.CancellationException
@@ -556,6 +558,7 @@ object SherpaSpeechClient {
                     }
 
                     if (!finalText.isNullOrBlank()) {
+                        InputStatsRepository.recordVoice(finalText, InputStatsVoiceSource.BUILTIN)
                         withContext(Dispatchers.Main) {
                             val ic = serviceRef?.get()?.currentInputConnection
                             ic?.setComposingText(finalText, 1)

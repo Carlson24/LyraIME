@@ -5,6 +5,7 @@
 
 package com.osfans.trime.data.backup
 
+import com.osfans.trime.data.stats.InputStatsBackupData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -58,9 +59,10 @@ data class BackupData(
     val clipboard: List<BackupBean>? = null,
     @Serializable(with = RawJsonStringSerializer::class)
     val customTasks: String? = null,
+    val inputStats: InputStatsBackupData? = null,
 ) {
     companion object {
-        const val CURRENT_VERSION = 2
+        const val CURRENT_VERSION = 3
     }
 }
 

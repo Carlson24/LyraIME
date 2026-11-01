@@ -166,6 +166,7 @@ class AppPrefs(
             const val TEST_INPUT_VISIBLE = "test_input_visible"
             const val TEST_INPUT_EXPANDED = "test_input_expanded"
             const val HIDE_STATIC_SWITCHER = "hide_static_switcher"
+            const val INPUT_STATISTICS = "input_statistics"
         }
 
         val inlinePreeditMode = enum(R.string.inline_preedit_mode, INLINE_PREEDIT_MODE, InlinePreeditMode.DISABLE)
@@ -174,6 +175,12 @@ class AppPrefs(
         val testInputVisible = bool(TEST_INPUT_VISIBLE, true)
         val testInputExpanded = bool(TEST_INPUT_EXPANDED, true)
         val hideStaticSwitcher = bool(HIDE_STATIC_SWITCHER, false)
+        val inputStatistics = switch(
+            R.string.input_statistics,
+            INPUT_STATISTICS,
+            true,
+            R.string.input_statistics_summary,
+        )
     }
 
     class VoiceInput(

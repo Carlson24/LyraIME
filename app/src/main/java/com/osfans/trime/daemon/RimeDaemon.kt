@@ -16,6 +16,7 @@ import com.osfans.trime.core.RimeLifecycle
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.core.lifecycleScope
 import com.osfans.trime.core.whenReady
+import com.osfans.trime.data.stats.InputStatsRepository
 import com.osfans.trime.ui.main.LogActivity
 import com.osfans.trime.util.CrashLogExporter
 import com.osfans.trime.util.appContext
@@ -168,6 +169,22 @@ object RimeDaemon {
     }
 
     private suspend fun handleRimeMessage(it: RimeMessage<*>) {
+        if (it is RimeMessage.CommitTextMessage) {
+            val text = it.data.text
+            if (!text.isNullOrEmpty()) {
+                val status = realRime.statusCached
+                InputStatsRepository.recordRimeCommit(
+                    text = text,
+                    schemaId = status.schemaId,
+                    schemaName = status.schemaName,
+                )
+            }
+            return
+        }
+        if (it is RimeMessage.SchemaMessage) {
+            InputStatsRepository.markSchemaUsed(it.data.id, it.data.name)
+            return
+        }
         if (it is RimeMessage.DeployMessage) {
             val buildNotification: NotificationCompat.Builder.() -> Unit
             when (it.data) {

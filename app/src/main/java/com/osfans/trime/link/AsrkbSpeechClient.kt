@@ -20,6 +20,8 @@ import android.os.Parcel
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.osfans.trime.R
+import com.osfans.trime.data.stats.InputStatsRepository
+import com.osfans.trime.data.stats.InputStatsVoiceSource
 import com.osfans.trime.ime.core.TrimeInputMethodService
 import com.osfans.trime.util.toast
 import kotlinx.coroutines.Dispatchers
@@ -116,6 +118,9 @@ object AsrkbSpeechClient {
                                             data.enforceInterface(DESCRIPTOR_CB)
                                             data.readInt()
                                             val text = data.readString() ?: ""
+                                            if (text.isNotBlank()) {
+                                                InputStatsRepository.recordVoice(text, InputStatsVoiceSource.AIDL)
+                                            }
                                             ctx.lifecycleScope.launch {
                                                 ctx.commitText(text)
                                                 unbind()

@@ -15,6 +15,7 @@ import androidx.room.withTransaction
 import com.osfans.trime.data.db.ClipboardHelper
 import com.osfans.trime.data.db.DatabaseBean
 import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.stats.InputStatsRepository
 import com.osfans.trime.util.appContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -41,6 +42,13 @@ object BackupManager {
         AppPrefs.Clipboard.SYNC_CLIPBOARD_PASSWORD,
     )
 
+    private val fingerprintIgnoredKeys = setOf(
+        AppPrefs.Internal.PID,
+        AppPrefs.Profile.LAST_SYNC_SETTINGS_HASH,
+        AppPrefs.Profile.LAST_BACKGROUND_SYNC_TIME,
+        AppPrefs.Profile.LAST_BACKGROUND_SYNC_STATUS,
+    )
+
     fun computeSettingsFingerprint(): String {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
         val allPrefs = sharedPreferences.all
@@ -49,7 +57,7 @@ object BackupManager {
         val sb = StringBuilder()
 
         val keys = allPrefs.keys
-            .filter { it != AppPrefs.Internal.PID }
+            .filter { it !in fingerprintIgnoredKeys }
             .sorted()
         for (key in keys) {
             val value = allPrefs[key]
@@ -79,14 +87,16 @@ object BackupManager {
         includePreferences: Boolean = true,
         includeClipboard: Boolean = true,
         includeCustomTasks: Boolean = true,
+        includeInputStats: Boolean = true,
         onlyPinnedClipboard: Boolean = false,
     ): BackupData = backupMutex.withLock {
         withContext(Dispatchers.IO) {
-            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, customTasks=$includeCustomTasks, onlyPinnedClipboard=$onlyPinnedClipboard")
+            Timber.d("Creating backup: preferences=$includePreferences, clipboard=$includeClipboard, customTasks=$includeCustomTasks, inputStats=$includeInputStats, onlyPinnedClipboard=$onlyPinnedClipboard")
             BackupData(
                 preferences = if (includePreferences) exportPreferences() else null,
                 clipboard = if (includeClipboard) exportClipboard(onlyPinnedClipboard) else null,
                 customTasks = if (includeCustomTasks) exportCustomTasks() else null,
+                inputStats = if (includeInputStats) InputStatsRepository.exportBackupData() else null,
             ).also {
                 Timber.d("Backup created successfully")
             }
@@ -98,10 +108,11 @@ object BackupManager {
         restorePreferences: Boolean = true,
         restoreClipboard: Boolean = true,
         restoreCustomTasks: Boolean = true,
+        restoreInputStats: Boolean = true,
     ): Result<Unit> = restoreMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                Timber.d("Restoring backup: preferences=$restorePreferences, clipboard=$restoreClipboard, customTasks=$restoreCustomTasks")
+                Timber.d("Restoring backup: preferences=$restorePreferences, clipboard=$restoreClipboard, customTasks=$restoreCustomTasks, inputStats=$restoreInputStats")
                 val migratedData = migrateBackup(backupData)
 
                 // Temporarily disable clipboard listener to avoid conflicts during restore
@@ -128,6 +139,10 @@ object BackupManager {
                     }
                     if (restoreCustomTasks && migratedData.customTasks != null) {
                         importCustomTasks(migratedData.customTasks)
+                    }
+                    val inputStats = migratedData.inputStats
+                    if (restoreInputStats && inputStats != null) {
+                        InputStatsRepository.importBackupData(inputStats)
                     }
                     Timber.d("Backup restored successfully")
                     Result.success(Unit)

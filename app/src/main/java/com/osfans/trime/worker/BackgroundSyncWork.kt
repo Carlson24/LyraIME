@@ -16,6 +16,7 @@ import com.osfans.trime.data.backup.BackupManager
 import com.osfans.trime.data.backup.WebDavSync
 import com.osfans.trime.data.base.DataManager
 import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.stats.InputStatsRepository
 import timber.log.Timber
 import java.io.File
 import java.util.Calendar
@@ -68,7 +69,11 @@ class BackgroundSyncWork(
 
         suspend fun backupSettingsToSyncDir() {
             try {
-                val currentHash = BackupManager.computeSettingsFingerprint()
+                val currentHash = buildString {
+                    append(BackupManager.computeSettingsFingerprint())
+                    append(':')
+                    append(InputStatsRepository.computeFingerprint())
+                }
                 if (currentHash == lastSyncSettingsHash && lastSyncSettingsHash.isNotEmpty()) {
                     Timber.d("Settings unchanged, skipping backup")
                     return
@@ -82,6 +87,7 @@ class BackgroundSyncWork(
                     includePreferences = true,
                     includeClipboard = true,
                     includeCustomTasks = true,
+                    includeInputStats = true,
                     onlyPinnedClipboard = true,
                 )
                 BackupManager.saveBackupToFile(backupData, backupFile)

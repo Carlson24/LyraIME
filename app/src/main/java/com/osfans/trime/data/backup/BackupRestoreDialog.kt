@@ -53,8 +53,9 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                 context.getString(R.string.preferences),
                 context.getString(R.string.clipboard_data),
                 context.getString(R.string.custom_tasks_data),
+                context.getString(R.string.input_stats_data),
             )
-        val checked = booleanArrayOf(true, true, true)
+        val checked = booleanArrayOf(true, true, true, true)
 
         context.buildDialog(R.string.select_backup_items)
             .apply {
@@ -66,7 +67,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                     if (isBackupInProgress) return@setPositiveButton
                     val timestamp = System.currentTimeMillis()
                     val fileName = "trime_backup_$timestamp.json"
-                    performBackup(checked[0], checked[1], checked[2], fileName)
+                    performBackup(checked[0], checked[1], checked[2], checked[3], fileName)
                 }
             }.show()
     }
@@ -80,6 +81,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
         includePreferences: Boolean,
         includeClipboard: Boolean,
         includeCustomTasks: Boolean,
+        includeInputStats: Boolean,
         fileName: String,
     ) {
         if (isBackupInProgress) return
@@ -102,6 +104,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                                 includePreferences = includePreferences,
                                 includeClipboard = includeClipboard,
                                 includeCustomTasks = includeCustomTasks,
+                                includeInputStats = includeInputStats,
                             )
 
                         BackupManager.saveBackupToFile(backupData, tempFile).getOrThrow()
@@ -192,8 +195,9 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                 val hasPreferences = backupData.preferences != null
                 val hasClipboard = backupData.clipboard != null
                 val hasCustomTasks = backupData.customTasks != null
+                val hasInputStats = backupData.inputStats != null
 
-                if (!hasPreferences && !hasClipboard && !hasCustomTasks) {
+                if (!hasPreferences && !hasClipboard && !hasCustomTasks && !hasInputStats) {
                     withContext(Dispatchers.Main) {
                         context.toast(R.string.backup_file_invalid)
                     }
@@ -201,7 +205,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                 }
 
                 withContext(Dispatchers.Main) {
-                    showRestoreItemsDialog(backupData, hasPreferences, hasClipboard, hasCustomTasks)
+                    showRestoreItemsDialog(backupData, hasPreferences, hasClipboard, hasCustomTasks, hasInputStats)
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -218,6 +222,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
         hasPreferences: Boolean,
         hasClipboard: Boolean,
         hasCustomTasks: Boolean,
+        hasInputStats: Boolean,
     ) {
         val context = fragment.requireContext()
         val items = mutableListOf<String>()
@@ -235,6 +240,10 @@ class BackupRestoreDialog(private val fragment: Fragment) {
             items.add(context.getString(R.string.custom_tasks_data))
             checked.add(true)
         }
+        if (hasInputStats) {
+            items.add(context.getString(R.string.input_stats_data))
+            checked.add(true)
+        }
 
         context.buildDialog(R.string.select_restore_items)
             .apply {
@@ -248,7 +257,8 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                         backupData,
                         if (hasPreferences) checked[idx++] else false,
                         if (hasClipboard) checked[idx++] else false,
-                        if (hasCustomTasks) checked[idx] else false,
+                        if (hasCustomTasks) checked[idx++] else false,
+                        if (hasInputStats) checked[idx] else false,
                     )
                 }
             }.show()
@@ -259,6 +269,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
         restorePreferences: Boolean,
         restoreClipboard: Boolean,
         restoreCustomTasks: Boolean,
+        restoreInputStats: Boolean,
     ) {
         val context = fragment.requireContext()
 
@@ -271,6 +282,7 @@ class BackupRestoreDialog(private val fragment: Fragment) {
                         restorePreferences = restorePreferences,
                         restoreClipboard = restoreClipboard,
                         restoreCustomTasks = restoreCustomTasks,
+                        restoreInputStats = restoreInputStats,
                     ).getOrThrow()
                 }
 

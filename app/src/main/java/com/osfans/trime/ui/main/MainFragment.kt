@@ -78,6 +78,11 @@ class MainFragment : PaddingPreferenceFragment() {
                     NavigationRoute.VoiceInput,
                 )
                 addDestinationPreference(
+                    R.string.input_statistics,
+                    R.drawable.ic_baseline_bar_chart_24,
+                    NavigationRoute.InputStats,
+                )
+                addDestinationPreference(
                     R.string.candidates_window,
                     R.drawable.ic_baseline_list_alt_24,
                     NavigationRoute.CandidatesWindow,

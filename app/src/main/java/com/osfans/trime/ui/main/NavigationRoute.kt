@@ -15,6 +15,7 @@ import com.osfans.trime.ui.main.settings.CandidatesSettingsFragment
 import com.osfans.trime.ui.main.settings.ClipboardSettingsFragment
 import com.osfans.trime.ui.main.settings.CustomTasksFragment
 import com.osfans.trime.ui.main.settings.GeneralSettingsFragment
+import com.osfans.trime.ui.main.settings.InputStatsFragment
 import com.osfans.trime.ui.main.settings.KeyboardSettingsFragment
 import com.osfans.trime.ui.main.settings.PackageListFragment
 import com.osfans.trime.ui.main.settings.ProfileSettingsFragment
@@ -51,6 +52,9 @@ sealed class NavigationRoute : Parcelable {
 
     @Serializable
     data object VoiceInput : NavigationRoute()
+
+    @Serializable
+    data object InputStats : NavigationRoute()
 
     @Serializable
     data object CandidatesWindow : NavigationRoute()
@@ -106,6 +110,9 @@ sealed class NavigationRoute : Parcelable {
             }
             fragment<VoiceInputSettingsFragment, VoiceInput> {
                 label = ctx.getString(R.string.voice_input)
+            }
+            fragment<InputStatsFragment, InputStats> {
+                label = ctx.getString(R.string.input_statistics)
             }
             fragment<CandidatesSettingsFragment, CandidatesWindow> {
                 label = ctx.getString(R.string.candidates_window)
