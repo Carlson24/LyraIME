@@ -33,6 +33,7 @@
     "row",
     "key",
     "preedit",
+    "sync_input",
     "window",
     "toolbar",
     "btn",

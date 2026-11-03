@@ -43,9 +43,16 @@ class SyncInputBox(
 
     private val mirrorTextView = MirrorTextView(context)
     private val textColor = ColorManager.getColor("text_color")
+    private val syncInput = theme.syncInput
+    private val verticalPaddingPx: Int
 
     private val maxHeightPx: Int
-        get() = lineHeightPx * 3 + mirrorTextView.totalPaddingTop + mirrorTextView.totalPaddingBottom
+        get() {
+            val lineHeight = lineHeightPx
+            val oneLineHeight = lineHeight + verticalPaddingPx * 2
+            val configured = syncInput.maxHeight?.takeIf { it > 0 }?.let { dp(it) }
+            return (configured ?: (lineHeight * 3 + verticalPaddingPx * 2)).coerceAtLeast(oneLineHeight)
+        }
 
     private val lineHeightPx: Int
         get() {
@@ -66,19 +73,20 @@ class SyncInputBox(
         outlineProvider = ViewOutlineProvider.BACKGROUND
 
         val backgroundColor = ColorManager.getColor("text_back_color")
-        val alpha = (theme.preedit.alpha.coerceIn(0f, 1f) * 255).toInt()
+        val alpha = ((syncInput.alpha ?: theme.preedit.alpha).coerceIn(0f, 1f) * 255).toInt()
         background =
             GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dp(8).toFloat()
+                cornerRadius = dp((syncInput.cornerRadius ?: 8f).coerceAtLeast(0f))
                 setColor(ColorUtils.setAlphaComponent(backgroundColor, alpha))
             }
 
-        val horizontalPadding = dp(theme.preedit.horizontalPadding)
-        val verticalPadding = dp(6)
+        val horizontalPadding = dp((syncInput.horizontalPadding ?: theme.preedit.horizontalPadding).coerceAtLeast(0))
+        verticalPaddingPx = dp((syncInput.verticalPadding ?: 6).coerceAtLeast(0))
+        val verticalPadding = verticalPaddingPx
         mirrorTextView.apply {
             setTextColor(textColor)
-            textSize = theme.preedit.foreground.fontSize
+            textSize = (syncInput.fontSize ?: theme.preedit.foreground.fontSize).coerceAtLeast(1f)
             typeface = FontManager.getTypeface()
             gravity = Gravity.TOP or Gravity.START
             setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding)
@@ -170,12 +178,13 @@ class SyncInputBox(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
     ) {
-        val limitedHeight =
-            MeasureSpec.makeMeasureSpec(
-                min(maxHeightPx.coerceAtLeast(dp(40)), MeasureSpec.getSize(heightMeasureSpec)),
-                MeasureSpec.AT_MOST,
-            )
-        super.onMeasure(widthMeasureSpec, limitedHeight)
+        val maxHeight = maxHeightPx
+        val parentHeight = MeasureSpec.getSize(heightMeasureSpec)
+        val limitedHeight = if (parentHeight > 0) min(maxHeight, parentHeight) else maxHeight
+        super.onMeasure(
+            widthMeasureSpec,
+            MeasureSpec.makeMeasureSpec(limitedHeight, MeasureSpec.AT_MOST),
+        )
     }
 }
 

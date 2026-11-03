@@ -28,6 +28,7 @@
    row(t)              —— 声明键盘行
    key(t)              —— 声明按键
    preedit(t)          —— 声明预编辑区样式
+   sync_input(t)       —— 声明悬浮同步输入框样式
    window(t)           —— 声明候选窗口样式
    toolbar(t)          —— 声明工具栏
    btn(t)              —— 声明工具栏按钮
@@ -602,6 +603,20 @@
 ---@field foreground?         PreeditForeground # 前景样式
 
 -- ============================================================================
+-- 悬浮同步输入框 (SyncInput)
+-- ============================================================================
+
+--- 悬浮键盘上方的同步输入框样式。
+--- 所有字段均为可选；未设置时沿用对应默认值。
+---@class SyncInput
+---@field font_size?          number  # 字号（未设置时沿用 preedit.foreground.font_size）
+---@field alpha?              number  # 背景透明度 0.0~1.0（未设置时沿用 preedit.alpha）
+---@field corner_radius?      number  # 圆角 dp（未设置时 8）
+---@field horizontal_padding? integer # 左右内边距 dp（未设置时沿用 preedit.horizontal_padding）
+---@field vertical_padding?   integer # 上下内边距 dp（未设置时 6）
+---@field max_height?         integer # 最大高度 dp（未设置时约 3 行；<=0 视为未设置）
+
+-- ============================================================================
 -- 候选窗口/悬浮窗 (Window)
 -- ============================================================================
 
@@ -904,6 +919,7 @@
 ---@field author?               string                     # 作者（默认 ""）
 ---@field style                 GeneralStyle               # 全局样式
 ---@field preedit?              Preedit                    # 预编辑区样式（默认值见 Preedit）
+---@field sync_input?           SyncInput                  # 悬浮同步输入框样式（默认值见 SyncInput）
 ---@field window?               Window                     # 候选窗口样式（默认值见 Window）
 ---@field tool_bar?             ToolBar                    # 工具栏样式（默认值见 ToolBar）
 ---@field candidates_tool?      CandidatesTool             # 候选工具栏（nil = 隐藏）
@@ -970,6 +986,13 @@ end
 ---@param t Preedit
 ---@return Preedit
 function preedit(t)
+  return t
+end
+
+--- 声明悬浮同步输入框样式。
+---@param t SyncInput
+---@return SyncInput
+function sync_input(t)
   return t
 end
 

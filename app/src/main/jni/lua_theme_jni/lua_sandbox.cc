@@ -227,6 +227,8 @@ void LuaThemeEngine::injectApi() {
   lua_pushcfunction(L, l_identity);
   lua_setglobal(L, "preedit");
   lua_pushcfunction(L, l_identity);
+  lua_setglobal(L, "sync_input");
+  lua_pushcfunction(L, l_identity);
   lua_setglobal(L, "window");
   lua_pushcfunction(L, l_identity);
   lua_setglobal(L, "toolbar");

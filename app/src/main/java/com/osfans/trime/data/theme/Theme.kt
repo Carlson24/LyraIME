@@ -12,6 +12,7 @@ import com.osfans.trime.data.theme.model.GeneralStyle
 import com.osfans.trime.data.theme.model.LiquidKeyboard
 import com.osfans.trime.data.theme.model.Preedit
 import com.osfans.trime.data.theme.model.PresetKey
+import com.osfans.trime.data.theme.model.SyncInput
 import com.osfans.trime.data.theme.model.TextKeyboard
 import com.osfans.trime.data.theme.model.ToolBar
 import com.osfans.trime.data.theme.model.Window
@@ -32,6 +33,7 @@ data class Theme(
     @SerialName("style")
     val generalStyle: GeneralStyle,
     val preedit: Preedit = Preedit(),
+    val syncInput: SyncInput = SyncInput(),
     val window: Window = Window(),
     val liquidKeyboard: LiquidKeyboard = LiquidKeyboard(),
     val presetKeys: Map<String, PresetKey> = emptyMap(),
