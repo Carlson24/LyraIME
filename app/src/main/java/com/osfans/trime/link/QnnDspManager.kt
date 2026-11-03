@@ -8,6 +8,7 @@ package com.osfans.trime.link
 import android.os.Build
 import com.osfans.trime.BuildConfig
 import com.osfans.trime.util.appContext
+import timber.log.Timber
 import java.io.File
 
 object QnnDspManager {
@@ -26,23 +27,6 @@ object QnnDspManager {
      */
     private val variant: String? = BuildConfig.QNN_VARIANT.takeIf { it.isNotBlank() }
 
-    /**
-     * SoCs whose Hexagon DSP arch matches each packaged QNN variant. The HTP
-     * backend is variant-specific: loading e.g. the v81 Skel on a v73 device makes
-     * QNN initialization fail (or abort in the native layer), so we only attempt
-     * QNN when the device SoC is in the whitelist for the configured variant.
-     */
-    private val variantSocWhitelist =
-        mapOf(
-            "v81" to setOf("SM8850"),
-            "v79" to setOf("SM8750"),
-            "v75" to setOf("SM8650"),
-            "v73" to setOf("SM8550"),
-            "v69" to setOf("SM8450", "SM8475"),
-            "v68" to setOf("SM8350"),
-            "v66" to setOf("SM8250"),
-        )
-
     private fun packagedDspLibs(): DspLibs? {
         val version = variant?.removePrefix("v") ?: return null
         val libDir = File(appContext.applicationInfo.nativeLibraryDir)
@@ -59,11 +43,18 @@ object QnnDspManager {
     /** True only when the device SoC is known to be supported by the packaged variant. */
     fun isDeviceSocCompatible(): Boolean {
         val variant = variant ?: return false
-        val whitelist = variantSocWhitelist[variant] ?: return false
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
-        val soc = Build.SOC_MODEL.trim().uppercase().substringBefore('-').trim()
-        if (soc.isEmpty()) return false
-        return soc in whitelist
+        val rawSoc = Build.SOC_MODEL.orEmpty()
+        val soc = QnnSocMatcher.normalize(rawSoc)
+        val supported = QnnSocMatcher.isSupported(variant, rawSoc)
+        Timber.d(
+            "QNN SoC check: raw=%s normalized=%s variant=%s supported=%s",
+            rawSoc,
+            soc,
+            variant,
+            supported,
+        )
+        return supported
     }
 
     fun isDeviceSupported(): Boolean = isInstalled() && isDeviceSocCompatible()
