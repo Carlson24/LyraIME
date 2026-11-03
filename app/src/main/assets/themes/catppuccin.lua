@@ -268,7 +268,26 @@ return theme {
     corner_radius = 8,       -- [float] 圆角 dp
     horizontal_padding = 8,  -- [int] 左右内边距 dp
     vertical_padding = 6,    -- [int] 上下内边距 dp
-    -- max_height = 96,      -- [int] 最大高度 dp；未设置时约 3 行
+    -- max_height 已废弃：同步输入框固定为单行，超出部分横向滚动
+    -- button = btn {          -- [ToolBar.Button] 右侧按键，可配置任意键盘动作
+    --   action = "Return",    -- 点击动作，未配置时默认 Return
+    --   long_press_action = "Hide",
+    --   size = { 40, -1 },    -- 宽度 dp；高度始终跟随单行输入框
+    --   foreground = fg {
+    --     style = "ic@keyboard_return",
+    --     normal = "text_color",
+    --     highlight = "hilited_text_color",
+    --     font_size = 20,
+    --     padding = 6,
+    --   },
+    --   background = bg {
+    --     normal = "",
+    --     highlight = "hilited_key_back_color",
+    --     corner_radius = 8,
+    --     horizontal_inset = 4,
+    --     vertical_inset = 4,
+    --   },
+    -- },
   },
 
   -- ========================================================================

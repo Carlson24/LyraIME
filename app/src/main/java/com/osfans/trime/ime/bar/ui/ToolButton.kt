@@ -310,8 +310,10 @@ class ToolButton : GestureFrame {
     }
 
     private fun setupFallbackContent(config: ToolBar.Button) {
-        val action = KeyActionManager.getAction(config.action).getLabel(KeyboardWindow.currentKeyboard)
-        setupContent(ContentType.TEXT, text = action)
+        val action = KeyActionManager.getAction(config.action)
+        val keyboard = runCatching { KeyboardWindow.currentKeyboard }.getOrNull()
+        val label = if (keyboard != null) action.getLabel(keyboard) else config.action
+        setupContent(ContentType.TEXT, text = label)
     }
 
     companion object {

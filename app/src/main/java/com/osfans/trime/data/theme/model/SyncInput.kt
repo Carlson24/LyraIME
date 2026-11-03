@@ -18,4 +18,5 @@ data class SyncInput(
     val horizontalPadding: Int? = null,
     val verticalPadding: Int? = null,
     val maxHeight: Int? = null,
+    val button: ToolBar.Button? = null,
 ) : Parcelable

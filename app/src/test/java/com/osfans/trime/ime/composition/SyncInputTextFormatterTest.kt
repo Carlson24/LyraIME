@@ -90,4 +90,23 @@ class SyncInputTextFormatterTest :
             display.displayOffsetToDocument(display.selectionStart!!) shouldBe 1
             display.displayOffsetToDocument(display.selectionEnd!!) shouldBe 4
         }
+
+        "keeps line breaks on one line without shifting offsets" {
+            val snapshot =
+                TargetTextSnapshot(
+                    text = "a\r\nb\tc\nd",
+                    startOffset = 0,
+                    selectionStart = 6,
+                    selectionEnd = 6,
+                    editable = true,
+                )
+
+            val display = SyncInputTextFormatter.format(snapshot)
+
+            display.text shouldBe "a\u200B\u21B5b c\u21B5d"
+            display.text.length shouldBe snapshot.text.length
+            display.cursor shouldBe 6
+            display.displayOffsetToDocument(6) shouldBe 6
+            display.documentOffsetToDisplay(6) shouldBe 6
+        }
     })

@@ -60,6 +60,13 @@ object SyncInputTextFormatter {
     private const val WINDOW_AFTER = 5_000
     private const val ELLIPSIS = "…"
 
+    private fun sanitizeChar(char: Char): Char = when (char) {
+        '\n', '\u000B', '\u000C', '\u2028', '\u2029' -> '\u21B5'
+        '\r' -> '\u200B'
+        '\t' -> ' '
+        else -> char
+    }
+
     fun format(snapshot: TargetTextSnapshot): SyncInputDisplay {
         val source = snapshot.text
         val sourceLength = source.length
@@ -80,7 +87,10 @@ object SyncInputTextFormatter {
         val prefix = if (truncatedBefore) ELLIPSIS else ""
         val suffix = if (truncatedAfter) ELLIPSIS else ""
         val window = source.substring(windowStart, windowEnd)
-        val displayText = prefix + window + suffix
+        // The sync input box renders a single line. Replace line-breaking
+        // characters with one-character placeholders so offsets stay aligned.
+        val displayWindow = window.map(::sanitizeChar).joinToString("")
+        val displayText = prefix + displayWindow + suffix
         val displayWindowStart = prefix.length
         val windowLength = window.length
         val documentStartOffset = snapshot.startOffset + windowStart

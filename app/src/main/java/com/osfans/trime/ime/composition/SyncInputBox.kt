@@ -14,15 +14,18 @@ import android.text.Layout
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
-import android.widget.ScrollView
+import android.widget.HorizontalScrollView
 import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.FontManager
 import com.osfans.trime.data.theme.Theme
+import com.osfans.trime.data.theme.model.ToolBar
+import com.osfans.trime.ime.bar.ui.ToolButton
 import splitties.dimensions.dp
 import kotlin.math.abs
 import kotlin.math.max
@@ -34,25 +37,28 @@ import kotlin.math.min
  * selects text there. Regular typing still goes through the IME's normal
  * target input path, so undo, cut/copy/paste and input-type restrictions keep
  * working as usual.
+ *
+ * The box is always one line tall. Overflowing text scrolls horizontally, and
+ * the trailing [ToolButton] is configured by `sync_input.button` in the theme.
  */
 class SyncInputBox(
     context: Context,
     theme: Theme,
-) : ScrollView(context) {
+) : FrameLayout(context) {
     private var displayData: SyncInputDisplay? = null
 
     private val mirrorTextView = MirrorTextView(context)
+    private val textScroll = HorizontalScrollView(context)
     private val textColor = ColorManager.getColor("text_color")
     private val syncInput = theme.syncInput
     private val verticalPaddingPx: Int
 
-    private val maxHeightPx: Int
-        get() {
-            val lineHeight = lineHeightPx
-            val oneLineHeight = lineHeight + verticalPaddingPx * 2
-            val configured = syncInput.maxHeight?.takeIf { it > 0 }?.let { dp(it) }
-            return (configured ?: (lineHeight * 3 + verticalPaddingPx * 2)).coerceAtLeast(oneLineHeight)
-        }
+    private val buttonConfig: ToolBar.Button = syncInput.button ?: DEFAULT_BUTTON
+    private val toolButton = ToolButton(context, buttonConfig)
+    private val buttonAction: String
+        get() = buttonConfig.action.ifEmpty { DEFAULT_ACTION }
+
+    var onAction: ((String) -> Unit)? = null
 
     private val lineHeightPx: Int
         get() {
@@ -60,13 +66,23 @@ class SyncInputBox(
             return if (measured > 0) measured else (mirrorTextView.paint.fontMetrics.bottom - mirrorTextView.paint.fontMetrics.top).toInt()
         }
 
+    private val oneLineHeightPx: Int
+        get() = lineHeightPx + verticalPaddingPx * 2
+
+    private val buttonWidthPx: Int
+        get() {
+            val configured = buttonConfig.size.takeIf { it.size == 2 }?.get(0)
+            return if (configured != null && configured >= 0) {
+                dp(configured)
+            } else {
+                oneLineHeightPx.coerceAtLeast(dp(36))
+            }
+        }
+
     var onMoveCursor: ((Int) -> Unit)? = null
     var onSelectRange: ((Int, Int) -> Unit)? = null
 
     init {
-        isFillViewport = false
-        isVerticalScrollBarEnabled = true
-        scrollBarStyle = SCROLLBARS_INSIDE_OVERLAY
         isFocusable = false
         isFocusableInTouchMode = false
         clipToOutline = true
@@ -90,6 +106,7 @@ class SyncInputBox(
             typeface = FontManager.getTypeface()
             gravity = Gravity.TOP or Gravity.START
             setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding)
+            maxLines = 1
             setTextIsSelectable(false)
             isFocusable = false
             isFocusableInTouchMode = false
@@ -115,11 +132,47 @@ class SyncInputBox(
             }
         }
 
+        textScroll.apply {
+            isFillViewport = false
+            isHorizontalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+            isFocusable = false
+            isFocusableInTouchMode = false
+            addView(
+                mirrorTextView,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                ),
+            )
+        }
+
+        toolButton.apply {
+            contentDescription = buttonAction
+            setOnClickListener { onAction?.invoke(buttonAction) }
+            if (buttonConfig.longPressAction.isNotEmpty()) {
+                setOnLongClickListener {
+                    onAction?.invoke(buttonConfig.longPressAction)
+                    true
+                }
+            }
+        }
+
         addView(
-            mirrorTextView,
+            textScroll,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ).apply {
+                marginEnd = buttonWidthPx
+            },
+        )
+        addView(
+            toolButton,
+            FrameLayout.LayoutParams(
+                buttonWidthPx,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                Gravity.END,
             ),
         )
     }
@@ -142,13 +195,17 @@ class SyncInputBox(
         post { scrollToCaret() }
     }
 
+    fun updateButtonStyle() {
+        toolButton.updateStyle()
+    }
+
     fun clear() {
         displayData = null
         mirrorTextView.setText("")
         mirrorTextView.caretOffset = -1
         mirrorTextView.selectionFrom = -1
         mirrorTextView.selectionTo = -1
-        scrollTo(0, 0)
+        textScroll.scrollTo(0, 0)
     }
 
     private fun setMirrorCaret(offset: Int) {
@@ -164,13 +221,32 @@ class SyncInputBox(
         if (caret < 0) return
         val layout = mirrorTextView.layout ?: return
         val offset = caret.coerceIn(0, mirrorTextView.length())
-        val line = layout.getLineForOffset(offset)
-        val top = layout.getLineTop(line) + mirrorTextView.totalPaddingTop
-        val bottom = layout.getLineBottom(line) + mirrorTextView.totalPaddingTop
-        val viewportHeight = height - paddingTop - paddingBottom
-        if (viewportHeight <= 0) return
-        if (top < scrollY || bottom > scrollY + viewportHeight) {
-            smoothScrollTo(0, (top - viewportHeight / 3).coerceAtLeast(0))
+        val x = layout.getPrimaryHorizontal(offset) + mirrorTextView.totalPaddingLeft
+        val viewportWidth = textScroll.width - textScroll.paddingLeft - textScroll.paddingRight
+        if (viewportWidth <= 0) return
+        val margin = dp(8)
+        val current = textScroll.scrollX
+        val target =
+            when {
+                x < current + margin -> (x - margin).toInt()
+                x > current + viewportWidth - margin -> (x - viewportWidth + margin).toInt()
+                else -> return
+            }
+        textScroll.smoothScrollTo(target.coerceAtLeast(0), 0)
+    }
+
+    override fun onLayout(
+        changed: Boolean,
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int,
+    ) {
+        super.onLayout(changed, left, top, right, bottom)
+        val minWidth = textScroll.width
+        if (minWidth > 0 && mirrorTextView.minWidth != minWidth) {
+            mirrorTextView.minWidth = minWidth
+            mirrorTextView.requestLayout()
         }
     }
 
@@ -178,12 +254,25 @@ class SyncInputBox(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
     ) {
-        val maxHeight = maxHeightPx
+        val desiredHeight = oneLineHeightPx
         val parentHeight = MeasureSpec.getSize(heightMeasureSpec)
-        val limitedHeight = if (parentHeight > 0) min(maxHeight, parentHeight) else maxHeight
+        val limitedHeight = if (parentHeight > 0) min(desiredHeight, parentHeight) else desiredHeight
         super.onMeasure(
             widthMeasureSpec,
-            MeasureSpec.makeMeasureSpec(limitedHeight, MeasureSpec.AT_MOST),
+            MeasureSpec.makeMeasureSpec(limitedHeight, MeasureSpec.EXACTLY),
+        )
+    }
+
+    private companion object {
+        const val DEFAULT_ACTION = "Return"
+
+        val DEFAULT_BUTTON = ToolBar.Button(
+            action = DEFAULT_ACTION,
+            foreground = ToolBar.Button.Foreground(
+                style = "ic@keyboard_return",
+                normal = "text_color",
+                highlight = "hilited_text_color",
+            ),
         )
     }
 }
@@ -209,12 +298,13 @@ private class MirrorTextView(
 
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private val longPressTimeout = ViewConfiguration.getLongPressTimeout().toLong()
-    private val parentScrollView: ScrollView? get() = parent as? ScrollView
+    private val parentScrollView: HorizontalScrollView? get() = parent as? HorizontalScrollView
 
     private var downX = 0f
     private var downY = 0f
     private var lastX = 0f
     private var lastY = 0f
+    private var previousX = 0f
     private var isDown = false
     private var isMoved = false
     private var selectionAnchor = 0
@@ -251,6 +341,7 @@ private class MirrorTextView(
                 downY = event.y
                 lastX = event.x
                 lastY = event.y
+                previousX = event.x
                 isDown = true
                 isMoved = false
                 isSelecting = false
@@ -260,13 +351,14 @@ private class MirrorTextView(
 
             MotionEvent.ACTION_MOVE -> {
                 if (!isDown) return false
-                val previousY = lastY
+                val previousXPos = previousX
                 lastX = event.x
                 lastY = event.y
+                previousX = event.x
                 if (isSelecting) {
                     selectionFocus = offsetAt(event.x, event.y)
                     updateLocalSelection()
-                    autoScrollWhileSelecting(event.y)
+                    autoScrollWhileSelecting(event.x)
                     return true
                 }
                 if (!isMoved && (abs(event.x - downX) > touchSlop || abs(event.y - downY) > touchSlop)) {
@@ -274,7 +366,7 @@ private class MirrorTextView(
                     removeCallbacks(longPressRunnable)
                 }
                 if (isMoved) {
-                    parentScrollView?.scrollBy(0, (previousY - event.y).toInt())
+                    parentScrollView?.scrollBy((previousXPos - event.x).toInt(), 0)
                 }
                 return true
             }
@@ -386,13 +478,22 @@ private class MirrorTextView(
         invalidate()
     }
 
-    private fun autoScrollWhileSelecting(y: Float) {
+    private fun autoScrollWhileSelecting(x: Float) {
         val scrollView = parentScrollView ?: return
         val threshold = dp(16)
         val step = dp(12)
-        when {
-            y < threshold -> scrollView.scrollBy(0, -step)
-            y > height - threshold -> scrollView.scrollBy(0, step)
+        val viewportLeft = scrollView.scrollX
+        val viewportRight = viewportLeft + scrollView.width
+        val delta =
+            when {
+                x < viewportLeft + threshold -> -step
+                x > viewportRight - threshold -> step
+                else -> 0
+            }
+        if (delta != 0) {
+            val before = scrollView.scrollX
+            scrollView.scrollBy(delta, 0)
+            lastX += scrollView.scrollX - before
         }
         selectionFocus = offsetAt(lastX, lastY)
         updateLocalSelection()
