@@ -150,6 +150,8 @@
     <string name="developer">開發者</string>
     <string name="exception_logcat_created">Logcat 行程已建立</string>
     <string name="floating_keyboard">懸浮鍵盤</string>
+    <string name="floating_sync_input">懸浮同步輸入框</string>
+    <string name="floating_sync_input_summary">在懸浮鍵盤上方顯示並編輯目標輸入框的內容</string>
     <string name="about">關於</string>
     <string name="theme">鍵盤樣式</string>
     <string name="profile_and_synchronization">配置與同步</string>

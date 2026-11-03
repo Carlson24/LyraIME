@@ -287,6 +287,7 @@ class AppPrefs(
             const val MAX_SPAN_COUNT = "max_span_count"
             const val HORIZONTAL_CANDIDATE_MODE = "horizontal_candidate_mode"
             const val AUTO_FLOAT_LANDSCAPE = "auto_float_landscape"
+            const val FLOATING_SYNC_INPUT = "floating_sync_input"
         }
 
         enum class LandscapeMode(override val stringRes: Int) : PreferenceDelegateEnum {
@@ -298,6 +299,12 @@ class AppPrefs(
 
         val landscapeMode = enum(R.string.enable_landscape_mode, LANDSCAPE_MODE, LandscapeMode.NEVER)
         val autoFloatLandscape = switch(R.string.auto_float_landscape, AUTO_FLOAT_LANDSCAPE, false)
+        val floatingSyncInput = switch(
+            R.string.floating_sync_input,
+            FLOATING_SYNC_INPUT,
+            true,
+            R.string.floating_sync_input_summary,
+        )
         val splitSpacePercent = int(
             R.string.split_space_percent,
             SPLIT_SPACE_PERCENT,

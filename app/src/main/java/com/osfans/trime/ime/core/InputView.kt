@@ -23,6 +23,7 @@ import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.widget.ImageView
+import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -34,6 +35,7 @@ import com.osfans.trime.core.CompositionProto
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.daemon.RimeSession
 import com.osfans.trime.data.prefs.AppPrefs
+import com.osfans.trime.data.prefs.PreferenceDelegate
 import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.ime.bar.InputBarDelegate
@@ -41,6 +43,9 @@ import com.osfans.trime.ime.broadcast.EnterKeyDisplayDelegate
 import com.osfans.trime.ime.broadcast.InputBroadcaster
 import com.osfans.trime.ime.candidates.popup.PopupCandidatesMode
 import com.osfans.trime.ime.composition.PreeditDelegate
+import com.osfans.trime.ime.composition.SyncInputBox
+import com.osfans.trime.ime.composition.SyncInputTextFormatter
+import com.osfans.trime.ime.composition.TargetTextSnapshot
 import com.osfans.trime.ime.dependency.InputDependencyManager
 import com.osfans.trime.ime.keyboard.KeyboardPrefs.isLandscapeMode
 import com.osfans.trime.ime.keyboard.KeyboardWindow
@@ -117,10 +122,28 @@ class InputView(
     private val keyboardWindow: KeyboardWindow by di.instance()
     private val liquidWindow: LiquidWindow by di.instance()
 
+    private val syncInputBox =
+        SyncInputBox(context, theme).apply {
+            visibility = View.GONE
+            onMoveCursor = { offset -> service.setTargetSelection(offset, offset) }
+            onSelectRange = { start, end -> service.setTargetSelection(start, end) }
+        }
+
     private val inlinePreeditMode by AppPrefs.defaultInstance().general.inlinePreeditMode
     private val appPrefs = AppPrefs.defaultInstance()
+    private val floatingSyncInput by appPrefs.keyboard.floatingSyncInput
     private val effectiveWindowMode get() = service.inputDeviceManager.effectiveWindowMode
     private val candidatesMode by AppPrefs.defaultInstance().candidates.mode
+
+    @Keep
+    private val floatingSyncInputListener =
+        PreferenceDelegate.OnChangeListener<Boolean> { _, enabled ->
+            if (!enabled) {
+                hideSyncInputBox()
+            } else if (isEffectiveFloating) {
+                service.scheduleFloatingSyncInputUpdate(0L)
+            }
+        }
 
     private val keyboardSidePadding = theme.generalStyle.keyboardPadding
     private val keyboardSidePaddingLandscape = theme.generalStyle.keyboardPaddingLand
@@ -314,7 +337,7 @@ class InputView(
                         floatingWidthPx = newWidth
                         keyboardView.translationX =
                             (floatingResizeStartTranslationX + floatingResizeStartWidth) - newWidth
-                        preedit.ui.root.translationX = keyboardView.translationX
+                        updateFloatingOverlayTranslation()
                         applyFloatingWidth()
                         true
                     }
@@ -429,8 +452,7 @@ class InputView(
                         keyboardView.translationX += dx
                         keyboardView.translationY += dy
                         clampFloatingPosition()
-                        preedit.ui.root.translationX = keyboardView.translationX
-                        preedit.ui.root.translationY = keyboardView.translationY
+                        updateFloatingOverlayTranslation()
                         updateHandlePosition()
                         lastTouchX = event.rawX
                         lastTouchY = event.rawY
@@ -724,11 +746,20 @@ class InputView(
 
         updateKeyboardSize()
 
+        preedit.ui.root.id = View.generateViewId()
         add(
             preedit.ui.root,
             lParams(wrapContent, wrapContent) {
                 above(keyboardView)
                 startOfParent()
+            },
+        )
+
+        add(
+            syncInputBox,
+            lParams(wrapContent, wrapContent) {
+                startOfParent()
+                bottomToTop = preedit.ui.root.id
             },
         )
 
@@ -796,8 +827,7 @@ class InputView(
                     keyboardView.translationX += dx
                     keyboardView.translationY += dy
                     clampFloatingPosition()
-                    preedit.ui.root.translationX = keyboardView.translationX
-                    preedit.ui.root.translationY = keyboardView.translationY
+                    updateFloatingOverlayTranslation()
                     updateHandlePosition()
                     lastTouchX = event.rawX
                     lastTouchY = event.rawY
@@ -817,6 +847,7 @@ class InputView(
             }
         }
 
+        appPrefs.keyboard.floatingSyncInput.registerOnChangeListener(floatingSyncInputListener)
         applyFloatingLayout()
     }
 
@@ -947,6 +978,32 @@ class InputView(
         inputBar.updateVisibility()
     }
 
+    fun updateSyncInputBox(snapshot: TargetTextSnapshot?) {
+        if (!isEffectiveFloating || !floatingSyncInput || snapshot == null || snapshot.text.isEmpty()) {
+            hideSyncInputBox()
+            return
+        }
+        val display = SyncInputTextFormatter.format(snapshot)
+        if (display.text.isEmpty()) {
+            hideSyncInputBox()
+            return
+        }
+        syncInputBox.update(display)
+        syncInputBox.visibility = View.VISIBLE
+        syncInputBox.translationX = keyboardView.translationX
+        syncInputBox.translationY = keyboardView.translationY
+        requestApplyInsets()
+        syncInputBox.post { this@InputView.requestApplyInsets() }
+    }
+
+    fun hideSyncInputBox() {
+        if (syncInputBox.visibility == View.VISIBLE) {
+            syncInputBox.visibility = View.GONE
+            syncInputBox.clear()
+            requestApplyInsets()
+        }
+    }
+
     fun reloadColors() {
         keyboardBackground.imageDrawable = ColorManager.getDrawable("keyboard_background")
         keyboardWindow.invalidateAllCachedKeyColors()
@@ -1052,6 +1109,7 @@ class InputView(
 
     override fun onDetachedFromWindow() {
         ViewCompat.setOnApplyWindowInsetsListener(this, null)
+        appPrefs.keyboard.floatingSyncInput.unregisterOnChangeListener(floatingSyncInputListener)
         // cancel the notification job and clear all broadcast receivers,
         // implies that InputView should not be attached again after detached.
         updateWindowViewHeightJob.cancel()
@@ -1059,6 +1117,13 @@ class InputView(
         inputBar.stopAsrkbVoiceFromToolbar()
         inputDepMgr.stop()
         super.onDetachedFromWindow()
+    }
+
+    private fun updateFloatingOverlayTranslation() {
+        preedit.ui.root.translationX = keyboardView.translationX
+        preedit.ui.root.translationY = keyboardView.translationY
+        syncInputBox.translationX = keyboardView.translationX
+        syncInputBox.translationY = keyboardView.translationY
     }
 
     private fun applyFloatingLayout() {
@@ -1103,8 +1168,16 @@ class InputView(
                 topToTop = ConstraintLayout.LayoutParams.UNSET
                 bottomToBottom = ConstraintLayout.LayoutParams.UNSET
             }
-            preedit.ui.root.translationX = keyboardView.translationX
-            preedit.ui.root.translationY = keyboardView.translationY
+            syncInputBox.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                width = 0
+                startToStart = keyboardView.id
+                endToEnd = keyboardView.id
+                bottomToTop = preedit.ui.root.id
+                topToBottom = ConstraintLayout.LayoutParams.UNSET
+                topToTop = ConstraintLayout.LayoutParams.UNSET
+                bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+            }
+            updateFloatingOverlayTranslation()
         } else {
             applyDockedLayout()
         }
@@ -1117,6 +1190,11 @@ class InputView(
         updateOneHandHandleVisibility()
         keyboardView.invalidateOutline()
         requestLayout()
+        if (isEffectiveFloating) {
+            service.scheduleFloatingSyncInputUpdate(0L)
+        } else {
+            hideSyncInputBox()
+        }
     }
 
     private fun applyDockedLayout() {
@@ -1150,6 +1228,9 @@ class InputView(
         }
         preedit.ui.root.translationX = 0f
         preedit.ui.root.translationY = 0f
+        syncInputBox.visibility = View.GONE
+        syncInputBox.translationX = 0f
+        syncInputBox.translationY = 0f
 
         keyboardView.invalidateOutline()
     }
@@ -1305,8 +1386,7 @@ class InputView(
             keyboardView.translationX = clampedX
             keyboardView.translationY = clampedY
         }
-        preedit.ui.root.translationX = keyboardView.translationX
-        preedit.ui.root.translationY = keyboardView.translationY
+        updateFloatingOverlayTranslation()
     }
 
     fun getFloatingKeyboardRegion(outRegion: Region) {
@@ -1319,6 +1399,12 @@ class InputView(
             val preeditRect = Rect()
             preedit.ui.root.getHitRect(preeditRect)
             rect.union(preeditRect)
+        }
+
+        if (syncInputBox.visibility == View.VISIBLE) {
+            val syncRect = Rect()
+            syncInputBox.getHitRect(syncRect)
+            rect.union(syncRect)
         }
 
         if (floatingRightHandle.visibility == View.VISIBLE) {

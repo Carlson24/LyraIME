@@ -17,6 +17,8 @@ import android.inputmethodservice.InputMethodService
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.text.InputType
 import android.view.InputDevice
@@ -47,6 +49,7 @@ import com.osfans.trime.core.RimeKeyMapping
 import com.osfans.trime.core.RimeMessage
 import com.osfans.trime.daemon.RimeDaemon
 import com.osfans.trime.daemon.RimeSession
+import com.osfans.trime.daemon.launchOnReady
 import com.osfans.trime.data.prefs.AppPrefs
 import com.osfans.trime.data.prefs.PreferenceDelegate
 import com.osfans.trime.data.prefs.PreferenceDelegateProvider
@@ -55,6 +58,7 @@ import com.osfans.trime.data.theme.ColorManager
 import com.osfans.trime.data.theme.Theme
 import com.osfans.trime.data.theme.ThemeManager
 import com.osfans.trime.ime.composition.CandidatesView
+import com.osfans.trime.ime.composition.TargetTextSnapshot
 import com.osfans.trime.ime.keyboard.InputFeedbackManager
 import com.osfans.trime.ime.keyboard.KeyboardWindow
 import com.osfans.trime.link.SherpaSpeechClient
@@ -79,6 +83,8 @@ import splitties.systemservices.inputMethodManager
 import timber.log.Timber
 
 /** [輸入法][InputMethodService]主程序  */
+
+private const val TEXT_SNAPSHOT_LIMIT = 20_000
 
 open class TrimeInputMethodService : LifecycleInputMethodService() {
     private lateinit var rime: RimeSession
@@ -111,6 +117,9 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     private var cursorComposingText: String = ""
 
     private var cursorUpdateIndex = 0
+
+    private val syncInputHandler = Handler(Looper.getMainLooper())
+    private val syncInputUpdateRunnable = Runnable { refreshFloatingSyncInputNow() }
 
     private val recreateInputViewPrefs: Array<PreferenceDelegate<*>> = arrayOf(
         prefs.keyboard.hideInputBar,
@@ -312,6 +321,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         setInputView(newInputView)
         inputDeviceManager.setInputView(newInputView)
         inputView = newInputView
+        scheduleFloatingSyncInputUpdate(0L)
         return newInputView
     }
 
@@ -339,6 +349,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
     override fun onDestroy() {
         InputFeedbackManager.destroy()
         InputStatsRepository.flushAsync()
+        syncInputHandler.removeCallbacks(syncInputUpdateRunnable)
         inputView = null
         recreateInputViewPrefs.forEach {
             it.unregisterOnChangeListener(recreateInputViewListener)
@@ -480,6 +491,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         cursorUpdateIndex += 1
         handleCursorUpdate(newSelStart, newSelEnd, candidatesStart, candidatesEnd, cursorUpdateIndex)
         inputView?.updateSelection(newSelStart, newSelEnd)
+        scheduleFloatingSyncInputUpdate()
     }
 
     private fun handleCursorUpdate(
@@ -620,6 +632,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
             inputDeviceManager.evaluateOnStartInputView(attribute, this)
         if (useVirtualKeyboard) {
             inputView?.startInput(attribute, restarting)
+            scheduleFloatingSyncInputUpdate(0L)
         }
         if (useCandidatesView) {
             if (currentInputConnection?.monitorCursorAnchor() != true) {
@@ -650,6 +663,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         inputView?.stopVoiceRecognition()
         InputFeedbackManager.finishInput()
         InputStatsRepository.flushAsync()
+        cancelFloatingSyncInputUpdate()
     }
 
     fun commitText(text: String) {
@@ -665,6 +679,7 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         composingText = ""
         cursorComposingText = ""
         InputFeedbackManager.textCommitSpeak(text)
+        scheduleFloatingSyncInputUpdate()
     }
 
     fun commitImage(
@@ -1038,6 +1053,116 @@ open class TrimeInputMethodService : LifecycleInputMethodService() {
         }
         composingText = text
         ic.endBatchEdit()
+        scheduleFloatingSyncInputUpdate()
+    }
+
+    fun scheduleFloatingSyncInputUpdate(delayMs: Long = 50L) {
+        syncInputHandler.removeCallbacks(syncInputUpdateRunnable)
+        if (inputView?.isFloating != true || !prefs.keyboard.floatingSyncInput.getValue()) {
+            inputView?.hideSyncInputBox()
+            return
+        }
+        syncInputHandler.postDelayed(syncInputUpdateRunnable, delayMs)
+    }
+
+    fun cancelFloatingSyncInputUpdate() {
+        syncInputHandler.removeCallbacks(syncInputUpdateRunnable)
+        inputView?.hideSyncInputBox()
+    }
+
+    private fun refreshFloatingSyncInputNow() {
+        val view = inputView ?: return
+        if (!view.isFloating || !prefs.keyboard.floatingSyncInput.getValue()) {
+            view.hideSyncInputBox()
+            return
+        }
+        view.updateSyncInputBox(extractTargetTextSnapshot())
+    }
+
+    private fun extractTargetTextSnapshot(): TargetTextSnapshot? {
+        val ic = currentInputConnection ?: return null
+        val editorInfo = currentInputEditorInfo ?: return null
+        val inputType = editorInfo.inputType
+        if ((inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_NULL) return null
+        if (isPasswordInputType(inputType)) return null
+
+        val request = ExtractedTextRequest().apply { token = 0 }
+        val extracted = runCatching { ic.getExtractedText(request, 0) }.getOrNull()
+        if (extracted?.text != null) {
+            return TargetTextSnapshot(
+                text = extracted.text.toString(),
+                startOffset = extracted.startOffset,
+                selectionStart = extracted.selectionStart,
+                selectionEnd = extracted.selectionEnd,
+                editable = true,
+                truncatedBefore = extracted.partialStartOffset >= 0 || extracted.startOffset > 0,
+                truncatedAfter = extracted.partialEndOffset >= 0,
+            )
+        }
+
+        val before = runCatching { ic.getTextBeforeCursor(TEXT_SNAPSHOT_LIMIT, 0) }.getOrNull()?.toString().orEmpty()
+        val after = runCatching { ic.getTextAfterCursor(TEXT_SNAPSHOT_LIMIT, 0) }.getOrNull()?.toString().orEmpty()
+        val selected = runCatching { ic.getSelectedText(0) }.getOrNull()?.toString().orEmpty()
+        if (before.isEmpty() && after.isEmpty() && selected.isEmpty()) return null
+
+        return TargetTextSnapshot(
+            text = before + selected + after,
+            startOffset = 0,
+            selectionStart = before.length,
+            selectionEnd = before.length + selected.length,
+            editable = before.length < TEXT_SNAPSHOT_LIMIT,
+            truncatedBefore = before.length >= TEXT_SNAPSHOT_LIMIT,
+            truncatedAfter = after.length >= TEXT_SNAPSHOT_LIMIT,
+        )
+    }
+
+    fun setTargetSelection(
+        start: Int,
+        end: Int,
+    ) {
+        val ic = currentInputConnection ?: return
+        if (!currentInputEditorInfo.isEditableTextInput()) return
+
+        val from = minOf(start, end).coerceAtLeast(0)
+        val to = maxOf(start, end).coerceAtLeast(0)
+        val applySelection = {
+            runCatching {
+                ic.beginBatchEdit()
+                ic.setSelection(from, to)
+            }.onFailure {
+                Timber.w(it, "setTargetSelection failed")
+            }
+            runCatching { ic.endBatchEdit() }
+            Unit
+        }
+
+        if (rime.run { statusCached.isComposing } || composingText.isNotEmpty()) {
+            rime.launchOnReady { api ->
+                api.commitComposition()
+                withContext(Dispatchers.Main) { applySelection() }
+            }
+        } else {
+            applySelection()
+        }
+    }
+
+    private fun isPasswordInputType(inputType: Int): Boolean {
+        val variation = inputType and InputType.TYPE_MASK_VARIATION
+        return when (inputType and InputType.TYPE_MASK_CLASS) {
+            InputType.TYPE_CLASS_TEXT ->
+                variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+                    variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+                    variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD
+
+            InputType.TYPE_CLASS_NUMBER -> variation == InputType.TYPE_NUMBER_VARIATION_PASSWORD
+
+            else -> false
+        }
+    }
+
+    private fun EditorInfo?.isEditableTextInput(): Boolean {
+        val type = this?.inputType ?: return false
+        return (type and InputType.TYPE_MASK_CLASS) != InputType.TYPE_NULL
     }
 
     fun getActiveText(type: Int): String {

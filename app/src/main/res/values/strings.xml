@@ -184,6 +184,8 @@
     <string name="stats_cleared">Input statistics cleared</string>
     <string name="theme">Keyboard Style</string>
     <string name="floating_keyboard">Floating Keyboard</string>
+    <string name="floating_sync_input">Floating sync input box</string>
+    <string name="floating_sync_input_summary">Show and edit the target field content above the floating keyboard</string>
     <string name="about">About</string>
     <string name="storage">Storage</string>
     <string name="maintenance">Maintenance</string>

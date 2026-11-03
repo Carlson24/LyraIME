@@ -159,6 +159,8 @@
     <string name="stats_clear_confirm">此操作将删除所有已记录的输入统计，且无法恢复。</string>
     <string name="stats_cleared">输入统计已清空</string>
     <string name="floating_keyboard">悬浮键盘</string>
+    <string name="floating_sync_input">悬浮同步输入框</string>
+    <string name="floating_sync_input_summary">在悬浮键盘上方显示并编辑目标输入框的内容</string>
     <string name="about">关于</string>
     <string name="theme">键盘样式</string>
     <string name="profile_and_synchronization">配置与同步</string>
