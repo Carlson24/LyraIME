@@ -758,19 +758,20 @@ class InputView(
         updateKeyboardSize()
 
         preedit.ui.root.id = View.generateViewId()
-        add(
-            preedit.ui.root,
-            lParams(wrapContent, wrapContent) {
-                above(keyboardView)
-                startOfParent()
-            },
-        )
-
+        syncInputBox.id = View.generateViewId()
         add(
             syncInputBox,
             lParams(wrapContent, wrapContent) {
                 startOfParent()
-                bottomToTop = preedit.ui.root.id
+                above(keyboardView)
+            },
+        )
+
+        add(
+            preedit.ui.root,
+            lParams(wrapContent, wrapContent) {
+                startOfParent()
+                above(syncInputBox)
             },
         )
 
@@ -1181,7 +1182,7 @@ class InputView(
                 width = 0
                 startToStart = keyboardView.id
                 endToEnd = keyboardView.id
-                bottomToTop = keyboardView.id
+                bottomToTop = syncInputBox.id
                 topToBottom = ConstraintLayout.LayoutParams.UNSET
                 topToTop = ConstraintLayout.LayoutParams.UNSET
                 bottomToBottom = ConstraintLayout.LayoutParams.UNSET
@@ -1190,7 +1191,7 @@ class InputView(
                 width = 0
                 startToStart = keyboardView.id
                 endToEnd = keyboardView.id
-                bottomToTop = preedit.ui.root.id
+                bottomToTop = keyboardView.id
                 topToBottom = ConstraintLayout.LayoutParams.UNSET
                 topToTop = ConstraintLayout.LayoutParams.UNSET
                 bottomToBottom = ConstraintLayout.LayoutParams.UNSET
