@@ -170,6 +170,8 @@ class InputView(
 
     private var lastAppearanceState = Triple(false, false, false)
 
+    private var lastNavBarBottomInsetPx = 0
+
     private fun broadcastKeyAppearanceUpdate() {
         val composing = rime.run { statusCached.isComposing }
         val hasMenu = rime.run { hasMenu }
@@ -965,10 +967,15 @@ class InputView(
     }
 
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
-        bottomPaddingSpace.updateLayoutParams<LayoutParams> {
-            bottomMargin = getNavBarBottomInset(insets)
-        }
+        lastNavBarBottomInsetPx = getNavBarBottomInset(insets)
+        applyBottomPaddingMargin()
         return insets
+    }
+
+    private fun applyBottomPaddingMargin() {
+        bottomPaddingSpace.updateLayoutParams<LayoutParams> {
+            bottomMargin = if (isEffectiveFloating) 0 else lastNavBarBottomInsetPx
+        }
     }
 
     fun startInput(
@@ -1159,9 +1166,7 @@ class InputView(
 
             applyFloatingHeight()
 
-            bottomPaddingSpace.updateLayoutParams<LayoutParams> {
-                bottomMargin = 0
-            }
+            applyBottomPaddingMargin()
 
             val (storedX, storedY) = getStoredFloatingPosition()
             if (storedX != -1 && storedY != -1) {
@@ -1251,6 +1256,7 @@ class InputView(
         syncInputBox.translationX = 0f
         syncInputBox.translationY = 0f
 
+        applyBottomPaddingMargin()
         keyboardView.invalidateOutline()
     }
 
