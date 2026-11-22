@@ -10,7 +10,6 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.widget.TextView
-import androidx.core.math.MathUtils
 
 @SuppressLint("AppCompatCustomView")
 class PreeditTextView
@@ -30,12 +29,8 @@ constructor(
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 val textString = text.toString()
-                lastTapOffset = MathUtils.clamp(
-                    getOffsetForPosition(x, y),
-                    0,
-                    textString.length,
-                )
-                val bytes = textString.substring(0, lastTapOffset).toByteArray()
+                lastTapOffset = textString.alignToCodePointBoundary(getOffsetForPosition(x, y))
+                val bytes = textString.substring(0, lastTapOffset).toByteArray(Charsets.UTF_8)
                 newCursorPos = bytes.size
                 return true
             }

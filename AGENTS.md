@@ -45,8 +45,7 @@ If the QNN SDK is not available at build time, the DSP libs are not packaged and
 
 **Prebuilt JNI caching**: if `app/prebuilt/` exists, the build reuses pre-compiled `.so` files instead of rebuilding native code. To force a full native rebuild, delete `app/prebuilt/`.
 
-**Auto-patch**: the `native-base-convention` Gradle plugin automatically applies four patches as a dependency of `ExternalNativeBuildTask`:
-- `patches/lua.patch` → `librime-plugins/librime-lua-deps`
+**Auto-patch**: the `native-base-convention` Gradle plugin automatically applies three patches as a dependency of `ExternalNativeBuildTask`:
 - `patches/sherpa-onnx-qnn.patch` → `sherpa-onnx`
 - `patches/librime-custom.patch` → `librime`
 - `patches/librime-lua.patch` → `librime-plugins/librime-lua`

@@ -368,9 +368,16 @@ class Rime :
     } else if (status.schemaName.isNotEmpty() &&
         !status.schemaName.startsWith('.')
     ) {
-        status.schemaName.take(2)
+        status.schemaName.takeCodePoints(2)
     } else {
         ""
+    }
+
+    /** Takes [count] code points instead of UTF-16 units, so surrogate pairs stay intact. */
+    private fun String.takeCodePoints(count: Int): String {
+        val codePoints = codePointCount(0, length)
+        if (codePoints <= count) return this
+        return substring(0, offsetByCodePoints(0, count))
     }
 
     private fun emitResponse(

@@ -158,10 +158,9 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
     private fun registerPatchApplyTask(project: Project) {
         val rootDir = project.rootDir
         val jniDir = "app/src/main/jni"
-        val macrosHeader = project.file("src/main/jni/sherpa-onnx/sherpa-onnx/csrc/macros.h")
+        val qnnMacrosHeader = project.file("src/main/jni/sherpa-onnx/sherpa-onnx/csrc/qnn/macros.h")
         val rimeApiH = project.file("src/main/jni/librime/src/rime_api.h")
         val luaCmake = project.file("src/main/jni/librime-plugins/librime-lua/CMakeLists.txt")
-        val luaLiolib = project.file("src/main/jni/librime-plugins/librime-lua-deps/lua5.5/liolib.c")
         val applyPatches =
             project.tasks.register("applyNativePatches") {
                 group = "native"
@@ -185,17 +184,10 @@ open class NativeBaseConventionPlugin : Plugin<Project> {
                         "--directory=$jniDir/librime-plugins/librime-lua",
                         "patches/librime-lua.patch",
                     ).directory(rootDir).inheritIO().start().waitFor()
-                    ProcessBuilder(
-                        "git",
-                        "apply",
-                        "--directory=$jniDir/librime-plugins/librime-lua-deps",
-                        "patches/lua.patch",
-                    ).directory(rootDir).inheritIO().start().waitFor()
                 }
                 outputs.upToDateWhen {
-                    (macrosHeader.exists() && macrosHeader.readText().contains("throw std::runtime_error")) &&
+                    (qnnMacrosHeader.exists() && qnnMacrosHeader.readText().contains("QNN fatal error")) &&
                         (rimeApiH.exists() && rimeApiH.readText().contains("char* type;")) &&
-                        (luaLiolib.exists() && luaLiolib.readText().contains("!defined(ANDROID)")) &&
                         (luaCmake.exists() && luaCmake.readText().contains("lua-utf8"))
                 }
             }

@@ -18,8 +18,9 @@ data class CandidateProto(
 
 data class CompositionProto(
     /**
-     * Actually we can directly use [String.length] on [preedit], but
-     * we add it here for the sake of completeness as it is semantically correct
+     * All offsets are UTF-16 code units, i.e. indexes into [preedit], so they
+     * can be used directly with [String] APIs. librime reports them in UTF-8
+     * bytes; they are converted in JNI.
      */
     val length: Int = 0,
     val cursorPos: Int = 0,

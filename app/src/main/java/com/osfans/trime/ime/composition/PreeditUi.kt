@@ -50,13 +50,6 @@ open class PreeditUi(
             }
         }
 
-    private fun CompositionProto.toSpannedString() = buildSpannedString {
-        if (!preedit.isNullOrEmpty()) {
-            append(preedit)
-            setSpan(ForegroundColorSpan(highlightTextColor), selStart, selEnd, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        }
-    }
-
     var visible = false
         private set
 
@@ -69,23 +62,52 @@ open class PreeditUi(
     }
 
     fun update(composition: CompositionProto) {
-        val string = composition.toSpannedString()
-        val cursorPos = composition.cursorPos
-        val hasPreedit = composition.length > 0
+        val preeditText = composition.preedit.orEmpty()
+        val hasPreedit = composition.length > 0 && preeditText.isNotEmpty()
         visible = hasPreedit
-        if (!visible) {
+        if (!hasPreedit) {
             updateTextView("", false)
             return
         }
+        val selStart = preeditText.alignToCodePointBoundary(composition.selStart)
+        val selEnd = preeditText.alignToCodePointBoundary(composition.selEnd).coerceAtLeast(selStart)
+        val string = buildSpannedString {
+            append(preeditText)
+            if (selEnd > selStart) {
+                setSpan(ForegroundColorSpan(highlightTextColor), selStart, selEnd, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
+        }
+        val cursorPos = preeditText.alignToCodePointBoundary(composition.cursorPos)
         val stringWithCursor =
             if (cursorPos == 0 || cursorPos == string.length) {
                 string
             } else {
                 buildSpannedString {
-                    if (cursorPos > 0) append(string, 0, cursorPos)
+                    append(string, 0, cursorPos)
                     append(string, cursorPos, string.length)
                 }
             }
         updateTextView(stringWithCursor, true)
+    }
+}
+
+/**
+ * Clamps [offset] into this sequence and moves it back to the start of a
+ * surrogate pair when it falls between the high and the low surrogate.
+ *
+ * A style span boundary inside a surrogate pair makes Android lay out each half
+ * as a separate run, so both halves render as missing glyphs. That is what made
+ * supplementary-plane Han characters (e.g. U+26B99) look like mojibake in the
+ * preedit.
+ */
+internal fun CharSequence.alignToCodePointBoundary(offset: Int): Int {
+    val index = offset.coerceIn(0, length)
+    if (index == 0 || index == length) return index
+    return if (Character.isLowSurrogate(this[index]) &&
+        Character.isHighSurrogate(this[index - 1])
+    ) {
+        index - 1
+    } else {
+        index
     }
 }

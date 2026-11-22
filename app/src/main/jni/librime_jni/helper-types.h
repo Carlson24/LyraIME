@@ -3,6 +3,7 @@
 #include <rime_api.h>
 #include <utf8.h>
 
+#include <cstdint>
 #include <cstring>
 #include <optional>
 #include <string>
@@ -72,8 +73,18 @@ class MenuProto {
   std::vector<std::string> selectLabels;
 };
 
-static inline int distance(const char* start, const char* end) {
-  return static_cast<int>(utf8::unchecked::distance(start, end));
+// librime reports preedit offsets (length, caret position, selection) in UTF-8
+// bytes, but the Java side indexes the preedit with UTF-16 code units. One
+// supplementary-plane character (e.g. CJK extension B ideographs such as
+// U+26B99) takes four UTF-8 bytes but two UTF-16 units, so counting code points
+// would leave the offsets one unit short and split surrogate pairs in spans.
+static inline int utf16_distance(const char* start, const char* end) {
+  int units = 0;
+  for (const char* it = start; it < end;) {
+    const uint32_t code_point = utf8::unchecked::next(it);
+    units += code_point > 0xFFFF ? 2 : 1;
+  }
+  return units;
 }
 
 class ContextProto {
@@ -92,10 +103,10 @@ class ContextProto {
     if (context->composition.length > 0) {
       auto& c = context->composition;
       auto t = c.preedit;
-      composition.length = distance(t, t + c.length);
-      composition.cursorPos = distance(t, t + c.cursor_pos);
-      composition.selStart = distance(t, t + c.sel_start);
-      composition.selEnd = distance(t, t + c.sel_end);
+      composition.length = utf16_distance(t, t + c.length);
+      composition.cursorPos = utf16_distance(t, t + c.cursor_pos);
+      composition.selStart = utf16_distance(t, t + c.sel_start);
+      composition.selEnd = utf16_distance(t, t + c.sel_end);
       composition.preedit = t;
       if (context->commit_text_preview) {
         composition.commitTextPreview = context->commit_text_preview;

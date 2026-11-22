@@ -1,75 +1,49 @@
-diff --git a/sherpa-onnx/csrc/macros.h b/sherpa-onnx/csrc/macros.h
-index d68c4c18..041cf2c2 100644
---- a/sherpa-onnx/csrc/macros.h
-+++ b/sherpa-onnx/csrc/macros.h
-@@ -7,6 +7,8 @@
- #include <stdio.h>
- #include <stdlib.h>
- 
-+#include <stdexcept>
-+#include <string>
- #include <utility>
- #if __OHOS__
- #include "hilog/log.h"
-@@ -51,11 +53,13 @@
-   } while (0)
- #endif
- 
--#define SHERPA_ONNX_EXIT(code) \
--  do {                         \
--    fflush(stdout);            \
--    fflush(stderr);            \
--    _Exit(code);               \
-+#define SHERPA_ONNX_EXIT(code)                                  \
-+  do {                                                          \
-+    fflush(stdout);                                             \
-+    fflush(stderr);                                             \
-+    throw std::runtime_error("sherpa-onnx internal error: " +   \
-+                             std::string(__FILE__) + ":" +      \
-+                             std::to_string(__LINE__));         \
-   } while (0)
- 
- // Read an integer
 diff --git a/sherpa-onnx/csrc/qnn/macros.h b/sherpa-onnx/csrc/qnn/macros.h
-index 58c65cf3..7e11ecb3 100644
+index 58c65cf3..7a52d5af 100644
 --- a/sherpa-onnx/csrc/qnn/macros.h
 +++ b/sherpa-onnx/csrc/qnn/macros.h
-@@ -5,15 +5,20 @@
+@@ -5,14 +5,32 @@
  #ifndef SHERPA_ONNX_CSRC_QNN_MACROS_H_
  #define SHERPA_ONNX_CSRC_QNN_MACROS_H_
  
-+#include <stdexcept>
 +#include <sstream>
++#include <stdexcept>
++#include <string>
 +
  #include "sherpa-onnx/csrc/macros.h"
  
--#define SHERPA_ONNX_QNN_CHECK(ret, msg, ...)                             \
--  do {                                                                   \
--    if (ret != QNN_SUCCESS) {                                            \
--      SHERPA_ONNX_LOGE("Return code is: %d", static_cast<int32_t>(ret)); \
--      SHERPA_ONNX_LOGE(msg, ##__VA_ARGS__);                              \
++// A QNN fatal error must not call _Exit(): that kills the Android app
++// process before the Kotlin side can catch the failure and fall back to CPU
++// inference. Scope the replacement to QNN translation units, which all
++// include this header, so the rest of sherpa-onnx keeps the upstream behavior.
++#undef SHERPA_ONNX_EXIT
++#define SHERPA_ONNX_EXIT(code)                                   \
++  do {                                                           \
++    throw std::runtime_error("sherpa-onnx QNN fatal error at " + \
++                             std::string(__FILE__) + ":" +       \
++                             std::to_string(__LINE__));          \
++  } while (0)
++
+ #define SHERPA_ONNX_QNN_CHECK(ret, msg, ...)                             \
+   do {                                                                   \
+     if (ret != QNN_SUCCESS) {                                            \
+       SHERPA_ONNX_LOGE("Return code is: %d", static_cast<int32_t>(ret)); \
+       SHERPA_ONNX_LOGE(msg, ##__VA_ARGS__);                              \
 -      SHERPA_ONNX_EXIT(-1);                                              \
--    }                                                                    \
-+#define SHERPA_ONNX_QNN_CHECK(ret, msg, ...)                              \
-+  do {                                                                    \
-+    if (ret != QNN_SUCCESS) {                                             \
-+      SHERPA_ONNX_LOGE("Return code is: %d", static_cast<int32_t>(ret));  \
-+      SHERPA_ONNX_LOGE(msg, ##__VA_ARGS__);                               \
-+      std::ostringstream oss;                                             \
-+      oss << "QNN error " << static_cast<int32_t>(ret) << ": " << msg;    \
-+      throw std::runtime_error(oss.str());                                \
-+    }                                                                     \
++      std::ostringstream oss;                                            \
++      oss << "QNN error " << static_cast<int32_t>(ret) << ": " << msg;   \
++      throw std::runtime_error(oss.str());                               \
+     }                                                                    \
    } while (0)
  
- #endif  // SHERPA_ONNX_CSRC_QNN_MACROS_H_
 diff --git a/sherpa-onnx/csrc/qnn/qnn-backend.cc b/sherpa-onnx/csrc/qnn/qnn-backend.cc
-index b482acf4..1dd40692 100644
+index 1ef6afc9..47860771 100644
 --- a/sherpa-onnx/csrc/qnn/qnn-backend.cc
 +++ b/sherpa-onnx/csrc/qnn/qnn-backend.cc
-@@ -23,38 +23,54 @@ namespace sherpa_onnx {
- class QnnBackend::Impl {
+@@ -26,28 +26,35 @@ class QnnBackend::Impl {
   public:
-   explicit Impl(const std::string &backend_lib, bool debug) : debug_(debug) {
+   Impl(const std::string &backend_lib, const QnnBackendOptions &opts)
+       : opts_(opts) {
 -    bool ok = InitQnnInterface(backend_lib);
 -    if (!ok) {
 -      SHERPA_ONNX_LOGE("Failed to init qnn interface from '%s'",
@@ -91,6 +65,13 @@ index b482acf4..1dd40692 100644
 +      InitBackend();
 +      InitDevice();
  
+-    if (opts_.htp_perf_mode) {
+-      InitHtpPerfMode();
+-    }
++      if (opts_.htp_perf_mode) {
++        InitHtpPerfMode();
++      }
+ 
 -    is_initialized_ = true;
 +      is_initialized_ = true;
 +    } catch (const std::exception &e) {
@@ -107,6 +88,9 @@ index b482acf4..1dd40692 100644
 +                         static_cast<int32_t>(ret));
 +      }
      }
+ 
+     if (htp_perf_infra_ && htp_power_config_id_ != 0) {
+@@ -60,17 +67,26 @@ class QnnBackend::Impl {
  
      if (device_handle_) {
        auto ret = qnn_interface_.deviceFree(device_handle_);
@@ -135,3 +119,4 @@ index b482acf4..1dd40692 100644
 +      }
      }
    }
+ 
