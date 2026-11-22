@@ -10,10 +10,10 @@ index 5b8985df..c2a48d39 100644
    void* reserved;
  } RimeCandidate;
  
-diff --git a/src/rime_api_impl.h b/src/rime_api_impl.h
+diff --git a/src/rime_api_impl.cc b/src/rime_api_impl.cc
 index 0fb6c696..1eb3b7b4 100644
---- a/src/rime_api_impl.h
-+++ b/src/rime_api_impl.h
+--- a/src/rime_api_impl.cc
++++ b/src/rime_api_impl.cc
 @@ -203,6 +203,13 @@ static void rime_candidate_copy(RimeCandidate* dest, const an<Candidate>& src) {
    } else {
      dest->comment = nullptr;
