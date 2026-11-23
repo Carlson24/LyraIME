@@ -18,7 +18,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 Android 的 Java/Kotlin 语言开发。Fork 自[同文输入法（Trime）](https://github.com/osfans/trime)，
 旨在保护汉语各地方言母语，音码、形码通用的输入法平台。
 
-[主题 DSL 文档](doc/theme-dsl.lua)
+[主题 DSL 文档](doc/theme-dsl.lua) · [音效主题制作指南](doc/sound-effect-theme.md)
 
 ## 特色功能
 
